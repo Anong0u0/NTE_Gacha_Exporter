@@ -1,6 +1,6 @@
-# NTE Gacha Exporter | NTE Gacha Record Exporter
+# NTE Gacha Exporter
 
-[繁體中文](https://github.com/Anong0u0/nte_gacha_exporter/blob/master/README.md) | [English](README.en.md)
+[繁體中文](https://github.com/Anong0u0/nte_gacha_exporter/blob/master/README.md) | English
 
 Captures NTE packets through Npcap, exports limited board, standard board, and fork-lottery records, and generates JSON/CSV.
 
@@ -22,8 +22,8 @@ When no output path is specified, exported files are written to `output/` under 
 ## Requirements
 
 - [Npcap](https://npcap.com/#download) must be installed.
- - Ensure `Install Npcap in WinPcap API-compatible mode` is ticked
- - Note for WiFi users: During Npcap installation, ensure `Support raw 802.11 traffic (and monitor mode) for wireless adapters` is ticked.
+  - Ensure `Install Npcap in WinPcap API-compatible mode` is ticked
+  - Note for WiFi users: During Npcap installation, ensure `Support raw 802.11 traffic (and monitor mode) for wireless adapters` is ticked.
 - The NTE game must be running.
 - Auto paging requires administrator permission, the game window visible in the foreground, and the gacha page opened manually with F3. 1920x1080 is recommended. Other resolutions may be inaccurate.
 

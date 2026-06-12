@@ -1,6 +1,6 @@
 # NTE Gacha Exporter | 異環抽卡紀錄導出
 
-[繁體中文](README.md) | [English](https://github.com/Anong0u0/nte_gacha_exporter/blob/master/docs/README.en.md)
+繁體中文 | [English](https://github.com/Anong0u0/nte_gacha_exporter/blob/master/docs/README.en.md)
 
 使用Npcap抓取異環封包，匯出 限定棋盤、標準棋盤、弧盤研募，產生 JSON/CSV
 
@@ -22,8 +22,8 @@
 ## 系統需求
 
 - 需安裝[Npcap](https://npcap.com/#download)
- - 確保 `Install Npcap in WinPcap API-compatible mode` 已勾選
- - WiFi 使用者注意: 安裝 Npcap 時, 確保 `Support raw 802.11 traffic (and monitor mode) for wireless adapters` 已勾選
+  - 確保 `Install Npcap in WinPcap API-compatible mode` 已勾選
+  - WiFi 使用者注意: 安裝 Npcap 時, 確保 `Support raw 802.11 traffic (and monitor mode) for wireless adapters` 已勾選
 - 已啟動的 NTE 遊戲
 - 自動翻頁需要管理員權限、遊戲視窗處於前台可見、手動F3開啟抽卡頁面；建議使用 1920x1080；其他解析度可能錯誤
 
