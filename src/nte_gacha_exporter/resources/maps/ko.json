@@ -1,0 +1,175 @@
+{
+  "csv_headers": {
+    "count": "수량",
+    "item_name": "아이템 이름",
+    "pool_group": "뽑기 유형",
+    "pool_name": "뽑기",
+    "roll_label": "주사위 숫자",
+    "secondary_count": "추가 획득 수량",
+    "secondary_item_name": "추가 획득",
+    "time": "획득 시간"
+  },
+  "items": {
+    "1003": "캐릭터·사키리",
+    "1004": "캐릭터·라크리모사",
+    "1008": "캐릭터·스키아",
+    "1010": "캐릭터·나나리",
+    "1019": "캐릭터·민트",
+    "1020": "캐릭터·하니엘",
+    "1021": "캐릭터·에드가",
+    "1023": "캐릭터·백장",
+    "1025": "캐릭터·하토르",
+    "1033": "캐릭터·아들러",
+    "1039": "캐릭터·파디아",
+    "1052": "캐릭터·호토리",
+    "1054": "캐릭터·다포딜",
+    "1055": "캐릭터·구원",
+    "1070": "캐릭터·우미츠키",
+    "1073": "캐릭터·치즈",
+    "Characterawaken_Adler": "아이템·심상 파편·아들러",
+    "Characterawaken_Hathor": "아이템·심상 파편·하토르",
+    "Characterawaken_Jin": "아이템·심상 파편·호토리",
+    "Characterawaken_Mint": "아이템·심상 파편·민트",
+    "Characterawaken_Nanally": "아이템·심상 파편·나나리",
+    "Characterawaken_Sagiri": "아이템·심상 파편·사키리",
+    "Characterawaken_cang": "아이템·심상 파편·백장",
+    "Characterawaken_dafudier": "아이템·심상 파편·다포딜",
+    "Characterawaken_fadia": "아이템·심상 파편·파디아",
+    "Characterawaken_lacrimosa": "아이템·심상 파편·라크리모사",
+    "Characterawaken_skia": "아이템·심상 파편·스키아",
+    "DIceLimite": "아이템·진실의 주사위",
+    "DIceNormal": "아이템·기만의 주사위",
+    "DiceNormal": "아이템·기만의 주사위",
+    "Dice_ticket_01": "아이템·탈차원 기물",
+    "Dice_ticket_02": "아이템·방향치 기물",
+    "Dicelimite": "아이템·진실의 주사위",
+    "Fashion_Glide_1004": "글라이더·토마토 듀오",
+    "Fashion_Glide_1010": "글라이더·이인자의 이인자",
+    "Fashion_Glide_1052": "글라이더·유란",
+    "Fashion_character_1004_01": "코스튬·금빛 교향시",
+    "Fashion_character_1010": "코스튬·화려한 발차기",
+    "Fashion_character_1052_01": "코스튬·고급 난초",
+    "Fashion_glide_1004": "글라이더·토마토 듀오",
+    "Fashion_glide_1010": "글라이더·이인자의 이인자",
+    "Fashion_glide_1052": "글라이더·유란",
+    "Fashion_vehicleSkin_1052_V016": "튜닝 부품·가을바람의 환대-리버리",
+    "Fashion_vehicle_1004_V021": "튜닝 부품·토마토 크루즈-리버리",
+    "Fashion_vehicle_1010_V008": "튜닝 부품·귀여운 호랑이의 습격-리버리",
+    "Fashion_vehicle_1052_V024": "튜닝 부품·가을의 여운-리버리",
+    "Fork_TigerTally": "아크·준비, 준비",
+    "fork_Arachne": "아크·영원한 왈츠",
+    "fork_BitGame": "아크·폭발 현장",
+    "fork_BitterCake": "아크·입에 쓴 약이 몸에 좋다",
+    "fork_BlackBook": "아크·암흑 청춘의 망상",
+    "fork_Butterfly": "아크·현실 도피처",
+    "fork_GoldWool": "아크·만인의 갈망",
+    "fork_Kite": "아크·머리 조심",
+    "fork_Nakupeda": "아크·백만불짜리 미소",
+    "fork_PaperPlane": "아크·정화 개시",
+    "fork_PoliceRat": "아크·헤테로의 안녕",
+    "fork_Prokaryon": "아크·「우리.」",
+    "fork_Rose": "아크·「마지막 장미」",
+    "fork_TigerTally": "아크·준비, 준비",
+    "fork_Time": "아크·시간 밖으로의 행진",
+    "fork_Vine": "아크·미소 천사",
+    "fork_appliance": "아크·광란의 「전자음악」",
+    "fork_bopu": "아크·화려한 조명 속 광란의 파티",
+    "fork_dustbin": "아크·위험한 게임",
+    "fork_jiaojuan": "아크·빛나는 나날",
+    "fork_jingmotingyuan": "아크·동백꽃 모임",
+    "fork_koinobori": "아크·때는 온다",
+    "fork_lingganzhongjiezhe": "아크·영감 배틀로얄",
+    "fork_mamen": "아크·생각하는 고양이",
+    "fork_mofeikesi": "아크·착한 강아지의 여행",
+    "fork_nonos": "아크·성공을 향한 첫 걸음",
+    "fork_oulaquantao": "아크·오라오라!",
+    "fork_rishi": "아크·휴일",
+    "fork_spider": "아크·말하기 어려운 마음",
+    "fork_tuansanlang": "아크·망할 인연",
+    "fork_vine": "아크·미소 천사",
+    "fork_wuhuakuang": "아크·잊힌 자",
+    "fork_wushoutieyu": "아크·염혼의 질주",
+    "fork_yaodao": "아크·발도",
+    "fork_yuren": "아크·물망산"
+  },
+  "pools": {
+    "1": "기적 상자",
+    "CardPool_Character": "한정 보드",
+    "CardPool_NewRole": "표준 보드",
+    "ForkLottery_AnHunQu": "기적 상자",
+    "ForkLottery_Kaesi": "기적 상자",
+    "ForkLottery_Nanali": "기적 상자",
+    "ForkLottery_Xun": "기적 상자"
+  },
+  "pool_meta": {
+    "CardPool_Character": {
+      "group_label": "한정 보드",
+      "title_windows": [
+        {
+          "end_at_tz8": "2026-05-13 05:59:00",
+          "title": "초대 가주 넘버원"
+        },
+        {
+          "end_at_tz8": "2026-06-03 05:59:00",
+          "title": "달빛 한 잔"
+        },
+        {
+          "end_at_tz8": "2026-06-24 05:59:00",
+          "title": "단꿈에서 깨어날 때"
+        },
+        {
+          "end_at_tz8": "2026-07-08 05:59:00",
+          "title": "돌아올 수 없는 길"
+        }
+      ]
+    },
+    "CardPool_NewRole": {
+      "group_label": "표준 보드",
+      "title": "기묘한 만남"
+    },
+    "ForkLottery_AnHunQu": {
+      "group_label": "아크 연구 모집",
+      "title": "녹턴 특간",
+      "subtitle": "한정 아크 「마지막 장미」 확률 UP!"
+    },
+    "ForkLottery_Kaesi": {
+      "group_label": "아크 연구 모집",
+      "title": "사냥꾼 특간",
+      "subtitle": "한정 아크 「만인의 갈망」 확률 UP!"
+    },
+    "ForkLottery_Nanali": {
+      "group_label": "아크 연구 모집",
+      "title": "타이거 스페셜",
+      "subtitle": "한정 아크 「준비, 준비」 확률 UP!"
+    },
+    "ForkLottery_Xun": {
+      "group_label": "아크 연구 모집",
+      "title": "밝은 달 특간",
+      "subtitle": "한정 아크 「시간 밖으로의 행진」 획득 확률 UP!"
+    }
+  },
+  "labels": {
+    "AbyssClone_Award_02": "완료",
+    "Abyss_GamepadKeys_1": "전환",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "표준 보드",
+    "BPUI_LotteryDiceRecord_qipanleixing": "보드 유형",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "한정 보드",
+    "BPUI_LotteryModuleEntrance_Title": "스카버러 마켓",
+    "BPUI_LotteryResult_chenmiandi": "안식의 땅",
+    "BPUI_LotteryResult_jidianzengli": "포인트 선물",
+    "Mall_8_name": "아크 상점",
+    "TreasureBox_2": "오픈",
+    "UI_CloneSystemChallengeFailed_Retry": "다시 시도",
+    "UI_CloneSystemStaminaTips_Enter": "들어가기",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "주사위 기록",
+    "UI_Lottery_GachaDetails_title": "보드 상세정보",
+    "UW_LotteryBase_BP_Hupanyanmu": "아크 연구 모집",
+    "W_HTButton_Next_Page": "다음 페이지",
+    "W_Vehicle_Button_Choose": "선택",
+    "common_3": "뒤로가기",
+    "ui_appearance_02": "글라이더",
+    "ui_forkshop_03": "아크 연구 모집 계획",
+    "ui_forkshop_07": "연구 모집 상세정보",
+    "ui_forkshop_10": "연구 모집 기록"
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "csv_headers": {
+    "count": "数量",
+    "item_name": "アイテム名",
+    "pool_group": "ガチャタイプ",
+    "pool_name": "ガチャ",
+    "roll_label": "サイコロポイント",
+    "secondary_count": "ボーナス数量",
+    "secondary_item_name": "ボーナス",
+    "time": "獲得時間"
+  },
+  "items": {
+    "1003": "キャラ·早霧",
+    "1004": "キャラ·レクイエム",
+    "1008": "キャラ·翳",
+    "1010": "キャラ·ナナリ",
+    "1019": "キャラ·ミント",
+    "1020": "キャラ·ハニア",
+    "1021": "キャラ·エドガー",
+    "1023": "キャラ·白蔵",
+    "1025": "キャラ·ハソール",
+    "1033": "キャラ·アドレー",
+    "1039": "キャラ·ファルディーヤ",
+    "1052": "キャラ·潯",
+    "1054": "キャラ·ダフォディール",
+    "1055": "キャラ·九原",
+    "1070": "キャラ·海月",
+    "1073": "キャラ·ちぃちゃん",
+    "Characterawaken_Adler": "アイテム·心象の欠片-アドレー",
+    "Characterawaken_Hathor": "アイテム·心象の欠片-ハソール",
+    "Characterawaken_Jin": "アイテム·心象の欠片-潯",
+    "Characterawaken_Mint": "アイテム·心象の欠片-ミント",
+    "Characterawaken_Nanally": "アイテム·心象の欠片-ナナリ",
+    "Characterawaken_Sagiri": "アイテム·心象の欠片-早霧",
+    "Characterawaken_cang": "アイテム·心象の欠片-白蔵",
+    "Characterawaken_dafudier": "アイテム·心象の欠片-ダフォディール",
+    "Characterawaken_fadia": "アイテム·心象の欠片-ファルディーヤ",
+    "Characterawaken_lacrimosa": "アイテム·心象の欠片-レクイエム",
+    "Characterawaken_skia": "アイテム·心象の欠片-翳",
+    "DIceLimite": "アイテム·本質サイコロ",
+    "DIceNormal": "アイテム·虚質サイコロ",
+    "DiceNormal": "アイテム·虚質サイコロ",
+    "Dice_ticket_01": "アイテム·次元ピース",
+    "Dice_ticket_02": "アイテム·迷走ピース",
+    "Dicelimite": "アイテム·本質サイコロ",
+    "Fashion_Glide_1004": "グライダー·ハッピートマト",
+    "Fashion_Glide_1010": "グライダー·相棒の相棒",
+    "Fashion_Glide_1052": "グライダー·幽蘭",
+    "Fashion_character_1004_01": "コスチューム·デビルズ・ビート",
+    "Fashion_character_1010": "コスチューム·華麗なるキック",
+    "Fashion_character_1052_01": "コスチューム·万金の蘭",
+    "Fashion_glide_1004": "グライダー·ハッピートマト",
+    "Fashion_glide_1010": "グライダー·相棒の相棒",
+    "Fashion_glide_1052": "グライダー·幽蘭",
+    "Fashion_vehicleSkin_1052_V016": "改造パーツ·金風の招客",
+    "Fashion_vehicle_1004_V021": "改造パーツ·トマトクルーズ",
+    "Fashion_vehicle_1010_V008": "改造パーツ·萌え虎襲来",
+    "Fashion_vehicle_1052_V024": "改造パーツ·秋色の残影",
+    "Fork_TigerTally": "弧盤·プリペア",
+    "fork_Arachne": "弧盤·永遠のワルツ",
+    "fork_BitGame": "弧盤·熱狂の渦",
+    "fork_BitterCake": "弧盤·良薬は口に苦し",
+    "fork_BlackBook": "弧盤·漆黒の青春妄想",
+    "fork_Butterfly": "弧盤·現実の避難所",
+    "fork_GoldWool": "弧盤·オムニ・デザイア",
+    "fork_Kite": "弧盤·頭上に注意！",
+    "fork_Nakupeda": "弧盤·コインより笑顔",
+    "fork_PaperPlane": "弧盤·空域確保開始",
+    "fork_PoliceRat": "弧盤·ヘテロシティの平穏",
+    "fork_Prokaryon": "弧盤·「私たち」",
+    "fork_Rose": "弧盤·「ラスト・ローズ」",
+    "fork_TigerTally": "弧盤·プリペア",
+    "fork_Time": "弧盤·時間外を行く",
+    "fork_Vine": "弧盤·いつも笑顔で",
+    "fork_appliance": "弧盤·「電音」カーニバル",
+    "fork_bopu": "弧盤·光のカーニバル",
+    "fork_dustbin": "弧盤·危険なゲーム",
+    "fork_jiaojuan": "弧盤·輝かしい日々",
+    "fork_jingmotingyuan": "弧盤·椿会",
+    "fork_koinobori": "弧盤·いつかは終わる",
+    "fork_lingganzhongjiezhe": "弧盤·ひらめきデスゲーム",
+    "fork_mamen": "弧盤·思考ニャン",
+    "fork_mofeikesi": "弧盤·お散歩ワンワン",
+    "fork_nonos": "弧盤·成功への第一歩",
+    "fork_oulaquantao": "弧盤·オラオラ！",
+    "fork_rishi": "弧盤·休息日",
+    "fork_spider": "弧盤·言葉にできない",
+    "fork_tuansanlang": "弧盤·呪われた出会い",
+    "fork_vine": "弧盤·いつも笑顔で",
+    "fork_wuhuakuang": "弧盤·忘れられし者",
+    "fork_wushoutieyu": "弧盤·炎魂ハリケーン",
+    "fork_yaodao": "弧盤·抜刀",
+    "fork_yuren": "弧盤·忘れな傘"
+  },
+  "pools": {
+    "1": "奇跡ボックス",
+    "CardPool_Character": "限定ボード",
+    "CardPool_NewRole": "標準ボード",
+    "ForkLottery_AnHunQu": "奇跡ボックス",
+    "ForkLottery_Kaesi": "奇跡ボックス",
+    "ForkLottery_Nanali": "奇跡ボックス",
+    "ForkLottery_Xun": "奇跡ボックス"
+  },
+  "pool_meta": {
+    "CardPool_Character": {
+      "group_label": "限定ボード",
+      "title_windows": [
+        {
+          "end_at_tz8": "2026-05-13 05:59:00",
+          "title": "エース・一代目"
+        },
+        {
+          "end_at_tz8": "2026-06-03 05:59:00",
+          "title": "独り酔い朧月流"
+        },
+        {
+          "end_at_tz8": "2026-06-24 05:59:00",
+          "title": "永き夢の目覚め"
+        },
+        {
+          "end_at_tz8": "2026-07-08 05:59:00",
+          "title": "還らざる路"
+        }
+      ]
+    },
+    "CardPool_NewRole": {
+      "group_label": "標準ボード",
+      "title": "奇縁物語"
+    },
+    "ForkLottery_AnHunQu": {
+      "group_label": "弧盤研究プロジェクト",
+      "title": "夜曲特別号",
+      "subtitle": "限定弧盤「ラスト・ローズ」出現確率UP！"
+    },
+    "ForkLottery_Kaesi": {
+      "group_label": "弧盤研究プロジェクト",
+      "title": "追猟特別号",
+      "subtitle": "限定弧盤「オムニ・デザイア」出現確率UP！"
+    },
+    "ForkLottery_Nanali": {
+      "group_label": "弧盤研究プロジェクト",
+      "title": "猛虎特別号",
+      "subtitle": "限定弧盤「プリペア」出現確率UP！"
+    },
+    "ForkLottery_Xun": {
+      "group_label": "弧盤研究プロジェクト",
+      "title": "名月特別号",
+      "subtitle": "限定弧盤「時間外を行く」出現確率UP！"
+    }
+  },
+  "labels": {
+    "AbyssClone_Award_02": "クリア",
+    "Abyss_GamepadKeys_1": "切り替え",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "標準ボード",
+    "BPUI_LotteryDiceRecord_qipanleixing": "ボードタイプ",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "限定ボード",
+    "BPUI_LotteryModuleEntrance_Title": "スカボロー市場",
+    "BPUI_LotteryResult_chenmiandi": "スリープゾーン",
+    "BPUI_LotteryResult_jidianzengli": "ポイントギフト",
+    "Mall_8_name": "弧盤ストア",
+    "TreasureBox_2": "開ける",
+    "UI_CloneSystemChallengeFailed_Retry": "リトライ",
+    "UI_CloneSystemStaminaTips_Enter": "入る",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "サイコロ履歴",
+    "UI_Lottery_GachaDetails_title": "ボード詳細",
+    "UW_LotteryBase_BP_Hupanyanmu": "弧盤研究プロジェクト",
+    "W_HTButton_Next_Page": "次のページ",
+    "W_Vehicle_Button_Choose": "選択",
+    "common_3": "戻る",
+    "ui_appearance_02": "グライダー",
+    "ui_forkshop_03": "弧盤研究プロジェクト",
+    "ui_forkshop_07": "研究募集詳細",
+    "ui_forkshop_10": "研究募集記録"
+  }
+}

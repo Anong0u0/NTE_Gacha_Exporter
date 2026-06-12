@@ -1,0 +1,4 @@
+{"type":"capture_start","schema_version":1,"pid":"1234","iface":"npcap0","ports":[30230],"bpf":"port 30230"}
+{"type":"packet","schema_version":1,"captured_at":1780861447.49,"capture_index":1,"proto":"udp","sport":30230,"dport":49310,"parser":"fixture","size":170,"payload_b64":"Rk1vbm9wb2x5TG90dGVyeVJlY29yZERhdGEAAAAAAIUAAAABAAAAAgAAABoAAABGYXNoaW9uX3ZlaGljbGVfMTAxMF9WMDA4AAAAAAABAAAAGgAAAEZhc2hpb25fdmVoaWNsZV8xMDEwX1YwMDgAGgAAAEZhc2hpb25fdmVoaWNsZV8xMDEwX1YwMDgAEwAAAENhcmRQb29sX0NoYXJhY3RlcgCA6NA62qbeCA=="}
+{"type":"packet","schema_version":1,"captured_at":1780861448.49,"capture_index":2,"proto":"udp","sport":30230,"dport":49310,"parser":"fixture","size":87,"payload_b64":"RkZvcmtMb3R0ZXJ5UmVjb3JkRGF0YQAAAAAAMQAAAAEAAAANAAAAZm9ya19kdXN0YmluABQAAABGb3JrTG90dGVyeV9Bbkh1blF1AIAFZ8eTwd4I"}
+{"type":"capture_stop","schema_version":1,"seen":2,"decoded_packets":2,"dropped":0}

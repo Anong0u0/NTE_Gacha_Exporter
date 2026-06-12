@@ -1,0 +1,175 @@
+{
+  "csv_headers": {
+    "count": "Cantidad",
+    "item_name": "Nombre de objeto",
+    "pool_group": "Banner Tipo",
+    "pool_name": "Banner",
+    "roll_label": "Tirar",
+    "secondary_count": "Recompensa extra Cantidad",
+    "secondary_item_name": "Recompensa extra",
+    "time": "Hora de adquisición"
+  },
+  "items": {
+    "1003": "Personaje·Sakiri",
+    "1004": "Personaje·Lacrimosa",
+    "1008": "Personaje·Skia",
+    "1010": "Personaje·Nanally",
+    "1019": "Personaje·Mint",
+    "1020": "Personaje·Haniel",
+    "1021": "Personaje·Edgar",
+    "1023": "Personaje·Baicang",
+    "1025": "Personaje·Hathor",
+    "1033": "Personaje·Adler",
+    "1039": "Personaje·Fadia",
+    "1052": "Personaje·Hotori",
+    "1054": "Personaje·Daffodill",
+    "1055": "Personaje·Jiuyuan",
+    "1070": "Personaje·Aurelia",
+    "1073": "Personaje·Chiz",
+    "Characterawaken_Adler": "Objeto·Fragmento mental: Adler",
+    "Characterawaken_Hathor": "Objeto·Fragmento mental: Hathor",
+    "Characterawaken_Jin": "Objeto·Fragmento mental: Hotori",
+    "Characterawaken_Mint": "Objeto·Fragmento mental: Mint",
+    "Characterawaken_Nanally": "Objeto·Fragmento mental: Nanally",
+    "Characterawaken_Sagiri": "Objeto·Fragmento mental: Sakiri",
+    "Characterawaken_cang": "Objeto·Fragmento mental: Baicang",
+    "Characterawaken_dafudier": "Objeto·Fragmento mental: Daffodill",
+    "Characterawaken_fadia": "Objeto·Fragmento mental: Fadia",
+    "Characterawaken_lacrimosa": "Objeto·Fragmento mental: Lacrimosa",
+    "Characterawaken_skia": "Objeto·Fragmento mental: Skia",
+    "DIceLimite": "Objeto·Dado sólido",
+    "DIceNormal": "Objeto·Dado fabricado",
+    "DiceNormal": "Objeto·Dado fabricado",
+    "Dice_ticket_01": "Objeto·Pieza deformada",
+    "Dice_ticket_02": "Objeto·Pieza perdida",
+    "Dicelimite": "Objeto·Dado sólido",
+    "Fashion_Glide_1004": "Planeador·Dúo tomate",
+    "Fashion_Glide_1010": "Planeador·El subjefe de los subjefes",
+    "Fashion_Glide_1052": "Planeador·Brisa de orquídea",
+    "Fashion_character_1004_01": "Atuendo·Rapsodia dorada",
+    "Fashion_character_1010": "Atuendo·Patada del Fénix",
+    "Fashion_character_1052_01": "Atuendo·Orquídea invaluable",
+    "Fashion_glide_1004": "Planeador·Dúo tomate",
+    "Fashion_glide_1010": "Planeador·El subjefe de los subjefes",
+    "Fashion_glide_1052": "Planeador·Brisa de orquídea",
+    "Fashion_vehicleSkin_1052_V016": "Piezas de modificación·Brisa dorada: Esquema de colores",
+    "Fashion_vehicle_1004_V021": "Piezas de modificación·Crucero tomate: Esquema de colores",
+    "Fashion_vehicle_1010_V008": "Piezas de modificación·¡Tigre en camino!: Esquema de colores",
+    "Fashion_vehicle_1052_V024": "Piezas de modificación·Bruma de otoño: Esquema de colores",
+    "Fork_TigerTally": "Disco·Listo, listo",
+    "fork_Arachne": "Disco·Vals eterno",
+    "fork_BitGame": "Disco·Impresionar al público",
+    "fork_BitterCake": "Disco·El bueno, el malo y el amargado",
+    "fork_BlackBook": "Disco·Fantasía juvenil",
+    "fork_Butterfly": "Disco·Refugio de la realidad",
+    "fork_GoldWool": "Disco·Lo que todos buscan",
+    "fork_Kite": "Disco·¡Cuidado con la cabeza!",
+    "fork_Nakupeda": "Disco·Tu felicidad no tiene precio",
+    "fork_PaperPlane": "Disco·Cielos despejados",
+    "fork_PoliceRat": "Disco·Guardián de Hethereau",
+    "fork_Prokaryon": "Disco·Nosotros",
+    "fork_Rose": "Disco·La última rosa",
+    "fork_TigerTally": "Disco·Listo, listo",
+    "fork_Time": "Disco·Marchando más allá del tiempo",
+    "fork_Vine": "Disco·Sé feliz",
+    "fork_appliance": "Disco·\"Música de verdad\"",
+    "fork_bopu": "Disco·Aturdimiento de cosmos, Ensoñación salvaje",
+    "fork_dustbin": "Disco·Juego peligroso",
+    "fork_jiaojuan": "Disco·Días brillantes",
+    "fork_jingmotingyuan": "Disco·Sociedad de la camelia",
+    "fork_koinobori": "Disco·Llegará la hora",
+    "fork_lingganzhongjiezhe": "Disco·Reino mental",
+    "fork_mamen": "Disco·Gato contemplativo",
+    "fork_mofeikesi": "Disco·Gran aventura del buen chico",
+    "fork_nonos": "Disco·1.° paso al éxito",
+    "fork_oulaquantao": "Disco·¡Oraora!",
+    "fork_rishi": "Disco·Día libre",
+    "fork_spider": "Disco·Te he fallado, con pesar en el corazón",
+    "fork_tuansanlang": "Disco·El gran ladrón",
+    "fork_vine": "Disco·Sé feliz",
+    "fork_wuhuakuang": "Disco·Los olvidados",
+    "fork_wushoutieyu": "Disco·Llamas furiosas",
+    "fork_yaodao": "Disco·Espada desenvainada",
+    "fork_yuren": "Disco·Paraguas"
+  },
+  "pools": {
+    "1": "Caja milagrosa",
+    "CardPool_Character": "Tablero limitado",
+    "CardPool_NewRole": "Tablero estándar",
+    "ForkLottery_AnHunQu": "Caja milagrosa",
+    "ForkLottery_Kaesi": "Caja milagrosa",
+    "ForkLottery_Nanali": "Caja milagrosa",
+    "ForkLottery_Xun": "Caja milagrosa"
+  },
+  "pool_meta": {
+    "CardPool_Character": {
+      "group_label": "Tablero limitado",
+      "title_windows": [
+        {
+          "end_at_tz8": "2026-05-13 05:59:00",
+          "title": "La Fundadora"
+        },
+        {
+          "end_at_tz8": "2026-06-03 05:59:00",
+          "title": "Estilo mareo neblinoso"
+        },
+        {
+          "end_at_tz8": "2026-06-24 05:59:00",
+          "title": "Sueño desvanecido"
+        },
+        {
+          "end_at_tz8": "2026-07-08 05:59:00",
+          "title": "Camino abandonado"
+        }
+      ]
+    },
+    "CardPool_NewRole": {
+      "group_label": "Tablero estándar",
+      "title": "Encuentros Misteriosos"
+    },
+    "ForkLottery_AnHunQu": {
+      "group_label": "Investigación de disco",
+      "title": "Especial Nocturno",
+      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"La última rosa\"!"
+    },
+    "ForkLottery_Kaesi": {
+      "group_label": "Investigación de disco",
+      "title": "Persecución Especial",
+      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"Aquello que se desea\"!"
+    },
+    "ForkLottery_Nanali": {
+      "group_label": "Investigación de disco",
+      "title": "Especial de tigre",
+      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"Listo, listo\"!"
+    },
+    "ForkLottery_Xun": {
+      "group_label": "Investigación de disco",
+      "title": "Especial de Luna brillante",
+      "subtitle": "¡Mayor probabilidad de obtención del Disco limitado Marchando más allá del tiempo!"
+    }
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Completado",
+    "Abyss_GamepadKeys_1": "Cambiar",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Tablero estándar",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Tipo de tablero",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Tablero limitado",
+    "BPUI_LotteryModuleEntrance_Title": "Feria de Scarborough",
+    "BPUI_LotteryResult_chenmiandi": "Sueñolandia",
+    "BPUI_LotteryResult_jidianzengli": "Regalo de puntos",
+    "Mall_8_name": "Tienda de discos",
+    "TreasureBox_2": "Abrir",
+    "UI_CloneSystemChallengeFailed_Retry": "Volver a intentar",
+    "UI_CloneSystemStaminaTips_Enter": "Entrar",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "Registros de tiradas",
+    "UI_Lottery_GachaDetails_title": "Detalles del tablero",
+    "UW_LotteryBase_BP_Hupanyanmu": "Investigación de disco",
+    "W_HTButton_Next_Page": "Siguiente",
+    "W_Vehicle_Button_Choose": "Seleccionar",
+    "common_3": "Atrás",
+    "ui_appearance_02": "Planeador",
+    "ui_forkshop_03": "Programas de investigación de discos",
+    "ui_forkshop_07": "Detalles",
+    "ui_forkshop_10": "Registros"
+  }
+}

@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "nte-gacha-exporter"
+version = "0.1.0"
+description = "Windows NTE gacha history exporter with sanitized CSV/JSON output."
+authors = ["NTE Gacha Exporter contributors"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "nte_gacha_exporter", from = "src" },
+]
+include = [
+    "src/nte_gacha_exporter/resources/maps/*.json",
+    "src/nte_gacha_exporter/resources/automation/*.json",
+    "src/nte_gacha_exporter/resources/automation/templates/*.png",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+scapy = { version = ">=2.5,<3.0", optional = true }
+rich = ">=13.0,<15.0"
+pillow = { version = ">=10.0,<13.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Foundation" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Foundation.Collections" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Globalization" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Graphics.Imaging" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Media.Ocr" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Storage" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.Storage.Streams" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+"winrt-Windows.System" = { version = ">=3.2,<4.0", markers = "sys_platform == 'win32'" }
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0,<9.0"
+nuitka = ">=4.1.2,<5.0"
+ruff = ">=0.11,<1.0"
+
+[tool.poetry.extras]
+live = ["scapy"]
+
+[tool.poetry.scripts]
+nte-gacha = "nte_gacha_exporter.tui.main:main"
+nte-gacha-cli = "nte_gacha_exporter.cli.main:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = [
+    "src/nte_gacha_exporter/resources/maps/*.json",
+    "src/nte_gacha_exporter/resources/automation/*.json",
+]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RET", "PIE", "PT", "PTH", "RUF"]
+ignore = ["RUF001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
