@@ -39,6 +39,7 @@ live = ["scapy"]
 [tool.poetry.scripts]
 nte-gacha = "nte_gacha_exporter.tui.main:main"
 nte-gacha-cli = "nte_gacha_exporter.cli.main:main"
+nte-gacha-sidecar = "nte_gacha_exporter.sidecar.main:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
