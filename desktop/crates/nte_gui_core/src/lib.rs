@@ -7,6 +7,6 @@ mod model;
 pub use db::AppDatabase;
 pub use export::{csv_export, json_export};
 pub use model::{
-    DashboardSummary, GuiError, ImportReport, ItemMeta, LatestRecord, PoolRule, PoolSummary,
-    Profile, RecordFilter, RecordList, StoredRecord, TimelineBucket, TypeSummary,
+    DashboardSummary, GuiError, ImportReport, ItemAlias, ItemMeta, LatestRecord, PoolRule,
+    PoolSummary, Profile, RecordFilter, RecordList, StoredRecord, TimelineBucket, TypeSummary,
 };

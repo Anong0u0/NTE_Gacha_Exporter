@@ -1,15 +1,48 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+
+import pytest
 
 from nte_gacha_exporter.mapping.assets import ITEM_ID_SOURCE_PRIORITY, _known_item_id_priorities, build_map
 from nte_gacha_exporter.mapping.runtime import available_locales, load_map
 
 
-def test_all_maps_have_public_schema_only():
+def test_all_maps_have_expected_schema():
     for locale in available_locales():
+        source_path = Path("src/nte_gacha_exporter/resources/maps") / f"{locale}.json"
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        assert set(source) == {
+            "schema_version",
+            "csv_headers",
+            "items",
+            "item_aliases",
+            "pools",
+            "labels",
+        }
+        assert source["schema_version"] == 2
+        assert not ({"pool_meta", "pool_rules", "item_meta"} & set(source))
+        for item in source["items"].values():
+            assert set(item) == {"name", "rarity", "category"}
+            assert "item_id" not in item
+            assert item["name"]
+            assert isinstance(item["rarity"], int)
+            assert item["category"]
+        for pool in source["pools"].values():
+            assert "pool_id" not in pool
+            assert "subtitle" not in pool
+            assert pool["name"]
+        for pool_id, pool in source["pools"].items():
+            if pool_id.startswith("ForkLottery_"):
+                assert pool["pickup_item_ids"]
+
         data = load_map(locale)
-        assert set(data) == {"csv_headers", "items", "pools", "pool_meta", "labels"}
+        item_ids = set(data["items"])
+        meta_ids = {item["item_id"] for item in data["item_meta"]}
+        assert item_ids == meta_ids
+        assert not (set(data["item_aliases"]) & item_ids)
+        assert set(data["item_aliases"].values()) <= item_ids
 
 
 def test_zh_hant_key_mappings():
@@ -17,9 +50,20 @@ def test_zh_hant_key_mappings():
     assert data["items"]["Fashion_vehicle_1010_V008"] == "改裝件·萌虎來襲-塗裝"
     assert data["items"]["Fashion_vehicle_1052_V024"] == "改裝件·秋色殘影-塗裝"
     assert data["items"]["Fashion_character_1004_01"] == "時裝·鎏金交響詩"
-    assert data["items"]["Characterawaken_dafudier"] == "道具·心象碎片·達芙蒂爾"
+    assert data["items"]["Characterawaken_daffodill"] == "道具·心象碎片·達芙蒂爾"
     assert data["items"]["DiceNormal"] == "道具·捏造骰子"
-    assert data["items"]["DIceNormal"] == "道具·捏造骰子"
+    assert "Characterawaken_dafudier" not in data["items"]
+    assert "DIceNormal" not in data["items"]
+    assert "DIceLimite" not in data["items"]
+    assert "Fashion_glide_1004" not in data["items"]
+    assert "Fork_TigerTally" not in data["items"]
+    assert "fork_Vine" not in data["items"]
+    assert data["item_aliases"]["Characterawaken_dafudier"] == "Characterawaken_daffodill"
+    assert data["item_aliases"]["DIceNormal"] == "DiceNormal"
+    assert data["item_aliases"]["DIceLimite"] == "Dicelimite"
+    assert data["item_aliases"]["Fashion_glide_1004"] == "Fashion_Glide_1004"
+    assert data["item_aliases"]["Fork_TigerTally"] == "fork_TigerTally"
+    assert data["item_aliases"]["fork_Vine"] == "fork_vine"
     assert "Annulith" not in data["items"]
     assert "Vehicle026" not in data["items"]
     assert "Fashion_character_1051_07" not in data["items"]
@@ -43,8 +87,19 @@ def test_zh_hant_key_mappings():
     assert data["pool_meta"]["ForkLottery_AnHunQu"] == {
         "group_label": "弧盤研募",
         "title": "夜曲特刊",
-        "subtitle": "限定弧盤「最後一朵玫瑰」機率提升!",
+        "pickup_item_ids": ["fork_Rose"],
     }
+    fork_rule = next(rule for rule in data["pool_rules"] if rule["pool_id"] == "ForkLottery_AnHunQu")
+    vehicle_item = next(item for item in data["item_meta"] if item["item_id"] == "Fashion_vehicle_1010_V008")
+    assert fork_rule == {
+        "pool_id": "ForkLottery_AnHunQu",
+        "pool_name": "奇蹟盒盒",
+        "group_label": "弧盤研募",
+        "pickup_item_ids": ["fork_Rose"],
+    }
+    assert set(vehicle_item) == {"item_id", "item_name", "rarity", "category"}
+    assert vehicle_item["rarity"] == 5
+    assert any(rule["pool_id"] == "CardPool_Character" for rule in data["pool_rules"])
 
 
 def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
@@ -67,6 +122,7 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
             },
             "ST_Item": {
                 "Characterawaken_dafudier_name": "心象碎片·達芙蒂爾",
+                "Characterawaken_daffodill_name": "心象碎片·達芙蒂爾",
                 "DiceNormal_Name": "捏造骰子",
                 "EventTokenA_name": "測試票券",
                 "fork_dustbin_name": "危險遊戲",
@@ -151,20 +207,32 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
             {
                 "Rows": {
                     "Annulith": {"ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "item_Annulith_name"}},
+                    "Characterawaken_daffodill": {
+                        "ItemType": "EItemType::ITEM_TYPE_Lottery",
+                        "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                        "ItemName": {
+                            "TableId": "/Game/Text/ST_Item.ST_Item",
+                            "Key": "Characterawaken_daffodill_name",
+                        },
+                    },
                     "DiceNormal": {
                         "ItemType": "EItemType::ITEM_TYPE_Lottery",
+                        "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
                         "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "DiceNormal_Name"},
                     },
                     "Fashion_character_1004_01": {
                         "ItemType": "EItemType::ITEM_TYPE_FASHION",
+                        "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
                         "ItemName": {"TableId": "/Game/Text/ST_Appearance.ST_Appearance", "Key": "Fashion_1004_1_Name"},
                     },
                     "Fashion_glide_1004": {
                         "ItemType": "EItemType::ITEM_TYPE_GLIDE",
+                        "ItemQuality": "EItemQuality::ITEM_QUALITY_BLUE",
                         "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "Fashion_glide_1004_name"},
                     },
                     "EventTokenA": {
                         "ItemType": "EItemType::ITEM_TYPE_EVENT_TOKEN",
+                        "ItemQuality": "EItemQuality::ITEM_QUALITY_BLUE",
                         "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "EventTokenA_name"},
                     },
                 }
@@ -177,7 +245,10 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
             {
                 "Rows": {
                     "NewRow": {
-                        "SSRItems": [{"ItemID": "fork_jianang", "bIsShowIconTip": False}],
+                        "SSRItems": [
+                            {"ItemID": "fork_jianang", "bIsShowIconTip": False},
+                            {"ItemID": "Fashion_vehicle_1010_V008"},
+                        ],
                     }
                 }
             }
@@ -190,6 +261,7 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
                 "Rows": {
                     "Fashion_Glide_1004": {
                         "AppearanceType": "EAppearanceType::Glide",
+                        "Quality": "EItemQuality::ITEM_QUALITY_ORANGE",
                         "Name": {"TableId": "/Game/Text/ST_Appearance.ST_Appearance", "Key": "Glide_2_3_Name"},
                     }
                 }
@@ -201,8 +273,14 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
         [
             {
                 "Rows": {
-                    "fork_dustbin": {"ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "fork_dustbin_name"}},
-                    "fork_jianang": {"ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "fork_jianang_name"}},
+                    "fork_dustbin": {
+                        "Quality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                        "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "fork_dustbin_name"},
+                    },
+                    "fork_jianang": {
+                        "Quality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                        "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "fork_jianang_name"},
+                    },
                 }
             }
         ],
@@ -260,6 +338,8 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
                         "ShowRewards": [{"ItemID": "fork_dustbin"}],
                         "ExtraRewards": [{"Value": {"ItemList": [{"ItemID": "DiceNormal"}]}}],
                         "BaseDropID": "drop_ForkPull_AnHunQu",
+                        "UpGuaranteeCnt": 80,
+                        "UpList": ["fork_jianang"],
                     },
                 }
             }
@@ -268,7 +348,15 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
 
     data = build_map(tmp_path, "zh-Hant")
 
-    assert set(data) == {"csv_headers", "items", "pools", "pool_meta", "labels"}
+    assert set(data) == {
+        "schema_version",
+        "csv_headers",
+        "items",
+        "item_aliases",
+        "pools",
+        "labels",
+    }
+    assert data["schema_version"] == 2
     assert data["csv_headers"] == {
         "count": "數量",
         "item_name": "道具名稱",
@@ -279,26 +367,35 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
         "secondary_item_name": "額外獲得",
         "time": "獲得時間",
     }
-    assert data["items"]["Characterawaken_dafudier"] == "道具·心象碎片·達芙蒂爾"
-    assert data["items"]["DIceNormal"] == "道具·捏造骰子"
-    assert data["items"]["DiceNormal"] == "道具·捏造骰子"
-    assert data["items"]["EventTokenA"] == "活動票券·測試票券"
-    assert data["items"]["Fashion_character_1004_01"] == "時裝·鎏金交響詩"
-    assert data["items"]["Fashion_Glide_1004"] == "滑翔翼·好柿成雙"
-    assert data["items"]["Fashion_glide_1004"] == "滑翔翼·好柿成雙"
-    assert data["items"]["Fashion_vehicle_1010_V008"] == "改裝件·萌虎來襲-塗裝"
-    assert data["items"]["fork_dustbin"] == "弧盤·危險遊戲"
-    assert data["items"]["fork_jianang"] == "弧盤·佳釀"
+    assert data["items"]["Characterawaken_daffodill"] == {
+        "name": "道具·心象碎片·達芙蒂爾",
+        "rarity": 5,
+        "category": "item",
+    }
+    assert data["items"]["DiceNormal"]["name"] == "道具·捏造骰子"
+    assert data["items"]["EventTokenA"]["name"] == "活動票券·測試票券"
+    assert data["items"]["Fashion_character_1004_01"]["name"] == "時裝·鎏金交響詩"
+    assert data["items"]["Fashion_Glide_1004"]["name"] == "滑翔翼·好柿成雙"
+    assert data["items"]["Fashion_vehicle_1010_V008"]["name"] == "改裝件·萌虎來襲-塗裝"
+    assert data["items"]["fork_dustbin"]["name"] == "弧盤·危險遊戲"
+    assert data["items"]["fork_jianang"] == {"name": "弧盤·佳釀", "rarity": 5, "category": "fork"}
+    assert "Characterawaken_dafudier" not in data["items"]
+    assert "DIceNormal" not in data["items"]
+    assert "Fashion_glide_1004" not in data["items"]
+    assert data["item_aliases"] == {
+        "Characterawaken_dafudier": "Characterawaken_daffodill",
+        "DIceNormal": "DiceNormal",
+        "Fashion_glide_1004": "Fashion_Glide_1004",
+    }
     assert "Annulith" not in data["items"]
     assert "fork_missing" not in data["items"]
-    assert data["pools"]["CardPool_NewRole"] == "標準棋盤"
-    assert data["pools"]["CardPool_Character"] == "限定棋盤"
-    assert data["pools"]["1"] == "奇蹟盒盒"
-    assert data["pool_meta"]["CardPool_NewRole"] == {
+    assert data["pools"]["CardPool_NewRole"] == {
+        "name": "標準棋盤",
         "group_label": "標準棋盤",
         "title": "世間奇遇",
     }
-    assert data["pool_meta"]["CardPool_Character"] == {
+    assert data["pools"]["CardPool_Character"] == {
+        "name": "限定棋盤",
         "group_label": "限定棋盤",
         "title_windows": [
             {"end_at_tz8": "2026-05-13 05:59:00", "title": "王牌一代目"},
@@ -307,10 +404,12 @@ def test_build_map_uses_gacha_refs_and_semantic_names(tmp_path):
             {"end_at_tz8": "2026-07-08 05:59:00", "title": "無歸路"},
         ],
     }
-    assert data["pool_meta"]["ForkLottery_AnHunQu"] == {
+    assert data["pools"]["1"] == {"name": "奇蹟盒盒"}
+    assert data["pools"]["ForkLottery_AnHunQu"] == {
+        "name": "奇蹟盒盒",
         "group_label": "弧盤研募",
         "title": "夜曲特刊",
-        "subtitle": "限定弧盤「最後一朵玫瑰」機率提升!",
+        "pickup_item_ids": ["fork_jianang"],
     }
     assert data["labels"]["Abyss_GamepadKeys_1"] == "切換"
     assert data["labels"]["AbyssClone_Award_02"] == "已完成"
@@ -355,11 +454,12 @@ def test_build_map_uses_english_asset_fallback_locale(tmp_path):
         "DataTable/Inventory/DT_ItemConfig.json",
         [
             {
-                "Rows": {
-                    "DiceNormal": {
-                        "ItemType": "EItemType::ITEM_TYPE_Lottery",
-                        "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "DiceNormal_Name"},
-                    },
+                    "Rows": {
+                        "DiceNormal": {
+                            "ItemQuality": "ITEM_QUALITY_ORANGE",
+                            "ItemType": "EItemType::ITEM_TYPE_Lottery",
+                            "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "DiceNormal_Name"},
+                        },
                 }
             }
         ],
@@ -367,7 +467,83 @@ def test_build_map_uses_english_asset_fallback_locale(tmp_path):
 
     data = build_map(tmp_path, "missing-locale")
 
-    assert data["items"]["DiceNormal"] == "Item·Test Dice"
+    assert data["items"]["DiceNormal"]["name"] == "Item·Test Dice"
+
+
+def test_build_map_falls_back_to_up_show_rewards_for_fork_pickup(tmp_path):
+    def write_json(relative: str, data: object) -> None:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    write_json(
+        "Localization/zh-Hant/game.json",
+        {
+            "ST_Common": {"item_type_5": "弧盤"},
+            "ST_Item": {"fork_jianang_name": "佳釀"},
+            "ST_Ui": {
+                "UW_LotteryBase_BP_Hupanyanmu": "弧盤研募",
+                "ui_forkshop_24": "奇蹟盒盒",
+                "ui_forklottery_up_anhunqu_01": "夜曲特刊",
+            },
+        },
+    )
+    write_json(
+        "DataTable/Fork/DT_ForkItemData.json",
+        [
+            {
+                "Rows": {
+                    "fork_jianang": {
+                        "Quality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                        "ItemName": {"TableId": "/Game/Text/ST_Item.ST_Item", "Key": "fork_jianang_name"},
+                    }
+                }
+            }
+        ],
+    )
+    write_json(
+        "DataTable/Fork/DT_ForkLotteryPoolData.json",
+        [
+            {
+                "Rows": {
+                    "ForkLottery_AnHunQu": {
+                        "Name": {"TableId": "/Game/Text/ST_Ui.ST_Ui", "Key": "ui_forkshop_24"},
+                        "ShowText1": {"TableId": "/Game/Text/ST_Ui.ST_Ui", "Key": "ui_forklottery_up_anhunqu_01"},
+                        "ShowRewards": [{"ItemID": "fork_jianang", "IsUp": True}],
+                    }
+                }
+            }
+        ],
+    )
+
+    data = build_map(tmp_path, "zh-Hant")
+
+    assert data["pools"]["ForkLottery_AnHunQu"]["pickup_item_ids"] == ["fork_jianang"]
+
+
+def test_build_map_errors_when_fork_pickup_source_missing(tmp_path):
+    def write_json(relative: str, data: object) -> None:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    write_json("Localization/zh-Hant/game.json", {"ST_Ui": {"ui_forkshop_24": "奇蹟盒盒"}})
+    write_json(
+        "DataTable/Fork/DT_ForkLotteryPoolData.json",
+        [
+            {
+                "Rows": {
+                    "ForkLottery_AnHunQu": {
+                        "Name": {"TableId": "/Game/Text/ST_Ui.ST_Ui", "Key": "ui_forkshop_24"},
+                        "ShowRewards": [{"ItemID": "fork_jianang", "IsUp": False}],
+                    }
+                }
+            }
+        ],
+    )
+
+    with pytest.raises(ValueError, match="ForkLottery_AnHunQu"):
+        build_map(tmp_path, "zh-Hant")
 
 
 def test_item_id_priorities_use_each_source_kind(tmp_path):

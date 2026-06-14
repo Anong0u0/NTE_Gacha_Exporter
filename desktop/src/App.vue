@@ -6,18 +6,29 @@ import { CanvasRenderer } from "echarts/renderers";
 import {
   Activity,
   BarChart3,
+  CircleStop,
   Database,
   Download,
   FileJson,
   FolderInput,
   History,
+  Play,
+  Plus,
   RefreshCw,
   Search,
   Settings,
   Upload,
 } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { api, type DashboardSummary, type ImportReport, type Profile, type StoredRecord } from "./api";
+import {
+  api,
+  type CaptureStatus,
+  type DashboardSummary,
+  type DoctorReport,
+  type ImportReport,
+  type Profile,
+  type StoredRecord,
+} from "./api";
 
 type ViewId = "dashboard" | "records" | "import" | "settings";
 use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
@@ -42,9 +53,14 @@ const statusText = ref("Ready");
 const errorText = ref("");
 const importPath = ref("");
 const exportPath = ref("");
+const newProfileName = ref("");
 const lastReport = ref<ImportReport | null>(null);
+const liveStatus = ref<CaptureStatus | null>(null);
+const liveReport = ref<ImportReport | null>(null);
+const doctorReport = ref<DoctorReport | null>(null);
 const chartEl = ref<HTMLElement | null>(null);
 let chart: ECharts | null = null;
+let capturePoll: number | null = null;
 
 const selectedProfile = computed(() =>
   profiles.value.find((profile) => profile.id === selectedProfileId.value) ?? null,
@@ -54,6 +70,15 @@ const topPool = computed(() => pools.value[0] ?? null);
 const latest = computed(() => summary.value?.latest_records ?? []);
 const canUseData = computed(() => Boolean(selectedProfileId.value));
 const importModeLabel = computed(() => (importPath.value.endsWith(".jsonl") ? "Raw JSONL" : "Public JSON"));
+const liveRunning = computed(() =>
+  ["starting", "running", "stopping"].includes(liveStatus.value?.state ?? ""),
+);
+const liveProgressText = computed(() => {
+  const status = liveStatus.value;
+  if (!status) return "Not started";
+  const counters = status.counters;
+  return `${status.state} | records=${status.records_count} packets=${counters.packets_seen} decoded=${counters.decoded_packets} dropped=${counters.dropped_packets}`;
+});
 
 onMounted(async () => {
   await loadProfiles();
@@ -62,6 +87,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   chart?.dispose();
+  stopCapturePolling();
 });
 
 watch(
@@ -82,6 +108,18 @@ async function loadProfiles() {
   if (!selectedProfileId.value && profiles.value.length > 0) {
     selectedProfileId.value = profiles.value[0].id;
   }
+}
+
+async function createProfile() {
+  const name = newProfileName.value.trim();
+  if (!name) return;
+  await runTask("Profile created", async () => {
+    const profile = await api.createProfile(name);
+    newProfileName.value = "";
+    await loadProfiles();
+    selectedProfileId.value = profile.id;
+    await refreshAll();
+  });
 }
 
 async function refreshAll() {
@@ -118,6 +156,62 @@ async function refreshRules() {
   });
 }
 
+async function startLiveCapture() {
+  if (!selectedProfileId.value || liveRunning.value) return;
+  await runTask("Live capture started", async () => {
+    liveReport.value = null;
+    liveStatus.value = await api.startLiveCapture("zh-Hant");
+    startCapturePolling();
+  });
+}
+
+async function stopLiveCapture() {
+  const sessionId = liveStatus.value?.session_id;
+  if (!sessionId) return;
+  await runTask("Stopping live capture", async () => {
+    liveStatus.value = await api.stopLiveCapture(sessionId);
+    startCapturePolling();
+  });
+}
+
+function startCapturePolling() {
+  stopCapturePolling();
+  capturePoll = window.setInterval(() => {
+    void pollLiveCapture();
+  }, 1000);
+  void pollLiveCapture();
+}
+
+function stopCapturePolling() {
+  if (capturePoll !== null) {
+    window.clearInterval(capturePoll);
+    capturePoll = null;
+  }
+}
+
+async function pollLiveCapture() {
+  const sessionId = liveStatus.value?.session_id;
+  if (!sessionId) return;
+  try {
+    liveStatus.value = await api.liveCaptureStatus(sessionId);
+    if (liveStatus.value.state === "completed") {
+      stopCapturePolling();
+      if (selectedProfileId.value && !liveReport.value) {
+        liveReport.value = await api.finalizeLiveCapture(selectedProfileId.value, sessionId);
+        lastReport.value = liveReport.value;
+        await refreshAll();
+        statusText.value = "Live capture imported";
+      }
+    } else if (liveStatus.value.state === "failed") {
+      stopCapturePolling();
+      errorText.value = liveStatus.value.error?.message ?? "live capture failed";
+    }
+  } catch (error) {
+    stopCapturePolling();
+    errorText.value = formatError(error);
+  }
+}
+
 async function runImport() {
   if (!selectedProfileId.value || !importPath.value.trim()) return;
   await runTask("Import completed", async () => {
@@ -141,6 +235,12 @@ async function exportCsv() {
 
 async function pingSidecar() {
   await runTask("Sidecar responded", () => api.sidecarPing());
+}
+
+async function runDoctor() {
+  await runTask("Doctor completed", async () => {
+    doctorReport.value = await api.doctorRun();
+  });
 }
 
 async function runTask(done: string, task: () => Promise<unknown>) {
@@ -205,6 +305,12 @@ function formatError(error: unknown) {
             {{ profile.name }}
           </option>
         </select>
+        <form class="profile-create" @submit.prevent="createProfile">
+          <input v-model="newProfileName" placeholder="New profile" />
+          <button type="submit" :disabled="busy || !newProfileName.trim()">
+            <Plus :size="16" />
+          </button>
+        </form>
       </label>
 
       <nav class="nav-list">
@@ -236,12 +342,16 @@ function formatError(error: unknown) {
         <section class="update-strip">
           <div>
             <span>Data update</span>
-            <strong>{{ summary?.total_records ?? 0 }} records stored</strong>
+            <strong>{{ liveProgressText }}</strong>
           </div>
           <div class="action-row">
-            <button class="primary" type="button" :disabled="busy || !canUseData" @click="refreshRules">
-              <RefreshCw :size="17" />
-              <span>Refresh Rules</span>
+            <button class="primary" type="button" :disabled="busy || !canUseData || liveRunning" @click="startLiveCapture">
+              <Play :size="17" />
+              <span>Update Data</span>
+            </button>
+            <button type="button" :disabled="busy || !liveRunning" @click="stopLiveCapture">
+              <CircleStop :size="17" />
+              <span>Stop</span>
             </button>
             <button type="button" :disabled="busy || !canUseData" @click="refreshAll">
               <Activity :size="17" />
@@ -269,6 +379,20 @@ function formatError(error: unknown) {
           </div>
         </section>
 
+        <section v-if="liveReport || liveStatus?.error" class="panel run-panel">
+          <div class="section-heading">
+            <h2>Latest Run</h2>
+            <span>{{ liveStatus?.session_id ?? "" }}</span>
+          </div>
+          <p v-if="liveReport" class="report">
+            Seen {{ liveReport.records_seen }}, inserted {{ liveReport.records_inserted }}, skipped
+            {{ liveReport.records_skipped }}.
+          </p>
+          <p v-if="liveStatus?.error" class="report error-text">
+            {{ liveStatus.error.code }}: {{ liveStatus.error.message }}
+          </p>
+        </section>
+
         <section class="split-layout">
           <div class="panel chart-panel">
             <div class="section-heading">
@@ -291,7 +415,6 @@ function formatError(error: unknown) {
                 </div>
                 <div class="pity-value">
                   <strong>{{ pool.current_pity ?? "n/a" }}</strong>
-                  <span v-if="pool.pity_limit">/ {{ pool.pity_limit }}</span>
                 </div>
               </article>
             </div>
@@ -395,10 +518,20 @@ function formatError(error: unknown) {
             <h2>Diagnostics</h2>
             <span>local sidecar</span>
           </div>
-          <button type="button" :disabled="busy" @click="pingSidecar">
-            <Database :size="17" />
-            <span>Ping Sidecar</span>
-          </button>
+          <div class="action-row">
+            <button type="button" :disabled="busy" @click="pingSidecar">
+              <Database :size="17" />
+              <span>Ping Sidecar</span>
+            </button>
+            <button type="button" :disabled="busy" @click="runDoctor">
+              <RefreshCw :size="17" />
+              <span>Run Doctor</span>
+            </button>
+          </div>
+          <div v-if="doctorReport" class="diagnostic-list">
+            <strong>{{ doctorReport.ok ? "OK" : "Needs attention" }}</strong>
+            <span v-for="line in doctorReport.lines" :key="line">{{ line }}</span>
+          </div>
         </section>
       </section>
     </main>

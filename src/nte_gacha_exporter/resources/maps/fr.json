@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "Quantité",
     "item_name": "Nom de l’objet",
@@ -10,99 +11,393 @@
     "time": "Heure de l’acquisition"
   },
   "items": {
-    "1003": "Personnage·Sakiri",
-    "1004": "Personnage·Lacrimosa",
-    "1008": "Personnage·Skia",
-    "1010": "Personnage·Nanally",
-    "1019": "Personnage·Menthe",
-    "1020": "Personnage·Haniel",
-    "1021": "Personnage·Edgar",
-    "1023": "Personnage·Baicang",
-    "1025": "Personnage·Hathor",
-    "1033": "Personnage·Adler",
-    "1039": "Personnage·Fadia",
-    "1052": "Personnage·Hotori",
-    "1054": "Personnage·Jonquille",
-    "1055": "Personnage·Jiuyuan",
-    "1070": "Personnage·Aurelia",
-    "1073": "Personnage·Chiz",
-    "Characterawaken_Adler": "Objet·Éclat spirituel - Adler",
-    "Characterawaken_Hathor": "Objet·Éclat spirituel - Hathor",
-    "Characterawaken_Jin": "Objet·Éclat spirituel - Hotori",
-    "Characterawaken_Mint": "Objet·Éclat spirituel - Menthe",
-    "Characterawaken_Nanally": "Objet·Éclat spirituel - Nanally",
-    "Characterawaken_Sagiri": "Objet·Éclat spirituel - Sakiri",
-    "Characterawaken_cang": "Objet·Éclat spirituel - Baicang",
-    "Characterawaken_dafudier": "Objet·Éclat spirituel - Jonquille",
-    "Characterawaken_fadia": "Objet·Éclat spirituel - Fadia",
-    "Characterawaken_lacrimosa": "Objet·Éclat spirituel - Lacrimosa",
-    "Characterawaken_skia": "Objet·Éclat spirituel - Skia",
-    "DIceLimite": "Objet·Dé solide",
-    "DIceNormal": "Objet·Dé confectionné",
-    "DiceNormal": "Objet·Dé confectionné",
-    "Dice_ticket_01": "Objet·Pièce de faille",
-    "Dice_ticket_02": "Objet·Pièce perdue",
-    "Dicelimite": "Objet·Dé solide",
-    "Fashion_Glide_1004": "Deltaplane·Duo de tomates",
-    "Fashion_Glide_1010": "Deltaplane·Sous-chef du sous-chef",
-    "Fashion_Glide_1052": "Deltaplane·Brise d’orchidée",
-    "Fashion_character_1004_01": "Tenue·Rhapsodie dorée",
-    "Fashion_character_1010": "Tenue·Coup de pied phénix",
-    "Fashion_character_1052_01": "Tenue·Orchidée inestimable",
-    "Fashion_glide_1004": "Deltaplane·Duo de tomates",
-    "Fashion_glide_1010": "Deltaplane·Sous-chef du sous-chef",
-    "Fashion_glide_1052": "Deltaplane·Brise d’orchidée",
-    "Fashion_vehicleSkin_1052_V016": "Pièces de rechange·Brise dorée - Peinture",
-    "Fashion_vehicle_1004_V021": "Pièces de rechange·Croisière tomate - Peinture",
-    "Fashion_vehicle_1010_V008": "Pièces de rechange·Tigre en approche ! - Peinture",
-    "Fashion_vehicle_1052_V024": "Pièces de rechange·Brume d’automne - Peinture",
-    "Fork_TigerTally": "Arc·Prépa-prépa",
-    "fork_Arachne": "Arc·Valse éternelle",
-    "fork_BitGame": "Arc·Enflammer la foule",
-    "fork_BitterCake": "Arc·Le bon, le mauvais, l’amertume",
-    "fork_BlackBook": "Arc·Fantaisie juvénile",
-    "fork_Butterfly": "Arc·Échappatoire au réel",
-    "fork_GoldWool": "Arc·Ce qui est désiré",
-    "fork_Kite": "Arc·Attention la tête",
-    "fork_Nakupeda": "Arc·Le bonheur n’a pas de prix",
-    "fork_PaperPlane": "Arc·Ciel dégagé",
-    "fork_PoliceRat": "Arc·Gardien d’Hethereau",
-    "fork_Prokaryon": "Arc·Nous.",
-    "fork_Rose": "Arc·La dernière rose",
-    "fork_TigerTally": "Arc·Prépa-prépa",
-    "fork_Time": "Arc·Marche au-delà du temps",
-    "fork_Vine": "Arc·La joie de vivre",
-    "fork_appliance": "Arc·« Vraie musique »",
-    "fork_bopu": "Arc·Confusion du cosmos, Rêverie sauvage",
-    "fork_dustbin": "Arc·Jeu dangereux",
-    "fork_jiaojuan": "Arc·Journées ensoleillées",
-    "fork_jingmotingyuan": "Arc·Société des camélias",
-    "fork_koinobori": "Arc·L’heure viendra",
-    "fork_lingganzhongjiezhe": "Arc·Mind Royale",
-    "fork_mamen": "Arc·Chat pensif",
-    "fork_mofeikesi": "Arc·Grande aventure d’un bon chien",
-    "fork_nonos": "Arc·La première étape du succès",
-    "fork_oulaquantao": "Arc·Oraora !",
-    "fork_rishi": "Arc·Congés",
-    "fork_spider": "Arc·Vous ouvrir mon cœur m’est difficile",
-    "fork_tuansanlang": "Arc·Le grand voleur",
-    "fork_vine": "Arc·La joie de vivre",
-    "fork_wuhuakuang": "Arc·Les oubliés",
-    "fork_wushoutieyu": "Arc·Flammes déchaînées",
-    "fork_yaodao": "Arc·Lame dégainée",
-    "fork_yuren": "Arc·Parapluie"
+    "1003": {
+      "name": "Personnage·Sakiri",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "Personnage·Lacrimosa",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "Personnage·Skia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "Personnage·Nanally",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "Personnage·Menthe",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "Personnage·Haniel",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "Personnage·Edgar",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "Personnage·Baicang",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "Personnage·Hathor",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "Personnage·Adler",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "Personnage·Fadia",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "Personnage·Hotori",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "Personnage·Jonquille",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "Personnage·Jiuyuan",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "Personnage·Aurelia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "Personnage·Chiz",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "Objet·Éclat spirituel - Adler",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "Objet·Éclat spirituel - Hathor",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "Objet·Éclat spirituel - Hotori",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "Objet·Éclat spirituel - Menthe",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "Objet·Éclat spirituel - Nanally",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Objet·Éclat spirituel - Sakiri",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "Objet·Éclat spirituel - Baicang",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "Objet·Éclat spirituel - Jonquille",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "Objet·Éclat spirituel - Fadia",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Objet·Éclat spirituel - Lacrimosa",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "Objet·Éclat spirituel - Skia",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "Objet·Dé confectionné",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "Objet·Pièce de faille",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "Objet·Pièce perdue",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "Objet·Dé solide",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Deltaplane·Duo de tomates",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Deltaplane·Sous-chef du sous-chef",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Deltaplane·Brise d’orchidée",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Tenue·Rhapsodie dorée",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "Tenue·Coup de pied phénix",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Tenue·Orchidée inestimable",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Pièces de rechange·Brise dorée - Peinture",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Pièces de rechange·Croisière tomate - Peinture",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Pièces de rechange·Tigre en approche ! - Peinture",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Pièces de rechange·Brume d’automne - Peinture",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "Arc·Valse éternelle",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "Arc·Enflammer la foule",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "Arc·Le bon, le mauvais, l’amertume",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "Arc·Fantaisie juvénile",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "Arc·Échappatoire au réel",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "Arc·Ce qui est désiré",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "Arc·Attention la tête",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "Arc·Le bonheur n’a pas de prix",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "Arc·Ciel dégagé",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "Arc·Gardien d’Hethereau",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "Arc·Nous.",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "Arc·La dernière rose",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "Arc·Prépa-prépa",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "Arc·Marche au-delà du temps",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "Arc·« Vraie musique »",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "Arc·Confusion du cosmos, Rêverie sauvage",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "Arc·Jeu dangereux",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "Arc·Journées ensoleillées",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arc·Société des camélias",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "Arc·L’heure viendra",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arc·Mind Royale",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "Arc·Chat pensif",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "Arc·Grande aventure d’un bon chien",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "Arc·La première étape du succès",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "Arc·Oraora !",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "Arc·Congés",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "Arc·Vous ouvrir mon cœur m’est difficile",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "Arc·Le grand voleur",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "Arc·La joie de vivre",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arc·Les oubliés",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arc·Flammes déchaînées",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "Arc·Lame dégainée",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "Arc·Parapluie",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "Boîte miraculeuse",
-    "CardPool_Character": "Plateau limité",
-    "CardPool_NewRole": "Plateau standard",
-    "ForkLottery_AnHunQu": "Boîte miraculeuse",
-    "ForkLottery_Kaesi": "Boîte miraculeuse",
-    "ForkLottery_Nanali": "Boîte miraculeuse",
-    "ForkLottery_Xun": "Boîte miraculeuse"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "Boîte miraculeuse"
+    },
     "CardPool_Character": {
+      "name": "Plateau limité",
       "group_label": "Plateau limité",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "Plateau standard",
       "group_label": "Plateau standard",
       "title": "Rencontres étranges"
     },
     "ForkLottery_AnHunQu": {
+      "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
       "title": "Spécial Nocturne",
-      "subtitle": "Taux d’obtention augmenté pour l’Arc limité La dernière rose !"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
       "title": "Spécial Poursuite",
-      "subtitle": "Taux d’obtention augmenté pour l’Arc limité Ce qui est désiré !"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
       "title": "Spécialité de tigresse",
-      "subtitle": "Augmentation du taux d’obtention de l’arc Prépa-prépa en édition limitée !"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
       "title": "Spécialité de clair de lune",
-      "subtitle": "Augmentation du taux d’obtention de l’arc en édition limitée Marche au-delà du temps !"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

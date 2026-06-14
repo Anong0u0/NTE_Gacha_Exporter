@@ -24,8 +24,6 @@ export type PoolSummary = {
   record_count: number;
   hit_count: number;
   current_pity?: number | null;
-  pity_limit?: number | null;
-  rule_source?: string | null;
   last_time?: string | null;
   last_item_name?: string | null;
 };
@@ -90,6 +88,31 @@ export type RecordList = {
   records: StoredRecord[];
 };
 
+export type DoctorReport = {
+  ok: boolean;
+  exit_code: number;
+  lines: string[];
+};
+
+export type CaptureCounters = {
+  packets_seen: number;
+  decoded_packets: number;
+  dropped_packets: number;
+};
+
+export type CaptureStatus = {
+  session_id: string;
+  state: "starting" | "running" | "stopping" | "completed" | "failed" | string;
+  records_count: number;
+  latest_records: StoredRecord[];
+  counters: CaptureCounters;
+  started_at: number;
+  updated_at: number;
+  target?: unknown;
+  error?: { code: string; message: string } | null;
+  document?: unknown;
+};
+
 export type AppApi = {
   listProfiles(): Promise<Profile[]>;
   createProfile(name: string): Promise<Profile>;
@@ -100,6 +123,11 @@ export type AppApi = {
   listRecords(profileId: number, filter: RecordFilter): Promise<RecordList>;
   exportProfileJson(profileId: number, path: string): Promise<void>;
   exportProfileCsv(profileId: number, path: string): Promise<void>;
+  doctorRun(): Promise<DoctorReport>;
+  startLiveCapture(locale?: string): Promise<CaptureStatus>;
+  liveCaptureStatus(sessionId: string): Promise<CaptureStatus>;
+  stopLiveCapture(sessionId: string): Promise<CaptureStatus>;
+  finalizeLiveCapture(profileId: number, sessionId: string): Promise<ImportReport>;
   sidecarPing(): Promise<unknown>;
 };
 
@@ -187,8 +215,6 @@ const mockApi: AppApi = {
           record_count: 146,
           hit_count: 2,
           current_pity: 73,
-          pity_limit: 80,
-          rule_source: "mock",
           last_time: "2026-01-09 21:40:00",
           last_item_name: "Sigrid",
         },
@@ -199,8 +225,6 @@ const mockApi: AppApi = {
           record_count: 36,
           hit_count: 1,
           current_pity: 12,
-          pity_limit: 80,
-          rule_source: "mock",
           last_time: "2026-01-07 20:11:00",
           last_item_name: "Vector Blade",
         },
@@ -230,6 +254,29 @@ const mockApi: AppApi = {
   async exportProfileCsv() {
     return undefined;
   },
+  async doctorRun() {
+    return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };
+  },
+  async startLiveCapture() {
+    return mockCaptureStatus("mock-session", "running", 0);
+  },
+  async liveCaptureStatus(sessionId: string) {
+    return mockCaptureStatus(sessionId, "completed", mockRecords.length);
+  },
+  async stopLiveCapture(sessionId: string) {
+    return mockCaptureStatus(sessionId, "completed", mockRecords.length);
+  },
+  async finalizeLiveCapture(profileId: number, sessionId: string) {
+    return {
+      profile_id: profileId,
+      run_id: Date.now(),
+      source_kind: "live_capture",
+      source_path: `session:${sessionId}`,
+      records_seen: mockRecords.length,
+      records_inserted: mockRecords.length,
+      records_skipped: 0,
+    };
+  },
   async sidecarPing() {
     return { ok: true, mock: true };
   },
@@ -247,6 +294,12 @@ const tauriApi: AppApi = {
   listRecords: (profileId, filter) => invoke<RecordList>("list_records", { profileId, filter }),
   exportProfileJson: (profileId, path) => invoke<void>("export_profile_json", { profileId, path }),
   exportProfileCsv: (profileId, path) => invoke<void>("export_profile_csv", { profileId, path }),
+  doctorRun: () => invoke<DoctorReport>("doctor_run"),
+  startLiveCapture: (locale) => invoke<CaptureStatus>("start_live_capture", { locale }),
+  liveCaptureStatus: (sessionId) => invoke<CaptureStatus>("live_capture_status", { sessionId }),
+  stopLiveCapture: (sessionId) => invoke<CaptureStatus>("stop_live_capture", { sessionId }),
+  finalizeLiveCapture: (profileId, sessionId) =>
+    invoke<ImportReport>("finalize_live_capture", { profileId, sessionId }),
   sidecarPing: () => invoke<unknown>("sidecar_ping"),
 };
 
@@ -262,5 +315,20 @@ function mockReport(profileId: number, sourceKind: string, sourcePath: string): 
   };
 }
 
-export const api: AppApi = isTauri() ? tauriApi : mockApi;
+function mockCaptureStatus(sessionId: string, state: string, recordsCount: number): CaptureStatus {
+  return {
+    session_id: sessionId,
+    state,
+    records_count: recordsCount,
+    latest_records: state === "completed" ? mockRecords : [],
+    counters: {
+      packets_seen: recordsCount,
+      decoded_packets: recordsCount,
+      dropped_packets: 0,
+    },
+    started_at: Date.now() / 1000 - 3,
+    updated_at: Date.now() / 1000,
+  };
+}
 
+export const api: AppApi = isTauri() ? tauriApi : mockApi;

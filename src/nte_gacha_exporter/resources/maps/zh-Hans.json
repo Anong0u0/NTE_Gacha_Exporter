@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "数量",
     "item_name": "道具名称",
@@ -10,99 +11,393 @@
     "time": "获得时间"
   },
   "items": {
-    "1003": "角色·早雾",
-    "1004": "角色·安魂曲",
-    "1008": "角色·翳",
-    "1010": "角色·娜娜莉",
-    "1019": "角色·薄荷",
-    "1020": "角色·哈尼娅",
-    "1021": "角色·埃德嘉",
-    "1023": "角色·白藏",
-    "1025": "角色·哈索尔",
-    "1033": "角色·阿德勒",
-    "1039": "角色·法帝娅",
-    "1052": "角色·浔",
-    "1054": "角色·达芙蒂尔",
-    "1055": "角色·九原",
-    "1070": "角色·海月",
-    "1073": "角色·小吱",
-    "Characterawaken_Adler": "道具·心象碎片·阿德勒",
-    "Characterawaken_Hathor": "道具·心象碎片·哈索尔",
-    "Characterawaken_Jin": "道具·心象碎片·浔",
-    "Characterawaken_Mint": "道具·心象碎片·薄荷",
-    "Characterawaken_Nanally": "道具·心象碎片·娜娜莉",
-    "Characterawaken_Sagiri": "道具·心象碎片·早雾",
-    "Characterawaken_cang": "道具·心象碎片·白藏",
-    "Characterawaken_dafudier": "道具·心象碎片·达芙蒂尔",
-    "Characterawaken_fadia": "道具·心象碎片·法帝娅",
-    "Characterawaken_lacrimosa": "道具·心象碎片·安魂曲",
-    "Characterawaken_skia": "道具·心象碎片·翳",
-    "DIceLimite": "道具·质实骰子",
-    "DIceNormal": "道具·捏造骰子",
-    "DiceNormal": "道具·捏造骰子",
-    "Dice_ticket_01": "道具·失纬棋子",
-    "Dice_ticket_02": "道具·迷迭棋子",
-    "Dicelimite": "道具·质实骰子",
-    "Fashion_Glide_1004": "滑翔翼·好柿成双",
-    "Fashion_Glide_1010": "滑翔翼·副手的副手",
-    "Fashion_Glide_1052": "滑翔翼·幽兰",
-    "Fashion_character_1004_01": "时装·鎏金交响诗",
-    "Fashion_character_1010": "时装·华丽飞踢",
-    "Fashion_character_1052_01": "时装·兰花不菲",
-    "Fashion_glide_1004": "滑翔翼·好柿成双",
-    "Fashion_glide_1010": "滑翔翼·副手的副手",
-    "Fashion_glide_1052": "滑翔翼·幽兰",
-    "Fashion_vehicleSkin_1052_V016": "改装件·金风迎客来-涂装",
-    "Fashion_vehicle_1004_V021": "改装件·番茄酱巡航-涂装",
-    "Fashion_vehicle_1010_V008": "改装件·萌虎来袭-涂装",
-    "Fashion_vehicle_1052_V024": "改装件·秋色残影-涂装",
-    "Fork_TigerTally": "弧盘·预备备",
-    "fork_Arachne": "弧盘·永恒圆舞曲",
-    "fork_BitGame": "弧盘·引爆全场",
-    "fork_BitterCake": "弧盘·良药苦口",
-    "fork_BlackBook": "弧盘·漆黑青春妄想",
-    "fork_Butterfly": "弧盘·现实避难所",
-    "fork_GoldWool": "弧盘·众人追寻之物",
-    "fork_Kite": "弧盘·当心头顶",
-    "fork_Nakupeda": "弧盘·千金难买你开心",
-    "fork_PaperPlane": "弧盘·开始净空",
-    "fork_PoliceRat": "弧盘·海特洛的安宁",
-    "fork_Prokaryon": "弧盘·「我们。」",
-    "fork_Rose": "弧盘·「最后一朵玫瑰」",
-    "fork_TigerTally": "弧盘·预备备",
-    "fork_Time": "弧盘·行进于时间之外",
-    "fork_Vine": "弧盘·笑口常开",
-    "fork_appliance": "弧盘·「电音」狂欢",
-    "fork_bopu": "弧盘·光波眩晕，迷走狂欢",
-    "fork_dustbin": "弧盘·危险游戏",
-    "fork_jiaojuan": "弧盘·闪耀的每一天",
-    "fork_jingmotingyuan": "弧盘·茶花会",
-    "fork_koinobori": "弧盘·终有时",
-    "fork_lingganzhongjiezhe": "弧盘·灵感大逃杀",
-    "fork_mamen": "弧盘·思考喵",
-    "fork_mofeikesi": "弧盘·好狗狗走四方",
-    "fork_nonos": "弧盘·成功的第一步",
-    "fork_oulaquantao": "弧盘·欧拉欧拉！",
-    "fork_rishi": "弧盘·休息日",
-    "fork_spider": "弧盘·挂你在心口难开",
-    "fork_tuansanlang": "弧盘·该死的邂逅",
-    "fork_vine": "弧盘·笑口常开",
-    "fork_wuhuakuang": "弧盘·被遗忘者",
-    "fork_wushoutieyu": "弧盘·焰魂狂飙",
-    "fork_yaodao": "弧盘·拔刀",
-    "fork_yuren": "弧盘·勿忘伞"
+    "1003": {
+      "name": "角色·早雾",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "角色·安魂曲",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "角色·翳",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "角色·娜娜莉",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "角色·薄荷",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "角色·哈尼娅",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "角色·埃德嘉",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "角色·白藏",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "角色·哈索尔",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "角色·阿德勒",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "角色·法帝娅",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "角色·浔",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "角色·达芙蒂尔",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "角色·九原",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "角色·海月",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "角色·小吱",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "道具·心象碎片·阿德勒",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "道具·心象碎片·哈索尔",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "道具·心象碎片·浔",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "道具·心象碎片·薄荷",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "道具·心象碎片·娜娜莉",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "道具·心象碎片·早雾",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "道具·心象碎片·白藏",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "道具·心象碎片·达芙蒂尔",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "道具·心象碎片·法帝娅",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "道具·心象碎片·安魂曲",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "道具·心象碎片·翳",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "道具·捏造骰子",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "道具·失纬棋子",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "道具·迷迭棋子",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "道具·质实骰子",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "滑翔翼·好柿成双",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "滑翔翼·副手的副手",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "滑翔翼·幽兰",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "时装·鎏金交响诗",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "时装·华丽飞踢",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "时装·兰花不菲",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "改装件·金风迎客来-涂装",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "改装件·番茄酱巡航-涂装",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "改装件·萌虎来袭-涂装",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "改装件·秋色残影-涂装",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "弧盘·永恒圆舞曲",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "弧盘·引爆全场",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "弧盘·良药苦口",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "弧盘·漆黑青春妄想",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "弧盘·现实避难所",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "弧盘·众人追寻之物",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "弧盘·当心头顶",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "弧盘·千金难买你开心",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "弧盘·开始净空",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "弧盘·海特洛的安宁",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "弧盘·「我们。」",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "弧盘·「最后一朵玫瑰」",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "弧盘·预备备",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "弧盘·行进于时间之外",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "弧盘·「电音」狂欢",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "弧盘·光波眩晕，迷走狂欢",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "弧盘·危险游戏",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "弧盘·闪耀的每一天",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "弧盘·茶花会",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "弧盘·终有时",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "弧盘·灵感大逃杀",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "弧盘·思考喵",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "弧盘·好狗狗走四方",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "弧盘·成功的第一步",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "弧盘·欧拉欧拉！",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "弧盘·休息日",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "弧盘·挂你在心口难开",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "弧盘·该死的邂逅",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "弧盘·笑口常开",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "弧盘·被遗忘者",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "弧盘·焰魂狂飙",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "弧盘·拔刀",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "弧盘·勿忘伞",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "奇迹盒盒",
-    "CardPool_Character": "限定棋盘",
-    "CardPool_NewRole": "标准棋盘",
-    "ForkLottery_AnHunQu": "奇迹盒盒",
-    "ForkLottery_Kaesi": "奇迹盒盒",
-    "ForkLottery_Nanali": "奇迹盒盒",
-    "ForkLottery_Xun": "奇迹盒盒"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "奇迹盒盒"
+    },
     "CardPool_Character": {
+      "name": "限定棋盘",
       "group_label": "限定棋盘",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "标准棋盘",
       "group_label": "标准棋盘",
       "title": "世间奇遇"
     },
     "ForkLottery_AnHunQu": {
+      "name": "奇迹盒盒",
       "group_label": "弧盘研募",
       "title": "夜曲特刊",
-      "subtitle": "限定弧盘「最后一朵玫瑰」概率提升!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "奇迹盒盒",
       "group_label": "弧盘研募",
       "title": "追猎特刊",
-      "subtitle": "限定弧盘「众人追寻之物」概率提升!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "奇迹盒盒",
       "group_label": "弧盘研募",
       "title": "猛虎特刊",
-      "subtitle": "限定弧盘「预备备」概率提升!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "奇迹盒盒",
       "group_label": "弧盘研募",
       "title": "名月特刊",
-      "subtitle": "限定弧盘「行进于时间之外」概率提升!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

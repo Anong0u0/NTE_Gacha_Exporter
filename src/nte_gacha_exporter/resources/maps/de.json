@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "Menge",
     "item_name": "Gegenstand-Name",
@@ -10,99 +11,393 @@
     "time": "Erwerbszeit"
   },
   "items": {
-    "1003": "Charakter·Sakiri",
-    "1004": "Charakter·Lacrimosa",
-    "1008": "Charakter·Skia",
-    "1010": "Charakter·Nanally",
-    "1019": "Charakter·Mint",
-    "1020": "Charakter·Haniel",
-    "1021": "Charakter·Edgar",
-    "1023": "Charakter·Baicang",
-    "1025": "Charakter·Hathor",
-    "1033": "Charakter·Adler",
-    "1039": "Charakter·Fadia",
-    "1052": "Charakter·Hotori",
-    "1054": "Charakter·Daffodill",
-    "1055": "Charakter·Jiuyuan",
-    "1070": "Charakter·Aurelia",
-    "1073": "Charakter·Chiz",
-    "Characterawaken_Adler": "Gegenstand·Gedankenfragment – Adler",
-    "Characterawaken_Hathor": "Gegenstand·Gedankenfragment – Hathor",
-    "Characterawaken_Jin": "Gegenstand·Gedankenfragment – Hotori",
-    "Characterawaken_Mint": "Gegenstand·Gedankenfragment – Mint",
-    "Characterawaken_Nanally": "Gegenstand·Gedankenfragment – Nanally",
-    "Characterawaken_Sagiri": "Gegenstand·Gedankenfragment – Sakiri",
-    "Characterawaken_cang": "Gegenstand·Gedankenfragment – Baicang",
-    "Characterawaken_dafudier": "Gegenstand·Gedankenfragment – Daffodill",
-    "Characterawaken_fadia": "Gegenstand·Gedankenfragment – Fadia",
-    "Characterawaken_lacrimosa": "Gegenstand·Gedankenfragment – Lacrimosa",
-    "Characterawaken_skia": "Gegenstand·Gedankenfragment – Skia",
-    "DIceLimite": "Gegenstand·Festwürfel",
-    "DIceNormal": "Gegenstand·Zinkwürfel",
-    "DiceNormal": "Gegenstand·Zinkwürfel",
-    "Dice_ticket_01": "Gegenstand·Warp-Figur",
-    "Dice_ticket_02": "Gegenstand·Verlorene Figur",
-    "Dicelimite": "Gegenstand·Festwürfel",
-    "Fashion_Glide_1004": "Gleiter·Tomaten-Duo",
-    "Fashion_Glide_1010": "Gleiter·Unterboss der Unterbosse",
-    "Fashion_Glide_1052": "Gleiter·Orchideenbrise",
-    "Fashion_character_1004_01": "Outfit·Vergoldete Rhapsodie",
-    "Fashion_character_1010": "Outfit·Phönix-Kick",
-    "Fashion_character_1052_01": "Outfit·Unbezahlbare Orchidee",
-    "Fashion_glide_1004": "Gleiter·Tomaten-Duo",
-    "Fashion_glide_1010": "Gleiter·Unterboss der Unterbosse",
-    "Fashion_glide_1052": "Gleiter·Orchideenbrise",
-    "Fashion_vehicleSkin_1052_V016": "Mod-Teile·Goldene Brise - Lackierung",
-    "Fashion_vehicle_1004_V021": "Mod-Teile·Tomatenkreuzfahrt – Lackierung",
-    "Fashion_vehicle_1010_V008": "Mod-Teile·Tiger kommt! - Lackierung",
-    "Fashion_vehicle_1052_V024": "Mod-Teile·Herbstnebel - Lackierung",
-    "Fork_TigerTally": "Arkus·Immer bereit",
-    "fork_Arachne": "Arkus·Ewiger Walzer",
-    "fork_BitGame": "Arkus·Publikumsbeben",
-    "fork_BitterCake": "Arkus·Die Guten, die Schlechten und die Bitteren",
-    "fork_BlackBook": "Arkus·Jugendliche Fantasie",
-    "fork_Butterfly": "Arkus·Zuflucht der Realität",
-    "fork_GoldWool": "Arkus·Was verlangt wird",
-    "fork_Kite": "Arkus·Vorsicht, Kopf einziehen!",
-    "fork_Nakupeda": "Arkus·Dein Glück ist unbezahlbar",
-    "fork_PaperPlane": "Arkus·Klarer Himmel",
-    "fork_PoliceRat": "Arkus·Hethereaus Hüter",
-    "fork_Prokaryon": "Arkus·Wir.",
-    "fork_Rose": "Arkus·Die letzte Rose",
-    "fork_TigerTally": "Arkus·Immer bereit",
-    "fork_Time": "Arkus·Marschieren jenseits der Zeit",
-    "fork_Vine": "Arkus·Glücklich sein",
-    "fork_appliance": "Arkus·„Echte Musik“",
-    "fork_bopu": "Arkus·Kosmosrausch, wilde Träumerei",
-    "fork_dustbin": "Arkus·Gefährliches Spiel",
-    "fork_jiaojuan": "Arkus·Strahlende Tage",
-    "fork_jingmotingyuan": "Arkus·Kamelienfest",
-    "fork_koinobori": "Arkus·Eine Zeit wird kommen",
-    "fork_lingganzhongjiezhe": "Arkus·Schlacht des Verstandes",
-    "fork_mamen": "Arkus·Nachdenkliche Katze",
-    "fork_mofeikesi": "Arkus·Das Abenteuer des braven Hundes",
-    "fork_nonos": "Arkus·Erste Schritte zum Erfolg",
-    "fork_oulaquantao": "Arkus·Oraora!",
-    "fork_rishi": "Arkus·Freier Tag",
-    "fork_spider": "Arkus·Es ist schwer, dich loszulassen",
-    "fork_tuansanlang": "Arkus·Verdammte Begegnung",
-    "fork_vine": "Arkus·Glücklich sein",
-    "fork_wuhuakuang": "Arkus·Die Vergessenen",
-    "fork_wushoutieyu": "Arkus·Wütende Flammen",
-    "fork_yaodao": "Arkus·Gezogene Klinge",
-    "fork_yuren": "Arkus·Regenschirm"
+    "1003": {
+      "name": "Charakter·Sakiri",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "Charakter·Lacrimosa",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "Charakter·Skia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "Charakter·Nanally",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "Charakter·Mint",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "Charakter·Haniel",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "Charakter·Edgar",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "Charakter·Baicang",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "Charakter·Hathor",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "Charakter·Adler",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "Charakter·Fadia",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "Charakter·Hotori",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "Charakter·Daffodill",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "Charakter·Jiuyuan",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "Charakter·Aurelia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "Charakter·Chiz",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "Gegenstand·Gedankenfragment – Adler",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "Gegenstand·Gedankenfragment – Hathor",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "Gegenstand·Gedankenfragment – Hotori",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "Gegenstand·Gedankenfragment – Mint",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "Gegenstand·Gedankenfragment – Nanally",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Gegenstand·Gedankenfragment – Sakiri",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "Gegenstand·Gedankenfragment – Baicang",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "Gegenstand·Gedankenfragment – Daffodill",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "Gegenstand·Gedankenfragment – Fadia",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Gegenstand·Gedankenfragment – Lacrimosa",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "Gegenstand·Gedankenfragment – Skia",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "Gegenstand·Zinkwürfel",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "Gegenstand·Warp-Figur",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "Gegenstand·Verlorene Figur",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "Gegenstand·Festwürfel",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Gleiter·Tomaten-Duo",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Gleiter·Unterboss der Unterbosse",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Gleiter·Orchideenbrise",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Outfit·Vergoldete Rhapsodie",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "Outfit·Phönix-Kick",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Outfit·Unbezahlbare Orchidee",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Mod-Teile·Goldene Brise - Lackierung",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Mod-Teile·Tomatenkreuzfahrt – Lackierung",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Mod-Teile·Tiger kommt! - Lackierung",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Mod-Teile·Herbstnebel - Lackierung",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "Arkus·Ewiger Walzer",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "Arkus·Publikumsbeben",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "Arkus·Die Guten, die Schlechten und die Bitteren",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "Arkus·Jugendliche Fantasie",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "Arkus·Zuflucht der Realität",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "Arkus·Was verlangt wird",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "Arkus·Vorsicht, Kopf einziehen!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "Arkus·Dein Glück ist unbezahlbar",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "Arkus·Klarer Himmel",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "Arkus·Hethereaus Hüter",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "Arkus·Wir.",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "Arkus·Die letzte Rose",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "Arkus·Immer bereit",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "Arkus·Marschieren jenseits der Zeit",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "Arkus·„Echte Musik“",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "Arkus·Kosmosrausch, wilde Träumerei",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "Arkus·Gefährliches Spiel",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "Arkus·Strahlende Tage",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arkus·Kamelienfest",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "Arkus·Eine Zeit wird kommen",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arkus·Schlacht des Verstandes",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "Arkus·Nachdenkliche Katze",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "Arkus·Das Abenteuer des braven Hundes",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "Arkus·Erste Schritte zum Erfolg",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "Arkus·Oraora!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "Arkus·Freier Tag",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "Arkus·Es ist schwer, dich loszulassen",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "Arkus·Verdammte Begegnung",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "Arkus·Glücklich sein",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arkus·Die Vergessenen",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arkus·Wütende Flammen",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "Arkus·Gezogene Klinge",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "Arkus·Regenschirm",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "Sensationskiste",
-    "CardPool_Character": "Limitiertes Spielbrett",
-    "CardPool_NewRole": "Standard-Spielbrett",
-    "ForkLottery_AnHunQu": "Sensationskiste",
-    "ForkLottery_Kaesi": "Sensationskiste",
-    "ForkLottery_Nanali": "Sensationskiste",
-    "ForkLottery_Xun": "Sensationskiste"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "Sensationskiste"
+    },
     "CardPool_Character": {
+      "name": "Limitiertes Spielbrett",
       "group_label": "Limitiertes Spielbrett",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "Standard-Spielbrett",
       "group_label": "Standard-Spielbrett",
       "title": "Sonderbare Begegnungen"
     },
     "ForkLottery_AnHunQu": {
+      "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
       "title": "Nacht-Spezialausgabe",
-      "subtitle": "Begrenzter Arkus Die letzte Rose – Drop-Rate erhöht!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
       "title": "Jagd-Spezialausgabe",
-      "subtitle": "Begrenzter Arkus Was verlangt wird – Drop-Rate erhöht!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
       "title": "Tiger-Spezialausgabe",
-      "subtitle": "Erhöhte Drop-Rate für begrenzten Arkus „Immer bereit“!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
       "title": "Hellmond-Spezialausgabe",
-      "subtitle": "Erhöhte Drop-Rate für begrenzten Arkus „Marschieren jenseits der Zeit“!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

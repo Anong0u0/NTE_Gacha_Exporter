@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from nte_gacha_exporter.mapping.rules import build_rules_map
 from nte_gacha_exporter.mapping.runtime import DEFAULT_LOCALE
 
 TABLES: list[tuple[str, str]] = [
@@ -155,14 +156,7 @@ class _ItemBuildContext:
 
 
 def candidate_roots() -> list[Path]:
-    cwd = Path.cwd()
-    values = [
-        os.environ.get("NTE_ASSETS_ROOT"),
-        str(cwd / "NTE_Assets"),
-        str(cwd / "assets" / "NTE_Assets"),
-        str(cwd / ".local" / "NTE_Assets"),
-        "/tmp/NTE_Assets",
-    ]
+    values = [os.environ.get("NTE_ASSETS_ROOT")]
     roots: list[Path] = []
     for value in values:
         if not value:
@@ -175,6 +169,8 @@ def candidate_roots() -> list[Path]:
 
 def find_assets_root(explicit: str | None = None) -> Path:
     roots = [Path(explicit).expanduser()] if explicit else candidate_roots()
+    if not roots:
+        raise FileNotFoundError("NTE_Assets root not set. Pass --assets-root or set NTE_ASSETS_ROOT.")
     for root in roots:
         if (root / "DataTable").exists() and (root / "Localization").exists():
             return root
@@ -417,22 +413,66 @@ def _known_item_id_priorities(assets_root: Path, localization: dict[str, Any]) -
     return item_priorities
 
 
-def _item_id_canonicalizer(item_priorities: dict[str, int]) -> Callable[[str], str]:
+def _st_item_signature(localization: dict[str, Any], item_id: str) -> tuple[str, str] | None:
+    item_text = localization.get("ST_Item")
+    if not isinstance(item_text, dict):
+        return None
+
+    name = _clean_name(str(item_text.get(f"{item_id}_name") or ""))
+    if not name:
+        return None
+    desc = _clean_name(str(item_text.get(f"{item_id}_desc") or ""))
+    return (name.casefold(), (desc or "").casefold())
+
+
+def _st_item_signature_aliases(
+    item_priorities: dict[str, int],
+    localization: dict[str, Any],
+) -> dict[str, str]:
+    fallback_priority = ITEM_ID_SOURCE_PRIORITY["st_item_fallback"]
+    by_signature: dict[tuple[str, str], list[str]] = {}
+
+    for item_id, priority in item_priorities.items():
+        if priority >= fallback_priority:
+            continue
+        signature = _st_item_signature(localization, item_id)
+        if signature:
+            by_signature.setdefault(signature, []).append(item_id)
+
+    aliases: dict[str, str] = {}
+    for item_id, priority in item_priorities.items():
+        if priority < fallback_priority:
+            continue
+        signature = _st_item_signature(localization, item_id)
+        if not signature:
+            continue
+        candidates = sorted(set(by_signature.get(signature, [])))
+        if len(candidates) == 1:
+            aliases[item_id] = candidates[0]
+    return aliases
+
+
+def _item_id_canonicalizer(
+    item_priorities: dict[str, int],
+    localization: dict[str, Any] | None = None,
+) -> Callable[[str], str]:
     by_folded: dict[str, list[str]] = {}
     for item_id in item_priorities:
         by_folded.setdefault(item_id.casefold(), []).append(item_id)
+    signature_aliases = _st_item_signature_aliases(item_priorities, localization or {})
 
     def canonicalize(item_id: str) -> str:
         candidates = by_folded.get(item_id.casefold())
         if not candidates:
-            return item_id
+            return signature_aliases.get(item_id, item_id)
         best_priority = min(item_priorities[candidate] for candidate in candidates)
         best_candidates = sorted(candidate for candidate in candidates if item_priorities[candidate] == best_priority)
         if len(best_candidates) == 1:
-            return best_candidates[0]
+            best = best_candidates[0]
+            return signature_aliases.get(best, best)
         if item_id in best_candidates:
-            return item_id
-        return item_id
+            return signature_aliases.get(item_id, item_id)
+        return signature_aliases.get(item_id, item_id)
 
     return canonicalize
 
@@ -631,18 +671,45 @@ def _add_pool(
         pools[pool_id] = name
 
 
-def _fork_pool_meta(row: dict[str, Any], localization: dict[str, Any]) -> dict[str, str]:
-    meta: dict[str, str] = {}
+def _fork_pickup_item_ids(
+    pool_id: str,
+    row: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+) -> list[str]:
+    raw_ids = row.get("UpList")
+    if isinstance(raw_ids, list):
+        pickup_item_ids = [canonicalize_item_id(str(item_id)) for item_id in raw_ids if item_id and item_id != "None"]
+        if pickup_item_ids:
+            return list(dict.fromkeys(pickup_item_ids))
+
+    show_rewards = row.get("ShowRewards")
+    if isinstance(show_rewards, list):
+        pickup_item_ids = [
+            canonicalize_item_id(str(reward.get("ItemID")))
+            for reward in show_rewards
+            if isinstance(reward, dict) and reward.get("IsUp") is True and reward.get("ItemID")
+        ]
+        if pickup_item_ids:
+            return list(dict.fromkeys(pickup_item_ids))
+
+    raise ValueError(f"fork pool missing pickup item ids from UpList or ShowRewards: {pool_id}")
+
+
+def _fork_pool_meta(
+    pool_id: str,
+    row: dict[str, Any],
+    localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+) -> dict[str, Any]:
+    meta: dict[str, Any] = {}
     group_label = _clean_name(_localized_key(localization, *FORK_GROUP_LABEL))
     if group_label:
         meta["group_label"] = group_label
 
     title = _clean_name(_localized_text(row.get("ShowText1"), localization))
-    subtitle = _clean_name(_localized_text(row.get("ShowText2"), localization))
     if title:
         meta["title"] = title
-    if subtitle:
-        meta["subtitle"] = subtitle
+    meta["pickup_item_ids"] = _fork_pickup_item_ids(pool_id, row, canonicalize_item_id)
     return meta
 
 
@@ -770,7 +837,7 @@ def _csv_headers(localization: dict[str, Any], locale: str) -> dict[str, str]:
 
 
 def _item_build_context(assets_root: Path, localization: dict[str, Any]) -> _ItemBuildContext:
-    canonicalize_item_id = _item_id_canonicalizer(_known_item_id_priorities(assets_root, localization))
+    canonicalize_item_id = _item_id_canonicalizer(_known_item_id_priorities(assets_root, localization), localization)
     item_refs = _required_item_refs(assets_root, canonicalize_item_id)
     return _ItemBuildContext(
         localization=localization,
@@ -862,13 +929,7 @@ def _add_fallback_items(items: dict[str, str], ctx: _ItemBuildContext) -> None:
             _add_required_item(items, ctx, item_id, f"{fallback_prefix}·{name}")
 
 
-def _add_item_aliases(items: dict[str, str], ctx: _ItemBuildContext) -> None:
-    for alias, canonical in sorted(ctx.item_aliases.items()):
-        if alias not in items and canonical in items:
-            items[alias] = items[canonical]
-
-
-def _build_items(assets_root: Path, localization: dict[str, Any]) -> dict[str, str]:
+def _build_item_data(assets_root: Path, localization: dict[str, Any]) -> tuple[dict[str, str], _ItemBuildContext]:
     ctx = _item_build_context(assets_root, localization)
     items: dict[str, str] = {}
     _add_table_items(items, assets_root, ctx)
@@ -876,8 +937,7 @@ def _build_items(assets_root: Path, localization: dict[str, Any]) -> dict[str, s
     _add_appearance_items(items, assets_root, ctx)
     _add_vehicle_module_items(items, assets_root, ctx)
     _add_fallback_items(items, ctx)
-    _add_item_aliases(items, ctx)
-    return items
+    return items, ctx
 
 
 def _add_monopoly_pools(
@@ -899,6 +959,7 @@ def _add_fork_pools(
     pool_meta: dict[str, dict[str, Any]],
     assets_root: Path,
     localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
 ) -> None:
     for _, rel_path in POOL_TABLES:
         table_path = assets_root / rel_path
@@ -912,16 +973,20 @@ def _add_fork_pools(
             if name:
                 _add_pool(pools, pool_key, name)
             if pool_key.startswith("ForkLottery_"):
-                meta = _fork_pool_meta(row, localization)
+                meta = _fork_pool_meta(pool_key, row, localization, canonicalize_item_id)
                 if meta:
                     pool_meta[pool_key] = meta
 
 
-def _build_pools(assets_root: Path, localization: dict[str, Any]) -> tuple[dict[str, str], dict[str, dict[str, Any]]]:
+def _build_pools(
+    assets_root: Path,
+    localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+) -> tuple[dict[str, str], dict[str, dict[str, Any]]]:
     pools: dict[str, str] = {}
     pool_meta: dict[str, dict[str, Any]] = {}
     _add_monopoly_pools(pools, pool_meta, localization)
-    _add_fork_pools(pools, pool_meta, assets_root, localization)
+    _add_fork_pools(pools, pool_meta, assets_root, localization, canonicalize_item_id)
     return pools, pool_meta
 
 
@@ -934,6 +999,38 @@ def _build_labels(localization: dict[str, Any]) -> dict[str, str]:
     return labels
 
 
+def _normalized_items(items: dict[str, str], item_meta: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    meta_by_id = {str(item["item_id"]): item for item in item_meta if isinstance(item, dict) and item.get("item_id")}
+    normalized: dict[str, dict[str, Any]] = {}
+    for item_id, item_name in sorted(items.items()):
+        meta = meta_by_id.get(str(item_id))
+        if not meta:
+            continue
+        entry: dict[str, Any] = {
+            "name": str(item_name),
+            "rarity": meta["rarity"],
+        }
+        category = meta.get("category")
+        if category is not None:
+            entry["category"] = category
+        normalized[str(item_id)] = entry
+    return normalized
+
+
+def _normalized_pools(
+    pools: dict[str, str],
+    pool_meta: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    normalized: dict[str, dict[str, Any]] = {}
+    for pool_id, pool_name in sorted(pools.items()):
+        entry: dict[str, Any] = {"name": str(pool_name)}
+        meta = pool_meta.get(pool_id, {})
+        if isinstance(meta, dict):
+            entry.update(meta)
+        normalized[str(pool_id)] = entry
+    return normalized
+
+
 def build_map(
     assets_root: Path,
     locale: str = DEFAULT_LOCALE,
@@ -941,11 +1038,20 @@ def build_map(
     """Build a public display-name map from exported NTE assets."""
 
     localization = _load_localization(assets_root, locale)
-    pools, pool_meta = _build_pools(assets_root, localization)
+    items, item_ctx = _build_item_data(assets_root, localization)
+    pools, pool_meta = _build_pools(assets_root, localization, item_ctx.canonicalize_item_id)
+    rules = build_rules_map(
+        assets_root,
+        items=items,
+        pools=pools,
+        pool_meta=pool_meta,
+        canonicalize_item_id=item_ctx.canonicalize_item_id,
+    )
     return {
+        "schema_version": 2,
         "csv_headers": dict(sorted(_csv_headers(localization, locale).items())),
-        "items": dict(sorted(_build_items(assets_root, localization).items())),
-        "pools": dict(sorted(pools.items())),
-        "pool_meta": dict(sorted(pool_meta.items())),
+        "items": _normalized_items(items, rules["item_meta"]),
+        "item_aliases": dict(sorted(item_ctx.item_aliases.items())),
+        "pools": _normalized_pools(pools, pool_meta),
         "labels": dict(sorted(_build_labels(localization).items())),
     }

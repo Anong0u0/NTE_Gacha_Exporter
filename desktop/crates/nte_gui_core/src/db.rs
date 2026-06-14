@@ -8,8 +8,8 @@ use serde_json::{json, Map, Value};
 
 use crate::export::{csv_export, json_export};
 use crate::model::{
-    DashboardSummary, GuiError, ImportReport, ItemMeta, LatestRecord, PoolRule, PoolSummary,
-    Profile, RecordFilter, RecordList, StoredRecord, TimelineBucket, TypeSummary,
+    DashboardSummary, GuiError, ImportReport, ItemAlias, ItemMeta, LatestRecord, PoolRule,
+    PoolSummary, Profile, RecordFilter, RecordList, StoredRecord, TimelineBucket, TypeSummary,
 };
 
 const DEFAULT_PROFILE_NAME: &str = "Default";
@@ -100,8 +100,6 @@ impl AppDatabase {
                 pool_id TEXT PRIMARY KEY,
                 pool_name TEXT NOT NULL,
                 group_label TEXT NOT NULL,
-                rule_source TEXT NOT NULL,
-                pity_limit INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
@@ -109,10 +107,14 @@ impl AppDatabase {
             CREATE TABLE IF NOT EXISTS item_meta (
                 item_id TEXT PRIMARY KEY,
                 item_name TEXT NOT NULL,
-                rarity INTEGER,
+                rarity INTEGER NOT NULL,
                 category TEXT,
-                is_pity_hit INTEGER,
-                rule_source TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS item_aliases (
+                alias_id TEXT PRIMARY KEY,
+                item_id TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
 
@@ -127,7 +129,80 @@ impl AppDatabase {
             "INSERT OR IGNORE INTO migrations(version, name, applied_at) VALUES(1, 'initial_gui_schema', ?1)",
             [now_stamp()],
         )?;
+        self.rebuild_table_if_columns_differ(
+            "pool_rules",
+            &[
+                "pool_id",
+                "pool_name",
+                "group_label",
+                "created_at",
+                "updated_at",
+            ],
+            "
+            CREATE TABLE pool_rules_new (
+                pool_id TEXT PRIMARY KEY,
+                pool_name TEXT NOT NULL,
+                group_label TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            INSERT INTO pool_rules_new(pool_id, pool_name, group_label, created_at, updated_at)
+            SELECT pool_id, pool_name, group_label, created_at, updated_at FROM pool_rules;
+            DROP TABLE pool_rules;
+            ALTER TABLE pool_rules_new RENAME TO pool_rules;
+            ",
+        )?;
+        self.rebuild_table_if_columns_differ(
+            "item_meta",
+            &["item_id", "item_name", "rarity", "category", "updated_at"],
+            "
+            CREATE TABLE item_meta_new (
+                item_id TEXT PRIMARY KEY,
+                item_name TEXT NOT NULL,
+                rarity INTEGER NOT NULL,
+                category TEXT,
+                updated_at TEXT NOT NULL
+            );
+            INSERT INTO item_meta_new(item_id, item_name, rarity, category, updated_at)
+            SELECT item_id, item_name, rarity, category, updated_at FROM item_meta WHERE rarity IS NOT NULL;
+            DROP TABLE item_meta;
+            ALTER TABLE item_meta_new RENAME TO item_meta;
+            ",
+        )?;
+        self.rebuild_table_if_columns_differ(
+            "item_aliases",
+            &["alias_id", "item_id", "updated_at"],
+            "
+            CREATE TABLE item_aliases_new (
+                alias_id TEXT PRIMARY KEY,
+                item_id TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            INSERT INTO item_aliases_new(alias_id, item_id, updated_at)
+            SELECT alias_id, item_id, updated_at FROM item_aliases;
+            DROP TABLE item_aliases;
+            ALTER TABLE item_aliases_new RENAME TO item_aliases;
+            ",
+        )?;
         self.ensure_default_profile()?;
+        Ok(())
+    }
+
+    fn rebuild_table_if_columns_differ(
+        &self,
+        table_name: &str,
+        expected_columns: &[&str],
+        rebuild_sql: &str,
+    ) -> Result<(), GuiError> {
+        let mut stmt = self
+            .conn
+            .prepare(&format!("PRAGMA table_info({table_name})"))?;
+        let columns = stmt
+            .query_map([], |row| row.get::<_, String>(1))?
+            .collect::<Result<Vec<_>, _>>()?;
+        if columns != expected_columns {
+            self.conn.execute_batch(rebuild_sql)?;
+        }
         Ok(())
     }
 
@@ -262,42 +337,32 @@ impl AppDatabase {
         &mut self,
         pool_rules: &[PoolRule],
         item_meta: &[ItemMeta],
+        item_aliases: &[ItemAlias],
     ) -> Result<(), GuiError> {
         let tx = self.conn.transaction()?;
         let now = now_stamp();
         for rule in pool_rules {
             tx.execute(
                 "
-                INSERT INTO pool_rules(pool_id, pool_name, group_label, rule_source, pity_limit, created_at, updated_at)
-                VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?6)
+                INSERT INTO pool_rules(pool_id, pool_name, group_label, created_at, updated_at)
+                VALUES(?1, ?2, ?3, ?4, ?4)
                 ON CONFLICT(pool_id) DO UPDATE SET
                     pool_name = excluded.pool_name,
                     group_label = excluded.group_label,
-                    rule_source = excluded.rule_source,
-                    pity_limit = excluded.pity_limit,
                     updated_at = excluded.updated_at
                 ",
-                params![
-                    rule.pool_id,
-                    rule.pool_name,
-                    rule.group_label,
-                    rule.rule_source,
-                    rule.pity_limit,
-                    now
-                ],
+                params![rule.pool_id, rule.pool_name, rule.group_label, now],
             )?;
         }
         for item in item_meta {
             tx.execute(
                 "
-                INSERT INTO item_meta(item_id, item_name, rarity, category, is_pity_hit, rule_source, updated_at)
-                VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                INSERT INTO item_meta(item_id, item_name, rarity, category, updated_at)
+                VALUES(?1, ?2, ?3, ?4, ?5)
                 ON CONFLICT(item_id) DO UPDATE SET
                     item_name = excluded.item_name,
                     rarity = excluded.rarity,
                     category = excluded.category,
-                    is_pity_hit = excluded.is_pity_hit,
-                    rule_source = excluded.rule_source,
                     updated_at = excluded.updated_at
                 ",
                 params![
@@ -305,10 +370,20 @@ impl AppDatabase {
                     item.item_name,
                     item.rarity,
                     item.category,
-                    item.is_pity_hit.map(i64::from),
-                    item.rule_source,
                     now
                 ],
+            )?;
+        }
+        for alias in item_aliases {
+            tx.execute(
+                "
+                INSERT INTO item_aliases(alias_id, item_id, updated_at)
+                VALUES(?1, ?2, ?3)
+                ON CONFLICT(alias_id) DO UPDATE SET
+                    item_id = excluded.item_id,
+                    updated_at = excluded.updated_at
+                ",
+                params![alias.alias_id, alias.item_id, now],
             )?;
         }
         tx.commit()?;
@@ -407,13 +482,12 @@ impl AppDatabase {
                 COALESCE(MAX(r.pool_name), '') AS pool_name,
                 COALESCE(MAX(pr.group_label), MAX(r.pool_name), '') AS group_label,
                 COUNT(*) AS record_count,
-                COALESCE(SUM(CASE WHEN im.is_pity_hit = 1 THEN 1 ELSE 0 END), 0) AS hit_count,
-                MAX(pr.pity_limit) AS pity_limit,
-                MAX(pr.rule_source) AS rule_source,
+                COALESCE(SUM(CASE WHEN im.rarity = 5 THEN 1 ELSE 0 END), 0) AS hit_count,
                 MAX(r.time) AS last_time
             FROM records r
             LEFT JOIN pool_rules pr ON pr.pool_id = r.pool_id
-            LEFT JOIN item_meta im ON im.item_id = r.item_id
+            LEFT JOIN item_aliases ia ON ia.alias_id = r.item_id
+            LEFT JOIN item_meta im ON im.item_id = COALESCE(ia.item_id, r.item_id)
             WHERE r.profile_id = ?1
             GROUP BY COALESCE(r.pool_id, '')
             ORDER BY record_count DESC, pool_name ASC
@@ -427,9 +501,7 @@ impl AppDatabase {
                 group_label: row.get(2)?,
                 record_count: row.get(3)?,
                 hit_count: row.get(4)?,
-                pity_limit: row.get(5)?,
-                rule_source: row.get(6)?,
-                last_time: row.get(7)?,
+                last_time: row.get(5)?,
             })
         })?;
         for row in rows {
@@ -447,8 +519,6 @@ impl AppDatabase {
                 record_count: row.record_count,
                 hit_count: row.hit_count,
                 current_pity,
-                pity_limit: row.pity_limit,
-                rule_source: row.rule_source,
                 last_time: row.last_time,
                 last_item_name,
             });
@@ -537,7 +607,8 @@ impl AppDatabase {
                 "
                 SELECT r.id
                 FROM records r
-                JOIN item_meta im ON im.item_id = r.item_id AND im.is_pity_hit = 1
+                LEFT JOIN item_aliases ia ON ia.alias_id = r.item_id
+                JOIN item_meta im ON im.item_id = COALESCE(ia.item_id, r.item_id) AND im.rarity = 5
                 WHERE r.profile_id = ?1 AND COALESCE(r.pool_id, '') = ?2
                 ORDER BY r.time DESC, r.id DESC
                 LIMIT 1
@@ -643,8 +714,6 @@ struct PartialPoolSummary {
     group_label: String,
     record_count: u64,
     hit_count: u64,
-    pity_limit: Option<u32>,
-    rule_source: Option<String>,
     last_time: Option<String>,
 }
 

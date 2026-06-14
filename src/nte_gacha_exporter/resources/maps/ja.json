@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "数量",
     "item_name": "アイテム名",
@@ -10,99 +11,393 @@
     "time": "獲得時間"
   },
   "items": {
-    "1003": "キャラ·早霧",
-    "1004": "キャラ·レクイエム",
-    "1008": "キャラ·翳",
-    "1010": "キャラ·ナナリ",
-    "1019": "キャラ·ミント",
-    "1020": "キャラ·ハニア",
-    "1021": "キャラ·エドガー",
-    "1023": "キャラ·白蔵",
-    "1025": "キャラ·ハソール",
-    "1033": "キャラ·アドレー",
-    "1039": "キャラ·ファルディーヤ",
-    "1052": "キャラ·潯",
-    "1054": "キャラ·ダフォディール",
-    "1055": "キャラ·九原",
-    "1070": "キャラ·海月",
-    "1073": "キャラ·ちぃちゃん",
-    "Characterawaken_Adler": "アイテム·心象の欠片-アドレー",
-    "Characterawaken_Hathor": "アイテム·心象の欠片-ハソール",
-    "Characterawaken_Jin": "アイテム·心象の欠片-潯",
-    "Characterawaken_Mint": "アイテム·心象の欠片-ミント",
-    "Characterawaken_Nanally": "アイテム·心象の欠片-ナナリ",
-    "Characterawaken_Sagiri": "アイテム·心象の欠片-早霧",
-    "Characterawaken_cang": "アイテム·心象の欠片-白蔵",
-    "Characterawaken_dafudier": "アイテム·心象の欠片-ダフォディール",
-    "Characterawaken_fadia": "アイテム·心象の欠片-ファルディーヤ",
-    "Characterawaken_lacrimosa": "アイテム·心象の欠片-レクイエム",
-    "Characterawaken_skia": "アイテム·心象の欠片-翳",
-    "DIceLimite": "アイテム·本質サイコロ",
-    "DIceNormal": "アイテム·虚質サイコロ",
-    "DiceNormal": "アイテム·虚質サイコロ",
-    "Dice_ticket_01": "アイテム·次元ピース",
-    "Dice_ticket_02": "アイテム·迷走ピース",
-    "Dicelimite": "アイテム·本質サイコロ",
-    "Fashion_Glide_1004": "グライダー·ハッピートマト",
-    "Fashion_Glide_1010": "グライダー·相棒の相棒",
-    "Fashion_Glide_1052": "グライダー·幽蘭",
-    "Fashion_character_1004_01": "コスチューム·デビルズ・ビート",
-    "Fashion_character_1010": "コスチューム·華麗なるキック",
-    "Fashion_character_1052_01": "コスチューム·万金の蘭",
-    "Fashion_glide_1004": "グライダー·ハッピートマト",
-    "Fashion_glide_1010": "グライダー·相棒の相棒",
-    "Fashion_glide_1052": "グライダー·幽蘭",
-    "Fashion_vehicleSkin_1052_V016": "改造パーツ·金風の招客",
-    "Fashion_vehicle_1004_V021": "改造パーツ·トマトクルーズ",
-    "Fashion_vehicle_1010_V008": "改造パーツ·萌え虎襲来",
-    "Fashion_vehicle_1052_V024": "改造パーツ·秋色の残影",
-    "Fork_TigerTally": "弧盤·プリペア",
-    "fork_Arachne": "弧盤·永遠のワルツ",
-    "fork_BitGame": "弧盤·熱狂の渦",
-    "fork_BitterCake": "弧盤·良薬は口に苦し",
-    "fork_BlackBook": "弧盤·漆黒の青春妄想",
-    "fork_Butterfly": "弧盤·現実の避難所",
-    "fork_GoldWool": "弧盤·オムニ・デザイア",
-    "fork_Kite": "弧盤·頭上に注意！",
-    "fork_Nakupeda": "弧盤·コインより笑顔",
-    "fork_PaperPlane": "弧盤·空域確保開始",
-    "fork_PoliceRat": "弧盤·ヘテロシティの平穏",
-    "fork_Prokaryon": "弧盤·「私たち」",
-    "fork_Rose": "弧盤·「ラスト・ローズ」",
-    "fork_TigerTally": "弧盤·プリペア",
-    "fork_Time": "弧盤·時間外を行く",
-    "fork_Vine": "弧盤·いつも笑顔で",
-    "fork_appliance": "弧盤·「電音」カーニバル",
-    "fork_bopu": "弧盤·光のカーニバル",
-    "fork_dustbin": "弧盤·危険なゲーム",
-    "fork_jiaojuan": "弧盤·輝かしい日々",
-    "fork_jingmotingyuan": "弧盤·椿会",
-    "fork_koinobori": "弧盤·いつかは終わる",
-    "fork_lingganzhongjiezhe": "弧盤·ひらめきデスゲーム",
-    "fork_mamen": "弧盤·思考ニャン",
-    "fork_mofeikesi": "弧盤·お散歩ワンワン",
-    "fork_nonos": "弧盤·成功への第一歩",
-    "fork_oulaquantao": "弧盤·オラオラ！",
-    "fork_rishi": "弧盤·休息日",
-    "fork_spider": "弧盤·言葉にできない",
-    "fork_tuansanlang": "弧盤·呪われた出会い",
-    "fork_vine": "弧盤·いつも笑顔で",
-    "fork_wuhuakuang": "弧盤·忘れられし者",
-    "fork_wushoutieyu": "弧盤·炎魂ハリケーン",
-    "fork_yaodao": "弧盤·抜刀",
-    "fork_yuren": "弧盤·忘れな傘"
+    "1003": {
+      "name": "キャラ·早霧",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "キャラ·レクイエム",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "キャラ·翳",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "キャラ·ナナリ",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "キャラ·ミント",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "キャラ·ハニア",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "キャラ·エドガー",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "キャラ·白蔵",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "キャラ·ハソール",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "キャラ·アドレー",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "キャラ·ファルディーヤ",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "キャラ·潯",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "キャラ·ダフォディール",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "キャラ·九原",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "キャラ·海月",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "キャラ·ちぃちゃん",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "アイテム·心象の欠片-アドレー",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "アイテム·心象の欠片-ハソール",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "アイテム·心象の欠片-潯",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "アイテム·心象の欠片-ミント",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "アイテム·心象の欠片-ナナリ",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "アイテム·心象の欠片-早霧",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "アイテム·心象の欠片-白蔵",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "アイテム·心象の欠片-ダフォディール",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "アイテム·心象の欠片-ファルディーヤ",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "アイテム·心象の欠片-レクイエム",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "アイテム·心象の欠片-翳",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "アイテム·虚質サイコロ",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "アイテム·次元ピース",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "アイテム·迷走ピース",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "アイテム·本質サイコロ",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "グライダー·ハッピートマト",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "グライダー·相棒の相棒",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "グライダー·幽蘭",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "コスチューム·デビルズ・ビート",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "コスチューム·華麗なるキック",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "コスチューム·万金の蘭",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "改造パーツ·金風の招客",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "改造パーツ·トマトクルーズ",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "改造パーツ·萌え虎襲来",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "改造パーツ·秋色の残影",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "弧盤·永遠のワルツ",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "弧盤·熱狂の渦",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "弧盤·良薬は口に苦し",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "弧盤·漆黒の青春妄想",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "弧盤·現実の避難所",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "弧盤·オムニ・デザイア",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "弧盤·頭上に注意！",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "弧盤·コインより笑顔",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "弧盤·空域確保開始",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "弧盤·ヘテロシティの平穏",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "弧盤·「私たち」",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "弧盤·「ラスト・ローズ」",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "弧盤·プリペア",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "弧盤·時間外を行く",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "弧盤·「電音」カーニバル",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "弧盤·光のカーニバル",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "弧盤·危険なゲーム",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "弧盤·輝かしい日々",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "弧盤·椿会",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "弧盤·いつかは終わる",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "弧盤·ひらめきデスゲーム",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "弧盤·思考ニャン",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "弧盤·お散歩ワンワン",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "弧盤·成功への第一歩",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "弧盤·オラオラ！",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "弧盤·休息日",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "弧盤·言葉にできない",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "弧盤·呪われた出会い",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "弧盤·いつも笑顔で",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "弧盤·忘れられし者",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "弧盤·炎魂ハリケーン",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "弧盤·抜刀",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "弧盤·忘れな傘",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "奇跡ボックス",
-    "CardPool_Character": "限定ボード",
-    "CardPool_NewRole": "標準ボード",
-    "ForkLottery_AnHunQu": "奇跡ボックス",
-    "ForkLottery_Kaesi": "奇跡ボックス",
-    "ForkLottery_Nanali": "奇跡ボックス",
-    "ForkLottery_Xun": "奇跡ボックス"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "奇跡ボックス"
+    },
     "CardPool_Character": {
+      "name": "限定ボード",
       "group_label": "限定ボード",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "標準ボード",
       "group_label": "標準ボード",
       "title": "奇縁物語"
     },
     "ForkLottery_AnHunQu": {
+      "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
       "title": "夜曲特別号",
-      "subtitle": "限定弧盤「ラスト・ローズ」出現確率UP！"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
       "title": "追猟特別号",
-      "subtitle": "限定弧盤「オムニ・デザイア」出現確率UP！"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
       "title": "猛虎特別号",
-      "subtitle": "限定弧盤「プリペア」出現確率UP！"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
       "title": "名月特別号",
-      "subtitle": "限定弧盤「時間外を行く」出現確率UP！"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

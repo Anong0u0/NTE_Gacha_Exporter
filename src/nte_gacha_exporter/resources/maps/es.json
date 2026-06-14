@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "Cantidad",
     "item_name": "Nombre de objeto",
@@ -10,99 +11,393 @@
     "time": "Hora de adquisición"
   },
   "items": {
-    "1003": "Personaje·Sakiri",
-    "1004": "Personaje·Lacrimosa",
-    "1008": "Personaje·Skia",
-    "1010": "Personaje·Nanally",
-    "1019": "Personaje·Mint",
-    "1020": "Personaje·Haniel",
-    "1021": "Personaje·Edgar",
-    "1023": "Personaje·Baicang",
-    "1025": "Personaje·Hathor",
-    "1033": "Personaje·Adler",
-    "1039": "Personaje·Fadia",
-    "1052": "Personaje·Hotori",
-    "1054": "Personaje·Daffodill",
-    "1055": "Personaje·Jiuyuan",
-    "1070": "Personaje·Aurelia",
-    "1073": "Personaje·Chiz",
-    "Characterawaken_Adler": "Objeto·Fragmento mental: Adler",
-    "Characterawaken_Hathor": "Objeto·Fragmento mental: Hathor",
-    "Characterawaken_Jin": "Objeto·Fragmento mental: Hotori",
-    "Characterawaken_Mint": "Objeto·Fragmento mental: Mint",
-    "Characterawaken_Nanally": "Objeto·Fragmento mental: Nanally",
-    "Characterawaken_Sagiri": "Objeto·Fragmento mental: Sakiri",
-    "Characterawaken_cang": "Objeto·Fragmento mental: Baicang",
-    "Characterawaken_dafudier": "Objeto·Fragmento mental: Daffodill",
-    "Characterawaken_fadia": "Objeto·Fragmento mental: Fadia",
-    "Characterawaken_lacrimosa": "Objeto·Fragmento mental: Lacrimosa",
-    "Characterawaken_skia": "Objeto·Fragmento mental: Skia",
-    "DIceLimite": "Objeto·Dado sólido",
-    "DIceNormal": "Objeto·Dado fabricado",
-    "DiceNormal": "Objeto·Dado fabricado",
-    "Dice_ticket_01": "Objeto·Pieza deformada",
-    "Dice_ticket_02": "Objeto·Pieza perdida",
-    "Dicelimite": "Objeto·Dado sólido",
-    "Fashion_Glide_1004": "Planeador·Dúo tomate",
-    "Fashion_Glide_1010": "Planeador·El subjefe de los subjefes",
-    "Fashion_Glide_1052": "Planeador·Brisa de orquídea",
-    "Fashion_character_1004_01": "Atuendo·Rapsodia dorada",
-    "Fashion_character_1010": "Atuendo·Patada del Fénix",
-    "Fashion_character_1052_01": "Atuendo·Orquídea invaluable",
-    "Fashion_glide_1004": "Planeador·Dúo tomate",
-    "Fashion_glide_1010": "Planeador·El subjefe de los subjefes",
-    "Fashion_glide_1052": "Planeador·Brisa de orquídea",
-    "Fashion_vehicleSkin_1052_V016": "Piezas de modificación·Brisa dorada: Esquema de colores",
-    "Fashion_vehicle_1004_V021": "Piezas de modificación·Crucero tomate: Esquema de colores",
-    "Fashion_vehicle_1010_V008": "Piezas de modificación·¡Tigre en camino!: Esquema de colores",
-    "Fashion_vehicle_1052_V024": "Piezas de modificación·Bruma de otoño: Esquema de colores",
-    "Fork_TigerTally": "Disco·Listo, listo",
-    "fork_Arachne": "Disco·Vals eterno",
-    "fork_BitGame": "Disco·Impresionar al público",
-    "fork_BitterCake": "Disco·El bueno, el malo y el amargado",
-    "fork_BlackBook": "Disco·Fantasía juvenil",
-    "fork_Butterfly": "Disco·Refugio de la realidad",
-    "fork_GoldWool": "Disco·Lo que todos buscan",
-    "fork_Kite": "Disco·¡Cuidado con la cabeza!",
-    "fork_Nakupeda": "Disco·Tu felicidad no tiene precio",
-    "fork_PaperPlane": "Disco·Cielos despejados",
-    "fork_PoliceRat": "Disco·Guardián de Hethereau",
-    "fork_Prokaryon": "Disco·Nosotros",
-    "fork_Rose": "Disco·La última rosa",
-    "fork_TigerTally": "Disco·Listo, listo",
-    "fork_Time": "Disco·Marchando más allá del tiempo",
-    "fork_Vine": "Disco·Sé feliz",
-    "fork_appliance": "Disco·\"Música de verdad\"",
-    "fork_bopu": "Disco·Aturdimiento de cosmos, Ensoñación salvaje",
-    "fork_dustbin": "Disco·Juego peligroso",
-    "fork_jiaojuan": "Disco·Días brillantes",
-    "fork_jingmotingyuan": "Disco·Sociedad de la camelia",
-    "fork_koinobori": "Disco·Llegará la hora",
-    "fork_lingganzhongjiezhe": "Disco·Reino mental",
-    "fork_mamen": "Disco·Gato contemplativo",
-    "fork_mofeikesi": "Disco·Gran aventura del buen chico",
-    "fork_nonos": "Disco·1.° paso al éxito",
-    "fork_oulaquantao": "Disco·¡Oraora!",
-    "fork_rishi": "Disco·Día libre",
-    "fork_spider": "Disco·Te he fallado, con pesar en el corazón",
-    "fork_tuansanlang": "Disco·El gran ladrón",
-    "fork_vine": "Disco·Sé feliz",
-    "fork_wuhuakuang": "Disco·Los olvidados",
-    "fork_wushoutieyu": "Disco·Llamas furiosas",
-    "fork_yaodao": "Disco·Espada desenvainada",
-    "fork_yuren": "Disco·Paraguas"
+    "1003": {
+      "name": "Personaje·Sakiri",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "Personaje·Lacrimosa",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "Personaje·Skia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "Personaje·Nanally",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "Personaje·Mint",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "Personaje·Haniel",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "Personaje·Edgar",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "Personaje·Baicang",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "Personaje·Hathor",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "Personaje·Adler",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "Personaje·Fadia",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "Personaje·Hotori",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "Personaje·Daffodill",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "Personaje·Jiuyuan",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "Personaje·Aurelia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "Personaje·Chiz",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "Objeto·Fragmento mental: Adler",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "Objeto·Fragmento mental: Hathor",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "Objeto·Fragmento mental: Hotori",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "Objeto·Fragmento mental: Mint",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "Objeto·Fragmento mental: Nanally",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Objeto·Fragmento mental: Sakiri",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "Objeto·Fragmento mental: Baicang",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "Objeto·Fragmento mental: Daffodill",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "Objeto·Fragmento mental: Fadia",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Objeto·Fragmento mental: Lacrimosa",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "Objeto·Fragmento mental: Skia",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "Objeto·Dado fabricado",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "Objeto·Pieza deformada",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "Objeto·Pieza perdida",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "Objeto·Dado sólido",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Planeador·Dúo tomate",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Planeador·El subjefe de los subjefes",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Planeador·Brisa de orquídea",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Atuendo·Rapsodia dorada",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "Atuendo·Patada del Fénix",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Atuendo·Orquídea invaluable",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Piezas de modificación·Brisa dorada: Esquema de colores",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Piezas de modificación·Crucero tomate: Esquema de colores",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Piezas de modificación·¡Tigre en camino!: Esquema de colores",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Piezas de modificación·Bruma de otoño: Esquema de colores",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "Disco·Vals eterno",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "Disco·Impresionar al público",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "Disco·El bueno, el malo y el amargado",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "Disco·Fantasía juvenil",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "Disco·Refugio de la realidad",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "Disco·Lo que todos buscan",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "Disco·¡Cuidado con la cabeza!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "Disco·Tu felicidad no tiene precio",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "Disco·Cielos despejados",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "Disco·Guardián de Hethereau",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "Disco·Nosotros",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "Disco·La última rosa",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "Disco·Listo, listo",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "Disco·Marchando más allá del tiempo",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "Disco·\"Música de verdad\"",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "Disco·Aturdimiento de cosmos, Ensoñación salvaje",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "Disco·Juego peligroso",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "Disco·Días brillantes",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Disco·Sociedad de la camelia",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "Disco·Llegará la hora",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Disco·Reino mental",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "Disco·Gato contemplativo",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "Disco·Gran aventura del buen chico",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "Disco·1.° paso al éxito",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "Disco·¡Oraora!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "Disco·Día libre",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "Disco·Te he fallado, con pesar en el corazón",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "Disco·El gran ladrón",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "Disco·Sé feliz",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "Disco·Los olvidados",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "Disco·Llamas furiosas",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "Disco·Espada desenvainada",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "Disco·Paraguas",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "Caja milagrosa",
-    "CardPool_Character": "Tablero limitado",
-    "CardPool_NewRole": "Tablero estándar",
-    "ForkLottery_AnHunQu": "Caja milagrosa",
-    "ForkLottery_Kaesi": "Caja milagrosa",
-    "ForkLottery_Nanali": "Caja milagrosa",
-    "ForkLottery_Xun": "Caja milagrosa"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "Caja milagrosa"
+    },
     "CardPool_Character": {
+      "name": "Tablero limitado",
       "group_label": "Tablero limitado",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "Tablero estándar",
       "group_label": "Tablero estándar",
       "title": "Encuentros Misteriosos"
     },
     "ForkLottery_AnHunQu": {
+      "name": "Caja milagrosa",
       "group_label": "Investigación de disco",
       "title": "Especial Nocturno",
-      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"La última rosa\"!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "Caja milagrosa",
       "group_label": "Investigación de disco",
       "title": "Persecución Especial",
-      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"Aquello que se desea\"!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "Caja milagrosa",
       "group_label": "Investigación de disco",
       "title": "Especial de tigre",
-      "subtitle": "¡Mayor probabilidad de obtener el disco limitado \"Listo, listo\"!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "Caja milagrosa",
       "group_label": "Investigación de disco",
       "title": "Especial de Luna brillante",
-      "subtitle": "¡Mayor probabilidad de obtención del Disco limitado Marchando más allá del tiempo!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

@@ -36,6 +36,17 @@ def _lookup(mapping: LocalizationMap, section: str, key: str | None) -> str:
     return key
 
 
+def _canonical_item_id(mapping: LocalizationMap, item_id: str | None) -> str | None:
+    if not item_id:
+        return item_id
+    aliases = mapping.get("item_aliases", {})
+    if isinstance(aliases, dict):
+        target = aliases.get(item_id)
+        if isinstance(target, str) and target:
+            return target
+    return item_id
+
+
 def _roll_text(row: ParsedRow, mapping: LocalizationMap) -> str:
     if row.roll_label_id:
         return _lookup(mapping, "labels", row.roll_label_id)
@@ -162,17 +173,32 @@ def public_records(rows: list[ParsedRow], mapping: LocalizationMap) -> list[Gach
 
     records: list[GachaRecord] = []
     for row in rows:
+        item_id = _canonical_item_id(mapping, row.item_id) or row.item_id
+        secondary_raw_id = _canonical_item_id(mapping, row.secondary_item_id)
         public_time = _public_time(row.time)
-        secondary_item_id, secondary_item_name, secondary_count = _secondary_fields(row, mapping)
+        canonical_row = ParsedRow(
+            record_type=row.record_type,
+            ticks=row.ticks,
+            time=row.time,
+            pool_id=row.pool_id,
+            item_id=item_id,
+            count=row.count,
+            roll_points=row.roll_points,
+            roll_label_id=row.roll_label_id,
+            secondary_item_id=secondary_raw_id,
+            secondary_count=row.secondary_count,
+            source=row.source,
+        )
+        secondary_item_id, secondary_item_name, secondary_count = _secondary_fields(canonical_row, mapping)
         records.append(
             GachaRecord(
-                record_id=_record_id(row),
+                record_id=_record_id(canonical_row),
                 record_type=row.record_type,
                 time=public_time,
                 pool_id=row.pool_id,
                 pool_name=_pool_name(mapping, row.pool_id, public_time),
-                item_id=row.item_id,
-                item_name=_lookup(mapping, "items", row.item_id),
+                item_id=item_id,
+                item_name=_lookup(mapping, "items", item_id),
                 count=row.count,
                 roll_points=row.roll_points,
                 roll_label=_roll_text(row, mapping),

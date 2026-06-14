@@ -124,6 +124,40 @@ def test_capture_history_writes_outputs_after_stop_event(monkeypatch, tmp_path):
     assert ready_targets[0].pid == "1234"
 
 
+def test_capture_live_returns_document_without_public_outputs(monkeypatch, tmp_path):
+    packet_record = json.loads(FIXTURE.read_text(encoding="utf-8").splitlines()[1])
+    stop_event = live.Event()
+    progress = []
+
+    def fake_sniff(*, prn, timeout, **_kwargs):
+        assert timeout == 0.5
+        prn(object())
+        stop_event.set()
+
+    monkeypatch.setattr(live, "_require_windows", lambda: None)
+    monkeypatch.setattr(live, "_load_scapy", lambda: (object(), fake_sniff))
+    monkeypatch.setattr(
+        live,
+        "_target_for_capture",
+        lambda *_args, **_kwargs: SimpleNamespace(pid="1234", interface="npcap0", ports=[30230], bpf="port 30230"),
+    )
+    monkeypatch.setattr(live, "resolve_scapy_iface", lambda iface: iface)
+    monkeypatch.setattr(live, "packet_to_raw_record", lambda _packet, *, capture_index: packet_record)
+
+    document = live.capture_live(
+        live.CaptureLiveOptions(
+            locale="zh-Hant",
+            on_progress=progress.append,
+            stop_event=stop_event,
+        )
+    )
+
+    assert document["_debug"]["summary"]["record_count"] == 1
+    assert progress[-1] == {"packets_seen": 1, "decoded_packets": 1, "dropped_packets": 0}
+    assert not (tmp_path / "history.json").exists()
+    assert not (tmp_path / "history.csv").exists()
+
+
 def test_capture_history_silently_ignores_duplicate_records(monkeypatch, tmp_path):
     packet_record = json.loads(FIXTURE.read_text(encoding="utf-8").splitlines()[1])
     stop_event = live.Event()

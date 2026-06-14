@@ -39,18 +39,22 @@ pub struct PoolRule {
     pub pool_id: String,
     pub pool_name: String,
     pub group_label: String,
-    pub rule_source: String,
-    pub pity_limit: Option<u32>,
+    #[serde(default)]
+    pub pickup_item_ids: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ItemMeta {
     pub item_id: String,
     pub item_name: String,
-    pub rarity: Option<u32>,
+    pub rarity: u32,
     pub category: Option<String>,
-    pub is_pity_hit: Option<bool>,
-    pub rule_source: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ItemAlias {
+    pub alias_id: String,
+    pub item_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -61,8 +65,6 @@ pub struct PoolSummary {
     pub record_count: u64,
     pub hit_count: u64,
     pub current_pity: Option<u64>,
-    pub pity_limit: Option<u32>,
-    pub rule_source: Option<String>,
     pub last_time: Option<String>,
     pub last_item_name: Option<String>,
 }

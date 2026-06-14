@@ -46,6 +46,19 @@ class CaptureHistoryOptions:
     debug_json_out: Path | None = None
     on_records: Callable[[list[GachaRecord]], None] | None = None
     on_ready: Callable[[CaptureTarget], None] | None = None
+    on_progress: Callable[[dict[str, int]], None] | None = None
+    stop_event: Event | None = None
+
+
+@dataclass(frozen=True)
+class CaptureLiveOptions:
+    locale: str
+    pid: str | None = None
+    iface: str | None = None
+    output_raw: Path | None = None
+    on_records: Callable[[list[GachaRecord]], None] | None = None
+    on_ready: Callable[[CaptureTarget], None] | None = None
+    on_progress: Callable[[dict[str, int]], None] | None = None
     stop_event: Event | None = None
 
 
@@ -120,6 +133,14 @@ def _raw_stop(counters: _CaptureCounters) -> CaptureStopRecord:
         "seen": counters.seen,
         "decoded_packets": counters.decoded_packets,
         "dropped": counters.dropped,
+    }
+
+
+def _progress_payload(counters: _CaptureCounters) -> dict[str, int]:
+    return {
+        "packets_seen": counters.seen,
+        "decoded_packets": counters.decoded_packets,
+        "dropped_packets": counters.dropped,
     }
 
 
@@ -208,6 +229,25 @@ def _write_history_outputs(options: CaptureHistoryOptions, document: ExportDocum
 def capture_history(options: CaptureHistoryOptions) -> ExportDocument:
     """Capture live packets and write sanitized history outputs."""
 
+    document = capture_live(
+        CaptureLiveOptions(
+            locale=options.locale,
+            pid=options.pid,
+            iface=options.iface,
+            output_raw=options.output_raw,
+            on_records=options.on_records,
+            on_ready=options.on_ready,
+            on_progress=options.on_progress,
+            stop_event=options.stop_event,
+        )
+    )
+    _write_history_outputs(options, document)
+    return document
+
+
+def capture_live(options: CaptureLiveOptions) -> ExportDocument:
+    """Capture live packets and return a sanitized document without public file output."""
+
     _require_windows()
     _conf, sniff = _load_scapy()
     target = _target_for_capture(options.pid, options.iface)
@@ -222,17 +262,23 @@ def capture_history(options: CaptureHistoryOptions) -> ExportDocument:
         options.on_records([])
     if options.on_ready:
         options.on_ready(target)
+    if options.on_progress:
+        options.on_progress(_progress_payload(counters))
 
     def on_packet(packet: Any) -> None:
         counters.seen += 1
         record = packet_to_raw_record(packet, capture_index=counters.seen)
         if record is None:
             counters.dropped += 1
+            if options.on_progress:
+                options.on_progress(_progress_payload(counters))
             return
         _write_raw_record(raw_fh, record)
         snapshot_rows = _packet_rows(record, counters=counters, warnings=warnings, assembler=assembler)
         if snapshot_rows and options.on_records:
             options.on_records(public_records(snapshot_rows, mapping))
+        if options.on_progress:
+            options.on_progress(_progress_payload(counters))
 
     try:
         _run_sniff_loop(sniff, scapy_iface=scapy_iface, target=target, stop=stop, on_packet=on_packet)
@@ -241,9 +287,7 @@ def capture_history(options: CaptureHistoryOptions) -> ExportDocument:
             _write_raw_record(raw_fh, _raw_stop(counters))
             raw_fh.close()
 
-    document = _build_live_document(assembler, warnings, counters, mapping, locale_name)
-    _write_history_outputs(options, document)
-    return document
+    return _build_live_document(assembler, warnings, counters, mapping, locale_name)
 
 
 def doctor() -> tuple[int, list[str]]:

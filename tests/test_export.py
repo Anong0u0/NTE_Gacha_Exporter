@@ -11,7 +11,6 @@ from nte_gacha_exporter.export.assembler import ProtocolAssembler
 from nte_gacha_exporter.export.document import ExportOptions, _pool_name, build_document, public_records
 from nte_gacha_exporter.export.pipeline import export_capture
 from nte_gacha_exporter.export.writers import write_csv, write_debug_json, write_json
-from nte_gacha_exporter.mapping.runtime import load_map
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample.raw.jsonl"
 
@@ -129,9 +128,20 @@ def test_csv_writer_has_stable_human_header(tmp_path):
 
 
 def test_locale_can_point_to_custom_map_file(tmp_path):
-    custom_map = load_map("zh-Hant")
-    custom_map["items"]["Fashion_vehicle_1010_V008"] = "自訂名稱"
-    custom_map["pool_meta"]["CardPool_Character"] = {"group_label": "自訂限定", "title": "自訂池"}
+    custom_map = {
+        "schema_version": 2,
+        "csv_headers": {},
+        "items": {
+            "Fashion_vehicle_1010_V008": {"name": "自訂名稱", "rarity": 5, "category": "vehicle_module"},
+            "fork_dustbin": {"name": "弧盤·危險遊戲", "rarity": 4, "category": "fork"},
+        },
+        "item_aliases": {},
+        "pools": {
+            "CardPool_Character": {"name": "自訂限定", "group_label": "自訂限定", "title": "自訂池"},
+            "ForkLottery_AnHunQu": {"name": "奇蹟盒盒", "group_label": "弧盤研募", "title": "夜曲特刊"},
+        },
+        "labels": {},
+    }
     map_path = tmp_path / "custom.json"
     map_path.write_text(json.dumps(custom_map, ensure_ascii=False), encoding="utf-8")
 
@@ -191,6 +201,39 @@ def test_public_record_keeps_secondary_fields_when_item_is_different():
     assert record["secondary_item_id"] == "Dice_ticket_01"
     assert record["secondary_item_name"] == "道具·質實骰子"
     assert record["secondary_count"] == 2
+
+
+def test_public_record_canonicalizes_item_aliases_before_localizing_and_deduping():
+    source = SourceRef(session=0, line=1, packet_index=0, view="src", row_index=0, offset=0)
+    row = ParsedRow(
+        record_type="monopoly",
+        ticks=639164696613410000,
+        time="2026-06-07T22:14:21.341000",
+        pool_id="CardPool_NewRole",
+        item_id="DIceNormal",
+        count=1,
+        roll_points=5,
+        roll_label_id=None,
+        secondary_item_id="DIceLimite",
+        secondary_count=2,
+        source=source,
+    )
+    mapping = {
+        "pools": {"CardPool_NewRole": "標準棋盤"},
+        "items": {"DiceNormal": "道具·捏造骰子", "Dicelimite": "道具·質實骰子"},
+        "item_aliases": {"DIceNormal": "DiceNormal", "DIceLimite": "Dicelimite"},
+    }
+
+    document = build_document([row], mapping, ExportOptions(locale="zh-Hant", source="test"))
+    record = document["nte"]["list"][0]
+
+    assert record["item_id"] == "DiceNormal"
+    assert record["item_name"] == "道具·捏造骰子"
+    assert record["secondary_item_id"] == "Dicelimite"
+    assert record["secondary_item_name"] == "道具·質實骰子"
+    assert "DIceNormal" not in record["record_id"]
+    assert "DIceLimite" not in record["record_id"]
+    assert document["_debug"]["summary"]["warning_count"] == 0
 
 
 def test_build_document_keeps_matching_public_rows_from_distinct_sources():

@@ -2,7 +2,7 @@
 mod tests {
     use serde_json::json;
 
-    use crate::{AppDatabase, ItemMeta, PoolRule, RecordFilter};
+    use crate::{AppDatabase, ItemAlias, ItemMeta, PoolRule, RecordFilter};
 
     fn sample_document() -> String {
         json!({
@@ -93,17 +93,15 @@ mod tests {
                 pool_id: "CardPool_Character".to_string(),
                 pool_name: "Limited".to_string(),
                 group_label: "Limited".to_string(),
-                rule_source: "test".to_string(),
-                pity_limit: Some(80),
+                pickup_item_ids: None,
             }],
             &[ItemMeta {
                 item_id: "item_5".to_string(),
                 item_name: "Rare A".to_string(),
-                rarity: Some(5),
+                rarity: 5,
                 category: Some("character".to_string()),
-                is_pity_hit: Some(true),
-                rule_source: "test".to_string(),
             }],
+            &[],
         )
         .unwrap();
         db.import_public_document(profile.id, &sample_document(), "json", None)
@@ -121,7 +119,92 @@ mod tests {
         assert_eq!(character.record_count, 2);
         assert_eq!(character.hit_count, 1);
         assert_eq!(character.current_pity, Some(0));
-        assert_eq!(character.pity_limit, Some(80));
+    }
+
+    #[test]
+    fn dashboard_counts_alias_item_as_known_pity_hit() {
+        let mut db = AppDatabase::open_in_memory().unwrap();
+        let profile = db.ensure_default_profile().unwrap();
+        db.upsert_rules(
+            &[PoolRule {
+                pool_id: "CardPool_Character".to_string(),
+                pool_name: "Limited".to_string(),
+                group_label: "Limited".to_string(),
+                pickup_item_ids: None,
+            }],
+            &[ItemMeta {
+                item_id: "item_5".to_string(),
+                item_name: "Rare A".to_string(),
+                rarity: 5,
+                category: Some("character".to_string()),
+            }],
+            &[ItemAlias {
+                alias_id: "item_5_alias".to_string(),
+                item_id: "item_5".to_string(),
+            }],
+        )
+        .unwrap();
+        let document = json!({
+            "info": {
+                "schema": "nte-gacha-export",
+                "schema_version": "1.0"
+            },
+            "nte": {
+                "list": [
+                    {
+                        "record_id": "Character:alias",
+                        "record_type": "gacha",
+                        "time": "2026-01-01 10:00:00",
+                        "pool_id": "CardPool_Character",
+                        "pool_name": "Limited",
+                        "item_id": "item_5_alias",
+                        "item_name": "Rare A",
+                        "count": 1,
+                        "roll_points": 1,
+                        "roll_label": "1"
+                    },
+                    {
+                        "record_id": "Character:common",
+                        "record_type": "gacha",
+                        "time": "2026-01-01 10:01:00",
+                        "pool_id": "CardPool_Character",
+                        "pool_name": "Limited",
+                        "item_id": "item_3",
+                        "item_name": "Common A",
+                        "count": 1,
+                        "roll_points": 2,
+                        "roll_label": "2"
+                    }
+                ]
+            }
+        })
+        .to_string();
+        db.import_public_document(profile.id, &document, "json", None)
+            .unwrap();
+
+        let summary = db.dashboard_summary(profile.id).unwrap();
+
+        let character = summary
+            .pools
+            .iter()
+            .find(|pool| pool.pool_id == "CardPool_Character")
+            .unwrap();
+        assert_eq!(character.record_count, 2);
+        assert_eq!(character.hit_count, 1);
+        assert_eq!(character.current_pity, Some(1));
+    }
+
+    #[test]
+    fn pool_rule_deserializes_optional_pickup_item_ids() {
+        let rule: PoolRule = serde_json::from_value(json!({
+            "pool_id": "ForkLottery_AnHunQu",
+            "pool_name": "Miracle Box",
+            "group_label": "Arc Research",
+            "pickup_item_ids": ["fork_Rose"]
+        }))
+        .unwrap();
+
+        assert_eq!(rule.pickup_item_ids, Some(vec!["fork_Rose".to_string()]));
     }
 
     #[test]

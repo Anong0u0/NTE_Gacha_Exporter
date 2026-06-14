@@ -132,6 +132,17 @@ select:focus {
   gap: 8px;
 }
 
+.profile-create {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) 38px;
+}
+
+.profile-create button {
+  justify-content: center;
+  padding: 0;
+}
+
 .nav-list {
   display: grid;
   gap: 6px;
@@ -363,6 +374,24 @@ select:focus {
   margin: 0;
 }
 
+.error-text {
+  color: #9e372e;
+}
+
+.diagnostic-list {
+  background: #fffdf8;
+  border: 1px solid #ece4d8;
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.diagnostic-list span {
+  color: #7b735f;
+  font-size: 12px;
+}
+
 @media (max-width: 920px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -411,4 +440,3 @@ select:focus {
     display: none;
   }
 }
-

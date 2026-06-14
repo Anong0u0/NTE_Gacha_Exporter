@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "수량",
     "item_name": "아이템 이름",
@@ -10,99 +11,393 @@
     "time": "획득 시간"
   },
   "items": {
-    "1003": "캐릭터·사키리",
-    "1004": "캐릭터·라크리모사",
-    "1008": "캐릭터·스키아",
-    "1010": "캐릭터·나나리",
-    "1019": "캐릭터·민트",
-    "1020": "캐릭터·하니엘",
-    "1021": "캐릭터·에드가",
-    "1023": "캐릭터·백장",
-    "1025": "캐릭터·하토르",
-    "1033": "캐릭터·아들러",
-    "1039": "캐릭터·파디아",
-    "1052": "캐릭터·호토리",
-    "1054": "캐릭터·다포딜",
-    "1055": "캐릭터·구원",
-    "1070": "캐릭터·우미츠키",
-    "1073": "캐릭터·치즈",
-    "Characterawaken_Adler": "아이템·심상 파편·아들러",
-    "Characterawaken_Hathor": "아이템·심상 파편·하토르",
-    "Characterawaken_Jin": "아이템·심상 파편·호토리",
-    "Characterawaken_Mint": "아이템·심상 파편·민트",
-    "Characterawaken_Nanally": "아이템·심상 파편·나나리",
-    "Characterawaken_Sagiri": "아이템·심상 파편·사키리",
-    "Characterawaken_cang": "아이템·심상 파편·백장",
-    "Characterawaken_dafudier": "아이템·심상 파편·다포딜",
-    "Characterawaken_fadia": "아이템·심상 파편·파디아",
-    "Characterawaken_lacrimosa": "아이템·심상 파편·라크리모사",
-    "Characterawaken_skia": "아이템·심상 파편·스키아",
-    "DIceLimite": "아이템·진실의 주사위",
-    "DIceNormal": "아이템·기만의 주사위",
-    "DiceNormal": "아이템·기만의 주사위",
-    "Dice_ticket_01": "아이템·탈차원 기물",
-    "Dice_ticket_02": "아이템·방향치 기물",
-    "Dicelimite": "아이템·진실의 주사위",
-    "Fashion_Glide_1004": "글라이더·토마토 듀오",
-    "Fashion_Glide_1010": "글라이더·이인자의 이인자",
-    "Fashion_Glide_1052": "글라이더·유란",
-    "Fashion_character_1004_01": "코스튬·금빛 교향시",
-    "Fashion_character_1010": "코스튬·화려한 발차기",
-    "Fashion_character_1052_01": "코스튬·고급 난초",
-    "Fashion_glide_1004": "글라이더·토마토 듀오",
-    "Fashion_glide_1010": "글라이더·이인자의 이인자",
-    "Fashion_glide_1052": "글라이더·유란",
-    "Fashion_vehicleSkin_1052_V016": "튜닝 부품·가을바람의 환대-리버리",
-    "Fashion_vehicle_1004_V021": "튜닝 부품·토마토 크루즈-리버리",
-    "Fashion_vehicle_1010_V008": "튜닝 부품·귀여운 호랑이의 습격-리버리",
-    "Fashion_vehicle_1052_V024": "튜닝 부품·가을의 여운-리버리",
-    "Fork_TigerTally": "아크·준비, 준비",
-    "fork_Arachne": "아크·영원한 왈츠",
-    "fork_BitGame": "아크·폭발 현장",
-    "fork_BitterCake": "아크·입에 쓴 약이 몸에 좋다",
-    "fork_BlackBook": "아크·암흑 청춘의 망상",
-    "fork_Butterfly": "아크·현실 도피처",
-    "fork_GoldWool": "아크·만인의 갈망",
-    "fork_Kite": "아크·머리 조심",
-    "fork_Nakupeda": "아크·백만불짜리 미소",
-    "fork_PaperPlane": "아크·정화 개시",
-    "fork_PoliceRat": "아크·헤테로의 안녕",
-    "fork_Prokaryon": "아크·「우리.」",
-    "fork_Rose": "아크·「마지막 장미」",
-    "fork_TigerTally": "아크·준비, 준비",
-    "fork_Time": "아크·시간 밖으로의 행진",
-    "fork_Vine": "아크·미소 천사",
-    "fork_appliance": "아크·광란의 「전자음악」",
-    "fork_bopu": "아크·화려한 조명 속 광란의 파티",
-    "fork_dustbin": "아크·위험한 게임",
-    "fork_jiaojuan": "아크·빛나는 나날",
-    "fork_jingmotingyuan": "아크·동백꽃 모임",
-    "fork_koinobori": "아크·때는 온다",
-    "fork_lingganzhongjiezhe": "아크·영감 배틀로얄",
-    "fork_mamen": "아크·생각하는 고양이",
-    "fork_mofeikesi": "아크·착한 강아지의 여행",
-    "fork_nonos": "아크·성공을 향한 첫 걸음",
-    "fork_oulaquantao": "아크·오라오라!",
-    "fork_rishi": "아크·휴일",
-    "fork_spider": "아크·말하기 어려운 마음",
-    "fork_tuansanlang": "아크·망할 인연",
-    "fork_vine": "아크·미소 천사",
-    "fork_wuhuakuang": "아크·잊힌 자",
-    "fork_wushoutieyu": "아크·염혼의 질주",
-    "fork_yaodao": "아크·발도",
-    "fork_yuren": "아크·물망산"
+    "1003": {
+      "name": "캐릭터·사키리",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "캐릭터·라크리모사",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "캐릭터·스키아",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "캐릭터·나나리",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "캐릭터·민트",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "캐릭터·하니엘",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "캐릭터·에드가",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "캐릭터·백장",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "캐릭터·하토르",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "캐릭터·아들러",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "캐릭터·파디아",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "캐릭터·호토리",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "캐릭터·다포딜",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "캐릭터·구원",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "캐릭터·우미츠키",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "캐릭터·치즈",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "아이템·심상 파편·아들러",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "아이템·심상 파편·하토르",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "아이템·심상 파편·호토리",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "아이템·심상 파편·민트",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "아이템·심상 파편·나나리",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "아이템·심상 파편·사키리",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "아이템·심상 파편·백장",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "아이템·심상 파편·다포딜",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "아이템·심상 파편·파디아",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "아이템·심상 파편·라크리모사",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "아이템·심상 파편·스키아",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "아이템·기만의 주사위",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "아이템·탈차원 기물",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "아이템·방향치 기물",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "아이템·진실의 주사위",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "글라이더·토마토 듀오",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "글라이더·이인자의 이인자",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "글라이더·유란",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "코스튬·금빛 교향시",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "코스튬·화려한 발차기",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "코스튬·고급 난초",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "튜닝 부품·가을바람의 환대-리버리",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "튜닝 부품·토마토 크루즈-리버리",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "튜닝 부품·귀여운 호랑이의 습격-리버리",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "튜닝 부품·가을의 여운-리버리",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "아크·영원한 왈츠",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "아크·폭발 현장",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "아크·입에 쓴 약이 몸에 좋다",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "아크·암흑 청춘의 망상",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "아크·현실 도피처",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "아크·만인의 갈망",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "아크·머리 조심",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "아크·백만불짜리 미소",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "아크·정화 개시",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "아크·헤테로의 안녕",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "아크·「우리.」",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "아크·「마지막 장미」",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "아크·준비, 준비",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "아크·시간 밖으로의 행진",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "아크·광란의 「전자음악」",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "아크·화려한 조명 속 광란의 파티",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "아크·위험한 게임",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "아크·빛나는 나날",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "아크·동백꽃 모임",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "아크·때는 온다",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "아크·영감 배틀로얄",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "아크·생각하는 고양이",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "아크·착한 강아지의 여행",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "아크·성공을 향한 첫 걸음",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "아크·오라오라!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "아크·휴일",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "아크·말하기 어려운 마음",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "아크·망할 인연",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "아크·미소 천사",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "아크·잊힌 자",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "아크·염혼의 질주",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "아크·발도",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "아크·물망산",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "기적 상자",
-    "CardPool_Character": "한정 보드",
-    "CardPool_NewRole": "표준 보드",
-    "ForkLottery_AnHunQu": "기적 상자",
-    "ForkLottery_Kaesi": "기적 상자",
-    "ForkLottery_Nanali": "기적 상자",
-    "ForkLottery_Xun": "기적 상자"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "기적 상자"
+    },
     "CardPool_Character": {
+      "name": "한정 보드",
       "group_label": "한정 보드",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "표준 보드",
       "group_label": "표준 보드",
       "title": "기묘한 만남"
     },
     "ForkLottery_AnHunQu": {
+      "name": "기적 상자",
       "group_label": "아크 연구 모집",
       "title": "녹턴 특간",
-      "subtitle": "한정 아크 「마지막 장미」 확률 UP!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "기적 상자",
       "group_label": "아크 연구 모집",
       "title": "사냥꾼 특간",
-      "subtitle": "한정 아크 「만인의 갈망」 확률 UP!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "기적 상자",
       "group_label": "아크 연구 모집",
       "title": "타이거 스페셜",
-      "subtitle": "한정 아크 「준비, 준비」 확률 UP!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "기적 상자",
       "group_label": "아크 연구 모집",
       "title": "밝은 달 특간",
-      "subtitle": "한정 아크 「시간 밖으로의 행진」 획득 확률 UP!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

@@ -14,7 +14,6 @@ from nte_gacha_exporter.app.summary import summary_text
 from nte_gacha_exporter.automation.pager import AutoPageStatus
 from nte_gacha_exporter.cli.main import AutoPageProgress, CaptureProgress, _relaunch_auto_as_admin, _wait_for_q, main
 from nte_gacha_exporter.core.models import GachaRecord, SourceRef
-from nte_gacha_exporter.mapping.runtime import load_map
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample.raw.jsonl"
 
@@ -91,10 +90,20 @@ def test_auto_page_status_formatter_restores_i18n_page_tooltip():
 
 
 def test_debug_export_accepts_locale_map_spec(tmp_path, capsys):
-    map_data = load_map("zh-Hant")
-    map_data["pools"]["CardPool_Character"] = "自訂限定"
-    map_data["pool_meta"]["CardPool_Character"] = {"group_label": "自訂限定", "title": "自訂池"}
-    map_data["items"]["Fashion_vehicle_1010_V008"] = "自訂道具"
+    map_data = {
+        "schema_version": 2,
+        "csv_headers": {},
+        "items": {
+            "Fashion_vehicle_1010_V008": {"name": "自訂道具", "rarity": 5, "category": "vehicle_module"},
+            "fork_dustbin": {"name": "弧盤·危險遊戲", "rarity": 4, "category": "fork"},
+        },
+        "item_aliases": {},
+        "pools": {
+            "CardPool_Character": {"name": "自訂限定", "group_label": "自訂限定", "title": "自訂池"},
+            "ForkLottery_AnHunQu": {"name": "奇蹟盒盒", "group_label": "弧盤研募", "title": "夜曲特刊"},
+        },
+        "labels": {},
+    }
     map_path = tmp_path / "custom.json"
     map_path.write_text(json.dumps(map_data, ensure_ascii=False), encoding="utf-8")
     json_out = tmp_path / "history.json"

@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "Quantity",
     "item_name": "Item Name",
@@ -10,99 +11,393 @@
     "time": "Acquisition Time"
   },
   "items": {
-    "1003": "Character·Sakiri",
-    "1004": "Character·Lacrimosa",
-    "1008": "Character·Skia",
-    "1010": "Character·Nanally",
-    "1019": "Character·Mint",
-    "1020": "Character·Haniel",
-    "1021": "Character·Edgar",
-    "1023": "Character·Baicang",
-    "1025": "Character·Hathor",
-    "1033": "Character·Adler",
-    "1039": "Character·Fadia",
-    "1052": "Character·Hotori",
-    "1054": "Character·Daffodill",
-    "1055": "Character·Jiuyuan",
-    "1070": "Character·Aurelia",
-    "1073": "Character·Chiz",
-    "Characterawaken_Adler": "Item·Mind Shard - Adler",
-    "Characterawaken_Hathor": "Item·Mind Shard - Hathor",
-    "Characterawaken_Jin": "Item·Mind Shard - Hotori",
-    "Characterawaken_Mint": "Item·Mind Shard - Mint",
-    "Characterawaken_Nanally": "Item·Mind Shard - Nanally",
-    "Characterawaken_Sagiri": "Item·Mind Shard - Sakiri",
-    "Characterawaken_cang": "Item·Mind Shard - Baicang",
-    "Characterawaken_dafudier": "Item·Mind Shard - Daffodill",
-    "Characterawaken_fadia": "Item·Mind Shard - Fadia",
-    "Characterawaken_lacrimosa": "Item·Mind Shard - Lacrimosa",
-    "Characterawaken_skia": "Item·Mind Shard - Skia",
-    "DIceLimite": "Item·Solid Dice",
-    "DIceNormal": "Item·Fabricated Dice",
-    "DiceNormal": "Item·Fabricated Dice",
-    "Dice_ticket_01": "Item·Warp Piece",
-    "Dice_ticket_02": "Item·Lost Piece",
-    "Dicelimite": "Item·Solid Dice",
-    "Fashion_Glide_1004": "Glider·Tomato Duo",
-    "Fashion_Glide_1010": "Glider·Underboss-of-the-Underboss",
-    "Fashion_Glide_1052": "Glider·Orchid Breeze",
-    "Fashion_character_1004_01": "Outfit·Gilded Rhapsody",
-    "Fashion_character_1010": "Outfit·Phoenix Kick",
-    "Fashion_character_1052_01": "Outfit·Priceless Orchid",
-    "Fashion_glide_1004": "Glider·Tomato Duo",
-    "Fashion_glide_1010": "Glider·Underboss-of-the-Underboss",
-    "Fashion_glide_1052": "Glider·Orchid Breeze",
-    "Fashion_vehicleSkin_1052_V016": "Mod Parts·Golden Breeze - Livery",
-    "Fashion_vehicle_1004_V021": "Mod Parts·Tomato Cruise - Livery",
-    "Fashion_vehicle_1010_V008": "Mod Parts·Tiger Incoming! - Livery",
-    "Fashion_vehicle_1052_V024": "Mod Parts·Autumn Haze - Livery",
-    "Fork_TigerTally": "Arc·Ready-Ready",
-    "fork_Arachne": "Arc·Eternal Waltz",
-    "fork_BitGame": "Arc·Blow up the Crowd",
-    "fork_BitterCake": "Arc·The Good, The Bad, The Bitter",
-    "fork_BlackBook": "Arc·Youthful Fantasy",
-    "fork_Butterfly": "Arc·Reality Refuge",
-    "fork_GoldWool": "Arc·What's Desired",
-    "fork_Kite": "Arc·Watch Your Heads!",
-    "fork_Nakupeda": "Arc·Your Happiness is Priceless",
-    "fork_PaperPlane": "Arc·Clear Skies",
-    "fork_PoliceRat": "Arc·Hethereau's Keeper",
-    "fork_Prokaryon": "Arc·Us.",
-    "fork_Rose": "Arc·The Last Rose",
-    "fork_TigerTally": "Arc·Ready-Ready",
-    "fork_Time": "Arc·Marching Beyond Time",
-    "fork_Vine": "Arc·Be Happy",
-    "fork_appliance": "Arc·\"Real Music\"",
-    "fork_bopu": "Arc·Cosmos Daze, Wild Reverie",
-    "fork_dustbin": "Arc·Dangerous Game",
-    "fork_jiaojuan": "Arc·Shiny Days",
-    "fork_jingmotingyuan": "Arc·Camellia Society",
-    "fork_koinobori": "Arc·A Time Will Come",
-    "fork_lingganzhongjiezhe": "Arc·Mind Royale",
-    "fork_mamen": "Arc·Contemplative Cat",
-    "fork_mofeikesi": "Arc·Good Boy's Grand Adventure",
-    "fork_nonos": "Arc·First Step to Success",
-    "fork_oulaquantao": "Arc·Oraora!",
-    "fork_rishi": "Arc·Day Off",
-    "fork_spider": "Arc·Failing You, Heavy in My Heart",
-    "fork_tuansanlang": "Arc·The Great Thief",
-    "fork_vine": "Arc·Be Happy",
-    "fork_wuhuakuang": "Arc·The Forgotten",
-    "fork_wushoutieyu": "Arc·Raging Flames",
-    "fork_yaodao": "Arc·Drawn Blade",
-    "fork_yuren": "Arc·Umbrella"
+    "1003": {
+      "name": "Character·Sakiri",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "Character·Lacrimosa",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "Character·Skia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "Character·Nanally",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "Character·Mint",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "Character·Haniel",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "Character·Edgar",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "Character·Baicang",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "Character·Hathor",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "Character·Adler",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "Character·Fadia",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "Character·Hotori",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "Character·Daffodill",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "Character·Jiuyuan",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "Character·Aurelia",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "Character·Chiz",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "Item·Mind Shard - Adler",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "Item·Mind Shard - Hathor",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "Item·Mind Shard - Hotori",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "Item·Mind Shard - Mint",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "Item·Mind Shard - Nanally",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Item·Mind Shard - Sakiri",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "Item·Mind Shard - Baicang",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "Item·Mind Shard - Daffodill",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "Item·Mind Shard - Fadia",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Item·Mind Shard - Lacrimosa",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "Item·Mind Shard - Skia",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "Item·Fabricated Dice",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "Item·Warp Piece",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "Item·Lost Piece",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "Item·Solid Dice",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Glider·Tomato Duo",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Glider·Underboss-of-the-Underboss",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Glider·Orchid Breeze",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Outfit·Gilded Rhapsody",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "Outfit·Phoenix Kick",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Outfit·Priceless Orchid",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Mod Parts·Golden Breeze - Livery",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Mod Parts·Tomato Cruise - Livery",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Mod Parts·Tiger Incoming! - Livery",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Mod Parts·Autumn Haze - Livery",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "Arc·Eternal Waltz",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "Arc·Blow up the Crowd",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "Arc·The Good, The Bad, The Bitter",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "Arc·Youthful Fantasy",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "Arc·Reality Refuge",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "Arc·What's Desired",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "Arc·Watch Your Heads!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "Arc·Your Happiness is Priceless",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "Arc·Clear Skies",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "Arc·Hethereau's Keeper",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "Arc·Us.",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "Arc·The Last Rose",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "Arc·Ready-Ready",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "Arc·Marching Beyond Time",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "Arc·\"Real Music\"",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "Arc·Cosmos Daze, Wild Reverie",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "Arc·Dangerous Game",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "Arc·Shiny Days",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arc·Camellia Society",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "Arc·A Time Will Come",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arc·Mind Royale",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "Arc·Contemplative Cat",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "Arc·Good Boy's Grand Adventure",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "Arc·First Step to Success",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "Arc·Oraora!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "Arc·Day Off",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "Arc·Failing You, Heavy in My Heart",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "Arc·The Great Thief",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "Arc·Be Happy",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arc·The Forgotten",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arc·Raging Flames",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "Arc·Drawn Blade",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "Arc·Umbrella",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "Miracle Box",
-    "CardPool_Character": "Limited Board",
-    "CardPool_NewRole": "Standard Board",
-    "ForkLottery_AnHunQu": "Miracle Box",
-    "ForkLottery_Kaesi": "Miracle Box",
-    "ForkLottery_Nanali": "Miracle Box",
-    "ForkLottery_Xun": "Miracle Box"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "Miracle Box"
+    },
     "CardPool_Character": {
+      "name": "Limited Board",
       "group_label": "Limited Board",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "Standard Board",
       "group_label": "Standard Board",
       "title": "Strange Encounters"
     },
     "ForkLottery_AnHunQu": {
+      "name": "Miracle Box",
       "group_label": "Arc Research",
       "title": "Nocturne Special",
-      "subtitle": "Limited Arc The Last Rose Drop Rate Up!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "Miracle Box",
       "group_label": "Arc Research",
       "title": "Pursuit Special",
-      "subtitle": "Limited Arc What's Desired Drop Rate Up!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "Miracle Box",
       "group_label": "Arc Research",
       "title": "Tiger Special",
-      "subtitle": "Limited Arc Ready-Ready Drop Rate Up!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "Miracle Box",
       "group_label": "Arc Research",
       "title": "Bright Moon Special",
-      "subtitle": "Limited Arc Marching Beyond Time Drop Rate Up!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

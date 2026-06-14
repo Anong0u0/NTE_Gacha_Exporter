@@ -1,4 +1,5 @@
 {
+  "schema_version": 2,
   "csv_headers": {
     "count": "Количество",
     "item_name": "Название предмета",
@@ -10,99 +11,393 @@
     "time": "Время получения"
   },
   "items": {
-    "1003": "Персонаж·Сакири",
-    "1004": "Персонаж·Лакримоза",
-    "1008": "Персонаж·Ския",
-    "1010": "Персонаж·Наналли",
-    "1019": "Персонаж·Минт",
-    "1020": "Персонаж·Ханиэль",
-    "1021": "Персонаж·Эдгар",
-    "1023": "Персонаж·Байканг",
-    "1025": "Персонаж·Хатор",
-    "1033": "Персонаж·Адлер",
-    "1039": "Персонаж·Фадия",
-    "1052": "Персонаж·Хотори",
-    "1054": "Персонаж·Даффодил",
-    "1055": "Персонаж·Цзююань",
-    "1070": "Персонаж·Аурелия",
-    "1073": "Персонаж·Чиз",
-    "Characterawaken_Adler": "Предмет·Осколок разума – Адлер",
-    "Characterawaken_Hathor": "Предмет·Осколок разума – Хатор",
-    "Characterawaken_Jin": "Предмет·Осколок разума – Хотори",
-    "Characterawaken_Mint": "Предмет·Осколок разума – Минт",
-    "Characterawaken_Nanally": "Предмет·Осколок разума – Наналли",
-    "Characterawaken_Sagiri": "Предмет·Осколок разума – Сакири",
-    "Characterawaken_cang": "Предмет·Осколок разума – Байканг",
-    "Characterawaken_dafudier": "Предмет·Осколок разума – Даффодил",
-    "Characterawaken_fadia": "Предмет·Осколок разума – Фадия",
-    "Characterawaken_lacrimosa": "Предмет·Осколок разума – Лакримоза",
-    "Characterawaken_skia": "Предмет·Осколок разума – Ския",
-    "DIceLimite": "Предмет·Твердый кубик",
-    "DIceNormal": "Предмет·Шулерские кубики",
-    "DiceNormal": "Предмет·Шулерские кубики",
-    "Dice_ticket_01": "Предмет·Фрагмент искривления",
-    "Dice_ticket_02": "Предмет·Потерянный фрагмент",
-    "Dicelimite": "Предмет·Твердый кубик",
-    "Fashion_Glide_1004": "Планер·Томатный дуэт",
-    "Fashion_Glide_1010": "Планер·Заместитель младшего босса",
-    "Fashion_Glide_1052": "Планер·Орхидеевый бриз",
-    "Fashion_character_1004_01": "Костюм·Позолоченная рапсодия",
-    "Fashion_character_1010": "Костюм·Удар Феникса",
-    "Fashion_character_1052_01": "Костюм·Бесценная орхидея",
-    "Fashion_glide_1004": "Планер·Томатный дуэт",
-    "Fashion_glide_1010": "Планер·Заместитель младшего босса",
-    "Fashion_glide_1052": "Планер·Орхидеевый бриз",
-    "Fashion_vehicleSkin_1052_V016": "Детали модификации·Окраска «Золотой бриз»",
-    "Fashion_vehicle_1004_V021": "Детали модификации·Окраска «Томатный круиз»",
-    "Fashion_vehicle_1010_V008": "Детали модификации·Окраска «Атакующий тигр!»",
-    "Fashion_vehicle_1052_V024": "Детали модификации·Окраска «Осенняя дымка»",
-    "Fork_TigerTally": "Дуга·Полная готовность",
-    "fork_Arachne": "Дуга·Вечный вальс",
-    "fork_BitGame": "Дуга·Взорвать толпу",
-    "fork_BitterCake": "Дуга·Хороший, плохой, горький",
-    "fork_BlackBook": "Дуга·Ребяческая фантазия",
-    "fork_Butterfly": "Дуга·Убежище реальности",
-    "fork_GoldWool": "Дуга·Заветное желание",
-    "fork_Kite": "Дуга·Берегите головы!",
-    "fork_Nakupeda": "Дуга·Твое счастье бесценно",
-    "fork_PaperPlane": "Дуга·Чистое небо",
-    "fork_PoliceRat": "Дуга·Хранитель Этеро",
-    "fork_Prokaryon": "Дуга·Мы.",
-    "fork_Rose": "Дуга·Последняя роза",
-    "fork_TigerTally": "Дуга·Полная готовность",
-    "fork_Time": "Дуга·За пределы времени",
-    "fork_Vine": "Дуга·Будь счастлив",
-    "fork_appliance": "Дуга·«Настоящая музыка»",
-    "fork_bopu": "Дуга·Космический восторг, дикая греза",
-    "fork_dustbin": "Дуга·Опасная игра",
-    "fork_jiaojuan": "Дуга·Блестящие дни",
-    "fork_jingmotingyuan": "Дуга·Сообщество Камелии",
-    "fork_koinobori": "Дуга·Время придет",
-    "fork_lingganzhongjiezhe": "Дуга·Королевский разум",
-    "fork_mamen": "Дуга·Созерцательная кошка",
-    "fork_mofeikesi": "Дуга·Большой квест хорошего мальчика",
-    "fork_nonos": "Дуга·Первый шаг к успеху",
-    "fork_oulaquantao": "Дуга·Ора-ора!",
-    "fork_rishi": "Дуга·Выходной",
-    "fork_spider": "Дуга·Я подвожу тебя с тяжестью в сердце",
-    "fork_tuansanlang": "Дуга·Великий вор",
-    "fork_vine": "Дуга·Будь счастлив",
-    "fork_wuhuakuang": "Дуга·Забытое",
-    "fork_wushoutieyu": "Дуга·Бушующее пламя",
-    "fork_yaodao": "Дуга·Обнаженный клинок",
-    "fork_yuren": "Дуга·Зонтик"
+    "1003": {
+      "name": "Персонаж·Сакири",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1004": {
+      "name": "Персонаж·Лакримоза",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1008": {
+      "name": "Персонаж·Ския",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1010": {
+      "name": "Персонаж·Наналли",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1019": {
+      "name": "Персонаж·Минт",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1020": {
+      "name": "Персонаж·Ханиэль",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1021": {
+      "name": "Персонаж·Эдгар",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1023": {
+      "name": "Персонаж·Байканг",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1025": {
+      "name": "Персонаж·Хатор",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1033": {
+      "name": "Персонаж·Адлер",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1039": {
+      "name": "Персонаж·Фадия",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1052": {
+      "name": "Персонаж·Хотори",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1054": {
+      "name": "Персонаж·Даффодил",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1055": {
+      "name": "Персонаж·Цзююань",
+      "rarity": 5,
+      "category": "character"
+    },
+    "1070": {
+      "name": "Персонаж·Аурелия",
+      "rarity": 4,
+      "category": "character"
+    },
+    "1073": {
+      "name": "Персонаж·Чиз",
+      "rarity": 5,
+      "category": "character"
+    },
+    "Characterawaken_Adler": {
+      "name": "Предмет·Осколок разума – Адлер",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Hathor": {
+      "name": "Предмет·Осколок разума – Хатор",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Jin": {
+      "name": "Предмет·Осколок разума – Хотори",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Mint": {
+      "name": "Предмет·Осколок разума – Минт",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Characterawaken_Nanally": {
+      "name": "Предмет·Осколок разума – Наналли",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Предмет·Осколок разума – Сакири",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_cang": {
+      "name": "Предмет·Осколок разума – Байканг",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_daffodill": {
+      "name": "Предмет·Осколок разума – Даффодил",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_fadia": {
+      "name": "Предмет·Осколок разума – Фадия",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Предмет·Осколок разума – Лакримоза",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Characterawaken_skia": {
+      "name": "Предмет·Осколок разума – Ския",
+      "rarity": 4,
+      "category": "item"
+    },
+    "DiceNormal": {
+      "name": "Предмет·Шулерские кубики",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_01": {
+      "name": "Предмет·Фрагмент искривления",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Dice_ticket_02": {
+      "name": "Предмет·Потерянный фрагмент",
+      "rarity": 4,
+      "category": "item"
+    },
+    "Dicelimite": {
+      "name": "Предмет·Твердый кубик",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Планер·Томатный дуэт",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Планер·Заместитель младшего босса",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Планер·Орхидеевый бриз",
+      "rarity": 4,
+      "category": "appearance"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Костюм·Позолоченная рапсодия",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1010": {
+      "name": "Костюм·Удар Феникса",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Костюм·Бесценная орхидея",
+      "rarity": 5,
+      "category": "item"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Детали модификации·Окраска «Золотой бриз»",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Детали модификации·Окраска «Томатный круиз»",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Детали модификации·Окраска «Атакующий тигр!»",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Детали модификации·Окраска «Осенняя дымка»",
+      "rarity": 5,
+      "category": "vehicle_module"
+    },
+    "fork_Arachne": {
+      "name": "Дуга·Вечный вальс",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitGame": {
+      "name": "Дуга·Взорвать толпу",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_BitterCake": {
+      "name": "Дуга·Хороший, плохой, горький",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_BlackBook": {
+      "name": "Дуга·Ребяческая фантазия",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Butterfly": {
+      "name": "Дуга·Убежище реальности",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_GoldWool": {
+      "name": "Дуга·Заветное желание",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Kite": {
+      "name": "Дуга·Берегите головы!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_Nakupeda": {
+      "name": "Дуга·Твое счастье бесценно",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_PaperPlane": {
+      "name": "Дуга·Чистое небо",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_PoliceRat": {
+      "name": "Дуга·Хранитель Этеро",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Prokaryon": {
+      "name": "Дуга·Мы.",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_Rose": {
+      "name": "Дуга·Последняя роза",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_TigerTally": {
+      "name": "Дуга·Полная готовность",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_Time": {
+      "name": "Дуга·За пределы времени",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_appliance": {
+      "name": "Дуга·«Настоящая музыка»",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_bopu": {
+      "name": "Дуга·Космический восторг, дикая греза",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_dustbin": {
+      "name": "Дуга·Опасная игра",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_jiaojuan": {
+      "name": "Дуга·Блестящие дни",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Дуга·Сообщество Камелии",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_koinobori": {
+      "name": "Дуга·Время придет",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Дуга·Королевский разум",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_mamen": {
+      "name": "Дуга·Созерцательная кошка",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_mofeikesi": {
+      "name": "Дуга·Большой квест хорошего мальчика",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_nonos": {
+      "name": "Дуга·Первый шаг к успеху",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_oulaquantao": {
+      "name": "Дуга·Ора-ора!",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_rishi": {
+      "name": "Дуга·Выходной",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_spider": {
+      "name": "Дуга·Я подвожу тебя с тяжестью в сердце",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_tuansanlang": {
+      "name": "Дуга·Великий вор",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_vine": {
+      "name": "Дуга·Будь счастлив",
+      "rarity": 3,
+      "category": "fork"
+    },
+    "fork_wuhuakuang": {
+      "name": "Дуга·Забытое",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_wushoutieyu": {
+      "name": "Дуга·Бушующее пламя",
+      "rarity": 5,
+      "category": "fork"
+    },
+    "fork_yaodao": {
+      "name": "Дуга·Обнаженный клинок",
+      "rarity": 4,
+      "category": "fork"
+    },
+    "fork_yuren": {
+      "name": "Дуга·Зонтик",
+      "rarity": 4,
+      "category": "fork"
+    }
+  },
+  "item_aliases": {
+    "Characterawaken_dafudier": "Characterawaken_daffodill",
+    "DIceLimite": "Dicelimite",
+    "DIceNormal": "DiceNormal",
+    "Fashion_glide_1004": "Fashion_Glide_1004",
+    "Fashion_glide_1010": "Fashion_Glide_1010",
+    "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fork_TigerTally": "fork_TigerTally",
+    "fork_Vine": "fork_vine"
   },
   "pools": {
-    "1": "Чудо-коробка",
-    "CardPool_Character": "Эксклюзивная доска",
-    "CardPool_NewRole": "Стандартная доска",
-    "ForkLottery_AnHunQu": "Чудо-коробка",
-    "ForkLottery_Kaesi": "Чудо-коробка",
-    "ForkLottery_Nanali": "Чудо-коробка",
-    "ForkLottery_Xun": "Чудо-коробка"
-  },
-  "pool_meta": {
+    "1": {
+      "name": "Чудо-коробка"
+    },
     "CardPool_Character": {
+      "name": "Эксклюзивная доска",
       "group_label": "Эксклюзивная доска",
       "title_windows": [
         {
@@ -124,28 +419,41 @@
       ]
     },
     "CardPool_NewRole": {
+      "name": "Стандартная доска",
       "group_label": "Стандартная доска",
       "title": "Странные встречи"
     },
     "ForkLottery_AnHunQu": {
+      "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
       "title": "Особый фонд Ноктюрна",
-      "subtitle": "Повышена вероятность ограниченной дуги «Последняя роза»!"
+      "pickup_item_ids": [
+        "fork_Rose"
+      ]
     },
     "ForkLottery_Kaesi": {
+      "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
       "title": "Особый фонд Погони",
-      "subtitle": "Повышена вероятность ограниченной дуги «Желанное»!"
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ]
     },
     "ForkLottery_Nanali": {
+      "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
       "title": "Особый фонд Тигра",
-      "subtitle": "Повышена вероятность получения ограниченной дуги «Полная готовность»!"
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ]
     },
     "ForkLottery_Xun": {
+      "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
       "title": "Особый фонд Яркой луны",
-      "subtitle": "Повышена вероятность получения ограниченной дуги «Поход за пределы времени»!"
+      "pickup_item_ids": [
+        "fork_Time"
+      ]
     }
   },
   "labels": {

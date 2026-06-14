@@ -52,16 +52,61 @@ class PoolTitleWindow(TypedDict, total=False):
 class PoolMeta(TypedDict, total=False):
     group_label: str
     title: str
-    subtitle: str
     title_windows: list[PoolTitleWindow]
+    pickup_item_ids: list[str]
+
+
+class PoolRule(TypedDict, total=False):
+    pool_id: str
+    pool_name: str
+    group_label: str
+    pickup_item_ids: list[str]
+
+
+class ItemMeta(TypedDict, total=False):
+    item_id: str
+    item_name: str
+    rarity: int | None
+    category: str | None
+
+
+class ItemAlias(TypedDict, total=False):
+    alias_id: str
+    item_id: str
+
+
+class SourceItem(TypedDict, total=False):
+    name: str
+    rarity: int
+    category: str | None
+
+
+class SourcePool(TypedDict, total=False):
+    name: str
+    group_label: str
+    title: str
+    title_windows: list[PoolTitleWindow]
+    pickup_item_ids: list[str]
+
+
+class LocalizationMapSource(TypedDict, total=False):
+    schema_version: int
+    csv_headers: dict[str, str]
+    items: dict[str, SourceItem]
+    item_aliases: dict[str, str]
+    pools: dict[str, SourcePool]
+    labels: dict[str, str]
 
 
 class LocalizationMap(TypedDict, total=False):
     csv_headers: dict[str, str]
     items: dict[str, str]
+    item_aliases: dict[str, str]
     pools: dict[str, str]
     pool_meta: dict[str, PoolMeta]
     labels: dict[str, str]
+    pool_rules: list[PoolRule]
+    item_meta: list[ItemMeta]
 
 
 class PublicRecordDict(TypedDict, total=False):
