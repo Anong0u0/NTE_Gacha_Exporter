@@ -44,6 +44,14 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -61,6 +69,26 @@ jobs:
       - name: Test
         run: poetry run pytest
 
+      - name: Desktop install
+        working-directory: desktop
+        run: bun install --frozen-lockfile
+
+      - name: Desktop format
+        working-directory: desktop
+        run: cargo fmt --check
+
+      - name: Desktop test
+        working-directory: desktop
+        run: cargo test --workspace
+
+      - name: Desktop clippy
+        working-directory: desktop
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Desktop build
+        working-directory: desktop
+        run: bun run build
+
   build-windows:
     name: Build Windows
     runs-on: windows-latest
@@ -70,6 +98,8 @@ jobs:
       tagName: ${{ steps.package.outputs.tagName }}
       zipPath: ${{ steps.package.outputs.zipPath }}
       assetName: ${{ steps.package.outputs.assetName }}
+      manifestPath: ${{ steps.package.outputs.manifestPath }}
+      manifestName: ${{ steps.package.outputs.manifestName }}
       prerelease: ${{ steps.package.outputs.prerelease }}
     steps:
       - name: Checkout
@@ -98,6 +128,12 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -109,16 +145,18 @@ jobs:
           poetry env use python
           poetry install --extras live
 
-      - name: Build, smoke, and zip
+      - name: Build, smoke, and stage portable package
         id: package
         shell: pwsh
         run: .\packaging\nuitka\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}"
 
-      - name: Upload release zip
+      - name: Upload release assets
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.package.outputs.assetName }}
-          path: ${{ steps.package.outputs.zipPath }}
+          name: windows-release-assets
+          path: |
+            ${{ steps.package.outputs.zipPath }}
+            ${{ steps.package.outputs.manifestPath }}
           if-no-files-found: error
 
   release:
@@ -135,10 +173,10 @@ jobs:
           ref: ${{ needs.build-windows.outputs.tagName }}
           fetch-depth: 0
 
-      - name: Download release zip
+      - name: Download release assets
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.build-windows.outputs.assetName }}
+          name: windows-release-assets
           path: release-assets
 
       - name: Build release notes
@@ -147,6 +185,7 @@ jobs:
         env:
           TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
           ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
         run: |
           set -euo pipefail
 
@@ -171,7 +210,8 @@ jobs:
             fi
             echo
             echo "### Download / 下載說明"
-            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable package. 解壓後執行 \`nte-gacha.exe\`；CLI 使用 \`nte-gacha-cli.exe\`."
+            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha.exe\`。"
+            echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) Updater manifest for the desktop app."
             echo "* Do not download Source code zip as the application package. 不要把 Source code zip 當作應用程式下載。"
           } > release-notes.md
 
@@ -197,6 +237,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
           ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
           PRERELEASE_FLAG: ${{ steps.flags.outputs.prereleaseFlag }}
         run: |
           set -euo pipefail
@@ -208,6 +249,7 @@ jobs:
 
           gh release create "$TAG_NAME" \
             "release-assets/${ASSET_NAME}#Windows portable package" \
+            "release-assets/${MANIFEST_NAME}#Desktop updater manifest" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG_NAME" \
             --notes-file release-notes.md \

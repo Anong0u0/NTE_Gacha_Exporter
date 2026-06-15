@@ -58,12 +58,13 @@ def test_windows_nuitka_build_uses_root_resources_and_pillow_trim(monkeypatch, t
     assert build.APP_VERSION == "0.1.0"
     assert build.RELEASE_DIR.name == "nte-gacha-0.1.0"
     commands = captured["commands"]
-    assert len(commands) == 3
+    assert len(commands) == 4
     command = commands[0]
     assert "--output-filename=nte-gacha-core" in command
     assert "--output-folder-name=nte-gacha-core" in command
     assert f"--main={build.TUI_ENTRYPOINT}" in command
     assert f"--main={build.CLI_ENTRYPOINT}" in command
+    assert f"--main={build.SIDECAR_ENTRYPOINT}" in command
     assert f"--include-data-dir={build.RESOURCE_DIR}=resources" in command
     assert "--include-package-data=nte_gacha_exporter.resources.maps:*.json" not in command
     assert "--include-package-data=nte_gacha_exporter.resources.automation:*.json" not in command
@@ -79,6 +80,7 @@ def test_windows_nuitka_build_uses_root_resources_and_pillow_trim(monkeypatch, t
     assert (build.BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
     assert (build.RELEASE_DIR / "nte-gacha.exe").read_text(encoding="utf-8") == "wrapper"
     assert (build.RELEASE_DIR / "nte-gacha-cli.exe").read_text(encoding="utf-8") == "wrapper"
+    assert (build.RELEASE_DIR / "nte-gacha-python-core.exe").read_text(encoding="utf-8") == "wrapper"
     assert (build.RELEASE_DIR / "resources" / "maps").is_dir()
     assert (build.RELEASE_DIR / "resources" / "automation").is_dir()
     assert (build.RELEASE_DIR / "output").is_dir()
@@ -124,6 +126,7 @@ def test_stage_release_clears_existing_build_owned_paths(monkeypatch, tmp_path):
     assert not (build.RELEASE_DIR / "debug.txt").exists()
     assert (build.RELEASE_DIR / "nte-gacha.exe").read_text(encoding="utf-8") == "wrapper"
     assert (build.RELEASE_DIR / "nte-gacha-cli.exe").read_text(encoding="utf-8") == "wrapper"
+    assert (build.RELEASE_DIR / "nte-gacha-python-core.exe").read_text(encoding="utf-8") == "wrapper"
     assert output_marker.read_text(encoding="utf-8") == "export"
     assert not list((tmp_path / "dist").glob("nte-gacha.previous-*"))
 
@@ -204,4 +207,21 @@ def test_nuitka_cli_entrypoint_calls_cli_main(monkeypatch):
         runpy.run_path(str(path), run_name="__main__")
 
     assert exc.value.code == 7
+    assert seen == {"called": True}
+
+
+def test_nuitka_sidecar_entrypoint_calls_sidecar_main(monkeypatch):
+    seen: dict[str, object] = {}
+
+    def fake_main():
+        seen["called"] = True
+        return 0
+
+    monkeypatch.setattr("nte_gacha_exporter.sidecar.main.main", fake_main)
+
+    path = Path(__file__).parents[1] / "packaging" / "nuitka" / "nte-gacha-sidecar.py"
+    with pytest.raises(SystemExit) as exc:
+        runpy.run_path(str(path), run_name="__main__")
+
+    assert exc.value.code == 0
     assert seen == {"called": True}

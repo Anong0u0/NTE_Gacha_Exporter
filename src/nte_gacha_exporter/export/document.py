@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone, tzinfo
@@ -143,7 +144,7 @@ def _record_id(row: ParsedRow) -> str:
         row.secondary_item_id or "",
         str(row.secondary_count) if row.secondary_count is not None else "",
     ]
-    return ":".join(parts)
+    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
 def _secondary_fields(row: ParsedRow, mapping: LocalizationMap) -> tuple[str | None, str | None, int | None]:

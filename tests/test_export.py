@@ -54,6 +54,8 @@ def test_export_capture_silently_ignores_duplicate_records(tmp_path):
     assert len(document["_debug"]["records"]) == 2
     assert len(document["_debug"]["raw_rows"]) == 2
     assert len({record["record_id"] for record in records}) == 2
+    assert all(len(record["record_id"]) == 64 for record in records)
+    assert all(set(record["record_id"]) <= set("0123456789abcdef") for record in records)
 
 
 def test_json_writer_omits_debug_data(tmp_path):

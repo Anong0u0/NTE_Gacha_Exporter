@@ -413,6 +413,38 @@ def test_auto_pager_runs_v2_workflow_sequence(monkeypatch):
     assert any(status.kind == "pool_completed" and status.pool == "fork" for status in statuses)
 
 
+def test_auto_pager_incremental_skips_pool_after_known_page(monkeypatch):
+    from nte_gacha_exporter.automation import pager
+
+    step = SimpleNamespace(
+        status="limitedBoardPages",
+        pageRect="boardPageNumber",
+        nextButton="boardNextButton",
+        pool="limited",
+    )
+    pager_instance = pager.AutoPager.__new__(pager.AutoPager)
+    pager_instance.profile = SimpleNamespace(rects={"boardPageNumber": object()})
+    pager_instance.options = pager.AutoPageOptions(
+        target=CaptureTarget("1234", "iface", [], None, ""),
+        stop_event=threading.Event(),
+        known_record_ids=tuple(f"r{index}" for index in range(5)),
+        record_snapshot=lambda: [
+            {"record_id": f"r{index}", "pool_id": "CardPool_Character"} for index in range(5)
+        ],
+        click_poll_interval=0.001,
+        duplicate_check_timeout=0.001,
+    )
+    statuses = []
+    pager_instance._point = lambda name: Point(1, 1)
+    pager_instance._read_page = lambda _rect: PageNumber(1, 3, "1/3")
+    pager_instance._should_stop = lambda: False
+    pager_instance._status = lambda message, **kwargs: statuses.append((message, kwargs))
+
+    assert pager_instance._capture_pages(step) == ("limited", True)
+    assert statuses[-1][1]["kind"] == "pool_skipped"
+    assert statuses[-1][1]["pool"] == "limited"
+
+
 def test_click_template_until_template_waits_for_target_after_source_disappears(monkeypatch):
     from nte_gacha_exporter.automation import pager
 

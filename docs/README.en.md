@@ -47,9 +47,12 @@ Public JSON contains export info and `nte.list` records:
   "nte": {
     "list": [
       {
+        "record_id": "b4b36f5d...",
         "record_type": "monopoly",
         "time": "2026-04-30 17:02:15",
+        "pool_id": "CardPool_Character",
         "pool_name": "王牌一代目",
+        "item_id": "Fashion_vehicle_1010_V008",
         "item_name": "改裝件·萌虎來襲-塗裝",
         "count": 1
       }
@@ -58,7 +61,7 @@ Public JSON contains export info and `nte.list` records:
 }
 ```
 
-CSV headers are localized by the selected language. Do not publish raw capture files unless you have reviewed their contents.
+`record_id` is an opaque hash used for import dedupe. CSV headers are localized by the selected language. Do not publish raw capture files unless you have reviewed their contents.
 
 ## Troubleshooting
 

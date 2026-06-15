@@ -11,6 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PACKAGING_DIR = PROJECT_ROOT / "packaging" / "nuitka"
 TUI_ENTRYPOINT = PACKAGING_DIR / "nte-gacha.py"
 CLI_ENTRYPOINT = PACKAGING_DIR / "nte-gacha-cli.py"
+SIDECAR_ENTRYPOINT = PACKAGING_DIR / "nte-gacha-sidecar.py"
 WRAPPER_SOURCE = PACKAGING_DIR / "wrapper.c"
 OUTPUT_DIR = PROJECT_ROOT / "dist"
 APP_NAME = "nte-gacha"
@@ -28,7 +29,7 @@ RESOURCE_DIR = PROJECT_ROOT / "src" / "nte_gacha_exporter" / "resources"
 NUITKA_OUTPUT_FOLDER = "nte-gacha-core"
 CORE_EXE_NAME = "nte-gacha-core.exe"
 CORE_DIST_DIR = OUTPUT_DIR / f"{NUITKA_OUTPUT_FOLDER}.dist"
-WRAPPER_EXE_NAMES = ("nte-gacha.exe", "nte-gacha-cli.exe")
+WRAPPER_EXE_NAMES = ("nte-gacha.exe", "nte-gacha-cli.exe", "nte-gacha-python-core.exe")
 PRESERVED_RELEASE_ROOT_NAMES = {"output"}
 RELEASE_ROOT_NAMES = {"bin", "output", "resources", *WRAPPER_EXE_NAMES}
 
@@ -172,6 +173,7 @@ def _build_command() -> list[str]:
         f"--output-folder-name={NUITKA_OUTPUT_FOLDER}",
         f"--main={TUI_ENTRYPOINT}",
         f"--main={CLI_ENTRYPOINT}",
+        f"--main={SIDECAR_ENTRYPOINT}",
         "--include-package=nte_gacha_exporter",
         *(f"--include-module={module}" for module in SCAPY_CAPTURE_MODULES),
         *(f"--include-module={module}" for module in PIL_OCR_MODULES),

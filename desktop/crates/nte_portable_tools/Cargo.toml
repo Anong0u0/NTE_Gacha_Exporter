@@ -1,0 +1,16 @@
+[package]
+name = "nte_portable_tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nte-gacha"
+path = "src/bin/nte-gacha.rs"
+
+[[bin]]
+name = "nte-gacha-updater"
+path = "src/bin/nte-gacha-updater.rs"
+
+[dependencies]
+nte_gui_core = { path = "../nte_gui_core" }

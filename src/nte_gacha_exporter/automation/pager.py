@@ -5,6 +5,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Event
+from typing import Any
 
 from nte_gacha_exporter.automation import winapi
 from nte_gacha_exporter.automation.errors import AutomationEnvironmentError
@@ -31,17 +32,22 @@ class AutoPageStatus:
 
 StatusCallback = Callable[[AutoPageStatus], None]
 StatusFormatter = Callable[[AutoPageStatus], str]
+RecordSnapshot = Callable[[], list[dict[str, Any]]]
 
 
 @dataclass(frozen=True)
 class AutoPageOptions:
     target: CaptureTarget
     stop_event: Event
+    full_update: bool = False
+    known_record_ids: tuple[str, ...] = ()
+    record_snapshot: RecordSnapshot | None = None
     non_interactive: bool = False
     on_status: StatusCallback | None = None
     status_formatter: StatusFormatter | None = None
     click_timeout: float = 1.5
     click_poll_interval: float = 0.3
+    duplicate_check_timeout: float = 1.5
     template_timeout: float = 5.0
     tooltip: bool = True
 
@@ -51,6 +57,7 @@ class AutoPageResult:
     status: str
     message: str
     completedPools: tuple[str, ...] = ()
+    skippedPools: tuple[str, ...] = ()
 
     @property
     def succeeded(self) -> bool:
@@ -100,22 +107,27 @@ class AutoPager:
 
     def run(self) -> AutoPageResult:
         completed: list[str] = []
+        skipped: list[str] = []
         self._status("auto page started", kind="started", step="started")
         self._focus_window()
         try:
             for step in self.profile.workflow:
                 if self._should_stop():
-                    return AutoPageResult("manual", "auto page stopped", tuple(completed))
-                pool = self._run_step(step)
-                if pool:
-                    completed.append(pool)
+                    return AutoPageResult("manual", "auto page stopped", tuple(completed), tuple(skipped))
+                page_result = self._run_step(step)
+                if page_result:
+                    pool, was_skipped = page_result
+                    if was_skipped:
+                        skipped.append(pool)
+                    else:
+                        completed.append(pool)
             self.options.stop_event.set()
             self._status("auto page completed", kind="completed", step="completed")
-            return AutoPageResult("completed", "auto page completed", tuple(completed))
+            return AutoPageResult("completed", "auto page completed", tuple(completed), tuple(skipped))
         finally:
             self.tooltip.close()
 
-    def _run_step(self, step: WorkflowStep) -> str | None:
+    def _run_step(self, step: WorkflowStep) -> tuple[str, bool] | None:
         if step.status:
             self._status(step.status, kind="step", step=step.status)
         if step.action == "verifyTemplate":
@@ -135,8 +147,7 @@ class AutoPager:
             time.sleep(0.1)
             return None
         if step.action == "page":
-            self._capture_pages(step)
-            return _required(step.pool, "pool")
+            return self._capture_pages(step)
         raise AutomationEnvironmentError(f"unsupported workflow action: {step.action}")
 
     def _verify_template(self, name: str, step: str | None) -> None:
@@ -273,7 +284,7 @@ class AutoPager:
             f"screen template not found after template click sequence: {source_template}->{target_template}{detail}"
         )
 
-    def _capture_pages(self, step: WorkflowStep) -> None:
+    def _capture_pages(self, step: WorkflowStep) -> tuple[str, bool]:
         pool = _required(step.pool, "pool")
         page_rect = self.profile.rects[_required(step.pageRect, "pageRect")]
         next_button = self._point(_required(step.nextButton, "nextButton"))
@@ -291,6 +302,8 @@ class AutoPager:
             raise AutomationEnvironmentError(
                 f"{pool}: freshly opened record page must be 1/{page.total}, got {page.current}/{page.total}"
             )
+        if self._should_skip_pool(pool=pool, step=step.status, page=page):
+            return pool, True
 
         while page.current < page.total:
             if self._should_stop():
@@ -305,6 +318,8 @@ class AutoPager:
                 totalPages=page.total,
             )
             page = self._click_page_button(page_rect, next_button, page, expected)
+            if self._should_skip_pool(pool=pool, step=step.status, page=page):
+                return pool, True
 
         self._status(
             "pool completed",
@@ -314,6 +329,38 @@ class AutoPager:
             currentPage=page.total,
             totalPages=page.total,
         )
+        return pool, False
+
+    def _should_skip_pool(self, *, pool: str, step: str, page: PageNumber) -> bool:
+        if self.options.full_update or not self.options.known_record_ids or self.options.record_snapshot is None:
+            return False
+
+        known_ids = set(self.options.known_record_ids)
+        deadline = time.monotonic() + self.options.duplicate_check_timeout
+        while time.monotonic() <= deadline:
+            page_records = self._latest_pool_page_records(pool)
+            if len(page_records) >= 5:
+                record_ids = [str(record.get("record_id") or "") for record in page_records[-5:]]
+                if record_ids and all(record_id in known_ids for record_id in record_ids):
+                    self._status(
+                        "known page found; skipping pool",
+                        kind="pool_skipped",
+                        step=step,
+                        pool=pool,
+                        currentPage=page.current,
+                        totalPages=page.total,
+                    )
+                    return True
+                return False
+            time.sleep(self.options.click_poll_interval)
+        return False
+
+    def _latest_pool_page_records(self, pool: str) -> list[dict[str, Any]]:
+        if self.options.record_snapshot is None:
+            return []
+        records = self.options.record_snapshot()
+        pool_records = [record for record in records if _record_pool(record) == pool]
+        return pool_records[-5:]
 
     def _click_page_button(
         self,
@@ -449,3 +496,15 @@ def _status_text(status: AutoPageStatus) -> str:
     if status.technicalDetail:
         return f"{text}: {status.technicalDetail}"
     return text
+
+
+def _record_pool(record: dict[str, Any]) -> str | None:
+    pool_id = str(record.get("pool_id") or "")
+    record_type = str(record.get("record_type") or "")
+    if pool_id == "CardPool_Character":
+        return "limited"
+    if pool_id == "CardPool_NewRole":
+        return "standard"
+    if record_type == "fork" or pool_id.startswith("ForkLottery_"):
+        return "fork"
+    return None

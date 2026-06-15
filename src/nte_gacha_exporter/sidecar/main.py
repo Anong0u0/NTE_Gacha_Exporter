@@ -15,7 +15,6 @@ if __package__ in {None, ""}:
 from nte_gacha_exporter.capture.live import CaptureEnvironmentError, CaptureLiveOptions, capture_live, doctor
 from nte_gacha_exporter.export.pipeline import export_capture
 from nte_gacha_exporter.mapping.runtime import available_locales
-from nte_gacha_exporter.sidecar.rules import build_rules
 
 JsonObject = dict[str, Any]
 
@@ -42,13 +41,21 @@ class CaptureSession:
         pid: str | None,
         iface: str | None,
         output_raw: Path | None,
+        auto_page: bool,
+        full_update: bool,
+        known_record_ids: tuple[str, ...],
     ) -> None:
         self.session_id = session_id
         self.locale = locale
         self.pid = pid
         self.iface = iface
         self.output_raw = output_raw
+        self.auto_page = auto_page
+        self.full_update = full_update
+        self.known_record_ids = known_record_ids
+        self.mode = _capture_mode(auto_page=auto_page, full_update=full_update)
         self.stop_event = threading.Event()
+        self.ready_event = threading.Event()
         self.lock = threading.Lock()
         self.state = "starting"
         self.started_at = time.time()
@@ -57,8 +64,11 @@ class CaptureSession:
         self.latest_records: list[JsonObject] = []
         self.counters = {"packets_seen": 0, "decoded_packets": 0, "dropped_packets": 0}
         self.target: JsonObject | None = None
+        self.auto_page_status: JsonObject | None = None
         self.document: JsonObject | None = None
         self.error: JsonObject | None = None
+        self.completed_pools: tuple[str, ...] = ()
+        self.skipped_pools: tuple[str, ...] = ()
         self.thread = threading.Thread(target=self._run, name=f"nte-capture-{session_id}", daemon=True)
 
     def start(self) -> None:
@@ -81,9 +91,14 @@ class CaptureSession:
                 "counters": dict(self.counters),
                 "started_at": self.started_at,
                 "updated_at": self.updated_at,
+                "mode": self.mode,
             }
             if self.target is not None:
                 payload["target"] = dict(self.target)
+            if self.output_raw is not None:
+                payload["raw_path"] = str(self.output_raw)
+            if self.auto_page_status is not None:
+                payload["auto_page"] = dict(self.auto_page_status)
             if self.error is not None:
                 payload["error"] = dict(self.error)
             if include_document and self.document is not None:
@@ -91,6 +106,12 @@ class CaptureSession:
             return payload
 
     def _run(self) -> None:
+        if self.auto_page:
+            self._run_auto_page()
+            return
+        self._run_live_capture()
+
+    def _run_live_capture(self) -> None:
         try:
             document = capture_live(
                 CaptureLiveOptions(
@@ -111,6 +132,106 @@ class CaptureSession:
         else:
             self._complete(document)
 
+    def _run_auto_page(self) -> None:
+        document_box: dict[str, JsonObject] = {}
+        error_box: list[BaseException] = []
+
+        def capture_worker() -> None:
+            try:
+                document_box["document"] = capture_live(
+                    CaptureLiveOptions(
+                        locale=self.locale,
+                        pid=self.pid,
+                        iface=self.iface,
+                        output_raw=self.output_raw,
+                        on_records=self._update_records,
+                        on_ready=self._update_ready,
+                        on_progress=self._update_progress,
+                        stop_event=self.stop_event,
+                    )
+                )
+            except BaseException as exc:
+                error_box.append(exc)
+            finally:
+                self.ready_event.set()
+
+        thread = threading.Thread(target=capture_worker, name=f"nte-capture-live-{self.session_id}", daemon=True)
+        thread.start()
+        while not self.ready_event.wait(0.1):
+            if self.stop_event.is_set():
+                break
+        if error_box:
+            self._fail_from_capture_error(error_box[0])
+            thread.join(timeout=2)
+            return
+        target = self._target_for_auto_page()
+        if target is None:
+            self.stop_event.set()
+            thread.join(timeout=2)
+            if error_box:
+                self._fail_from_capture_error(error_box[0])
+            elif self.state not in {"failed", "completed"}:
+                self._fail("capture_failed", "capture stopped before auto page could start")
+            return
+
+        try:
+            from nte_gacha_exporter.automation.pager import AutoPageOptions, run_auto_page
+
+            self._update_auto_page(
+                {
+                    "state": "running",
+                    "message": "auto page started",
+                    "kind": "started",
+                    "completed_pools": [],
+                    "skipped_pools": [],
+                }
+            )
+            result = run_auto_page(
+                AutoPageOptions(
+                    target=target,
+                    stop_event=self.stop_event,
+                    full_update=self.full_update,
+                    known_record_ids=self.known_record_ids,
+                    record_snapshot=self._record_snapshot,
+                    non_interactive=True,
+                    on_status=self._update_auto_page_status,
+                )
+            )
+            self.completed_pools = result.completedPools
+            self.skipped_pools = result.skippedPools
+            self._update_auto_page(
+                {
+                    "state": result.status,
+                    "message": result.message,
+                    "kind": "completed" if result.succeeded else result.status,
+                    "completed_pools": list(result.completedPools),
+                    "skipped_pools": list(result.skippedPools),
+                }
+            )
+            self.stop_event.set()
+            if not result.succeeded:
+                thread.join()
+                document = document_box.get("document")
+                if self._state() == "stopping" and document is not None:
+                    self._complete(document)
+                else:
+                    self._fail("auto_page_failed", result.message)
+                return
+        except Exception as exc:
+            self.stop_event.set()
+            self._fail("auto_page_failed", str(exc))
+        thread.join()
+        if error_box:
+            self._fail_from_capture_error(error_box[0])
+            return
+        if self.state == "failed":
+            return
+        document = document_box.get("document")
+        if document is None:
+            self._fail("capture_failed", "capture completed without a public document")
+            return
+        self._complete(document)
+
     def _update_ready(self, target: Any) -> None:
         with self.lock:
             self.state = "running"
@@ -121,6 +242,7 @@ class CaptureSession:
                 "bpf": str(target.bpf),
             }
             self.updated_at = time.time()
+        self.ready_event.set()
 
     def _update_progress(self, counters: JsonObject) -> None:
         with self.lock:
@@ -155,6 +277,64 @@ class CaptureSession:
             self.state = "failed"
             self.updated_at = time.time()
 
+    def _fail_from_capture_error(self, exc: BaseException) -> None:
+        if isinstance(exc, CaptureEnvironmentError):
+            self._fail("capture_environment", str(exc))
+            return
+        self._fail("capture_failed", str(exc))
+
+    def _target_for_auto_page(self) -> Any | None:
+        with self.lock:
+            target = dict(self.target) if self.target is not None else None
+        if target is None:
+            return None
+        return type(
+            "CaptureTargetPayload",
+            (),
+            {
+                "pid": target.get("pid"),
+                "interface": target.get("interface"),
+                "ports": target.get("ports") or [],
+                "bpf": target.get("bpf") or "",
+            },
+        )()
+
+    def _record_snapshot(self) -> list[JsonObject]:
+        with self.lock:
+            return list(self.latest_records)
+
+    def _state(self) -> str:
+        with self.lock:
+            return self.state
+
+    def _update_auto_page_status(self, status: Any) -> None:
+        payload: JsonObject = {
+            "state": "running",
+            "message": str(status.message),
+            "kind": str(status.kind),
+            "step": status.step,
+            "pool": status.pool,
+            "current_page": status.currentPage,
+            "total_pages": status.totalPages,
+            "technical_detail": status.technicalDetail,
+            "completed_pools": list(self.completed_pools),
+            "skipped_pools": list(self.skipped_pools),
+        }
+        if status.kind == "pool_completed" and status.pool:
+            completed = [*self.completed_pools, str(status.pool)]
+            self.completed_pools = tuple(dict.fromkeys(completed))
+            payload["completed_pools"] = list(self.completed_pools)
+        if status.kind == "pool_skipped" and status.pool:
+            skipped = [*self.skipped_pools, str(status.pool)]
+            self.skipped_pools = tuple(dict.fromkeys(skipped))
+            payload["skipped_pools"] = list(self.skipped_pools)
+        self._update_auto_page(payload)
+
+    def _update_auto_page(self, payload: JsonObject) -> None:
+        with self.lock:
+            self.auto_page_status = {key: value for key, value in payload.items() if value is not None}
+            self.updated_at = time.time()
+
 
 def _object(value: Any, *, code: str, message: str) -> JsonObject:
     if not isinstance(value, dict):
@@ -183,6 +363,19 @@ def _bool_param(params: JsonObject, key: str, *, default: bool = False) -> bool:
     if not isinstance(value, bool):
         raise RpcError("invalid_params", f"param must be a boolean: {key}")
     return value
+
+
+def _text_list_param(params: JsonObject, key: str) -> tuple[str, ...]:
+    value = params.get(key, [])
+    if not isinstance(value, list):
+        raise RpcError("invalid_params", f"param must be a list: {key}")
+    return tuple(str(item) for item in value if isinstance(item, str) and item)
+
+
+def _capture_mode(*, auto_page: bool, full_update: bool) -> str:
+    if not auto_page:
+        return "live_only"
+    return "auto_page_full" if full_update else "auto_page_incremental"
 
 
 def _session_payload(state: SidecarState, document: JsonObject) -> JsonObject:
@@ -220,23 +413,20 @@ def _handle_raw_replay(state: SidecarState, params: JsonObject) -> JsonObject:
     return _session_payload(state, document)
 
 
-def _handle_rules_build(_state: SidecarState, params: JsonObject) -> JsonObject:
-    locale = _text_param(params, "locale", default="zh-Hant")
-    try:
-        return build_rules(locale)
-    except Exception as exc:
-        raise RpcError("rules_build_failed", str(exc)) from exc
-
-
 def _handle_capture_start(state: SidecarState, params: JsonObject) -> JsonObject:
     session_id = uuid.uuid4().hex
     output_raw = _optional_text_param(params, "output_raw")
+    auto_page = _bool_param(params, "auto_page")
+    full_update = _bool_param(params, "full_update")
     session = CaptureSession(
         session_id=session_id,
         locale=_text_param(params, "locale", default="zh-Hant"),
         pid=_optional_text_param(params, "pid"),
         iface=_optional_text_param(params, "iface"),
         output_raw=Path(output_raw) if output_raw else None,
+        auto_page=auto_page,
+        full_update=full_update,
+        known_record_ids=_text_list_param(params, "known_record_ids"),
     )
     state.capture_sessions[session_id] = session
     session.start()
@@ -281,7 +471,6 @@ HANDLERS: dict[str, Handler] = {
     "maps.list": _handle_maps_list,
     "raw.replay": _handle_raw_replay,
     "raw.import": _handle_raw_replay,
-    "rules.build": _handle_rules_build,
     "capture.start": _handle_capture_start,
     "capture.status": _handle_capture_status,
     "capture.stop": _handle_capture_stop,
