@@ -16,6 +16,7 @@ ROLL_POINT_LABEL_IDS = {
     0: "BPUI_LotteryResult_jidianzengli",
     0xFFFFFFFF: "BPUI_LotteryResult_chenmiandi",
 }
+ROLL_POINT_SENTINELS = frozenset(ROLL_POINT_LABEL_IDS)
 MAX_ROWS_PER_BLOCK = 100
 PROTOCOL_CONSTANT = 0x03000000
 MONOPOLY_BLOCK_KIND = 527
@@ -254,6 +255,12 @@ def _roll_label_id(roll_points: int) -> str | None:
     return ROLL_POINT_LABEL_IDS.get(roll_points)
 
 
+def _roll_points_value(raw_value: int) -> int | None:
+    if raw_value in ROLL_POINT_SENTINELS:
+        return None
+    return raw_value
+
+
 def _parse_monopoly_block(data: bytes, marker_pos: int, ctx: ParseContext) -> ParsedBlock:
     envelope = parse_protocol_envelope("monopoly", data, marker_pos, ctx.view)
     pos = marker_pos + len(MONOPOLY_MARKER)
@@ -272,7 +279,7 @@ def _parse_monopoly_block(data: bytes, marker_pos: int, ctx: ParseContext) -> Pa
     rows: list[ParsedRow] = []
     for index in range(row_count):
         row_start = reader.pos
-        roll_points = reader.u32()
+        raw_roll_points = reader.u32()
         item_spec = reader.string()
         _zero = reader.u32()
         secondary_count = reader.u32()
@@ -297,8 +304,8 @@ def _parse_monopoly_block(data: bytes, marker_pos: int, ctx: ParseContext) -> Pa
                 pool_id=pool_id,
                 item_id=item_id,
                 count=count,
-                roll_points=roll_points,
-                roll_label_id=_roll_label_id(roll_points),
+                roll_points=_roll_points_value(raw_roll_points),
+                roll_label_id=_roll_label_id(raw_roll_points),
                 secondary_item_id=secondary_item or None,
                 secondary_count=secondary_count,
                 source=_source_with_envelope(ctx, envelope, row_index=index, offset=row_start),

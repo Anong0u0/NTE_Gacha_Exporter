@@ -20,6 +20,29 @@ ITEM_TABLES = [
     ("character", "DataTable/Character/DT_Character.json"),
     ("appearance", "DataTable/Character/Appearance/DT_AppearanceData.json"),
 ]
+GACHA_ILLUSTRATE_TABLE = "DataTable/Gacha/GachaIllustrate.json"
+GACHA_ASSET_REF_FIELDS = {
+    "HeadIcon": "icon",
+    "ItemIcon": "portrait",
+    "ActivityHeadIcon": "banner",
+    "MaterialTexture": "material",
+}
+ITEM_ASSET_REF_FIELDS = {
+    "ItemIcon": "icon",
+    "ItemIconSmall": "head_icon",
+    "ItemIconBig": "portrait",
+}
+APPEARANCE_ASSET_REF_FIELDS = {
+    "DisplayIcon": "icon",
+    "HeadIcon": "head_icon",
+    "HeadIconBig": "portrait",
+    "PortraitImg": "banner",
+}
+VEHICLE_ASSET_REF_FIELDS = {
+    "UnLockNormalIcon": "icon",
+    "UnLockSelectedIcon": "head_icon",
+    "NameplateBg": "banner",
+}
 
 
 def build_rules_map(
@@ -61,6 +84,7 @@ def _asset_item_meta(
 
     _add_vehicle_module_meta(meta, assets_root, known_ids, canonicalize_item_id)
     _add_lottery_table_meta(meta, assets_root, known_ids, canonicalize_item_id)
+    _add_gacha_illustrate_meta(meta, assets_root, known_ids, canonicalize_item_id)
     return meta
 
 
@@ -98,6 +122,9 @@ def _item_meta_rows(items: dict[str, str], item_meta: JsonObject) -> list[JsonOb
                 "item_name": str(item_name),
                 "rarity": rarity,
                 "category": _str_or_none(asset_item.get("category")),
+                "domain_type": _str_or_none(asset_item.get("domain_type")),
+                "asset_refs": _dict_or_none(asset_item.get("asset_refs")),
+                "color": _str_or_none(asset_item.get("color")),
             }
         )
     return rows
@@ -118,10 +145,18 @@ def _rows_from_table(path: Path) -> JsonObject:
 
 def _row_item_meta(row: JsonObject, category: str) -> JsonObject:
     rarity = _rarity_from_quality(row.get("ItemQuality") or row.get("Quality"))
-    return {
+    meta: JsonObject = {
         "category": category,
+        "domain_type": category,
         "rarity": rarity,
     }
+    asset_refs = _asset_refs_from_fields(
+        row,
+        APPEARANCE_ASSET_REF_FIELDS if category == "appearance" else ITEM_ASSET_REF_FIELDS,
+    )
+    if asset_refs:
+        meta["asset_refs"] = asset_refs
+    return meta
 
 
 def _add_vehicle_module_meta(
@@ -145,7 +180,11 @@ def _add_vehicle_module_meta(
                 continue
             item_id = canonicalize_item_id(str(requirement.get("ID") or ""))
             if item_id in known_ids:
-                _merge_item_meta(meta, item_id, {"category": "vehicle_module"})
+                patch: JsonObject = {"category": "vehicle_module", "domain_type": "vehicle_module"}
+                asset_refs = _asset_refs_from_fields(row, VEHICLE_ASSET_REF_FIELDS)
+                if asset_refs:
+                    patch["asset_refs"] = asset_refs
+                _merge_item_meta(meta, item_id, patch)
 
 
 def _add_lottery_table_meta(
@@ -161,6 +200,73 @@ def _add_lottery_table_meta(
             _add_lottery_items(meta, row.get("SSRItems"), known_ids, canonicalize_item_id, rarity=5)
             _add_lottery_items(meta, row.get("SRItems"), known_ids, canonicalize_item_id, rarity=4)
             _add_lottery_items(meta, row.get("RItems"), known_ids, canonicalize_item_id, rarity=3)
+
+
+def _add_gacha_illustrate_meta(
+    meta: JsonObject,
+    assets_root: Path,
+    known_ids: set[str],
+    canonicalize_item_id: Callable[[str], str],
+) -> None:
+    table_path = assets_root / GACHA_ILLUSTRATE_TABLE
+    if not table_path.exists():
+        return
+    for raw_item_id, row in _rows_from_table(table_path).items():
+        if not isinstance(row, dict):
+            continue
+        item_id = canonicalize_item_id(str(raw_item_id))
+        if item_id not in known_ids:
+            continue
+        patch: JsonObject = {}
+        asset_refs = _asset_refs_from_gacha_illustrate(row)
+        if asset_refs:
+            patch["asset_refs"] = asset_refs
+        color = _row_hex_color(row)
+        if color:
+            patch["color"] = color
+        _merge_item_meta(meta, item_id, patch)
+
+
+def _asset_refs_from_gacha_illustrate(row: JsonObject) -> JsonObject:
+    return _asset_refs_from_fields(row, GACHA_ASSET_REF_FIELDS)
+
+
+def _asset_refs_from_fields(row: JsonObject, fields: dict[str, str]) -> JsonObject:
+    refs: JsonObject = {}
+    for source_field, target_field in fields.items():
+        asset_path = _asset_path(row.get(source_field))
+        if asset_path:
+            refs[target_field] = asset_path
+            if target_field == "icon":
+                refs["head_icon"] = asset_path
+    return refs
+
+
+def _asset_path(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    path = value.get("AssetPathName")
+    return path if isinstance(path, str) and path.startswith("/Game/") else None
+
+
+def _row_hex_color(row: JsonObject) -> str | None:
+    for field in ("OutlineColor", "BloomColor"):
+        value = row.get(field)
+        if not isinstance(value, dict):
+            continue
+        color = _hex_color(value.get("Hex"))
+        if color:
+            return color
+    return None
+
+
+def _hex_color(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip().lstrip("#")
+    if len(text) == 6 and all(char in "0123456789abcdefABCDEF" for char in text):
+        return f"#{text.upper()}"
+    return None
 
 
 def _add_lottery_items(
@@ -188,7 +294,10 @@ def _merge_item_meta(meta: JsonObject, item_id: str, patch: JsonObject) -> None:
         meta[item_id] = existing
     for key, value in patch.items():
         if value is not None:
-            existing[key] = value
+            if isinstance(value, dict) and isinstance(existing.get(key), dict):
+                existing[key].update(value)
+            else:
+                existing[key] = value
 
 
 def _rarity_from_quality(value: Any) -> int | None:
@@ -209,3 +318,7 @@ def _int_or_none(value: Any) -> int | None:
 
 def _str_or_none(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
+
+
+def _dict_or_none(value: Any) -> JsonObject | None:
+    return value if isinstance(value, dict) and value else None

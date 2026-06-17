@@ -1,11 +1,13 @@
 [CmdletBinding()]
 param(
-    [string]$TagName = "",
+    [switch]$ChecksOnly,
     [switch]$SkipInstall,
     [switch]$SkipSidecarBuild,
     [switch]$SkipTauriBuild,
+    [switch]$SkipPortableStage,
     [switch]$SkipSmoke,
-    [switch]$AllowGnuRust
+    [switch]$AllowGnuRust,
+    [string]$TagName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -264,26 +266,83 @@ function New-PortableManifest {
     Write-JsonNoBom -Path $ManifestPath -Value $payload
 }
 
-function Assert-NuitkaRelease {
+function Assert-SidecarRelease {
     param(
         [string]$ReleaseRoot,
         [string]$Version
     )
 
-    $expectedRootName = "nte-gacha-$Version"
+    $expectedRootName = "nte-gacha-sidecar-$Version"
     if ((Split-Path -Leaf $ReleaseRoot) -ne $expectedRootName) {
-        throw "Unexpected Nuitka release directory name: $ReleaseRoot"
+        throw "Unexpected sidecar release directory name: $ReleaseRoot"
     }
 
     $requiredPaths = @(
-        (Join-Path $ReleaseRoot "bin"),
-        (Join-Path $ReleaseRoot "resources"),
         (Join-Path $ReleaseRoot "nte-gacha-python-core.exe"),
-        (Join-Path $ReleaseRoot "bin\nte-gacha-core.exe")
+        (Join-Path $ReleaseRoot "bin\nte-gacha-core.exe"),
+        (Join-Path $ReleaseRoot "resources\maps"),
+        (Join-Path $ReleaseRoot "resources\automation")
     )
     foreach ($path in $requiredPaths) {
         if (-not (Test-Path -LiteralPath $path)) {
-            throw "Nuitka release artifact is incomplete, missing: $path"
+            throw "Sidecar release artifact is incomplete, missing: $path"
+        }
+    }
+}
+
+function Clear-PortableStageBuildOwnedPaths {
+    param(
+        [string]$ProjectRoot,
+        [string]$ReleaseRoot,
+        [string]$Version
+    )
+
+    if (-not (Test-Path -LiteralPath $ReleaseRoot)) {
+        return
+    }
+    $expectedName = "nte-gacha-desktop-v$Version-windows-x64"
+    $item = Get-Item -LiteralPath $ReleaseRoot
+    if ($item.Parent.FullName -ne (Join-Path $ProjectRoot "dist") -or $item.Name -ne $expectedName) {
+        throw "Refusing to clear unexpected portable stage: $ReleaseRoot"
+    }
+    foreach ($name in @("nte-gacha.exe", "app", "sidecars", "update")) {
+        $path = Join-Path $ReleaseRoot $name
+        if (Test-Path -LiteralPath $path) {
+            Remove-Item -LiteralPath $path -Force -Recurse
+        }
+    }
+}
+
+function Assert-PortableStageContent {
+    param([string]$ReleaseRoot)
+
+    $requiredPaths = @(
+        (Join-Path $ReleaseRoot "nte-gacha.exe"),
+        (Join-Path $ReleaseRoot "app\nte-gacha-desktop.exe"),
+        (Join-Path $ReleaseRoot "app\nte-gacha-updater.exe"),
+        (Join-Path $ReleaseRoot "app\release.json"),
+        (Join-Path $ReleaseRoot "sidecars\nte-gacha-python-core.exe"),
+        (Join-Path $ReleaseRoot "sidecars\bin\nte-gacha-core.exe"),
+        (Join-Path $ReleaseRoot "sidecars\resources\maps"),
+        (Join-Path $ReleaseRoot "sidecars\resources\automation")
+    )
+    foreach ($path in $requiredPaths) {
+        if (-not (Test-Path -LiteralPath $path)) {
+            throw "Portable stage is incomplete, missing: $path"
+        }
+    }
+
+    $sidecarCmd = @(Get-ChildItem -LiteralPath (Join-Path $ReleaseRoot "sidecars") -Filter "*.cmd" -File -Recurse)
+    if ($sidecarCmd.Count -gt 0) {
+        throw "Portable stage must not contain development sidecar command files: $($sidecarCmd[0].FullName)"
+    }
+
+    Get-ChildItem -LiteralPath $ReleaseRoot -File -Recurse | Where-Object {
+        $_.Extension.ToLowerInvariant() -in @(".bat", ".cmd", ".ps1", ".txt")
+    } | ForEach-Object {
+        $text = [System.IO.File]::ReadAllText($_.FullName)
+        if ($text.Contains(".local")) {
+            throw "Portable stage must not contain .local development paths: $($_.FullName)"
         }
     }
 }
@@ -301,9 +360,7 @@ function New-PortableStage {
     $releaseRoot = Join-Path $distRoot "nte-gacha-desktop-v$Version-windows-x64"
     $zipPath = Join-Path $distRoot "nte-gacha-desktop-v$Version-windows-x64.zip"
     $manifestPath = Join-Path $distRoot "nte-gacha-update.json"
-    if (Test-Path -LiteralPath $releaseRoot) {
-        throw "Portable staging directory already exists: $releaseRoot"
-    }
+    Clear-PortableStageBuildOwnedPaths -ProjectRoot $ProjectRoot -ReleaseRoot $releaseRoot -Version $Version
     if (-not (Test-Path -LiteralPath $distRoot)) {
         New-Item -ItemType Directory -Path $distRoot | Out-Null
     }
@@ -318,25 +375,26 @@ function New-PortableStage {
         }
     }
 
-    $nuitkaRelease = Join-Path $ProjectRoot "dist\nte-gacha-$Version"
-    Assert-NuitkaRelease -ReleaseRoot $nuitkaRelease -Version $Version
+    $sidecarRelease = Join-Path $ProjectRoot "dist\nte-gacha-sidecar-$Version"
+    Assert-SidecarRelease -ReleaseRoot $sidecarRelease -Version $Version
 
     $appDir = Join-Path $releaseRoot "app"
     $sidecarsDir = Join-Path $releaseRoot "sidecars"
-    New-Item -ItemType Directory -Path $appDir | Out-Null
-    New-Item -ItemType Directory -Path $sidecarsDir | Out-Null
-    New-Item -ItemType Directory -Path (Join-Path $releaseRoot "data") | Out-Null
-    New-Item -ItemType Directory -Path (Join-Path $releaseRoot "update\downloads") | Out-Null
-    New-Item -ItemType Directory -Path (Join-Path $releaseRoot "update\staging") | Out-Null
+    New-Item -ItemType Directory -Force -Path $appDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $sidecarsDir | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $releaseRoot "data") | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $releaseRoot "update\downloads") | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $releaseRoot "update\staging") | Out-Null
 
     Copy-Item -LiteralPath $launcher -Destination (Join-Path $releaseRoot "nte-gacha.exe")
     Copy-Item -LiteralPath $desktopExe -Destination (Join-Path $appDir "nte-gacha-desktop.exe")
     Copy-Item -LiteralPath $updater -Destination (Join-Path $appDir "nte-gacha-updater.exe")
     New-ReleaseJson -Path (Join-Path $appDir "release.json") -Version $Version
 
-    Copy-Item -LiteralPath (Join-Path $nuitkaRelease "nte-gacha-python-core.exe") -Destination (Join-Path $sidecarsDir "nte-gacha-python-core.exe")
-    Copy-DirectoryContents -Source (Join-Path $nuitkaRelease "bin") -Destination (Join-Path $sidecarsDir "bin")
-    Copy-DirectoryContents -Source (Join-Path $nuitkaRelease "resources") -Destination (Join-Path $sidecarsDir "resources")
+    Copy-Item -LiteralPath (Join-Path $sidecarRelease "nte-gacha-python-core.exe") -Destination (Join-Path $sidecarsDir "nte-gacha-python-core.exe")
+    Copy-DirectoryContents -Source (Join-Path $sidecarRelease "bin") -Destination (Join-Path $sidecarsDir "bin")
+    Copy-DirectoryContents -Source (Join-Path $sidecarRelease "resources") -Destination (Join-Path $sidecarsDir "resources")
+    Assert-PortableStageContent -ReleaseRoot $releaseRoot
 
     if (Test-Path -LiteralPath $manifestPath) {
         Remove-Item -LiteralPath $manifestPath -Force
@@ -422,13 +480,22 @@ Write-Step "Native Windows release environment"
 Write-Host "Repo: $projectRoot"
 Write-Ok "version -> $desktopVersion"
 Write-Ok "tag -> $normalizedTagName"
-foreach ($name in @("poetry", "bun", "bunx", "node", "cargo", "rustc")) {
+$requiredCommands = @("bun", "bunx", "node", "cargo", "rustc")
+if (-not $SkipSidecarBuild) {
+    $requiredCommands = @("poetry") + $requiredCommands
+}
+foreach ($name in $requiredCommands) {
     Assert-Command -Name $name
 }
 Assert-RustHost
 
+if ($ChecksOnly) {
+    Write-Ok "ChecksOnly complete. Native Windows release toolchain looks usable."
+    return
+}
+
 if (-not $SkipSidecarBuild) {
-    Invoke-External -Name "Nuitka sidecar build" -FilePath "poetry" -Arguments @("run", "python", ".\packaging\nuitka\build.py") -WorkingDirectory $projectRoot
+    Invoke-External -Name "Nuitka sidecar build" -FilePath "poetry" -Arguments @("run", "python", ".\packaging\nuitka\build.py", "--target", "sidecar") -WorkingDirectory $projectRoot
 }
 
 if (-not $SkipInstall) {
@@ -446,9 +513,15 @@ if (-not $SkipTauriBuild) {
     Invoke-External -Name "Portable tools build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte_portable_tools") -WorkingDirectory $desktopRoot
 }
 
-$portableRoot = New-PortableStage -ProjectRoot $projectRoot -DesktopRoot $desktopRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease
+$portableRoot = $null
+if (-not $SkipPortableStage) {
+    $portableRoot = New-PortableStage -ProjectRoot $projectRoot -DesktopRoot $desktopRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease
+}
 
 if (-not $SkipSmoke) {
+    if ($null -eq $portableRoot) {
+        throw "Smoke requires portable stage. Remove -SkipPortableStage or pass -SkipSmoke."
+    }
     Invoke-SidecarSmoke -ReleaseRoot $portableRoot
     Invoke-PortableRunSmoke -ReleaseRoot $portableRoot
 }

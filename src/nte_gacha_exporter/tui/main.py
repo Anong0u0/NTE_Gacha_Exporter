@@ -892,9 +892,15 @@ class TuiApp:
 
     def _request_admin_maps_build(self, assets_root: str | None, locale: str | None, out_dir: Path | None) -> bool:
         payload = {"assetsRoot": assets_root, "locale": locale, "outDir": str(out_dir) if out_dir else None}
-        temp_path = Path.cwd() / ".local" / "tui-maps-build.json"
-        temp_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            delete=False,
+            prefix="nte-gacha-maps-build-",
+            suffix=".json",
+        ) as temp_file:
+            json.dump(payload, temp_file, ensure_ascii=False)
+            temp_path = Path(temp_file.name)
         return self._request_admin_relaunch(["--maps-build-json", str(temp_path)], "maps build")
 
 

@@ -696,6 +696,7 @@ impl JsonStore {
             return Ok(Vec::new());
         }
         let mut disk: DiskRecords = read_json(&path)?;
+        normalize_records(&mut disk.records);
         sort_records(&mut disk.records);
         Ok(disk.records)
     }
@@ -705,11 +706,13 @@ impl JsonStore {
         profile_name: &str,
         records: &[InternalRecord],
     ) -> Result<(), GuiError> {
+        let mut records = records.to_vec();
+        normalize_records(&mut records);
         write_json(
             &self.records_path(profile_name),
             &DiskRecords {
                 schema_version: 1,
-                records: records.to_vec(),
+                records,
             },
         )
     }
@@ -877,6 +880,17 @@ fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Re
         }
     }
     Ok(())
+}
+
+fn normalize_records(records: &mut [InternalRecord]) {
+    for record in records {
+        if record
+            .roll_points
+            .is_some_and(|value| matches!(value, 0 | 4_294_967_295))
+        {
+            record.roll_points = None;
+        }
+    }
 }
 
 fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T, GuiError> {

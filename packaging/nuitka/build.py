@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import shutil
@@ -23,15 +24,22 @@ for line in PYPROJECT_FILE.read_text(encoding="utf-8").splitlines():
     if match:
         APP_VERSION = match.group("version")
         break
-RELEASE_DIR = OUTPUT_DIR / f"{APP_NAME}-{APP_VERSION}"
-BIN_DIR = RELEASE_DIR / "bin"
+CORE_RELEASE_DIR = OUTPUT_DIR / f"{APP_NAME}-core-{APP_VERSION}"
+CORE_RELEASE_BIN_DIR = CORE_RELEASE_DIR / "bin"
+SIDECAR_RELEASE_DIR = OUTPUT_DIR / f"{APP_NAME}-sidecar-{APP_VERSION}"
+SIDECAR_RELEASE_BIN_DIR = SIDECAR_RELEASE_DIR / "bin"
 RESOURCE_DIR = PROJECT_ROOT / "src" / "nte_gacha_exporter" / "resources"
 NUITKA_OUTPUT_FOLDER = "nte-gacha-core"
 CORE_EXE_NAME = "nte-gacha-core.exe"
 CORE_DIST_DIR = OUTPUT_DIR / f"{NUITKA_OUTPUT_FOLDER}.dist"
-WRAPPER_EXE_NAMES = ("nte-gacha.exe", "nte-gacha-cli.exe", "nte-gacha-python-core.exe")
-PRESERVED_RELEASE_ROOT_NAMES = {"output"}
-RELEASE_ROOT_NAMES = {"bin", "output", "resources", *WRAPPER_EXE_NAMES}
+CORE_TARGET = "core"
+SIDECAR_TARGET = "sidecar"
+TARGETS = (CORE_TARGET, SIDECAR_TARGET)
+CORE_WRAPPER_EXE_NAMES: tuple[str, ...] = ()
+SIDECAR_WRAPPER_EXE_NAMES = ("nte-gacha-python-core.exe",)
+NUITKA_GENERATED_EXE_NAMES = ("nte-gacha.exe", "nte-gacha-cli.exe", "nte-gacha-sidecar.exe")
+CORE_RELEASE_ROOT_NAMES = {"bin", "resources"}
+SIDECAR_RELEASE_ROOT_NAMES = {"bin", "resources", *SIDECAR_WRAPPER_EXE_NAMES}
 
 
 SCAPY_CAPTURE_MODULES = (
@@ -161,7 +169,37 @@ def _nuitkaPythonCommand() -> list[str]:
     return command
 
 
-def _build_command() -> list[str]:
+def _entrypoints_for_target(target: str) -> tuple[Path, ...]:
+    if target == SIDECAR_TARGET:
+        return (SIDECAR_ENTRYPOINT,)
+    return (TUI_ENTRYPOINT, CLI_ENTRYPOINT)
+
+
+def _release_dir_for_target(target: str) -> Path:
+    if target == SIDECAR_TARGET:
+        return SIDECAR_RELEASE_DIR
+    return CORE_RELEASE_DIR
+
+
+def _bin_dir_for_target(target: str) -> Path:
+    if target == SIDECAR_TARGET:
+        return SIDECAR_RELEASE_BIN_DIR
+    return CORE_RELEASE_BIN_DIR
+
+
+def _wrapper_names_for_target(target: str) -> tuple[str, ...]:
+    if target == SIDECAR_TARGET:
+        return SIDECAR_WRAPPER_EXE_NAMES
+    return CORE_WRAPPER_EXE_NAMES
+
+
+def _release_root_names_for_target(target: str) -> set[str]:
+    if target == SIDECAR_TARGET:
+        return SIDECAR_RELEASE_ROOT_NAMES
+    return CORE_RELEASE_ROOT_NAMES
+
+
+def _build_command(target: str = CORE_TARGET) -> list[str]:
     command = [
         *_nuitkaPythonCommand(),
         "-m",
@@ -171,9 +209,7 @@ def _build_command() -> list[str]:
         f"--output-dir={OUTPUT_DIR}",
         f"--output-filename={NUITKA_OUTPUT_FOLDER}",
         f"--output-folder-name={NUITKA_OUTPUT_FOLDER}",
-        f"--main={TUI_ENTRYPOINT}",
-        f"--main={CLI_ENTRYPOINT}",
-        f"--main={SIDECAR_ENTRYPOINT}",
+        *(f"--main={entrypoint}" for entrypoint in _entrypoints_for_target(target)),
         "--include-package=nte_gacha_exporter",
         *(f"--include-module={module}" for module in SCAPY_CAPTURE_MODULES),
         *(f"--include-module={module}" for module in PIL_OCR_MODULES),
@@ -237,7 +273,12 @@ def _wrapper_compile_command(*, compiler: Path, output: Path) -> list[str]:
     ]
 
 
-def _compile_wrappers(*, environment: dict[str, str], output_dir: Path) -> int:
+def _compile_wrappers(
+    *, environment: dict[str, str], output_dir: Path, names: tuple[str, ...]
+) -> int:
+    if not names:
+        return 0
+
     compiler = _find_gcc()
     if compiler is None:
         print("C compiler not found. Install gcc or let Nuitka download its MinGW64 toolchain.")
@@ -246,7 +287,7 @@ def _compile_wrappers(*, environment: dict[str, str], output_dir: Path) -> int:
     wrapper_env = environment.copy()
     wrapper_env["PATH"] = f"{compiler.parent}{os.pathsep}{wrapper_env.get('PATH', '')}"
 
-    for name in WRAPPER_EXE_NAMES:
+    for name in names:
         command = _wrapper_compile_command(compiler=compiler, output=output_dir / name)
         code = subprocess.run(command, cwd=PROJECT_ROOT, env=wrapper_env, check=False).returncode
         if code != 0:
@@ -254,71 +295,86 @@ def _compile_wrappers(*, environment: dict[str, str], output_dir: Path) -> int:
     return 0
 
 
-def _assert_release_dir_scope() -> None:
-    if RELEASE_DIR.exists() and RELEASE_DIR.is_symlink():
-        raise RuntimeError(f"refusing to clear symlinked release directory: {RELEASE_DIR}")
-    if RELEASE_DIR.parent.resolve() != OUTPUT_DIR.resolve() or RELEASE_DIR.name != f"{APP_NAME}-{APP_VERSION}":
-        raise RuntimeError(f"refusing to clear unexpected release directory: {RELEASE_DIR}")
+def _assert_release_dir_scope(release_dir: Path, target: str) -> None:
+    if release_dir.exists() and release_dir.is_symlink():
+        raise RuntimeError(f"refusing to clear symlinked release directory: {release_dir}")
+    expected = f"{APP_NAME}-{target}-{APP_VERSION}"
+    if release_dir.parent.resolve() != OUTPUT_DIR.resolve() or release_dir.name != expected:
+        raise RuntimeError(f"refusing to clear unexpected release directory: {release_dir}")
 
 
-def _assert_build_owned_release_path(path: Path) -> None:
-    _assert_release_dir_scope()
-    if path.parent != RELEASE_DIR or path.name in PRESERVED_RELEASE_ROOT_NAMES:
+def _assert_build_owned_release_path(path: Path, *, release_dir: Path, target: str) -> None:
+    _assert_release_dir_scope(release_dir, target)
+    if path.parent != release_dir:
         raise RuntimeError(f"refusing to remove path outside release build-owned scope: {path}")
 
 
-def _build_owned_release_paths() -> tuple[Path, ...]:
-    if not RELEASE_DIR.exists():
+def _build_owned_release_paths(*, release_dir: Path, target: str) -> tuple[Path, ...]:
+    if not release_dir.exists():
         return ()
-    _assert_release_dir_scope()
-    return tuple(path for path in RELEASE_DIR.iterdir() if path.name not in PRESERVED_RELEASE_ROOT_NAMES)
+    _assert_release_dir_scope(release_dir, target)
+    return tuple(release_dir.iterdir())
 
 
-def _clear_build_owned_release_paths() -> None:
-    for path in _build_owned_release_paths():
+def _clear_build_owned_release_paths(*, release_dir: Path, target: str) -> None:
+    for path in _build_owned_release_paths(release_dir=release_dir, target=target):
         if not path.exists():
             continue
-        _assert_build_owned_release_path(path)
+        _assert_build_owned_release_path(path, release_dir=release_dir, target=target)
         if path.is_dir() and not path.is_symlink():
             shutil.rmtree(path)
         else:
             path.unlink()
 
 
-def _stage_release() -> int:
+def _remove_nuitka_generated_launchers(*, preserved_names: tuple[str, ...]) -> None:
+    preserved = set(preserved_names)
+    for name in NUITKA_GENERATED_EXE_NAMES:
+        if name in preserved:
+            continue
+        path = CORE_DIST_DIR / name
+        if path.is_file():
+            path.unlink()
+
+
+def _stage_release(target: str = CORE_TARGET) -> int:
+    release_dir = _release_dir_for_target(target)
+    bin_dir = _bin_dir_for_target(target)
+    wrapper_names = _wrapper_names_for_target(target)
     if not (CORE_DIST_DIR / CORE_EXE_NAME).is_file():
         print(f"Nuitka executable not found after build: {CORE_DIST_DIR / CORE_EXE_NAME}")
         return 2
-    for name in WRAPPER_EXE_NAMES:
+    for name in wrapper_names:
         if not (CORE_DIST_DIR / name).is_file():
             print(f"Wrapper executable not found after build: {CORE_DIST_DIR / name}")
             return 2
 
-    _clear_build_owned_release_paths()
+    _remove_nuitka_generated_launchers(preserved_names=wrapper_names)
+    _clear_build_owned_release_paths(release_dir=release_dir, target=target)
 
-    RELEASE_DIR.mkdir(parents=True, exist_ok=True)
-    for name in WRAPPER_EXE_NAMES:
-        shutil.move(str(CORE_DIST_DIR / name), str(RELEASE_DIR / name))
-    shutil.move(str(CORE_DIST_DIR), str(BIN_DIR))
+    release_dir.mkdir(parents=True, exist_ok=True)
+    for name in wrapper_names:
+        shutil.move(str(CORE_DIST_DIR / name), str(release_dir / name))
+    shutil.move(str(CORE_DIST_DIR), str(bin_dir))
 
-    bundled_resources = BIN_DIR / "resources"
+    bundled_resources = bin_dir / "resources"
     if not bundled_resources.is_dir():
         print(f"Bundled resources not found after build: {bundled_resources}")
         return 2
-    shutil.move(str(bundled_resources), str(RELEASE_DIR / "resources"))
-
-    (RELEASE_DIR / "output").mkdir(exist_ok=True)
+    shutil.move(str(bundled_resources), str(release_dir / "resources"))
     return 0
 
 
-def _validate_release() -> int:
-    required_paths = (
-        RELEASE_DIR / "nte-gacha.exe",
-        RELEASE_DIR / "nte-gacha-cli.exe",
-        BIN_DIR / CORE_EXE_NAME,
-        RELEASE_DIR / "resources" / "maps",
-        RELEASE_DIR / "resources" / "automation",
-        RELEASE_DIR / "output",
+def _validate_release(target: str = CORE_TARGET) -> int:
+    release_dir = _release_dir_for_target(target)
+    bin_dir = _bin_dir_for_target(target)
+    required_paths = [
+        bin_dir / CORE_EXE_NAME,
+        release_dir / "resources" / "maps",
+        release_dir / "resources" / "automation",
+    ]
+    required_paths.extend(
+        release_dir / name for name in _wrapper_names_for_target(target)
     )
     missing = [path for path in required_paths if not path.exists()]
     if missing:
@@ -327,16 +383,29 @@ def _validate_release() -> int:
             print(f"missing: {path}")
         return 2
 
-    unexpected = sorted(path.name for path in RELEASE_DIR.iterdir() if path.name not in RELEASE_ROOT_NAMES)
+    expected_names = _release_root_names_for_target(target)
+    unexpected = sorted(path.name for path in release_dir.iterdir() if path.name not in expected_names)
     if unexpected:
         print("Release artifact contains unexpected root entries:")
         for name in unexpected:
-            print(f"unexpected: {RELEASE_DIR / name}")
+            print(f"unexpected: {release_dir / name}")
         return 2
     return 0
 
 
-def main() -> int:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build Windows Nuitka artifacts.")
+    parser.add_argument(
+        "--target",
+        choices=TARGETS,
+        default=CORE_TARGET,
+        help="Artifact target to build. Defaults to core.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
     if sys.platform != "win32":
         print("Nuitka packaging is Windows-only. Build on Windows with `poetry install --extras live`.")
         return 2
@@ -345,7 +414,7 @@ def main() -> int:
     environment["PYTHONHASHSEED"] = "0"
 
     code = subprocess.run(
-        _build_command(),
+        _build_command(args.target),
         cwd=PROJECT_ROOT,
         env=environment,
         check=False,
@@ -353,15 +422,19 @@ def main() -> int:
     if code != 0:
         return code
 
-    code = _compile_wrappers(environment=environment, output_dir=CORE_DIST_DIR)
+    code = _compile_wrappers(
+        environment=environment,
+        output_dir=CORE_DIST_DIR,
+        names=_wrapper_names_for_target(args.target),
+    )
     if code != 0:
         return code
 
-    code = _stage_release()
+    code = _stage_release(args.target)
     if code != 0:
         return code
 
-    return _validate_release()
+    return _validate_release(args.target)
 
 
 if __name__ == "__main__":

@@ -502,6 +502,10 @@ def _error_response(request_id: Any, code: str, message: str) -> JsonObject:
 
 
 def main() -> int:
+    if hasattr(sys.stdin, "reconfigure"):
+        sys.stdin.reconfigure(encoding="utf-8", errors="strict")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="strict")
     state = SidecarState()
     for line in sys.stdin:
         if not line.strip():

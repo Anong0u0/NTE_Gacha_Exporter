@@ -428,9 +428,7 @@ def test_auto_pager_incremental_skips_pool_after_known_page(monkeypatch):
         target=CaptureTarget("1234", "iface", [], None, ""),
         stop_event=threading.Event(),
         known_record_ids=tuple(f"r{index}" for index in range(5)),
-        record_snapshot=lambda: [
-            {"record_id": f"r{index}", "pool_id": "CardPool_Character"} for index in range(5)
-        ],
+        record_snapshot=lambda: [{"record_id": f"r{index}", "pool_id": "CardPool_Character"} for index in range(5)],
         click_poll_interval=0.001,
         duplicate_check_timeout=0.001,
     )

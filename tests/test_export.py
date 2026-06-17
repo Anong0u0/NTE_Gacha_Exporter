@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import json
 from dataclasses import replace
-from datetime import timedelta, timezone
 from pathlib import Path
 
 from nte_gacha_exporter.core.models import ParsedBlock, ParsedRow, ProtocolEnvelope, SourceRef
@@ -11,6 +10,7 @@ from nte_gacha_exporter.export.assembler import ProtocolAssembler
 from nte_gacha_exporter.export.document import ExportOptions, _pool_name, build_document, public_records
 from nte_gacha_exporter.export.pipeline import export_capture
 from nte_gacha_exporter.export.writers import write_csv, write_debug_json, write_json
+from nte_gacha_exporter.mapping.runtime import load_map
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample.raw.jsonl"
 
@@ -19,6 +19,7 @@ def test_export_document_is_sanitized_and_localized():
     document = export_capture(FIXTURE, locale="zh-Hant")
 
     assert document["info"]["schema"] == "nte-gacha-export"
+    assert document["info"]["schema_version"] == "2.0"
     assert document["info"]["export_app"] == "nte-gacha-exporter"
     assert isinstance(document["info"]["export_timestamp"], int)
     assert document["info"]["name_source"] == "localization_map"
@@ -27,12 +28,23 @@ def test_export_document_is_sanitized_and_localized():
     assert document["_debug"]["summary"]["record_count"] == 2
     assert document["nte"]["list"][0]["time"] == "2026-04-30 17:02:15"
     assert document["nte"]["list"][0]["pool_name"] == "王牌一代目"
+    assert document["nte"]["list"][0]["banner_id"] == "monopoly_limited_Nanali"
+    assert document["nte"]["list"][0]["banner_name"] == "王牌一代目"
+    assert document["nte"]["list"][0]["banner_type"] == "limited"
+    assert document["nte"]["list"][0]["banner_phase"] == "limited_2026_05_13"
+    assert "banner_version" not in document["nte"]["list"][0]
+    assert document["nte"]["list"][0]["banner_source_confidence"] == "curated"
+    assert document["nte"]["list"][0]["banner_resolution_status"] == "matched"
     assert document["nte"]["list"][0]["item_name"] == "改裝件·萌虎來襲-塗裝"
     assert "secondary_item_id" not in document["nte"]["list"][0]
     assert "secondary_item_name" not in document["nte"]["list"][0]
     assert "secondary_count" not in document["nte"]["list"][0]
     assert "secondary_item_id" not in document["nte"]["list"][1]
     assert document["nte"]["list"][1]["pool_name"] == "夜曲特刊"
+    assert document["nte"]["list"][1]["banner_id"] == "ForkLottery_AnHunQu"
+    assert "banner_phase" not in document["nte"]["list"][1]
+    assert "banner_version" not in document["nte"]["list"][1]
+    assert document["nte"]["list"][1]["banner_source_confidence"] == "exact"
     assert document["nte"]["list"][1]["item_name"] == "弧盤·危險遊戲"
     text = json.dumps(document, ensure_ascii=False)
     assert "src" not in text
@@ -131,7 +143,7 @@ def test_csv_writer_has_stable_human_header(tmp_path):
 
 def test_locale_can_point_to_custom_map_file(tmp_path):
     custom_map = {
-        "schema_version": 2,
+        "schema_version": 4,
         "csv_headers": {},
         "items": {
             "Fashion_vehicle_1010_V008": {"name": "自訂名稱", "rarity": 5, "category": "vehicle_module"},
@@ -154,7 +166,7 @@ def test_locale_can_point_to_custom_map_file(tmp_path):
     assert document["nte"]["list"][0]["item_name"] == "自訂名稱"
 
 
-def test_monopoly_pool_name_uses_tz8_windows_as_host_local_native_time():
+def test_monopoly_pool_name_uses_local_naive_tz8_windows():
     mapping = {
         "pools": {"CardPool_Character": "限定棋盤"},
         "pool_meta": {
@@ -168,14 +180,34 @@ def test_monopoly_pool_name_uses_tz8_windows_as_host_local_native_time():
             }
         },
     }
-    tz8 = timezone(timedelta(hours=8))
-    utc = timezone.utc
+    assert _pool_name(mapping, "CardPool_Character", "2026-05-13 05:59:00") == "王牌一代目"
+    assert _pool_name(mapping, "CardPool_Character", "2026-05-13 05:59:01") == "獨酌朧月流"
+    assert _pool_name(mapping, "CardPool_Character", "2026-07-08 05:59:01") == "限定棋盤"
 
-    assert _pool_name(mapping, "CardPool_Character", "2026-05-13 05:59:00", local_tz=tz8) == "王牌一代目"
-    assert _pool_name(mapping, "CardPool_Character", "2026-05-13 05:59:01", local_tz=tz8) == "獨酌朧月流"
-    assert _pool_name(mapping, "CardPool_Character", "2026-05-12 21:59:00", local_tz=utc) == "王牌一代目"
-    assert _pool_name(mapping, "CardPool_Character", "2026-05-12 21:59:01", local_tz=utc) == "獨酌朧月流"
-    assert _pool_name(mapping, "CardPool_Character", "2026-07-08 05:59:01", local_tz=tz8) == "限定棋盤"
+
+def test_public_record_keeps_unmatched_banner_status_and_pool_fallback():
+    source = SourceRef(session=0, line=1, packet_index=0, view="src", row_index=0, offset=0)
+    row = ParsedRow(
+        record_type="monopoly",
+        ticks=639164696613410000,
+        time="2026-07-08T05:59:01.000000",
+        pool_id="CardPool_Character",
+        item_id="fork_dustbin",
+        count=1,
+        roll_points=5,
+        roll_label_id=None,
+        secondary_item_id=None,
+        secondary_count=None,
+        source=source,
+    )
+    document = build_document([row], load_map("zh-Hant"), ExportOptions(locale="zh-Hant", source="test"))
+    record = document["nte"]["list"][0]
+
+    assert record["pool_name"] == "限定棋盤"
+    assert record["banner_resolution_status"] == "outside_known_windows"
+    assert "banner_id" not in record
+    assert "banner_phase" not in record
+    assert "banner_version" not in record
 
 
 def test_public_record_keeps_secondary_fields_when_item_is_different():
@@ -203,6 +235,37 @@ def test_public_record_keeps_secondary_fields_when_item_is_different():
     assert record["secondary_item_id"] == "Dice_ticket_01"
     assert record["secondary_item_name"] == "道具·質實骰子"
     assert record["secondary_count"] == 2
+
+
+def test_public_record_keeps_roll_label_sentinel_out_of_roll_points():
+    source = SourceRef(session=0, line=1, packet_index=0, view="src", row_index=0, offset=0)
+    row = ParsedRow(
+        record_type="monopoly",
+        ticks=639164696613410000,
+        time="2026-06-07T22:14:21.341000",
+        pool_id="CardPool_NewRole",
+        item_id="Dice_ticket_01",
+        count=30,
+        roll_points=None,
+        roll_label_id="BPUI_LotteryResult_chenmiandi",
+        secondary_item_id="Dice_ticket_01",
+        secondary_count=1,
+        source=source,
+    )
+    document = build_document(
+        [row],
+        {
+            "pools": {"CardPool_NewRole": "標準棋盤"},
+            "items": {"Dice_ticket_01": "道具·質實骰子"},
+            "labels": {"BPUI_LotteryResult_chenmiandi": "沉眠地"},
+        },
+        ExportOptions(locale="zh-Hant", source="test"),
+    )
+    record = document["nte"]["list"][0]
+
+    assert record["roll_label"] == "沉眠地"
+    assert "roll_points" not in record
+    assert document["_debug"]["raw_rows"][0]["roll_points"] is None
 
 
 def test_public_record_canonicalizes_item_aliases_before_localizing_and_deduping():
@@ -253,18 +316,23 @@ def test_build_document_keeps_matching_public_rows_from_distinct_sources():
         secondary_count=1,
         source=source,
     )
+    mapping = {
+        "pools": {"CardPool_NewRole": "標準棋盤"},
+        "items": {"fork_nonos": "弧盤·霓歐斯", "Dice_ticket_01": "道具·質實骰子"},
+    }
     document = build_document(
         [row, replace(row, source=SourceRef(session=0, line=2, packet_index=1, view="src", row_index=0, offset=0))],
-        {
-            "pools": {"CardPool_NewRole": "標準棋盤"},
-            "items": {"fork_nonos": "弧盤·霓歐斯", "Dice_ticket_01": "道具·質實骰子"},
-        },
+        mapping,
         ExportOptions(locale="zh-Hant", source="test"),
     )
+    single = build_document([row], mapping, ExportOptions(locale="zh-Hant", source="test"))
 
     records = document["nte"]["list"]
     assert document["_debug"]["summary"]["record_count"] == 2
     assert [record["secondary_count"] for record in records] == [1, 1]
+    assert records[0]["record_id"] == single["nte"]["list"][0]["record_id"]
+    assert records[1]["record_id"] != records[0]["record_id"]
+    assert len({record["record_id"] for record in records}) == 2
 
 
 def _row_for_segment(index: int, *, segment_index: int = 0) -> ParsedRow:

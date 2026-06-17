@@ -29,17 +29,20 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import {
   api,
   type BackupReport,
+  type BannerSummary,
   type CaptureMode,
   type CaptureStatus,
   type DashboardOverview,
   type DisplayRecord,
   type DoctorReport,
   type ImportReport,
+  type PendingAdminCapture,
   type PoolKind,
   type PoolKindDetail,
   type RecordFilter,
   type RecordFilterOptions,
   type RecordSortKey,
+  type RateUpResult,
   type SortDirection,
   type Profile,
   type RestoreReport,
@@ -54,6 +57,8 @@ type ViewId = "dashboard" | "records" | "import_export" | "settings";
 type ImportMode = "raw" | "public";
 type ExportMode = "json" | "csv";
 type PoolKindFilter = PoolKind | "all";
+type HitRarityFilter = "" | "4" | "5";
+type RateUpFilter = "" | RateUpResult;
 
 const navItems = [
   { id: "dashboard" as const, label: "Dashboard", icon: Activity },
@@ -77,10 +82,11 @@ const locale = ref("zh-Hant");
 const locales = ref<string[]>(["zh-Hant"]);
 const summary = ref<DashboardOverview | null>(null);
 const selectedPoolKind = ref<PoolKind>("monopoly_limited");
+const selectedBannerId = ref("");
 const detail = ref<PoolKindDetail | null>(null);
 const records = ref<DisplayRecord[]>([]);
 const recordTotal = ref(0);
-const filterOptions = ref<RecordFilterOptions>({ pools: [], record_types: [] });
+const filterOptions = ref<RecordFilterOptions>({ pools: [], banners: [], record_types: [] });
 const importPath = ref("");
 const importMode = ref<ImportMode>("raw");
 const exportPath = ref("");
@@ -107,7 +113,14 @@ let capturePollTimer: ReturnType<typeof setInterval> | null = null;
 
 const recordPoolKind = ref<PoolKindFilter>("all");
 const recordPoolId = ref("");
+const recordBannerId = ref("");
 const recordType = ref("");
+const hitRarity = ref<HitRarityFilter>("");
+const rateUpResult = ref<RateUpFilter>("");
+const pity5Min = ref("");
+const pity5Max = ref("");
+const pity4Min = ref("");
+const pity4Max = ref("");
 const dateFrom = ref("");
 const dateTo = ref("");
 const search = ref("");
@@ -121,16 +134,33 @@ const settingsCheckUpdates = ref(false);
 const activeProfile = computed(() => profiles.value.find((profile) => profile.name === activeProfileName.value));
 const allPoolSummaries = computed(() => summary.value?.pool_kinds ?? []);
 const trackedPoolCount = computed(() => allPoolSummaries.value.filter((pool) => pool.total_pulls > 0).length);
+const bannerSummaries = computed(() => summary.value?.banners ?? []);
+const trackedBannerCount = computed(() => bannerSummaries.value.filter((banner) => banner.total_pulls > 0).length);
 const selectedSummary = computed(
   () => allPoolSummaries.value.find((item) => item.pool_kind === selectedPoolKind.value) ?? null,
 );
+const selectedBanner = computed(() => {
+  const byId = bannerSummaries.value.find((banner) => banner.banner_id === selectedBannerId.value);
+  if (byId) return byId;
+  return (
+    bannerSummaries.value.find((banner) => banner.pool_kind === selectedPoolKind.value && banner.total_pulls > 0) ??
+    bannerSummaries.value[0] ??
+    null
+  );
+});
 const latest = computed(() => summary.value?.latest_records ?? []);
+const phaseSummaries = computed(() => summary.value?.time_stats.phases ?? []);
 const recordPageStart = computed(() => (recordTotal.value === 0 ? 0 : pageIndex.value * pageSize.value + 1));
 const recordPageEnd = computed(() => Math.min(recordTotal.value, (pageIndex.value + 1) * pageSize.value));
 const canPrevPage = computed(() => pageIndex.value > 0);
 const canNextPage = computed(() => recordPageEnd.value < recordTotal.value);
 const poolsForRecordKind = computed(() =>
   filterOptions.value.pools.filter((pool) => recordPoolKind.value === "all" || pool.pool_kind === recordPoolKind.value),
+);
+const bannersForRecordKind = computed(() =>
+  filterOptions.value.banners.filter(
+    (banner) => recordPoolKind.value === "all" || banner.pool_kind === recordPoolKind.value,
+  ),
 );
 const isCaptureActive = computed(() => {
   const state = captureStatus.value?.state;
@@ -190,10 +220,30 @@ watch(selectedPoolKind, () => {
   void loadDetail();
 });
 
-watch([recordPoolKind, recordPoolId, recordType, dateFrom, dateTo, search, sortKey, sortDirection, pageSize], () => {
+watch(
+  [
+    recordPoolKind,
+    recordPoolId,
+    recordBannerId,
+    recordType,
+    hitRarity,
+    rateUpResult,
+    pity5Min,
+    pity5Max,
+    pity4Min,
+    pity4Max,
+    dateFrom,
+    dateTo,
+    search,
+    sortKey,
+    sortDirection,
+    pageSize,
+  ],
+  () => {
   pageIndex.value = 0;
   void loadRecords();
-});
+  },
+);
 
 watch(pageIndex, () => {
   void loadRecords();
@@ -202,6 +252,9 @@ watch(pageIndex, () => {
 watch(recordPoolKind, () => {
   if (recordPoolId.value && !poolsForRecordKind.value.some((pool) => pool.pool_id === recordPoolId.value)) {
     recordPoolId.value = "";
+  }
+  if (recordBannerId.value && !bannersForRecordKind.value.some((banner) => banner.banner_id === recordBannerId.value)) {
+    recordBannerId.value = "";
   }
 });
 
@@ -217,7 +270,8 @@ async function bootstrap() {
     await loadProfiles();
     await refreshAll();
     await loadUpdaterStatus();
-    if (settings.check_updates_on_startup) {
+    const startedPendingCapture = await startPendingAdminCapture();
+    if (!startedPendingCapture && settings.check_updates_on_startup) {
       void checkForUpdates(false);
     }
   } catch (error) {
@@ -225,6 +279,16 @@ async function bootstrap() {
   } finally {
     busy.value = false;
   }
+}
+
+async function startPendingAdminCapture() {
+  const pending = await api.takePendingAdminCapture();
+  if (!pending) return false;
+  activeProfileName.value = pending.profile_name;
+  locale.value = pending.locale;
+  captureMode.value = pending.mode;
+  await startLiveCapture({ skipAdminRequest: true, pending });
+  return true;
 }
 
 async function loadProfiles() {
@@ -279,7 +343,9 @@ async function refreshAll() {
   if (!activeProfileName.value) return;
   summary.value = await api.dashboardOverview(activeProfileName.value, locale.value);
   const firstActive = summary.value.pool_kinds.find((pool) => pool.total_pulls > 0)?.pool_kind;
+  const firstBanner = summary.value.banners.find((banner) => banner.total_pulls > 0)?.banner_id;
   selectedPoolKind.value = firstActive ?? selectedPoolKind.value;
+  selectedBannerId.value = firstBanner ?? selectedBannerId.value;
   await Promise.all([loadDetail(), loadFilterOptions(), loadRecords()]);
   statusText.value = "Dashboard updated";
   await nextTick();
@@ -301,7 +367,14 @@ async function loadRecords() {
   const filter: RecordFilter = {
     pool_kind: recordPoolKind.value === "all" ? null : recordPoolKind.value,
     pool_id: recordPoolId.value || null,
+    banner_id: recordBannerId.value || null,
     record_type: recordType.value || null,
+    hit_rarity: hitRarity.value ? Number(hitRarity.value) : null,
+    rate_up_result: rateUpResult.value || null,
+    pity_5_min: parseOptionalNumber(pity5Min.value),
+    pity_5_max: parseOptionalNumber(pity5Max.value),
+    pity_4_min: parseOptionalNumber(pity4Min.value),
+    pity_4_max: parseOptionalNumber(pity4Max.value),
     date_from: dateFrom.value || null,
     date_to: dateTo.value || null,
     search: search.value || null,
@@ -343,13 +416,22 @@ async function runImport() {
   });
 }
 
-async function startLiveCapture() {
-  if (isWorkflowBusy.value || !activeProfileName.value) return;
+async function startLiveCapture(options: { skipAdminRequest?: boolean; pending?: PendingAdminCapture } = {}) {
+  if ((isWorkflowBusy.value && !options.skipAdminRequest) || !activeProfileName.value) return;
   captureActionBusy.value = true;
   errorText.value = "";
   try {
+    if (!options.skipAdminRequest && captureMode.value !== "live_only") {
+      const relaunching = await api.requestAdminCaptureStart(activeProfileName.value, locale.value, captureMode.value);
+      if (relaunching) {
+        statusText.value = "Waiting for administrator window";
+        return;
+      }
+    }
     await applyCaptureStatus(await api.captureStart(activeProfileName.value, locale.value, captureMode.value));
-    statusText.value = `${formatCaptureMode(captureMode.value)} started`;
+    statusText.value = options.pending
+      ? `${formatCaptureMode(captureMode.value)} resumed as administrator`
+      : `${formatCaptureMode(captureMode.value)} started`;
     if (isCaptureActive.value) {
       ensureCapturePolling();
     }
@@ -585,12 +667,94 @@ function numberOrDash(value?: number | null) {
   return value == null ? "-" : String(Math.round(value * 10) / 10);
 }
 
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
 function formatTime(value?: string | null) {
   return value || "-";
 }
 
 function formatResult(value: string) {
+  if (value === "unknown") return "Unknown";
+  if (value === "not_applicable") return "N/A";
   return value === "off_rate" ? "Off-rate" : "UP";
+}
+
+function bannerTitle(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  return banner?.title || banner?.banner_id || "Unknown banner";
+}
+
+function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  const parts = [banner?.version, banner?.phase, banner?.source_confidence].filter(Boolean);
+  if (parts.length) return parts.join(" · ");
+  return banner && "status" in banner ? banner.status : "unknown";
+}
+
+function formatBannerWindow(start?: string | null, end?: string | null) {
+  if (!start && !end) return "window unknown";
+  return `${start ?? "unknown"} -> ${end ?? "ongoing"}`;
+}
+
+function formatPullNo(record: DisplayRecord) {
+  return record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? "-";
+}
+
+function formatPity(record: DisplayRecord) {
+  return `5★ ${record.derived.pity_5_before}->${record.derived.pity_5_after} · 4★ ${record.derived.pity_4_before}->${record.derived.pity_4_after}`;
+}
+
+function formatGuarantee(record: DisplayRecord) {
+  const before = record.derived.guarantee_5_before ? "G before" : "normal";
+  const after = record.derived.guarantee_5_after ? "G after" : "normal";
+  return `${before} / ${after}`;
+}
+
+function assetRefEntries(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
+  if (!assetRefs) return [];
+  const all = Object.entries(assetRefs);
+  const preferred = preferredKeys
+    .map((key) => all.find(([candidate]) => candidate === key))
+    .filter((entry): entry is [string, unknown] => Boolean(entry));
+  const rest = all.filter(([key]) => !preferredKeys.includes(key));
+  return [...preferred, ...rest].flatMap(([key, value]) => {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => ({ key: `${key}[${index}]`, value: item }));
+    }
+    return [{ key, value }];
+  });
+}
+
+function shortAssetRef(value: unknown) {
+  const raw = typeof value === "string" ? value : JSON.stringify(value);
+  if (!raw) return "-";
+  const compact = raw.split("/").pop() ?? raw;
+  return compact.length > 34 ? `${compact.slice(0, 31)}...` : compact;
+}
+
+function assetRefTitle(value: unknown) {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function assetRefsCount(assetRefs?: Record<string, unknown> | null) {
+  return assetRefEntries(assetRefs).length;
+}
+
+function itemAssetEntries(record: DisplayRecord) {
+  return assetRefEntries(record.item_asset_refs, ["portrait", "icon", "head_icon"]);
+}
+
+function bannerAssetEntries(record: DisplayRecord | BannerSummary) {
+  const assetRefs = "banner" in record ? record.banner.asset_refs : record.asset_refs;
+  return assetRefEntries(assetRefs, [
+    "image",
+    "background",
+    "icon",
+    "featured_portraits",
+  ]);
 }
 
 function formatCaptureState(value?: string | null) {
@@ -731,7 +895,7 @@ function formatError(error: unknown) {
                 Live only
               </button>
             </div>
-            <button class="primary" type="button" :disabled="isWorkflowBusy" @click="startLiveCapture">
+            <button class="primary" type="button" :disabled="isWorkflowBusy" @click="startLiveCapture()">
               <RadioTower :size="17" />
               <span>Update Data</span>
             </button>
@@ -764,16 +928,16 @@ function formatError(error: unknown) {
             <strong>{{ summary?.total_records ?? 0 }}</strong>
           </div>
           <div class="metric">
-            <span>Tracked pools</span>
-            <strong>{{ trackedPoolCount }}</strong>
+            <span>Tracked banners</span>
+            <strong>{{ trackedBannerCount }}</strong>
           </div>
           <div class="metric">
-            <span>Current pity</span>
-            <strong>{{ selectedSummary?.current_pity ?? 0 }}</strong>
+            <span>Total roll points</span>
+            <strong>{{ summary?.resource.total_roll_points ?? 0 }}</strong>
           </div>
           <div class="metric">
-            <span>Latest item</span>
-            <strong class="metric-text">{{ latest[0]?.item_name ?? "-" }}</strong>
+            <span>Selected 5★ pity</span>
+            <strong>{{ selectedBanner?.current_5star_pity ?? selectedSummary?.current_pity ?? 0 }}</strong>
           </div>
         </section>
 
@@ -792,6 +956,49 @@ function formatError(error: unknown) {
             <span class="pity">{{ pool.current_pity }}/{{ pool.hard_pity }}</span>
             <span class="state">{{ pool.current_guarantee ? "Guaranteed" : "Normal" }}</span>
             <span class="pool-latest">Latest 5★ · {{ pool.latest_5star?.item_name ?? "-" }}</span>
+          </button>
+        </section>
+
+        <section class="banner-grid">
+          <button
+            v-for="banner in bannerSummaries"
+            :key="banner.banner_id"
+            class="banner-card"
+            :class="{ active: selectedBanner?.banner_id === banner.banner_id }"
+            type="button"
+            @click="
+              selectedBannerId = banner.banner_id;
+              selectedPoolKind = banner.pool_kind;
+            "
+          >
+            <span class="banner-card-head">
+              <span>
+                <strong>{{ banner.title }}</strong>
+                <small>{{ kindLabels[banner.pool_kind] }} · {{ banner.banner_type ?? "banner" }}</small>
+              </span>
+              <span class="confidence-badge">{{ banner.source_confidence ?? "unknown" }}</span>
+            </span>
+            <span class="banner-window">{{ formatBannerWindow(banner.start_at, banner.end_at) }}</span>
+            <span class="banner-stats">
+              <span>{{ banner.total_pulls }} pulls</span>
+              <span>{{ banner.roll_points_total }} roll</span>
+              <span>5★ {{ banner.current_5star_pity }}</span>
+              <span>4★ {{ banner.current_4star_pity }}</span>
+            </span>
+            <span class="banner-hit-line">
+              5★ {{ banner.five_star_count }} · 4★ {{ banner.four_star_count }} · UP {{ banner.rate_up_5_count }}/{{ banner.off_rate_5_count }}
+            </span>
+            <span class="asset-ref-list">
+              <span
+                v-for="entry in bannerAssetEntries(banner).slice(0, 3)"
+                :key="`${banner.banner_id}-${entry.key}`"
+                class="asset-ref-chip"
+                :title="assetRefTitle(entry.value)"
+              >
+                {{ entry.key }}: {{ shortAssetRef(entry.value) }}
+              </span>
+              <span v-if="bannerAssetEntries(banner).length === 0" class="muted">No refs</span>
+            </span>
           </button>
         </section>
 
@@ -849,6 +1056,68 @@ function formatError(error: unknown) {
           </div>
         </section>
 
+        <section class="split">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">{{ selectedBanner ? bannerMeta(selectedBanner) : "Banner" }}</span>
+                <h2>Selected banner</h2>
+              </div>
+            </div>
+            <div class="stat-table compact">
+              <div><span>Title</span><strong class="stat-text">{{ selectedBanner?.title ?? "-" }}</strong></div>
+              <div><span>Pulls</span><strong>{{ selectedBanner?.total_pulls ?? 0 }}</strong></div>
+              <div><span>Roll points</span><strong>{{ selectedBanner?.roll_points_total ?? 0 }}</strong></div>
+              <div><span>Avg 5★ pity</span><strong>{{ numberOrDash(selectedBanner?.average_5star_pity) }}</strong></div>
+              <div><span>Avg 4★ pity</span><strong>{{ numberOrDash(selectedBanner?.average_4star_pity) }}</strong></div>
+              <div><span>Latest hit</span><strong class="stat-text">{{ selectedBanner?.latest_hit?.item_name ?? "-" }}</strong></div>
+            </div>
+            <div class="derived-chip-row">
+              <span class="derived-chip">5★ UP {{ selectedBanner?.rate_up_5_count ?? 0 }}</span>
+              <span class="derived-chip">5★ off {{ selectedBanner?.off_rate_5_count ?? 0 }}</span>
+              <span class="derived-chip">4★ UP {{ selectedBanner?.rate_up_4_count ?? 0 }}</span>
+              <span class="derived-chip">missing roll {{ selectedBanner?.missing_roll_point_records ?? 0 }}</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Resource</span>
+                <h2>Roll points</h2>
+              </div>
+            </div>
+            <div class="resource-grid">
+              <div><span>Total</span><strong>{{ summary?.resource.total_roll_points ?? 0 }}</strong></div>
+              <div><span>Known records</span><strong>{{ summary?.resource.known_roll_point_records ?? 0 }}</strong></div>
+              <div><span>Missing records</span><strong>{{ summary?.resource.missing_roll_point_records ?? 0 }}</strong></div>
+            </div>
+            <div class="timeline-list compact-list">
+              <div v-for="resource in summary?.resource.by_pool_kind ?? []" :key="resource.pool_kind">
+                <span>{{ resource.label }}</span>
+                <strong>{{ resource.roll_points_total }}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">Phase</span>
+              <h2>Banner timeline</h2>
+            </div>
+          </div>
+          <div class="timeline-list">
+            <div v-for="phase in phaseSummaries" :key="`${phase.version ?? 'v'}-${phase.phase ?? 'p'}`">
+              <span>{{ phase.version ?? "unknown" }} · {{ phase.phase ?? "phase" }}</span>
+              <small>{{ phase.banner_count }} banners · {{ phase.total_pulls }} pulls · 5★ {{ phase.five_star_count }} · 4★ {{ phase.four_star_count }}</small>
+              <strong>{{ phase.roll_points_total }}</strong>
+            </div>
+            <div v-if="phaseSummaries.length === 0" class="empty-row">No phase stats.</div>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -860,7 +1129,19 @@ function formatError(error: unknown) {
             <div v-for="record in latest" :key="record.record_id" class="record-row">
               <div>
                 <strong>{{ record.item_name }}</strong>
-                <span>{{ record.pool_label }} · {{ record.rarity ? `${record.rarity}★` : "unknown" }}</span>
+                <span>{{ bannerTitle(record.banner) }} · {{ record.rarity ? `${record.rarity}★` : "unknown" }} · pull {{ formatPullNo(record) }}</span>
+                <span class="derived-chip">{{ formatResult(record.derived.rate_up_result) }} · {{ formatPity(record) }}</span>
+                <span class="asset-ref-list">
+                  <span
+                    v-for="entry in itemAssetEntries(record).slice(0, 2)"
+                    :key="`${record.record_id}-${entry.key}`"
+                    class="asset-ref-chip"
+                    :title="assetRefTitle(entry.value)"
+                  >
+                    {{ entry.key }}: {{ shortAssetRef(entry.value) }}
+                  </span>
+                  <span v-if="itemAssetEntries(record).length === 0" class="muted">No refs</span>
+                </span>
               </div>
               <small>{{ formatTime(record.time) }}</small>
             </div>
@@ -899,12 +1180,39 @@ function formatError(error: unknown) {
             </select>
           </label>
           <label class="field">
+            <span>Banner</span>
+            <select v-model="recordBannerId">
+              <option value="">All banners</option>
+              <option v-for="banner in bannersForRecordKind" :key="banner.banner_id" :value="banner.banner_id">
+                {{ banner.title }} ({{ banner.count }})
+              </option>
+            </select>
+          </label>
+          <label class="field">
             <span>Type</span>
             <select v-model="recordType">
               <option value="">All types</option>
               <option v-for="type in filterOptions.record_types" :key="type.record_type" :value="type.record_type">
                 {{ type.record_type }} ({{ type.count }})
               </option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Hit rarity</span>
+            <select v-model="hitRarity">
+              <option value="">All hits</option>
+              <option value="5">5★</option>
+              <option value="4">4★</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Rate-up</span>
+            <select v-model="rateUpResult">
+              <option value="">All results</option>
+              <option value="up">UP</option>
+              <option value="off_rate">Off-rate</option>
+              <option value="not_applicable">N/A</option>
+              <option value="unknown">Unknown</option>
             </select>
           </label>
           <label class="field">
@@ -919,10 +1227,15 @@ function formatError(error: unknown) {
             <span>Sort</span>
             <select v-model="sortKey">
               <option value="time">Time</option>
+              <option value="banner">Banner</option>
               <option value="pool">Pool</option>
               <option value="item">Item</option>
               <option value="rarity">Rarity</option>
               <option value="record_type">Type</option>
+              <option value="pull_no">Pull no</option>
+              <option value="pity_5">5★ pity</option>
+              <option value="pity_4">4★ pity</option>
+              <option value="rate_up">Rate-up</option>
             </select>
           </label>
           <label class="field">
@@ -931,6 +1244,22 @@ function formatError(error: unknown) {
               <option value="desc">Desc</option>
               <option value="asc">Asc</option>
             </select>
+          </label>
+          <label class="field">
+            <span>5★ pity min</span>
+            <input v-model="pity5Min" inputmode="numeric" placeholder="0" />
+          </label>
+          <label class="field">
+            <span>5★ pity max</span>
+            <input v-model="pity5Max" inputmode="numeric" placeholder="90" />
+          </label>
+          <label class="field">
+            <span>4★ pity min</span>
+            <input v-model="pity4Min" inputmode="numeric" placeholder="0" />
+          </label>
+          <label class="field">
+            <span>4★ pity max</span>
+            <input v-model="pity4Max" inputmode="numeric" placeholder="10" />
           </label>
         </section>
 
@@ -954,22 +1283,50 @@ function formatError(error: unknown) {
               </button>
             </div>
           </div>
-          <div class="record-table">
-            <div class="record-header">
+          <div class="record-table history-table">
+            <div class="record-header history-header">
               <span>Time</span>
-              <span>Pool</span>
-              <span>Type</span>
+              <span>Banner</span>
               <span>Item</span>
               <span>Rarity</span>
-              <span>Roll</span>
+              <span>Pull</span>
+              <span>Pity</span>
+              <span>Result</span>
+              <span>Rolls</span>
+              <span>Assets</span>
             </div>
-            <div v-for="record in records" :key="record.record_id" class="record-line">
+            <div v-for="record in records" :key="record.record_id" class="record-line history-line">
               <span>{{ formatTime(record.time) }}</span>
-              <span>{{ record.pool_label }}</span>
-              <span>{{ record.record_type }}</span>
-              <span>{{ record.item_name }}</span>
+              <span>
+                <strong>{{ bannerTitle(record.banner) }}</strong>
+                <small>{{ bannerMeta(record.banner) }}</small>
+              </span>
+              <span>
+                <strong>{{ record.item_name }}</strong>
+                <small v-if="record.secondary_item_name">{{ record.secondary_item_name }} x{{ record.secondary_count ?? 1 }}</small>
+              </span>
               <span>{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
+              <span>{{ formatPullNo(record) }}</span>
+              <span>{{ formatPity(record) }}</span>
+              <span>
+                <span class="derived-chip">{{ formatResult(record.derived.rate_up_result) }}</span>
+                <small>{{ formatGuarantee(record) }}</small>
+              </span>
               <span>{{ record.roll_points ?? "-" }}</span>
+              <span class="asset-ref-list">
+                <span
+                  v-for="entry in itemAssetEntries(record).slice(0, 2)"
+                  :key="`${record.record_id}-history-${entry.key}`"
+                  class="asset-ref-chip"
+                  :title="assetRefTitle(entry.value)"
+                >
+                  {{ entry.key }}: {{ shortAssetRef(entry.value) }}
+                </span>
+                <span v-if="itemAssetEntries(record).length === 0 && assetRefsCount(record.banner.asset_refs) === 0" class="muted">No refs</span>
+                <span v-else-if="assetRefsCount(record.banner.asset_refs)" class="asset-ref-chip">
+                  banner refs {{ assetRefsCount(record.banner.asset_refs) }}
+                </span>
+              </span>
             </div>
             <div v-if="records.length === 0" class="empty-row">No records match current filters.</div>
           </div>

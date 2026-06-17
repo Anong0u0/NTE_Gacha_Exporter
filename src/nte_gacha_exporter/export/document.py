@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime, timezone, tzinfo
 from typing import cast
 
 from nte_gacha_exporter import __version__
@@ -16,9 +16,9 @@ from nte_gacha_exporter.core.schema import (
     PoolMeta,
     PublicDocument,
 )
+from nte_gacha_exporter.mapping.banner_catalog import banner_label, normalize_game_time, resolve_banner
 
-SCHEMA_VERSION = "1.0"
-POOL_WINDOW_TIMEZONE = timezone(timedelta(hours=8))
+SCHEMA_VERSION = "2.0"
 
 
 @dataclass(frozen=True)
@@ -73,13 +73,11 @@ def _parse_public_datetime(value: str | None) -> datetime | None:
 
 
 def _host_local_naive_from_tz8(value: str, local_tz: tzinfo | None = None) -> datetime | None:
+    _ = local_tz
     parsed = _parse_public_datetime(value)
     if parsed is None:
         return None
-
-    aware = parsed.replace(tzinfo=POOL_WINDOW_TIMEZONE)
-    local = aware.astimezone(local_tz) if local_tz is not None else aware.astimezone()
-    return local.replace(tzinfo=None)
+    return parsed
 
 
 def _pool_meta_for_id(mapping: LocalizationMap, pool_id: str | None) -> PoolMeta:
@@ -98,7 +96,8 @@ def _pool_title_from_windows(
     *,
     local_tz: tzinfo | None = None,
 ) -> str | None:
-    record_dt = _parse_public_datetime(record_time)
+    _ = local_tz
+    record_dt = normalize_game_time(record_time)
     windows = meta.get("title_windows")
     if record_dt is None or not isinstance(windows, list):
         return None
@@ -108,7 +107,7 @@ def _pool_title_from_windows(
             continue
         title = str(window.get("title") or "")
         end_at_tz8 = str(window.get("end_at_tz8") or "")
-        end_dt = _host_local_naive_from_tz8(end_at_tz8, local_tz)
+        end_dt = normalize_game_time(end_at_tz8)
         if title and end_dt is not None and record_dt <= end_dt:
             return title
     return None
@@ -132,8 +131,8 @@ def _pool_name(
     return _lookup(mapping, "pools", pool_id)
 
 
-def _record_id(row: ParsedRow) -> str:
-    parts = [
+def _record_id_material(row: ParsedRow) -> tuple[str, ...]:
+    return (
         row.record_type,
         str(row.ticks),
         row.pool_id or "",
@@ -143,8 +142,39 @@ def _record_id(row: ParsedRow) -> str:
         str(row.count),
         row.secondary_item_id or "",
         str(row.secondary_count) if row.secondary_count is not None else "",
-    ]
-    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+    )
+
+
+def _record_id_from_material(material: tuple[str, ...]) -> str:
+    return hashlib.sha256("\x1f".join(material).encode("utf-8")).hexdigest()
+
+
+def _record_id(row: ParsedRow) -> str:
+    return _record_id_from_material(_record_id_material(row))
+
+
+def _record_id_for_occurrence(row: ParsedRow, occurrence_index: int) -> str:
+    material = _record_id_material(row)
+    if occurrence_index == 0:
+        return _record_id_from_material(material)
+    return _record_id_from_material((*material, "duplicate_occurrence", str(occurrence_index)))
+
+
+def _record_ids(rows: list[ParsedRow]) -> list[str]:
+    base_ids = [_record_id(row) for row in rows]
+    totals = Counter(base_ids)
+    seen: Counter[str] = Counter()
+    record_ids: list[str] = []
+
+    for row, base_id in zip(rows, base_ids, strict=True):
+        if totals[base_id] == 1:
+            record_ids.append(base_id)
+            continue
+        occurrence_index = seen[base_id]
+        seen[base_id] += 1
+        record_ids.append(_record_id_for_occurrence(row, occurrence_index))
+
+    return record_ids
 
 
 def _secondary_fields(row: ParsedRow, mapping: LocalizationMap) -> tuple[str | None, str | None, int | None]:
@@ -172,34 +202,42 @@ def _debug_raw_row(row: ParsedRow) -> dict[str, JsonValue]:
 def public_records(rows: list[ParsedRow], mapping: LocalizationMap) -> list[GachaRecord]:
     """Localize parsed rows and shape them into stable public records."""
 
-    records: list[GachaRecord] = []
+    canonical_rows: list[ParsedRow] = []
     for row in rows:
         item_id = _canonical_item_id(mapping, row.item_id) or row.item_id
         secondary_raw_id = _canonical_item_id(mapping, row.secondary_item_id)
-        public_time = _public_time(row.time)
-        canonical_row = ParsedRow(
-            record_type=row.record_type,
-            ticks=row.ticks,
-            time=row.time,
-            pool_id=row.pool_id,
-            item_id=item_id,
-            count=row.count,
-            roll_points=row.roll_points,
-            roll_label_id=row.roll_label_id,
-            secondary_item_id=secondary_raw_id,
-            secondary_count=row.secondary_count,
-            source=row.source,
+        canonical_rows.append(
+            ParsedRow(
+                record_type=row.record_type,
+                ticks=row.ticks,
+                time=row.time,
+                pool_id=row.pool_id,
+                item_id=item_id,
+                count=row.count,
+                roll_points=row.roll_points,
+                roll_label_id=row.roll_label_id,
+                secondary_item_id=secondary_raw_id,
+                secondary_count=row.secondary_count,
+                source=row.source,
+            )
         )
+
+    record_ids = _record_ids(canonical_rows)
+    records: list[GachaRecord] = []
+    for row, canonical_row, record_id in zip(rows, canonical_rows, record_ids, strict=True):
+        public_time = _public_time(row.time)
         secondary_item_id, secondary_item_name, secondary_count = _secondary_fields(canonical_row, mapping)
+        resolved_banner = resolve_banner(mapping, row.pool_id, public_time)
+        banner_matched = resolved_banner.get("status") == "matched"
         records.append(
             GachaRecord(
-                record_id=_record_id(canonical_row),
+                record_id=record_id,
                 record_type=row.record_type,
                 time=public_time,
                 pool_id=row.pool_id,
-                pool_name=_pool_name(mapping, row.pool_id, public_time),
-                item_id=item_id,
-                item_name=_lookup(mapping, "items", item_id),
+                pool_name=banner_label(mapping, row.pool_id, public_time),
+                item_id=canonical_row.item_id,
+                item_name=_lookup(mapping, "items", canonical_row.item_id),
                 count=row.count,
                 roll_points=row.roll_points,
                 roll_label=_roll_text(row, mapping),
@@ -207,6 +245,17 @@ def public_records(rows: list[ParsedRow], mapping: LocalizationMap) -> list[Gach
                 secondary_item_name=secondary_item_name,
                 secondary_count=secondary_count,
                 source=row.source,
+                banner_id=str(resolved_banner.get("banner_id")) if banner_matched else None,
+                banner_name=str(resolved_banner.get("title")) if banner_matched else None,
+                banner_type=str(resolved_banner.get("banner_type")) if banner_matched else None,
+                banner_version=str(resolved_banner.get("version"))
+                if banner_matched and resolved_banner.get("version")
+                else None,
+                banner_phase=str(resolved_banner.get("phase"))
+                if banner_matched and resolved_banner.get("phase")
+                else None,
+                banner_source_confidence=str(resolved_banner.get("source_confidence")) if banner_matched else None,
+                banner_resolution_status=str(resolved_banner.get("status") or ""),
             )
         )
     return records
@@ -246,7 +295,7 @@ def build_document(
     options: ExportOptions,
     warnings: list[ParseWarning] | None = None,
 ) -> ExportDocument:
-    """Build the public UIGF-like v1 sanitized JSON export document."""
+    """Build the public UIGF-like v2 sanitized JSON export document."""
 
     records = public_records(rows, mapping)
     all_warnings = [*(warnings or []), *unknown_warnings(records)]

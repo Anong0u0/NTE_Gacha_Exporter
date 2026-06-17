@@ -3,14 +3,15 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use atomic_write_file::AtomicWriteFile;
+use serde::Serialize;
 use serde_json::{json, Value};
 
-use crate::analysis::display_record;
+use crate::analysis::display_records;
 use crate::maps::MapData;
 use crate::model::{DisplayRecord, GuiError, InternalRecord};
 use crate::rules::classify_pool_id;
 
-const CSV_FIELDS: [&str; 8] = [
+const CSV_FIELDS: [&str; 21] = [
     "time",
     "pool_group",
     "pool_name",
@@ -19,6 +20,19 @@ const CSV_FIELDS: [&str; 8] = [
     "roll_label",
     "secondary_item_name",
     "secondary_count",
+    "banner_id",
+    "banner_name",
+    "pull_no",
+    "pool_pull_no",
+    "pity_5_before",
+    "pity_4_before",
+    "hit_rarity",
+    "rate_up_result",
+    "guarantee_5_before",
+    "guarantee_5_after",
+    "guarantee_4_before",
+    "guarantee_4_after",
+    "roll_points",
 ];
 
 pub fn export_public_json(
@@ -27,14 +41,15 @@ pub fn export_public_json(
     map: &MapData,
     locale: &str,
 ) -> Result<(), GuiError> {
-    let public_records = records
+    let display_records = display_records(records, map)?;
+    let public_records = display_records
         .iter()
-        .map(|record| public_record(record, map))
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(public_record)
+        .collect::<Vec<_>>();
     let document = json!({
         "info": {
             "schema": "nte-gacha-export",
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "export_app": "nte-gacha-exporter",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -51,6 +66,7 @@ pub fn export_public_json(
 }
 
 pub fn export_csv(path: &Path, records: &[InternalRecord], map: &MapData) -> Result<(), GuiError> {
+    let display_records = display_records(records, map)?;
     let mut lines = Vec::new();
     let headers = CSV_FIELDS
         .iter()
@@ -59,8 +75,7 @@ pub fn export_csv(path: &Path, records: &[InternalRecord], map: &MapData) -> Res
         .join(",");
     lines.push(headers);
 
-    for record in records {
-        let display = display_record(record, map)?;
+    for display in display_records {
         let row = csv_row(&display, map)?;
         lines.push(
             CSV_FIELDS
@@ -76,8 +91,7 @@ pub fn export_csv(path: &Path, records: &[InternalRecord], map: &MapData) -> Res
     write_bytes(path, text.as_bytes())
 }
 
-fn public_record(record: &InternalRecord, map: &MapData) -> Result<Value, GuiError> {
-    let display = display_record(record, map)?;
+fn public_record(display: &DisplayRecord) -> Value {
     let mut value = json!({
         "record_id": display.record_id,
         "record_type": display.record_type,
@@ -87,7 +101,7 @@ fn public_record(record: &InternalRecord, map: &MapData) -> Result<Value, GuiErr
         "item_name": display.item_name
     });
     let object = value.as_object_mut().expect("json object");
-    if let Some(time) = display.time {
+    if let Some(time) = display.time.as_ref() {
         object.insert("time".to_string(), json!(time));
     }
     if let Some(rarity) = display.rarity {
@@ -100,10 +114,93 @@ fn public_record(record: &InternalRecord, map: &MapData) -> Result<Value, GuiErr
         object.insert("roll_points".to_string(), json!(roll_points));
         object.insert("roll_label".to_string(), json!(roll_points.to_string()));
     }
-    if let Some(secondary_item_id) = display.secondary_item_id {
+    object.insert(
+        "banner_resolution_status".to_string(),
+        json!(display.banner.status),
+    );
+    object.insert("pool_kind".to_string(), json!(display.pool_kind));
+    object.insert(
+        "pull_no_in_pool_kind".to_string(),
+        json!(display.derived.pull_no_in_pool_kind),
+    );
+    object.insert(
+        "pity_5_before".to_string(),
+        json!(display.derived.pity_5_before),
+    );
+    object.insert(
+        "pity_5_after".to_string(),
+        json!(display.derived.pity_5_after),
+    );
+    object.insert(
+        "pity_4_before".to_string(),
+        json!(display.derived.pity_4_before),
+    );
+    object.insert(
+        "pity_4_after".to_string(),
+        json!(display.derived.pity_4_after),
+    );
+    object.insert(
+        "rate_up_result".to_string(),
+        json!(display.derived.rate_up_result),
+    );
+    object.insert(
+        "result_confidence".to_string(),
+        json!(display.derived.result_confidence),
+    );
+    object.insert(
+        "rule_resolution_status".to_string(),
+        json!(display.derived.rule.status),
+    );
+    object.insert(
+        "rule_source_confidence".to_string(),
+        json!(display.derived.rule.source_confidence),
+    );
+    if let Some(banner_id) = display.banner.banner_id.as_ref() {
+        object.insert("banner_id".to_string(), json!(banner_id));
+    }
+    if let Some(banner_name) = display.banner.title.as_ref() {
+        object.insert("banner_name".to_string(), json!(banner_name));
+    }
+    if let Some(banner_type) = display.banner.banner_type.as_ref() {
+        object.insert("banner_type".to_string(), json!(banner_type));
+    }
+    if let Some(source_confidence) = display.banner.source_confidence.as_ref() {
+        object.insert(
+            "banner_source_confidence".to_string(),
+            json!(source_confidence),
+        );
+    }
+    if let Some(version) = display.derived.banner_version.as_ref() {
+        object.insert("banner_version".to_string(), json!(version));
+    }
+    if let Some(phase) = display.derived.banner_phase.as_ref() {
+        object.insert("banner_phase".to_string(), json!(phase));
+    }
+    if let Some(pull_no) = display.derived.pull_no_in_banner {
+        object.insert("pull_no_in_banner".to_string(), json!(pull_no));
+    }
+    if let Some(rarity) = display.derived.hit_rarity {
+        object.insert("hit_rarity".to_string(), json!(rarity));
+    }
+    if let Some(value) = display.derived.guarantee_5_before {
+        object.insert("guarantee_5_before".to_string(), json!(value));
+    }
+    if let Some(value) = display.derived.guarantee_5_after {
+        object.insert("guarantee_5_after".to_string(), json!(value));
+    }
+    if let Some(value) = display.derived.guarantee_4_before {
+        object.insert("guarantee_4_before".to_string(), json!(value));
+    }
+    if let Some(value) = display.derived.guarantee_4_after {
+        object.insert("guarantee_4_after".to_string(), json!(value));
+    }
+    if let Some(rule_id) = display.derived.rule.rule_id.as_ref() {
+        object.insert("rule_id".to_string(), json!(rule_id));
+    }
+    if let Some(secondary_item_id) = display.secondary_item_id.as_ref() {
         object.insert("secondary_item_id".to_string(), json!(secondary_item_id));
     }
-    if let Some(secondary_item_name) = display.secondary_item_name {
+    if let Some(secondary_item_name) = display.secondary_item_name.as_ref() {
         object.insert(
             "secondary_item_name".to_string(),
             json!(secondary_item_name),
@@ -112,7 +209,7 @@ fn public_record(record: &InternalRecord, map: &MapData) -> Result<Value, GuiErr
     if let Some(secondary_count) = display.secondary_count {
         object.insert("secondary_count".to_string(), json!(secondary_count));
     }
-    Ok(value)
+    value
 }
 
 struct CsvRow {
@@ -124,6 +221,19 @@ struct CsvRow {
     roll_label: String,
     secondary_item_name: String,
     secondary_count: String,
+    banner_id: String,
+    banner_name: String,
+    pull_no: String,
+    pool_pull_no: String,
+    pity_5_before: String,
+    pity_4_before: String,
+    hit_rarity: String,
+    rate_up_result: String,
+    guarantee_5_before: String,
+    guarantee_5_after: String,
+    guarantee_4_before: String,
+    guarantee_4_after: String,
+    roll_points: String,
 }
 
 fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
@@ -145,6 +255,30 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
             .secondary_count
             .map(|value| value.to_string())
             .unwrap_or_default(),
+        banner_id: record.derived.banner_id.clone().unwrap_or_default(),
+        banner_name: record.banner.title.clone().unwrap_or_default(),
+        pull_no: record
+            .derived
+            .pull_no_in_banner
+            .unwrap_or(record.derived.pull_no_in_pool_kind)
+            .to_string(),
+        pool_pull_no: record.derived.pull_no_in_pool_kind.to_string(),
+        pity_5_before: record.derived.pity_5_before.to_string(),
+        pity_4_before: record.derived.pity_4_before.to_string(),
+        hit_rarity: record
+            .derived
+            .hit_rarity
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        rate_up_result: json_label(record.derived.rate_up_result)?,
+        guarantee_5_before: bool_cell(record.derived.guarantee_5_before),
+        guarantee_5_after: bool_cell(record.derived.guarantee_5_after),
+        guarantee_4_before: bool_cell(record.derived.guarantee_4_before),
+        guarantee_4_after: bool_cell(record.derived.guarantee_4_after),
+        roll_points: record
+            .roll_points
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
     })
 }
 
@@ -158,8 +292,32 @@ fn row_value<'a>(row: &'a CsvRow, field: &str) -> &'a str {
         "roll_label" => &row.roll_label,
         "secondary_item_name" => &row.secondary_item_name,
         "secondary_count" => &row.secondary_count,
+        "banner_id" => &row.banner_id,
+        "banner_name" => &row.banner_name,
+        "pull_no" => &row.pull_no,
+        "pool_pull_no" => &row.pool_pull_no,
+        "pity_5_before" => &row.pity_5_before,
+        "pity_4_before" => &row.pity_4_before,
+        "hit_rarity" => &row.hit_rarity,
+        "rate_up_result" => &row.rate_up_result,
+        "guarantee_5_before" => &row.guarantee_5_before,
+        "guarantee_5_after" => &row.guarantee_5_after,
+        "guarantee_4_before" => &row.guarantee_4_before,
+        "guarantee_4_after" => &row.guarantee_4_after,
+        "roll_points" => &row.roll_points,
         _ => "",
     }
+}
+
+fn json_label<T: Serialize>(value: T) -> Result<String, GuiError> {
+    Ok(serde_json::to_value(value)?
+        .as_str()
+        .unwrap_or_default()
+        .to_string())
+}
+
+fn bool_cell(value: Option<bool>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
 }
 
 fn csv_header<'a>(map: &'a MapData, field: &'a str) -> &'a str {

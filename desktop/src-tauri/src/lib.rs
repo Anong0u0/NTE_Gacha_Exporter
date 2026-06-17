@@ -1,9 +1,11 @@
 use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Mutex;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use nte_gui_core::{
     available_locales, check_update_manifest, load_locale_or_settings, prepare_update_install,
@@ -20,6 +22,7 @@ struct AppState {
     store: Mutex<JsonStore>,
     sidecar: Mutex<Option<SidecarClient>>,
     captures: Mutex<HashMap<String, CaptureSessionMeta>>,
+    pending_admin_capture: Mutex<Option<PendingAdminCapture>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,6 +62,13 @@ struct CaptureSessionMeta {
     source_path: Option<String>,
     full_update: bool,
     import_report: Option<ImportReport>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PendingAdminCapture {
+    profile_name: String,
+    locale: String,
+    mode: CaptureMode,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -352,6 +362,46 @@ fn sidecar_ping(state: State<'_, AppState>) -> Result<Value, ApiError> {
 }
 
 #[tauri::command]
+fn request_admin_capture_start(
+    state: State<'_, AppState>,
+    profile_name: String,
+    locale: Option<String>,
+    mode: Option<CaptureMode>,
+) -> Result<bool, ApiError> {
+    let mode = mode.unwrap_or(CaptureMode::AutoPageIncremental);
+    if !mode.auto_page() || !admin_relaunch_required()? {
+        return Ok(false);
+    }
+    let locale = with_store(&state, |store| {
+        let locale = load_locale_or_settings(store, locale)?;
+        store.dashboard_overview(&profile_name, &locale)?;
+        Ok(locale)
+    })?;
+    let payload = PendingAdminCapture {
+        profile_name,
+        locale,
+        mode,
+    };
+    let path = write_admin_capture_payload(&payload)?;
+    relaunch_admin_with_capture_payload(&path)?;
+    schedule_process_exit();
+    Ok(true)
+}
+
+#[tauri::command]
+fn take_pending_admin_capture(
+    state: State<'_, AppState>,
+) -> Result<Option<PendingAdminCapture>, ApiError> {
+    state
+        .pending_admin_capture
+        .lock()
+        .map_err(|_| {
+            api_error_message("admin_capture_lock_poisoned", "admin capture lock poisoned")
+        })
+        .map(|mut pending| pending.take())
+}
+
+#[tauri::command]
 fn capture_start(
     state: State<'_, AppState>,
     profile_name: String,
@@ -359,6 +409,12 @@ fn capture_start(
     mode: Option<CaptureMode>,
 ) -> Result<CaptureStatus, ApiError> {
     let mode = mode.unwrap_or(CaptureMode::AutoPageIncremental);
+    if mode.auto_page() && admin_relaunch_required()? {
+        return Err(api_error_message(
+            "admin_required",
+            "auto page requires administrator permission",
+        ));
+    }
     let locale = with_store(&state, |store| {
         let locale = load_locale_or_settings(store, locale)?;
         store.dashboard_overview(&profile_name, &locale)?;
@@ -426,9 +482,11 @@ fn capture_stop(state: State<'_, AppState>, session_id: String) -> Result<Captur
 }
 
 pub fn run() {
+    let pending_admin_capture = pending_admin_capture_from_args()
+        .unwrap_or_else(|error| panic!("failed to read pending admin capture: {error:?}"));
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .setup(|app| {
+        .setup(move |app| {
             let root =
                 portable_root().map_err(|err| format!("failed to resolve portable root: {err}"))?;
             let store =
@@ -437,6 +495,7 @@ pub fn run() {
                 store: Mutex::new(store),
                 sidecar: Mutex::new(None),
                 captures: Mutex::new(HashMap::new()),
+                pending_admin_capture: Mutex::new(pending_admin_capture.clone()),
             });
             Ok(())
         })
@@ -463,6 +522,8 @@ pub fn run() {
             maps_list,
             doctor_run,
             sidecar_ping,
+            request_admin_capture_start,
+            take_pending_admin_capture,
             capture_start,
             capture_status,
             capture_stop
@@ -583,7 +644,7 @@ struct GithubAsset {
 }
 
 fn portable_root() -> Result<PathBuf, std::io::Error> {
-    if let Ok(root) = std::env::var("NTE_GACHA_PORTABLE_ROOT") {
+    if let Ok(root) = env::var("NTE_GACHA_PORTABLE_ROOT") {
         if !root.trim().is_empty() {
             return Ok(PathBuf::from(root));
         }
@@ -595,6 +656,44 @@ fn portable_root() -> Result<PathBuf, std::io::Error> {
         .ok_or_else(|| {
             std::io::Error::other("cannot resolve current executable or current directory")
         })
+}
+
+fn pending_admin_capture_from_args() -> Result<Option<PendingAdminCapture>, ApiError> {
+    let mut args = env::args_os().skip(1);
+    while let Some(arg) = args.next() {
+        if arg == "--admin-capture-json" {
+            let path = args.next().ok_or_else(|| {
+                api_error_message(
+                    "admin_capture_arg_missing",
+                    "--admin-capture-json requires a path",
+                )
+            })?;
+            let text = fs::read_to_string(path).map_err(api_error)?;
+            return serde_json::from_str(&text).map(Some).map_err(api_error);
+        }
+    }
+    Ok(None)
+}
+
+fn write_admin_capture_payload(payload: &PendingAdminCapture) -> Result<PathBuf, ApiError> {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(api_error)?
+        .as_millis();
+    let path = env::temp_dir().join(format!(
+        "nte-gacha-admin-capture-{}-{stamp}.json",
+        std::process::id()
+    ));
+    let text = serde_json::to_string(payload).map_err(api_error)?;
+    fs::write(&path, text).map_err(api_error)?;
+    Ok(path)
+}
+
+fn schedule_process_exit() {
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(750));
+        std::process::exit(0);
+    });
 }
 
 fn sidecar_call(
@@ -714,12 +813,14 @@ impl SidecarClient {
     }
 
     fn connect(sidecar: SidecarCommand) -> Result<Self, ApiError> {
-        let mut child = Command::new(&sidecar.program)
+        let mut command = Command::new(&sidecar.program);
+        command
+            .env("PYTHONUTF8", "1")
+            .env("PYTHONIOENCODING", "utf-8")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(api_error)?;
+            .stderr(Stdio::null());
+        let mut child = command.spawn().map_err(api_error)?;
         let stdin = child
             .stdin
             .take()
@@ -748,14 +849,23 @@ impl SidecarClient {
         writeln!(self.stdin, "{request}").map_err(api_error)?;
         self.stdin.flush().map_err(api_error)?;
 
-        let mut line = String::new();
-        let read = self.stdout.read_line(&mut line).map_err(api_error)?;
+        let mut line = Vec::new();
+        let read = self
+            .stdout
+            .read_until(b'\n', &mut line)
+            .map_err(api_error)?;
         if read == 0 {
             return Err(api_error_message(
                 "sidecar_exited",
                 format!("sidecar exited while handling {method}"),
             ));
         }
+        let line = String::from_utf8(line).map_err(|error| {
+            api_error_message(
+                "sidecar_bad_encoding",
+                format!("sidecar returned non-UTF-8 response while handling {method}: {error}"),
+            )
+        })?;
         parse_sidecar_response(&line)
     }
 }
@@ -797,7 +907,6 @@ fn sidecar_candidates() -> Vec<SidecarCommand> {
     {
         let sidecars = PathBuf::from(root).join("sidecars");
         push_existing_sidecar(&mut candidates, sidecars.join(sidecar_exe_name()));
-        push_existing_sidecar(&mut candidates, sidecars.join(sidecar_cmd_name()));
     }
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
@@ -805,20 +914,12 @@ fn sidecar_candidates() -> Vec<SidecarCommand> {
                 &mut candidates,
                 exe_dir.join("sidecars").join(sidecar_exe_name()),
             );
-            push_existing_sidecar(
-                &mut candidates,
-                exe_dir.join("sidecars").join(sidecar_cmd_name()),
-            );
         }
     }
     if let Ok(current_dir) = std::env::current_dir() {
         push_existing_sidecar(
             &mut candidates,
             current_dir.join("sidecars").join(sidecar_exe_name()),
-        );
-        push_existing_sidecar(
-            &mut candidates,
-            current_dir.join("sidecars").join(sidecar_cmd_name()),
         );
     }
     candidates.push(SidecarCommand {
@@ -843,13 +944,163 @@ fn sidecar_exe_name() -> &'static str {
     }
 }
 
-fn sidecar_cmd_name() -> &'static str {
-    "nte-gacha-python-core.cmd"
-}
-
 impl SidecarCommand {
     fn label(&self) -> String {
         self.program.clone()
+    }
+}
+
+#[cfg(not(windows))]
+fn admin_relaunch_required() -> Result<bool, ApiError> {
+    Ok(false)
+}
+
+#[cfg(windows)]
+fn admin_relaunch_required() -> Result<bool, ApiError> {
+    windows_admin::is_elevated().map(|is_elevated| !is_elevated)
+}
+
+#[cfg(not(windows))]
+fn relaunch_admin_with_capture_payload(_path: &Path) -> Result<(), ApiError> {
+    Err(api_error_message(
+        "admin_relaunch_unsupported",
+        "administrator relaunch requires Windows",
+    ))
+}
+
+#[cfg(windows)]
+fn relaunch_admin_with_capture_payload(path: &Path) -> Result<(), ApiError> {
+    let executable = env::var_os("NTE_GACHA_LAUNCHER")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| env::current_exe().ok())
+        .ok_or_else(|| {
+            api_error_message("admin_relaunch_failed", "cannot resolve launcher path")
+        })?;
+    let working_dir = env::var_os("NTE_GACHA_PORTABLE_ROOT")
+        .or_else(|| env::var_os("NTE_GACHA_ROOT"))
+        .map(PathBuf::from)
+        .or_else(|| env::current_dir().ok());
+    windows_admin::runas(
+        &executable,
+        &[
+            "--admin-capture-json".into(),
+            path.as_os_str().to_os_string(),
+        ],
+        working_dir.as_deref(),
+    )
+}
+
+#[cfg(windows)]
+mod windows_admin {
+    use std::ffi::{OsStr, OsString};
+    use std::os::windows::ffi::OsStrExt;
+    use std::path::Path;
+    use std::ptr;
+
+    use super::{api_error_message, ApiError};
+
+    const SW_SHOWNORMAL: i32 = 1;
+
+    #[link(name = "shell32")]
+    extern "system" {
+        fn IsUserAnAdmin() -> i32;
+        fn ShellExecuteW(
+            hwnd: *mut std::ffi::c_void,
+            lp_operation: *const u16,
+            lp_file: *const u16,
+            lp_parameters: *const u16,
+            lp_directory: *const u16,
+            n_show_cmd: i32,
+        ) -> isize;
+    }
+
+    pub fn is_elevated() -> Result<bool, ApiError> {
+        Ok(unsafe { IsUserAnAdmin() != 0 })
+    }
+
+    pub fn runas(
+        executable: &Path,
+        arguments: &[OsString],
+        working_dir: Option<&Path>,
+    ) -> Result<(), ApiError> {
+        let operation = wide("runas");
+        let file = wide(executable.as_os_str());
+        let parameters = wide(command_line(arguments));
+        let directory = working_dir.map(|path| wide(path.as_os_str()));
+        let directory_ptr = directory
+            .as_ref()
+            .map_or(ptr::null(), |value| value.as_ptr());
+        let result = unsafe {
+            ShellExecuteW(
+                ptr::null_mut(),
+                operation.as_ptr(),
+                file.as_ptr(),
+                parameters.as_ptr(),
+                directory_ptr,
+                SW_SHOWNORMAL,
+            )
+        };
+        if result <= 32 {
+            return Err(api_error_message(
+                "admin_relaunch_failed",
+                format!("administrator relaunch failed: ShellExecuteW={result}"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn command_line(args: &[OsString]) -> OsString {
+        OsString::from(
+            args.iter()
+                .map(|arg| quote_arg(&arg.to_string_lossy()))
+                .collect::<Vec<_>>()
+                .join(" "),
+        )
+    }
+
+    fn quote_arg(arg: &str) -> String {
+        if arg.is_empty() {
+            return "\"\"".to_string();
+        }
+        if !arg
+            .bytes()
+            .any(|byte| matches!(byte, b' ' | b'\t' | b'"' | b'\\'))
+        {
+            return arg.to_string();
+        }
+        let mut quoted = String::from("\"");
+        let mut backslashes = 0;
+        for ch in arg.chars() {
+            if ch == '\\' {
+                backslashes += 1;
+                continue;
+            }
+            if ch == '"' {
+                quoted.push_str(&"\\".repeat(backslashes * 2 + 1));
+                quoted.push('"');
+                backslashes = 0;
+                continue;
+            }
+            if backslashes > 0 {
+                quoted.push_str(&"\\".repeat(backslashes));
+                backslashes = 0;
+            }
+            quoted.push(ch);
+        }
+        if backslashes > 0 {
+            quoted.push_str(&"\\".repeat(backslashes * 2));
+        }
+        quoted.push('"');
+        quoted
+    }
+
+    fn wide(value: impl AsRef<OsStr>) -> Vec<u16> {
+        value
+            .as_ref()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect()
     }
 }
 

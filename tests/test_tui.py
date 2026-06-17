@@ -758,6 +758,40 @@ def test_tui_admin_handoff_stores_parent_absolute_output_paths(monkeypatch, tmp_
     assert state.handoffContext["settings"]["saveRaw"] is True
 
 
+def test_tui_maps_build_admin_handoff_uses_os_temp_file(monkeypatch, tmp_path):
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    app = TuiApp(
+        console=Console(file=io.StringIO(), width=120, force_terminal=False),
+        settings=TuiSettings(),
+    )
+    seen: dict[str, object] = {}
+
+    def fake_request_admin_relaunch(arguments, purpose):
+        assert purpose == "maps build"
+        assert arguments[0] == "--maps-build-json"
+        payload_path = Path(arguments[1])
+        seen["path"] = payload_path
+        seen["payload"] = json.loads(payload_path.read_text(encoding="utf-8"))
+        return True
+
+    monkeypatch.chdir(work_dir)
+    app._request_admin_relaunch = fake_request_admin_relaunch
+
+    assert app._request_admin_maps_build("D:/NTE_Assets", "zh-Hant", tmp_path / "maps") is True
+
+    payload_path = seen["path"]
+    assert isinstance(payload_path, Path)
+    assert payload_path.is_absolute()
+    assert payload_path.parent != work_dir / ".local"
+    assert payload_path.name.startswith("nte-gacha-maps-build-")
+    assert seen["payload"] == {
+        "assetsRoot": "D:/NTE_Assets",
+        "locale": "zh-Hant",
+        "outDir": str(tmp_path / "maps"),
+    }
+
+
 def test_tui_auto_page_once_uses_handoff_paths_not_child_cwd(monkeypatch, tmp_path):
     from nte_gacha_exporter.automation.pager import AutoPageResult
 

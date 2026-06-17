@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import nte_gacha_exporter.sidecar.main as sidecar
@@ -44,6 +47,26 @@ def test_sidecar_raw_replay_returns_document_and_session_result():
     )
 
     assert session_response["result"]["records_count"] == 2
+
+
+def test_sidecar_process_outputs_utf8_json():
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "raw.replay",
+        "params": {"path": str(FIXTURE), "locale": "zh-Hant"},
+    }
+
+    result = subprocess.run(
+        [sys.executable, "-m", "nte_gacha_exporter.sidecar.main"],
+        input=(json.dumps(request) + "\n").encode("utf-8"),
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode("utf-8"))
+    assert response["result"]["records_count"] == 2
 
 
 def test_sidecar_maps_list_returns_bundled_locales(monkeypatch):

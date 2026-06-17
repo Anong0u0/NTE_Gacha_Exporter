@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from nte_gacha_exporter.mapping.rules import build_rules_map
-from nte_gacha_exporter.mapping.runtime import DEFAULT_LOCALE
+from nte_gacha_exporter.mapping.runtime import DEFAULT_LOCALE, MAP_SCHEMA_VERSION, _validate_map_source
 
 TABLES: list[tuple[str, str]] = [
     ("inventory", "DataTable/Inventory/DT_ItemConfig.json"),
@@ -46,12 +46,10 @@ MONOPOLY_DESCRIPTION_KEYS = (
     "LotteryDes_JIshishuoming_{tail}Des",
 )
 STANDARD_MONOPOLY_TITLE_TAIL = "changzhu"
-LIMITED_MONOPOLY_TITLE_WINDOWS_TZ8: tuple[tuple[str, str], ...] = (
-    ("Nanali", "2026-05-13 05:59:00"),
-    ("Xun", "2026-06-03 05:59:00"),
-    ("AnHunQu", "2026-06-24 05:59:00"),
-    ("Kaesi", "2026-07-08 05:59:00"),
-)
+MONOPOLY_LIMITED_RULE_TEXT_KEY = "LotteryDes_XiandingJishiguize_Des"
+MONOPOLY_STANDARD_RULE_TEXT_KEY = "LotteryDes_Changzhujishiguize_Des"
+MONOPOLY_LOTTERY_TABLE = "DataTable/Gacha/DT_LotteryDataTable_Nanali.json"
+FORK_POOL_TABLE = "DataTable/Fork/DT_ForkLotteryPoolData.json"
 LABEL_KEYS: dict[str, tuple[str, str]] = {
     "Abyss_GamepadKeys_1": ("ST_Ui", "Abyss_GamepadKeys_1"),
     "AbyssClone_Award_02": ("ST_Ui", "AbyssClone_Award_02"),
@@ -144,6 +142,48 @@ ROMAN_POOL_TITLE_RE = re.compile(
     re.IGNORECASE,
 )
 TITLE_QUOTE_PAIRS = (("「", "」"), ("『", "』"), ("“", "”"), ('"', '"'), ("'", "'"))
+
+
+@dataclass(frozen=True)
+class _CuratedLimitedBanner:
+    tail: str
+    banner_id: str
+    end_at_tz8: str
+    rate_up_5: tuple[str, ...]
+    version: str | None = None
+    phase: str | None = None
+
+
+CURATED_LIMITED_BANNERS: tuple[_CuratedLimitedBanner, ...] = (
+    _CuratedLimitedBanner(
+        "Nanali",
+        "monopoly_limited_Nanali",
+        "2026-05-13 05:59:00",
+        ("1010",),
+        phase="limited_2026_05_13",
+    ),
+    _CuratedLimitedBanner(
+        "Xun",
+        "monopoly_limited_Xun",
+        "2026-06-03 05:59:00",
+        ("1052",),
+        phase="limited_2026_06_03",
+    ),
+    _CuratedLimitedBanner(
+        "AnHunQu",
+        "monopoly_limited_AnHunQu",
+        "2026-06-24 05:59:00",
+        ("1004",),
+        phase="limited_2026_06_24",
+    ),
+    _CuratedLimitedBanner(
+        "Kaesi",
+        "monopoly_limited_Kaesi",
+        "2026-07-08 05:59:00",
+        ("1020",),
+        phase="limited_2026_07_08",
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -240,6 +280,13 @@ def _text_ref_fallback(text_ref: dict[str, Any]) -> str | None:
         if value:
             return str(value)
     return None
+
+
+def _text_ref_key(text_ref: Any) -> str | None:
+    if not isinstance(text_ref, dict):
+        return None
+    key = text_ref.get("Key")
+    return str(key) if key else None
 
 
 def _localized_text(text_ref: Any, localization: dict[str, Any]) -> str | None:
@@ -671,6 +718,39 @@ def _add_pool(
         pools[pool_id] = name
 
 
+def _source_evidence(
+    confidence: str,
+    tables: tuple[str, ...],
+    *,
+    notes: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    evidence: dict[str, Any] = {
+        "confidence": confidence,
+        "tables": list(tables),
+    }
+    if notes:
+        evidence["notes"] = list(notes)
+    return evidence
+
+
+def _asset_path(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    path = value.get("AssetPathName")
+    return path if isinstance(path, str) and path.startswith("/Game/") else None
+
+
+def _pool_asset_refs(row: dict[str, Any]) -> dict[str, str]:
+    refs: dict[str, str] = {}
+    background = _asset_path(row.get("Bg"))
+    if background:
+        refs["background"] = background
+    icon = _asset_path(row.get("Icon"))
+    if icon:
+        refs["icon"] = icon
+    return refs
+
+
 def _fork_pickup_item_ids(
     pool_id: str,
     row: dict[str, Any],
@@ -710,6 +790,9 @@ def _fork_pool_meta(
     if title:
         meta["title"] = title
     meta["pickup_item_ids"] = _fork_pickup_item_ids(pool_id, row, canonicalize_item_id)
+    asset_refs = _pool_asset_refs(row)
+    if asset_refs:
+        meta["asset_refs"] = asset_refs
     return meta
 
 
@@ -793,10 +876,10 @@ def _monopoly_pool_meta(
         return meta
 
     title_windows: list[dict[str, str]] = []
-    for tail, end_at_tz8 in LIMITED_MONOPOLY_TITLE_WINDOWS_TZ8:
-        title = _localized_monopoly_pool_title(localization, tail)
+    for banner in CURATED_LIMITED_BANNERS:
+        title = _localized_monopoly_pool_title(localization, banner.tail)
         if title:
-            title_windows.append({"end_at_tz8": end_at_tz8, "title": title})
+            title_windows.append({"end_at_tz8": banner.end_at_tz8, "title": title})
     if title_windows:
         meta["title_windows"] = title_windows
     return meta
@@ -990,6 +1073,408 @@ def _build_pools(
     return pools, pool_meta
 
 
+def _lottery_item_ids(
+    assets_root: Path,
+    key: str,
+    canonicalize_item_id: Callable[[str], str],
+    *,
+    known_item_ids: set[str],
+) -> list[str]:
+    table_path = assets_root / MONOPOLY_LOTTERY_TABLE
+    if not table_path.exists():
+        return []
+
+    item_ids: list[str] = []
+    for row in _rows_from_datatable(table_path).values():
+        if not isinstance(row, dict):
+            continue
+        values = row.get(key)
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            if not isinstance(value, dict):
+                continue
+            raw_item_id = value.get("ItemID")
+            if not raw_item_id or raw_item_id == "None":
+                continue
+            item_id = canonicalize_item_id(str(raw_item_id))
+            if item_id in known_item_ids:
+                item_ids.append(item_id)
+    return list(dict.fromkeys(item_ids))
+
+
+def _item_ref_list(
+    item_ids: tuple[str, ...],
+    canonicalize_item_id: Callable[[str], str],
+    known_item_ids: set[str],
+) -> list[str]:
+    refs = [canonicalize_item_id(item_id) for item_id in item_ids]
+    return [item_id for item_id in dict.fromkeys(refs) if item_id in known_item_ids]
+
+
+def _item_asset_ref(items: dict[str, dict[str, Any]], item_id: str, key: str) -> str | None:
+    item = items.get(item_id)
+    if not isinstance(item, dict):
+        return None
+    refs = item.get("asset_refs")
+    if not isinstance(refs, dict):
+        return None
+    value = refs.get(key)
+    return value if isinstance(value, str) and value else None
+
+
+def _featured_portraits(items: dict[str, dict[str, Any]], item_ids: list[str]) -> list[str]:
+    refs = [_item_asset_ref(items, item_id, "portrait") for item_id in item_ids]
+    return [ref for ref in refs if ref]
+
+
+def _monopoly_rule_text_refs(*, limited: bool) -> dict[str, str]:
+    key = MONOPOLY_LIMITED_RULE_TEXT_KEY if limited else MONOPOLY_STANDARD_RULE_TEXT_KEY
+    return {"rule_desc_1": key}
+
+
+def _build_gacha_rules(
+    assets_root: Path,
+    locale: str,
+    canonicalize_item_id: Callable[[str], str],
+) -> dict[str, dict[str, Any]]:
+    rules: dict[str, dict[str, Any]] = {
+        "monopoly_limited": {
+            "rule_id": "monopoly_limited",
+            "pool_kind": "monopoly_limited",
+            "hard_pity_5": 90,
+            "has_guarantee_5": False,
+            "guarantee_scope": "unknown",
+            "carry_scope": "pool_kind",
+            "rule_text_refs": _monopoly_rule_text_refs(limited=True),
+            "source": _source_evidence(
+                "curated",
+                (f"Localization/{locale}/game.json",),
+                notes=("Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown.",),
+            ),
+        },
+        "monopoly_standard": {
+            "rule_id": "monopoly_standard",
+            "pool_kind": "monopoly_standard",
+            "hard_pity_5": 90,
+            "has_guarantee_5": False,
+            "guarantee_scope": "unknown",
+            "carry_scope": "pool_kind",
+            "rule_text_refs": _monopoly_rule_text_refs(limited=False),
+            "source": _source_evidence(
+                "curated",
+                (f"Localization/{locale}/game.json",),
+                notes=("Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled.",),
+            ),
+        },
+    }
+
+    fork_rows = _fork_pool_rows(assets_root)
+    if any(str(pool_id).startswith("ForkLottery_") and isinstance(row, dict) for pool_id, row in fork_rows.items()):
+        hard_pity_5 = _fork_hard_pity_5(fork_rows)
+        pickup_win_rate_5 = _fork_pickup_win_rate_5(assets_root, fork_rows, canonicalize_item_id)
+        source_is_exact = hard_pity_5 is not None and pickup_win_rate_5 is not None
+        rules["fork_lottery_s"] = {
+            "rule_id": "fork_lottery_s",
+            "pool_kind": "fork_lottery",
+            "hard_pity_5": hard_pity_5 or 80,
+            "pickup_win_rate_5": pickup_win_rate_5 or 25,
+            "has_guarantee_5": True,
+            "guarantee_scope": "pool_kind",
+            "carry_scope": "pool_kind",
+            "rule_text_refs": _fork_rule_text_refs(fork_rows),
+            "source": _source_evidence(
+                "exact" if source_is_exact else "curated",
+                (FORK_POOL_TABLE, DROP_GROUP_TABLE, DROP_SEQUENCE_TABLE),
+                notes=("Fallback numeric rule follows current desktop behavior when structured values are absent.",)
+                if not source_is_exact
+                else ("Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump.",),
+            ),
+        }
+    return dict(sorted(rules.items()))
+
+
+def _fork_pool_rows(assets_root: Path) -> dict[str, Any]:
+    table_path = assets_root / FORK_POOL_TABLE
+    return _rows_from_datatable(table_path) if table_path.exists() else {}
+
+
+def _fork_hard_pity_5(fork_rows: dict[str, Any]) -> int | None:
+    values: set[int] = set()
+    for pool_id, row in fork_rows.items():
+        if not str(pool_id).startswith("ForkLottery_") or not isinstance(row, dict):
+            continue
+        value = row.get("UpGuaranteeCnt")
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            values.add(value)
+    if len(values) == 1:
+        return next(iter(values))
+    return None
+
+
+def _fork_pickup_win_rate_5(
+    assets_root: Path,
+    fork_rows: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+) -> int | None:
+    drop_group_path = assets_root / DROP_GROUP_TABLE
+    drop_sequence_path = assets_root / DROP_SEQUENCE_TABLE
+    if not drop_group_path.exists() or not drop_sequence_path.exists():
+        return None
+
+    drop_group_rows = _rows_from_datatable(drop_group_path)
+    sequence_rows = _rows_from_datatable(drop_sequence_path)
+    rates: list[int] = []
+    for pool_id, row in fork_rows.items():
+        pool_key = str(pool_id)
+        if not pool_key.startswith("ForkLottery_") or not isinstance(row, dict):
+            continue
+        base_drop_id = row.get("BaseDropID")
+        if not base_drop_id:
+            continue
+        pickup_item_ids = set(_fork_pickup_item_ids(pool_key, row, canonicalize_item_id))
+        for sequence_id in _fork_gold_sequence_ids(drop_group_rows, str(base_drop_id)):
+            rate = _weighted_pickup_rate(sequence_rows, sequence_id, pickup_item_ids, canonicalize_item_id)
+            if rate is not None:
+                rates.append(rate)
+    unique_rates = set(rates)
+    if len(unique_rates) == 1:
+        return next(iter(unique_rates))
+    return None
+
+
+def _fork_gold_sequence_ids(drop_group_rows: dict[str, Any], base_drop_id: str) -> list[str]:
+    sequence_ids: list[str] = []
+    for row_id, row in drop_group_rows.items():
+        if not _matches_numbered_row(str(row_id), base_drop_id) or not isinstance(row, dict):
+            continue
+        sequence_id = row.get("SequenceId")
+        if isinstance(sequence_id, str) and "_gold" in sequence_id:
+            sequence_ids.append(sequence_id)
+    return list(dict.fromkeys(sequence_ids))
+
+
+def _weighted_pickup_rate(
+    sequence_rows: dict[str, Any],
+    sequence_id: str,
+    pickup_item_ids: set[str],
+    canonicalize_item_id: Callable[[str], str],
+) -> int | None:
+    total_weight = 0.0
+    pickup_weight = 0.0
+    for row_id, row in sequence_rows.items():
+        if not _matches_numbered_row(str(row_id), sequence_id) or not isinstance(row, dict):
+            continue
+        weight = row.get("Weight")
+        if isinstance(weight, bool) or not isinstance(weight, int | float):
+            continue
+        item_id = canonicalize_item_id(str(row.get("ItemID") or ""))
+        total_weight += weight
+        if item_id in pickup_item_ids:
+            pickup_weight += weight
+    if total_weight <= 0 or pickup_weight <= 0:
+        return None
+    return round(pickup_weight * 100 / total_weight)
+
+
+def _fork_rule_text_refs(fork_rows: dict[str, Any]) -> dict[str, str]:
+    for pool_id, row in sorted(fork_rows.items()):
+        if not str(pool_id).startswith("ForkLottery_") or not isinstance(row, dict):
+            continue
+        refs: dict[str, str] = {}
+        for source_key, target_key in (
+            ("RuleDesc1", "rule_desc_1"),
+            ("RuleDesc2", "rule_desc_2"),
+            ("ProbDesc", "probability_desc"),
+        ):
+            key = _text_ref_key(row.get(source_key))
+            if key:
+                refs[target_key] = key
+        if refs:
+            return refs
+    return {}
+
+
+def _standard_banner(
+    locale: str,
+    localization: dict[str, Any],
+    standard_5_pool: list[str],
+    standard_4_pool: list[str],
+) -> dict[str, Any] | None:
+    title = _localized_monopoly_pool_title(localization, STANDARD_MONOPOLY_TITLE_TAIL)
+    if not title:
+        return None
+    return {
+        "banner_id": "monopoly_standard",
+        "pool_id": "CardPool_NewRole",
+        "pool_kind": "monopoly_standard",
+        "banner_type": "standard",
+        "title": title,
+        "rate_up_5": [],
+        "rate_up_4": [],
+        "standard_5_pool": standard_5_pool,
+        "standard_4_pool": standard_4_pool,
+        "rule_id": "monopoly_standard",
+        "source": _source_evidence(
+            "curated",
+            (MONOPOLY_LOTTERY_TABLE, f"Localization/{locale}/game.json"),
+            notes=("Standard pool uses the available monopoly lottery table; banner instance is not explicit.",),
+        ),
+    }
+
+
+def _limited_banners(
+    locale: str,
+    localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+    known_item_ids: set[str],
+    normalized_items: dict[str, dict[str, Any]],
+    standard_5_pool: list[str],
+    standard_4_pool: list[str],
+) -> dict[str, dict[str, Any]]:
+    banners: dict[str, dict[str, Any]] = {}
+    previous_end: str | None = None
+    for banner in CURATED_LIMITED_BANNERS:
+        title = _localized_monopoly_pool_title(localization, banner.tail)
+        if not title:
+            previous_end = banner.end_at_tz8
+            continue
+        rate_up_5 = _item_ref_list(banner.rate_up_5, canonicalize_item_id, known_item_ids)
+        asset_refs: dict[str, Any] = {}
+        featured_portraits = _featured_portraits(normalized_items, rate_up_5)
+        if featured_portraits:
+            asset_refs["featured_portraits"] = featured_portraits
+        if len(rate_up_5) == 1:
+            image = _item_asset_ref(normalized_items, rate_up_5[0], "banner")
+            if image:
+                asset_refs["image"] = image
+
+        entry: dict[str, Any] = {
+            "banner_id": banner.banner_id,
+            "pool_id": "CardPool_Character",
+            "pool_kind": "monopoly_limited",
+            "banner_type": "limited",
+            "title": title,
+            "end_at": banner.end_at_tz8,
+            "timezone": "Asia/Shanghai",
+            "rate_up_5": rate_up_5,
+            "rate_up_4": [],
+            "standard_5_pool": standard_5_pool,
+            "standard_4_pool": standard_4_pool,
+            "rule_id": "monopoly_limited",
+            "source": _source_evidence(
+                "curated",
+                (MONOPOLY_LOTTERY_TABLE, f"Localization/{locale}/game.json"),
+                notes=(
+                    "Schedule and rate-up are curated because no structured limited banner table was found.",
+                    "Version/phase metadata is curated when present.",
+                ),
+            ),
+        }
+        if banner.version:
+            entry["version"] = banner.version
+        if banner.phase:
+            entry["phase"] = banner.phase
+        if previous_end:
+            entry["start_at"] = previous_end
+        if asset_refs:
+            entry["asset_refs"] = asset_refs
+        banners[banner.banner_id] = entry
+        previous_end = banner.end_at_tz8
+    return banners
+
+
+def _fork_banners(
+    assets_root: Path,
+    localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+) -> dict[str, dict[str, Any]]:
+    banners: dict[str, dict[str, Any]] = {}
+    for pool_id, row in sorted(_fork_pool_rows(assets_root).items()):
+        pool_key = str(pool_id)
+        if not pool_key.startswith("ForkLottery_") or not isinstance(row, dict):
+            continue
+        title = _clean_name(_localized_text(row.get("ShowText1"), localization))
+        if not title:
+            continue
+        banner: dict[str, Any] = {
+            "banner_id": pool_key,
+            "pool_id": pool_key,
+            "pool_kind": "fork_lottery",
+            "banner_type": "fork",
+            "title": title,
+            "rate_up_5": _fork_pickup_item_ids(pool_key, row, canonicalize_item_id),
+            "rate_up_4": [],
+            "rule_id": "fork_lottery_s",
+            "source": _source_evidence("exact", (FORK_POOL_TABLE,)),
+        }
+        asset_refs = _pool_asset_refs(row)
+        if asset_refs:
+            banner["asset_refs"] = asset_refs
+        currency_id = row.get("CurrencyID")
+        if isinstance(currency_id, str) and currency_id:
+            banner["currency_id"] = canonicalize_item_id(currency_id)
+        for source_key, target_key in (("CurrencyCnt", "currency_count"), ("OnceLotteryCnt", "roll_unit")):
+            value = row.get(source_key)
+            if isinstance(value, int) and not isinstance(value, bool):
+                banner[target_key] = value
+        banners[pool_key] = banner
+    return banners
+
+
+def _build_banners(
+    assets_root: Path,
+    locale: str,
+    localization: dict[str, Any],
+    canonicalize_item_id: Callable[[str], str],
+    normalized_items: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    known_item_ids = set(normalized_items)
+    standard_5_pool = _lottery_item_ids(
+        assets_root,
+        "SSRItems",
+        canonicalize_item_id,
+        known_item_ids=known_item_ids,
+    )
+    standard_4_pool = _lottery_item_ids(
+        assets_root,
+        "SRItems",
+        canonicalize_item_id,
+        known_item_ids=known_item_ids,
+    )
+
+    banners: dict[str, dict[str, Any]] = {}
+    standard = _standard_banner(locale, localization, standard_5_pool, standard_4_pool)
+    if standard:
+        banners[standard["banner_id"]] = standard
+    banners.update(
+        _limited_banners(
+            locale,
+            localization,
+            canonicalize_item_id,
+            known_item_ids,
+            normalized_items,
+            standard_5_pool,
+            standard_4_pool,
+        )
+    )
+    banners.update(_fork_banners(assets_root, localization, canonicalize_item_id))
+    return dict(sorted(banners.items()))
+
+
+def _attach_banner_ids(pool_meta: dict[str, dict[str, Any]], banners: dict[str, dict[str, Any]]) -> None:
+    banner_ids_by_pool: dict[str, list[str]] = {}
+    for banner_id, banner in banners.items():
+        pool_id = banner.get("pool_id")
+        if isinstance(pool_id, str) and pool_id:
+            banner_ids_by_pool.setdefault(pool_id, []).append(banner_id)
+    for pool_id, banner_ids in banner_ids_by_pool.items():
+        meta = pool_meta.setdefault(pool_id, {})
+        meta["banner_ids"] = sorted(banner_ids)
+
+
 def _build_labels(localization: dict[str, Any]) -> dict[str, str]:
     labels: dict[str, str] = {}
     for label_id, (namespace, key) in LABEL_KEYS.items():
@@ -1013,6 +1498,13 @@ def _normalized_items(items: dict[str, str], item_meta: list[dict[str, Any]]) ->
         category = meta.get("category")
         if category is not None:
             entry["category"] = category
+        for key in ("domain_type", "subtype", "color"):
+            value = meta.get(key)
+            if isinstance(value, str) and value:
+                entry[key] = value
+        asset_refs = meta.get("asset_refs")
+        if isinstance(asset_refs, dict) and asset_refs:
+            entry["asset_refs"] = dict(sorted(asset_refs.items()))
         normalized[str(item_id)] = entry
     return normalized
 
@@ -1047,11 +1539,18 @@ def build_map(
         pool_meta=pool_meta,
         canonicalize_item_id=item_ctx.canonicalize_item_id,
     )
-    return {
-        "schema_version": 2,
+    normalized_items = _normalized_items(items, rules["item_meta"])
+    banners = _build_banners(assets_root, locale, localization, item_ctx.canonicalize_item_id, normalized_items)
+    _attach_banner_ids(pool_meta, banners)
+    map_data = {
+        "schema_version": MAP_SCHEMA_VERSION,
         "csv_headers": dict(sorted(_csv_headers(localization, locale).items())),
-        "items": _normalized_items(items, rules["item_meta"]),
+        "items": normalized_items,
         "item_aliases": dict(sorted(item_ctx.item_aliases.items())),
         "pools": _normalized_pools(pools, pool_meta),
+        "banners": banners,
+        "gacha_rules": _build_gacha_rules(assets_root, locale, item_ctx.canonicalize_item_id),
         "labels": dict(sorted(_build_labels(localization).items())),
     }
+    _validate_map_source(map_data, source=f"{locale}.json")
+    return map_data

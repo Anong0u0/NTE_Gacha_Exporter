@@ -91,7 +91,7 @@ def test_auto_page_status_formatter_restores_i18n_page_tooltip():
 
 def test_debug_export_accepts_locale_map_spec(tmp_path, capsys):
     map_data = {
-        "schema_version": 2,
+        "schema_version": 4,
         "csv_headers": {},
         "items": {
             "Fashion_vehicle_1010_V008": {"name": "自訂道具", "rarity": 5, "category": "vehicle_module"},

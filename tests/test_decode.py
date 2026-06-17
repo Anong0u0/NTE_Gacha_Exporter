@@ -53,6 +53,33 @@ def test_monopoly_record_decodes_public_fields():
     assert parsed.secondary_count == 1
 
 
+@pytest.mark.parametrize(
+    ("raw_roll_points", "label_id"),
+    [
+        (0, "BPUI_LotteryResult_jidianzengli"),
+        (0xFFFFFFFF, "BPUI_LotteryResult_chenmiandi"),
+    ],
+)
+def test_monopoly_roll_point_sentinel_decodes_as_label_not_numeric(raw_roll_points, label_id):
+    row = (
+        struct.pack("<I", raw_roll_points)
+        + fstring("Dice_ticket_01,30")
+        + struct.pack("<II", 0, 1)
+        + fstring("Dice_ticket_01")
+        + fstring("Dice_ticket_01")
+        + fstring("CardPool_Character")
+        + struct.pack("<Q", 639131653353040000)
+    )
+    payload = b"FMonopolyLotteryRecordData\x00" + struct.pack("<III", 0, len(row), 1) + row
+
+    blocks, warnings = parse_packet_record(packet(payload), session=0, line=1, packet_index=0)
+
+    assert warnings == []
+    parsed = blocks[0].rows[0]
+    assert parsed.roll_points is None
+    assert parsed.roll_label_id == label_id
+
+
 def test_monopoly_record_decodes_secondary_fields_when_different():
     row = (
         struct.pack("<I", 5)

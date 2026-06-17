@@ -1,7 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type PoolKind = "monopoly_limited" | "monopoly_standard" | "fork_lottery";
-export type RecordSortKey = "time" | "pool" | "item" | "rarity" | "record_type";
+export type AssetRefs = Record<string, unknown>;
+export type RecordSortKey =
+  | "time"
+  | "pool"
+  | "item"
+  | "rarity"
+  | "record_type"
+  | "banner"
+  | "pull_no"
+  | "pity_5"
+  | "pity_4"
+  | "rate_up";
 export type SortDirection = "asc" | "desc";
 export type CaptureMode = "live_only" | "auto_page_incremental" | "auto_page_full";
 
@@ -97,6 +108,12 @@ export type CaptureStatus = {
   import_report?: ImportReport | null;
 };
 
+export type PendingAdminCapture = {
+  profile_name: string;
+  locale: string;
+  mode: CaptureMode;
+};
+
 export type DisplayRecord = {
   record_id: string;
   record_type: string;
@@ -104,20 +121,100 @@ export type DisplayRecord = {
   pool_kind: PoolKind;
   pool_id: string;
   pool_label: string;
+  banner: ResolvedBanner;
   item_id: string;
   item_name: string;
+  item_asset_refs: AssetRefs;
   rarity?: number | null;
   count?: number | null;
   roll_points?: number | null;
   secondary_item_id?: string | null;
   secondary_item_name?: string | null;
+  secondary_item_asset_refs: AssetRefs;
   secondary_count?: number | null;
+  derived: RecordDerived;
+};
+
+export type BannerResolutionStatus =
+  | "matched"
+  | "unknown_pool"
+  | "unknown_time"
+  | "outside_known_windows"
+  | "ambiguous";
+
+export type RuleResolutionStatus =
+  | "matched"
+  | "fallback_pool_kind"
+  | "missing_banner"
+  | "missing_rule"
+  | "unsupported_scope";
+
+export type RateUpResult = "up" | "off_rate" | "not_applicable" | "unknown";
+
+export type ResolvedBanner = {
+  status: BannerResolutionStatus;
+  reason: string;
+  banner_id?: string | null;
+  pool_id?: string | null;
+  pool_kind?: PoolKind | string | null;
+  banner_type?: "limited" | "standard" | "fork" | string | null;
+  title?: string | null;
+  version?: string | null;
+  phase?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  timezone?: string | null;
+  rate_up_5: string[];
+  rate_up_4: string[];
+  rule_id?: string | null;
+  asset_refs: AssetRefs;
+  source_confidence?: "exact" | "inferred" | "curated" | "unknown" | string | null;
+};
+
+export type GachaRuleView = {
+  status: RuleResolutionStatus;
+  reason: string;
+  rule_id?: string | null;
+  pool_kind: PoolKind;
+  hard_pity_5?: number | null;
+  hard_pity_4?: number | null;
+  pickup_win_rate_5?: number | null;
+  pickup_win_rate_4?: number | null;
+  has_guarantee_5?: boolean | null;
+  has_guarantee_4?: boolean | null;
+  guarantee_scope?: string | null;
+  carry_scope?: string | null;
+  source_confidence?: string | null;
+};
+
+export type RecordDerived = {
+  record_id: string;
+  banner_id?: string | null;
+  banner_version?: string | null;
+  banner_phase?: string | null;
+  pull_no_in_pool_kind: number;
+  pull_no_in_banner?: number | null;
+  pity_5_before: number;
+  pity_5_after: number;
+  pity_4_before: number;
+  pity_4_after: number;
+  hit_rarity?: number | null;
+  rate_up_result: RateUpResult;
+  result_confidence: string;
+  guarantee_5_before?: boolean | null;
+  guarantee_5_after?: boolean | null;
+  guarantee_4_before?: boolean | null;
+  guarantee_4_after?: boolean | null;
+  rule: GachaRuleView;
 };
 
 export type PoolKindSummary = {
   pool_kind: PoolKind;
   label: string;
   total_pulls: number;
+  roll_points_total: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
   hit_count: number;
   current_pity: number;
   current_guarantee: boolean;
@@ -128,8 +225,111 @@ export type PoolKindSummary = {
   early_hit_count: number;
   up_count: number;
   off_rate_count: number;
+  not_applicable_rate_up_count: number;
+  unknown_rate_up_count: number;
   observed_up_rate?: number | null;
   latest_5star?: DisplayRecord | null;
+  current_4star_pity: number;
+  hard_pity_4?: number | null;
+  average_4star_pity?: number | null;
+  min_4star_pity?: number | null;
+  max_4star_pity?: number | null;
+  four_star_count: number;
+  rate_up_4_count: number;
+  off_rate_4_count: number;
+  not_applicable_rate_up_4_count: number;
+  unknown_rate_up_4_count: number;
+  rule_resolution_status: RuleResolutionStatus;
+  rule_source_confidence?: string | null;
+  average_roll_points_to_5star?: number | null;
+  average_roll_points_to_4star?: number | null;
+  roll_point_cost_samples_5star: number;
+  roll_point_cost_samples_4star: number;
+};
+
+export type BannerSummary = {
+  banner_id: string;
+  pool_id: string;
+  pool_kind: PoolKind;
+  banner_type?: string | null;
+  title: string;
+  version?: string | null;
+  phase?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  source_confidence?: string | null;
+  asset_refs: AssetRefs;
+  total_pulls: number;
+  roll_points_total: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
+  five_star_count: number;
+  four_star_count: number;
+  current_5star_pity: number;
+  current_4star_pity: number;
+  average_5star_pity?: number | null;
+  average_4star_pity?: number | null;
+  rate_up_5_count: number;
+  off_rate_5_count: number;
+  not_applicable_rate_up_5_count: number;
+  unknown_rate_up_5_count: number;
+  rate_up_4_count: number;
+  off_rate_4_count: number;
+  not_applicable_rate_up_4_count: number;
+  unknown_rate_up_4_count: number;
+  average_roll_points_to_5star?: number | null;
+  average_roll_points_to_4star?: number | null;
+  roll_point_cost_samples_5star: number;
+  roll_point_cost_samples_4star: number;
+  latest_hit?: DisplayRecord | null;
+};
+
+export type ResourceSummary = {
+  total_roll_points: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
+  by_pool_kind: ResourcePoolKindSummary[];
+};
+
+export type ResourcePoolKindSummary = {
+  pool_kind: PoolKind;
+  label: string;
+  roll_points_total: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
+};
+
+export type TimeStats = {
+  monthly: TimeBucketSummary[];
+  daily: TimeBucketSummary[];
+  phases: PhaseSummary[];
+  missing_time_records: number;
+};
+
+export type TimeBucketSummary = {
+  bucket: string;
+  total_pulls: number;
+  five_star_count: number;
+  four_star_count: number;
+  roll_points_total: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
+  average_5star_pity?: number | null;
+  average_4star_pity?: number | null;
+};
+
+export type PhaseSummary = {
+  version?: string | null;
+  phase?: string | null;
+  total_pulls: number;
+  five_star_count: number;
+  four_star_count: number;
+  roll_points_total: number;
+  known_roll_point_records: number;
+  missing_roll_point_records: number;
+  banner_count: number;
+  average_5star_pity?: number | null;
+  average_4star_pity?: number | null;
 };
 
 export type RarityBucket = {
@@ -150,6 +350,9 @@ export type DashboardOverview = {
   last_run?: ImportReport | null;
   total_records: number;
   pool_kinds: PoolKindSummary[];
+  banners: BannerSummary[];
+  resource: ResourceSummary;
+  time_stats: TimeStats;
   rarity_distribution: RarityBucket[];
   item_ranking: ItemRank[];
   latest_records: DisplayRecord[];
@@ -158,20 +361,39 @@ export type DashboardOverview = {
 export type FiveStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
-  result: "up" | "off_rate";
-  guarantee_before: boolean;
-  guarantee_after: boolean;
+  result: RateUpResult;
+  result_confidence: string;
+  guarantee_before?: boolean | null;
+  guarantee_after?: boolean | null;
+};
+
+export type FourStarRecord = {
+  record: DisplayRecord;
+  pity_distance: number;
+  result: RateUpResult;
+  result_confidence: string;
+  guarantee_before?: boolean | null;
+  guarantee_after?: boolean | null;
 };
 
 export type PoolKindDetail = {
   summary: PoolKindSummary;
   five_star_history: FiveStarRecord[];
+  four_star_history: FourStarRecord[];
 };
 
 export type RecordFilter = {
   pool_kind?: PoolKind | null;
   pool_id?: string | null;
+  banner_id?: string | null;
   record_type?: string | null;
+  rarity?: number | null;
+  hit_rarity?: number | null;
+  rate_up_result?: RateUpResult | null;
+  pity_5_min?: number | null;
+  pity_5_max?: number | null;
+  pity_4_min?: number | null;
+  pity_4_max?: number | null;
   date_from?: string | null;
   date_to?: string | null;
   search?: string | null;
@@ -198,8 +420,17 @@ export type RecordTypeOption = {
   count: number;
 };
 
+export type RecordBannerOption = {
+  banner_id: string;
+  pool_kind: PoolKind;
+  title: string;
+  count: number;
+  phase?: string | null;
+};
+
 export type RecordFilterOptions = {
   pools: RecordPoolOption[];
+  banners: RecordBannerOption[];
   record_types: RecordTypeOption[];
 };
 
@@ -269,6 +500,8 @@ export type AppApi = {
   updaterCheck(channel?: string): Promise<UpdateCheckReport>;
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;
   updaterInstallStaged(version: string, relaunch?: boolean): Promise<void>;
+  requestAdminCaptureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<boolean>;
+  takePendingAdminCapture(): Promise<PendingAdminCapture | null>;
   captureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<CaptureStatus>;
   captureStatus(sessionId: string): Promise<CaptureStatus>;
   captureStop(sessionId: string): Promise<CaptureStatus>;
@@ -283,6 +516,17 @@ const mockProfile: Profile = {
   active: true,
 };
 
+const mockItemAssetRefs: Record<string, AssetRefs> = {
+  rare_1: {
+    portrait: "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu",
+    icon: "/Game/UI/UI_Icon/Character/Sigrid.Sigrid",
+  },
+  fork_1: {
+    portrait: "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
+    icon: "/Game/UI/UI_Icon/Fork/256/fork_Rose.fork_Rose",
+  },
+};
+
 const mockRecords: DisplayRecord[] = [
   {
     record_id: "mock-4",
@@ -291,11 +535,30 @@ const mockRecords: DisplayRecord[] = [
     pool_kind: "monopoly_limited",
     pool_id: "CardPool_Character",
     pool_label: "Limited Board",
+    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated"),
     item_id: "rare_1",
     item_name: "Sigrid",
+    item_asset_refs: mockItemAssetRefs.rare_1,
     rarity: 5,
     count: 1,
     roll_points: 74,
+    secondary_item_asset_refs: {},
+    derived: mockDerived("mock-4", {
+      bannerId: "limited_mock",
+      poolKind: "monopoly_limited",
+      pullNoInPoolKind: 146,
+      pullNoInBanner: 74,
+      pity5Before: 73,
+      pity5After: 0,
+      pity4Before: 4,
+      pity4After: 5,
+      hitRarity: 5,
+      rateUpResult: "up",
+      confidence: "curated",
+      guarantee5Before: false,
+      guarantee5After: false,
+      ruleId: "monopoly_limited",
+    }),
   },
   {
     record_id: "mock-3",
@@ -304,11 +567,30 @@ const mockRecords: DisplayRecord[] = [
     pool_kind: "monopoly_limited",
     pool_id: "CardPool_Character",
     pool_label: "Limited Board",
+    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated"),
     item_id: "common_2",
     item_name: "Training Log",
+    item_asset_refs: {},
     rarity: 3,
     count: 1,
     roll_points: 73,
+    secondary_item_asset_refs: {},
+    derived: mockDerived("mock-3", {
+      bannerId: "limited_mock",
+      poolKind: "monopoly_limited",
+      pullNoInPoolKind: 145,
+      pullNoInBanner: 73,
+      pity5Before: 72,
+      pity5After: 73,
+      pity4Before: 3,
+      pity4After: 4,
+      hitRarity: null,
+      rateUpResult: "unknown",
+      confidence: "unknown",
+      guarantee5Before: false,
+      guarantee5After: false,
+      ruleId: "monopoly_limited",
+    }),
   },
   {
     record_id: "mock-2",
@@ -317,17 +599,132 @@ const mockRecords: DisplayRecord[] = [
     pool_kind: "fork_lottery",
     pool_id: "ForkLottery_AnHunQu",
     pool_label: "Arc Research",
+    banner: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research", "exact"),
     item_id: "fork_1",
     item_name: "Rose",
+    item_asset_refs: mockItemAssetRefs.fork_1,
     rarity: 5,
     count: 1,
+    roll_points: 24,
+    secondary_item_asset_refs: {},
+    derived: mockDerived("mock-2", {
+      bannerId: "ForkLottery_AnHunQu",
+      poolKind: "fork_lottery",
+      pullNoInPoolKind: 24,
+      pullNoInBanner: 24,
+      pity5Before: 23,
+      pity5After: 0,
+      pity4Before: 6,
+      pity4After: 7,
+      hitRarity: 5,
+      rateUpResult: "up",
+      confidence: "exact",
+      guarantee5Before: true,
+      guarantee5After: false,
+      ruleId: "fork_lottery_s",
+    }),
   },
 ];
+
+function mockBanner(
+  bannerId: string,
+  poolKind: PoolKind,
+  bannerType: "limited" | "standard" | "fork",
+  title: string,
+  confidence: string,
+  phase?: string,
+): ResolvedBanner {
+  const limitedAssetRefs: AssetRefs = {
+    image: "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
+    featured_portraits: ["/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"],
+  };
+  const forkAssetRefs: AssetRefs = {
+    background: "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+    icon: "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
+  };
+  return {
+    status: "matched",
+    reason: "matched",
+    banner_id: bannerId,
+    pool_kind: poolKind,
+    banner_type: bannerType,
+    title,
+    phase: phase ?? null,
+    rate_up_5: [],
+    rate_up_4: [],
+    rule_id: poolKind === "fork_lottery" ? "fork_lottery_s" : poolKind,
+    asset_refs: bannerType === "fork" ? forkAssetRefs : limitedAssetRefs,
+    source_confidence: confidence,
+  };
+}
+
+function mockRule(poolKind: PoolKind, ruleId: string, confidence: string): GachaRuleView {
+  return {
+    status: "matched",
+    reason: "matched",
+    rule_id: ruleId,
+    pool_kind: poolKind,
+    hard_pity_5: poolKind === "fork_lottery" ? 80 : 90,
+    hard_pity_4: null,
+    pickup_win_rate_5: poolKind === "fork_lottery" ? 25 : null,
+    pickup_win_rate_4: null,
+    has_guarantee_5: poolKind === "fork_lottery" ? true : false,
+    has_guarantee_4: null,
+    guarantee_scope: poolKind === "fork_lottery" ? "pool_kind" : "unknown",
+    carry_scope: "pool_kind",
+    source_confidence: confidence,
+  };
+}
+
+function mockDerived(
+  recordId: string,
+  options: {
+    bannerId: string;
+    poolKind: PoolKind;
+    pullNoInPoolKind: number;
+    pullNoInBanner: number;
+    pity5Before: number;
+    pity5After: number;
+    pity4Before: number;
+    pity4After: number;
+    hitRarity: number | null;
+    rateUpResult: RateUpResult;
+    confidence: string;
+    guarantee5Before: boolean;
+    guarantee5After: boolean;
+    ruleId: string;
+  },
+): RecordDerived {
+  return {
+    record_id: recordId,
+    banner_id: options.bannerId,
+    banner_version: null,
+    banner_phase: null,
+    pull_no_in_pool_kind: options.pullNoInPoolKind,
+    pull_no_in_banner: options.pullNoInBanner,
+    pity_5_before: options.pity5Before,
+    pity_5_after: options.pity5After,
+    pity_4_before: options.pity4Before,
+    pity_4_after: options.pity4After,
+    hit_rarity: options.hitRarity,
+    rate_up_result: options.rateUpResult,
+    result_confidence: options.confidence,
+    guarantee_5_before: options.guarantee5Before,
+    guarantee_5_after: options.guarantee5After,
+    guarantee_4_before: null,
+    guarantee_4_after: null,
+    rule: mockRule(options.poolKind, options.ruleId, options.confidence),
+  };
+}
 
 const mockFilterOptions: RecordFilterOptions = {
   pools: [
     { pool_id: "CardPool_Character", pool_kind: "monopoly_limited", label: "Limited Board", count: 146 },
     { pool_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", label: "Arc Research", count: 36 },
+  ],
+  banners: [
+    { banner_id: "limited_mock", pool_kind: "monopoly_limited", title: "Limited Board", count: 146, phase: null },
+    { banner_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", title: "Arc Research", count: 36, phase: null },
   ],
   record_types: [
     { record_type: "monopoly", count: 146 },
@@ -345,6 +742,9 @@ const mockSummary: PoolKindSummary[] = [
     pool_kind: "monopoly_limited",
     label: "Limited Board",
     total_pulls: 146,
+    roll_points_total: 10731,
+    known_roll_point_records: 146,
+    missing_roll_point_records: 0,
     hit_count: 2,
     current_pity: 73,
     current_guarantee: false,
@@ -355,13 +755,34 @@ const mockSummary: PoolKindSummary[] = [
     early_hit_count: 2,
     up_count: 2,
     off_rate_count: 0,
+    not_applicable_rate_up_count: 0,
+    unknown_rate_up_count: 0,
     observed_up_rate: 1,
     latest_5star: mockRecords[0],
+    current_4star_pity: 4,
+    hard_pity_4: null,
+    average_4star_pity: 9.5,
+    min_4star_pity: 5,
+    max_4star_pity: 14,
+    four_star_count: 8,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 8,
+    rule_resolution_status: "matched",
+    rule_source_confidence: "curated",
+    average_roll_points_to_5star: 72.5,
+    average_roll_points_to_4star: 9.5,
+    roll_point_cost_samples_5star: 2,
+    roll_point_cost_samples_4star: 8,
   },
   {
     pool_kind: "fork_lottery",
     label: "Arc Research",
     total_pulls: 36,
+    roll_points_total: 666,
+    known_roll_point_records: 36,
+    missing_roll_point_records: 0,
     hit_count: 1,
     current_pity: 12,
     current_guarantee: false,
@@ -372,10 +793,177 @@ const mockSummary: PoolKindSummary[] = [
     early_hit_count: 1,
     up_count: 1,
     off_rate_count: 0,
+    not_applicable_rate_up_count: 0,
+    unknown_rate_up_count: 0,
     observed_up_rate: 1,
     latest_5star: mockRecords[2],
+    current_4star_pity: 3,
+    hard_pity_4: null,
+    average_4star_pity: 7,
+    min_4star_pity: 7,
+    max_4star_pity: 7,
+    four_star_count: 1,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 1,
+    rule_resolution_status: "matched",
+    rule_source_confidence: "exact",
+    average_roll_points_to_5star: 24,
+    average_roll_points_to_4star: 7,
+    roll_point_cost_samples_5star: 1,
+    roll_point_cost_samples_4star: 1,
   },
 ];
+
+const mockBanners: BannerSummary[] = [
+  {
+    banner_id: "limited_mock",
+    pool_id: "CardPool_Character",
+    pool_kind: "monopoly_limited",
+    banner_type: "limited",
+    title: "Limited Board",
+    version: null,
+    phase: null,
+    start_at: null,
+    end_at: null,
+    source_confidence: "curated",
+    asset_refs: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated").asset_refs,
+    total_pulls: 146,
+    roll_points_total: 10731,
+    known_roll_point_records: 146,
+    missing_roll_point_records: 0,
+    five_star_count: 2,
+    four_star_count: 8,
+    current_5star_pity: 73,
+    current_4star_pity: 4,
+    average_5star_pity: 72.5,
+    average_4star_pity: 9.5,
+    rate_up_5_count: 2,
+    off_rate_5_count: 0,
+    not_applicable_rate_up_5_count: 0,
+    unknown_rate_up_5_count: 0,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 8,
+    average_roll_points_to_5star: 72.5,
+    average_roll_points_to_4star: 9.5,
+    roll_point_cost_samples_5star: 2,
+    roll_point_cost_samples_4star: 8,
+    latest_hit: mockRecords[0],
+  },
+  {
+    banner_id: "ForkLottery_AnHunQu",
+    pool_id: "ForkLottery_AnHunQu",
+    pool_kind: "fork_lottery",
+    banner_type: "fork",
+    title: "Arc Research",
+    version: null,
+    phase: null,
+    start_at: null,
+    end_at: null,
+    source_confidence: "exact",
+    asset_refs: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research", "exact").asset_refs,
+    total_pulls: 36,
+    roll_points_total: 666,
+    known_roll_point_records: 36,
+    missing_roll_point_records: 0,
+    five_star_count: 1,
+    four_star_count: 1,
+    current_5star_pity: 12,
+    current_4star_pity: 3,
+    average_5star_pity: 24,
+    average_4star_pity: 7,
+    rate_up_5_count: 1,
+    off_rate_5_count: 0,
+    not_applicable_rate_up_5_count: 0,
+    unknown_rate_up_5_count: 0,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 1,
+    average_roll_points_to_5star: 24,
+    average_roll_points_to_4star: 7,
+    roll_point_cost_samples_5star: 1,
+    roll_point_cost_samples_4star: 1,
+    latest_hit: mockRecords[2],
+  },
+];
+
+const mockResource: ResourceSummary = {
+  total_roll_points: 11397,
+  known_roll_point_records: 182,
+  missing_roll_point_records: 0,
+  by_pool_kind: [
+    {
+      pool_kind: "monopoly_limited",
+      label: "Limited Board",
+      roll_points_total: 10731,
+      known_roll_point_records: 146,
+      missing_roll_point_records: 0,
+    },
+    {
+      pool_kind: "monopoly_standard",
+      label: "Standard Board",
+      roll_points_total: 0,
+      known_roll_point_records: 0,
+      missing_roll_point_records: 0,
+    },
+    {
+      pool_kind: "fork_lottery",
+      label: "Arc Research",
+      roll_points_total: 666,
+      known_roll_point_records: 36,
+      missing_roll_point_records: 0,
+    },
+  ],
+};
+
+const mockTimeStats: TimeStats = {
+  monthly: [
+    {
+      bucket: "2026-01",
+      total_pulls: 182,
+      five_star_count: 3,
+      four_star_count: 9,
+      roll_points_total: 11397,
+      known_roll_point_records: 182,
+      missing_roll_point_records: 0,
+      average_5star_pity: 56.3,
+      average_4star_pity: 9.2,
+    },
+  ],
+  daily: [
+    {
+      bucket: "2026-01-09",
+      total_pulls: 1,
+      five_star_count: 1,
+      four_star_count: 0,
+      roll_points_total: 74,
+      known_roll_point_records: 1,
+      missing_roll_point_records: 0,
+      average_5star_pity: 74,
+      average_4star_pity: null,
+    },
+  ],
+  phases: [
+    {
+      version: null,
+      phase: null,
+      total_pulls: 182,
+      five_star_count: 3,
+      four_star_count: 9,
+      roll_points_total: 11397,
+      known_roll_point_records: 182,
+      missing_roll_point_records: 0,
+      banner_count: 2,
+      average_5star_pity: 56.3,
+      average_4star_pity: 9.2,
+    },
+  ],
+  missing_time_records: 0,
+};
 
 const mockApi: AppApi = {
   async getSettings() {
@@ -425,6 +1013,9 @@ const mockApi: AppApi = {
           pool_kind: "monopoly_standard" as const,
           label: "Standard Board",
           total_pulls: 0,
+          roll_points_total: 0,
+          known_roll_point_records: 0,
+          missing_roll_point_records: 0,
           hit_count: 0,
           current_pity: 0,
           current_guarantee: false,
@@ -435,10 +1026,31 @@ const mockApi: AppApi = {
           early_hit_count: 0,
           up_count: 0,
           off_rate_count: 0,
+          not_applicable_rate_up_count: 0,
+          unknown_rate_up_count: 0,
           observed_up_rate: null,
           latest_5star: null,
+          current_4star_pity: 0,
+          hard_pity_4: null,
+          average_4star_pity: null,
+          min_4star_pity: null,
+          max_4star_pity: null,
+          four_star_count: 0,
+          rate_up_4_count: 0,
+          off_rate_4_count: 0,
+          not_applicable_rate_up_4_count: 0,
+          unknown_rate_up_4_count: 0,
+          rule_resolution_status: "fallback_pool_kind",
+          rule_source_confidence: "unknown",
+          average_roll_points_to_5star: null,
+          average_roll_points_to_4star: null,
+          roll_point_cost_samples_5star: 0,
+          roll_point_cost_samples_4star: 0,
         },
       ],
+      banners: mockBanners,
+      resource: mockResource,
+      time_stats: mockTimeStats,
       rarity_distribution: [
         { rarity: 5, count: 3, percent: 0.016 },
         { rarity: 4, count: 18, percent: 0.099 },
@@ -461,11 +1073,13 @@ const mockApi: AppApi = {
               record: summary.latest_5star,
               pity_distance: Math.round(summary.average_5star_pity ?? 0),
               result: "up",
+              result_confidence: summary.rule_source_confidence ?? "unknown",
               guarantee_before: false,
               guarantee_after: false,
             },
           ]
         : [],
+      four_star_history: [],
     };
   },
   async listRecords(_profileName: string, filter: RecordFilter) {
@@ -473,7 +1087,15 @@ const mockApi: AppApi = {
     let records = mockRecords.filter((record) => {
       if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
       if (filter.pool_id && record.pool_id !== filter.pool_id) return false;
+      if (filter.banner_id && record.derived.banner_id !== filter.banner_id) return false;
       if (filter.record_type && record.record_type !== filter.record_type) return false;
+      if (filter.rarity && record.rarity !== filter.rarity) return false;
+      if (filter.hit_rarity && record.derived.hit_rarity !== filter.hit_rarity) return false;
+      if (filter.rate_up_result && record.derived.rate_up_result !== filter.rate_up_result) return false;
+      if (filter.pity_5_min != null && record.derived.pity_5_before < filter.pity_5_min) return false;
+      if (filter.pity_5_max != null && record.derived.pity_5_before > filter.pity_5_max) return false;
+      if (filter.pity_4_min != null && record.derived.pity_4_before < filter.pity_4_min) return false;
+      if (filter.pity_4_max != null && record.derived.pity_4_before > filter.pity_4_max) return false;
       if (search && !`${record.item_name} ${record.item_id}`.toLowerCase().includes(search)) return false;
       return true;
     });
@@ -548,6 +1170,12 @@ const mockApi: AppApi = {
   async updaterInstallStaged() {
     return undefined;
   },
+  async requestAdminCaptureStart() {
+    return false;
+  },
+  async takePendingAdminCapture() {
+    return null;
+  },
   async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "auto_page_incremental") {
     const sessionId = `mock-capture-${Date.now()}`;
     mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode });
@@ -599,6 +1227,9 @@ const tauriApi: AppApi = {
     invoke<UpdateStageReport>("updater_download_and_stage", { package: packageInfo }),
   updaterInstallStaged: (version, relaunch) =>
     invoke<void>("updater_install_staged", { version, relaunch }),
+  requestAdminCaptureStart: (profileName, locale, mode) =>
+    invoke<boolean>("request_admin_capture_start", { profileName, locale, mode }),
+  takePendingAdminCapture: () => invoke<PendingAdminCapture | null>("take_pending_admin_capture"),
   captureStart: (profileName, locale, mode) => invoke<CaptureStatus>("capture_start", { profileName, locale, mode }),
   captureStatus: (sessionId) => invoke<CaptureStatus>("capture_status", { sessionId }),
   captureStop: (sessionId) => invoke<CaptureStatus>("capture_stop", { sessionId }),

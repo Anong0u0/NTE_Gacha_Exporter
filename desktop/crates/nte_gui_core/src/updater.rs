@@ -21,6 +21,8 @@ const DATA_DIR: &str = "data";
 const UPDATE_DIR: &str = "update";
 const APP_EXE: &str = "nte-gacha-desktop.exe";
 const UPDATER_EXE: &str = "nte-gacha-updater.exe";
+const SIDECAR_EXE: &str = "nte-gacha-python-core.exe";
+const SIDECAR_CORE_EXE: &str = "nte-gacha-core.exe";
 const RELEASE_JSON: &str = "release.json";
 const RELEASE_SCHEMA: &str = "nte-gacha-release";
 const RELEASE_SCHEMA_VERSION: u32 = 1;
@@ -324,6 +326,13 @@ fn validate_payload_layout(payload: &Path) -> Result<(), GuiError> {
         payload.join(APP_DIR).join(APP_EXE),
         payload.join(APP_DIR).join(UPDATER_EXE),
         payload.join(APP_DIR).join(RELEASE_JSON),
+        payload.join(SIDECAR_DIR).join(SIDECAR_EXE),
+        payload.join(SIDECAR_DIR).join("bin").join(SIDECAR_CORE_EXE),
+        payload.join(SIDECAR_DIR).join("resources").join("maps"),
+        payload
+            .join(SIDECAR_DIR)
+            .join("resources")
+            .join("automation"),
     ] {
         if !path.exists() {
             return Err(GuiError::InvalidUpdate(format!(
@@ -332,12 +341,49 @@ fn validate_payload_layout(payload: &Path) -> Result<(), GuiError> {
             )));
         }
     }
+    validate_no_dev_sidecar_artifacts(payload)?;
     if payload.join(DATA_DIR).is_file() {
         return Err(GuiError::InvalidUpdate(
             "update package data path must not be a file".to_string(),
         ));
     }
     Ok(())
+}
+
+fn validate_no_dev_sidecar_artifacts(payload: &Path) -> Result<(), GuiError> {
+    let sidecars = payload.join(SIDECAR_DIR);
+    if sidecars.join("nte-gacha-python-core.cmd").exists() {
+        return Err(GuiError::InvalidUpdate(
+            "update package must not contain development sidecar command files".to_string(),
+        ));
+    }
+    for path in walk_files(&sidecars)? {
+        if is_text_launcher_or_script(&path) && file_contains_dev_magic(&path)? {
+            return Err(GuiError::InvalidUpdate(format!(
+                "update package must not contain .local development paths: {}",
+                path.to_string_lossy()
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn is_text_launcher_or_script(path: &Path) -> bool {
+    path.extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(|extension| {
+            matches!(
+                extension.to_ascii_lowercase().as_str(),
+                "bat" | "cmd" | "ps1" | "sh" | "txt"
+            )
+        })
+}
+
+fn file_contains_dev_magic(path: &Path) -> Result<bool, GuiError> {
+    let bytes = fs::read(path)?;
+    Ok(bytes
+        .windows(b".local".len())
+        .any(|window| window == b".local"))
 }
 
 fn validate_payload_release(payload: &Path, expected_version: &str) -> Result<(), GuiError> {

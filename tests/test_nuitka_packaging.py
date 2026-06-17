@@ -18,53 +18,45 @@ def _load_build_module():
     return module
 
 
-def test_windows_nuitka_build_uses_root_resources_and_pillow_trim(monkeypatch, tmp_path):
+def test_windows_nuitka_core_build_uses_root_resources_and_pillow_trim(monkeypatch, tmp_path):
     build = _load_build_module()
     captured: dict[str, object] = {"commands": []}
 
     monkeypatch.setattr(build, "OUTPUT_DIR", tmp_path / "dist")
-    monkeypatch.setattr(build, "RELEASE_DIR", tmp_path / "dist" / "nte-gacha-0.1.0")
-    monkeypatch.setattr(build, "BIN_DIR", tmp_path / "dist" / "nte-gacha-0.1.0" / "bin")
+    monkeypatch.setattr(build, "CORE_RELEASE_DIR", tmp_path / "dist" / "nte-gacha-core-0.1.0")
+    monkeypatch.setattr(build, "CORE_RELEASE_BIN_DIR", tmp_path / "dist" / "nte-gacha-core-0.1.0" / "bin")
     monkeypatch.setattr(build, "CORE_DIST_DIR", tmp_path / "dist" / "nte-gacha-core.dist")
-    fake_gcc = tmp_path / "gcc.exe"
-    fake_gcc.write_text("gcc", encoding="utf-8")
-    monkeypatch.setattr(build, "_find_gcc", lambda: fake_gcc)
-    output_marker = build.RELEASE_DIR / "output" / "history.json"
-    output_marker.parent.mkdir(parents=True)
-    output_marker.write_text("export", encoding="utf-8")
 
     def fake_run(command, *, cwd, env, check):
         captured["commands"].append(command)
         captured["cwd"] = cwd
         captured["env"] = env
         captured["check"] = check
-        if "-m" in command and "nuitka" in command:
-            core_exe = build.CORE_DIST_DIR / "nte-gacha-core.exe"
-            maps_dir = build.CORE_DIST_DIR / "resources" / "maps"
-            automation_dir = build.CORE_DIST_DIR / "resources" / "automation"
-            maps_dir.mkdir(parents=True)
-            automation_dir.mkdir(parents=True)
-            core_exe.write_text("core", encoding="utf-8")
-        else:
-            out = Path(command[command.index("-o") + 1])
-            out.write_text("wrapper", encoding="utf-8")
+        core_exe = build.CORE_DIST_DIR / "nte-gacha-core.exe"
+        maps_dir = build.CORE_DIST_DIR / "resources" / "maps"
+        automation_dir = build.CORE_DIST_DIR / "resources" / "automation"
+        maps_dir.mkdir(parents=True)
+        automation_dir.mkdir(parents=True)
+        core_exe.write_text("core", encoding="utf-8")
+        for name in build.NUITKA_GENERATED_EXE_NAMES:
+            (build.CORE_DIST_DIR / name).write_text("generated", encoding="utf-8")
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(build.sys, "platform", "win32")
     monkeypatch.setattr(build.subprocess, "run", fake_run)
 
-    assert build.main() == 0
+    assert build.main([]) == 0
 
     assert build.APP_VERSION == "0.1.0"
-    assert build.RELEASE_DIR.name == "nte-gacha-0.1.0"
+    assert build.CORE_RELEASE_DIR.name == "nte-gacha-core-0.1.0"
     commands = captured["commands"]
-    assert len(commands) == 4
+    assert len(commands) == 1
     command = commands[0]
     assert "--output-filename=nte-gacha-core" in command
     assert "--output-folder-name=nte-gacha-core" in command
     assert f"--main={build.TUI_ENTRYPOINT}" in command
     assert f"--main={build.CLI_ENTRYPOINT}" in command
-    assert f"--main={build.SIDECAR_ENTRYPOINT}" in command
+    assert f"--main={build.SIDECAR_ENTRYPOINT}" not in command
     assert f"--include-data-dir={build.RESOURCE_DIR}=resources" in command
     assert "--include-package-data=nte_gacha_exporter.resources.maps:*.json" not in command
     assert "--include-package-data=nte_gacha_exporter.resources.automation:*.json" not in command
@@ -77,57 +69,96 @@ def test_windows_nuitka_build_uses_root_resources_and_pillow_trim(monkeypatch, t
     assert all(f"--include-module={module}" in command for module in build.WINRT_OCR_MODULES)
     assert captured["cwd"] == build.PROJECT_ROOT
     assert captured["check"] is False
-    assert (build.BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
-    assert (build.RELEASE_DIR / "nte-gacha.exe").read_text(encoding="utf-8") == "wrapper"
-    assert (build.RELEASE_DIR / "nte-gacha-cli.exe").read_text(encoding="utf-8") == "wrapper"
-    assert (build.RELEASE_DIR / "nte-gacha-python-core.exe").read_text(encoding="utf-8") == "wrapper"
-    assert (build.RELEASE_DIR / "resources" / "maps").is_dir()
-    assert (build.RELEASE_DIR / "resources" / "automation").is_dir()
-    assert (build.RELEASE_DIR / "output").is_dir()
-    assert output_marker.read_text(encoding="utf-8") == "export"
-    wrapper_commands = commands[1:]
-    assert all("-municode" in item for item in wrapper_commands)
-    assert all(str(build.WRAPPER_SOURCE) in item for item in wrapper_commands)
+    assert (build.CORE_RELEASE_BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
+    assert not (build.CORE_RELEASE_DIR / "nte-gacha-python-core.exe").exists()
+    assert not (build.CORE_RELEASE_BIN_DIR / "nte-gacha.exe").exists()
+    assert not (build.CORE_RELEASE_BIN_DIR / "nte-gacha-cli.exe").exists()
+    assert (build.CORE_RELEASE_DIR / "resources" / "maps").is_dir()
+    assert (build.CORE_RELEASE_DIR / "resources" / "automation").is_dir()
     assert not hasattr(build, "CLI_DIST_DIR")
 
 
-def test_stage_release_clears_existing_build_owned_paths(monkeypatch, tmp_path):
+def test_windows_nuitka_sidecar_target_stages_sidecar_layout(monkeypatch, tmp_path):
+    build = _load_build_module()
+    captured: dict[str, object] = {"commands": []}
+
+    monkeypatch.setattr(build, "OUTPUT_DIR", tmp_path / "dist")
+    monkeypatch.setattr(build, "SIDECAR_RELEASE_DIR", tmp_path / "dist" / "nte-gacha-sidecar-0.1.0")
+    monkeypatch.setattr(
+        build,
+        "SIDECAR_RELEASE_BIN_DIR",
+        tmp_path / "dist" / "nte-gacha-sidecar-0.1.0" / "bin",
+    )
+    monkeypatch.setattr(build, "CORE_DIST_DIR", tmp_path / "dist" / "nte-gacha-core.dist")
+    fake_gcc = tmp_path / "gcc.exe"
+    fake_gcc.write_text("gcc", encoding="utf-8")
+    monkeypatch.setattr(build, "_find_gcc", lambda: fake_gcc)
+
+    def fake_run(command, *, cwd, env, check):
+        captured["commands"].append(command)
+        if "-m" in command and "nuitka" in command:
+            core_exe = build.CORE_DIST_DIR / "nte-gacha-core.exe"
+            maps_dir = build.CORE_DIST_DIR / "resources" / "maps"
+            automation_dir = build.CORE_DIST_DIR / "resources" / "automation"
+            maps_dir.mkdir(parents=True)
+            automation_dir.mkdir(parents=True)
+            core_exe.write_text("core", encoding="utf-8")
+            (build.CORE_DIST_DIR / "nte-gacha-sidecar.exe").write_text("generated", encoding="utf-8")
+        else:
+            out = Path(command[command.index("-o") + 1])
+            out.write_text("wrapper", encoding="utf-8")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(build.sys, "platform", "win32")
+    monkeypatch.setattr(build.subprocess, "run", fake_run)
+
+    assert build.main(["--target", "sidecar"]) == 0
+
+    commands = captured["commands"]
+    assert len(commands) == 2
+    command = commands[0]
+    assert f"--main={build.SIDECAR_ENTRYPOINT}" in command
+    assert f"--main={build.TUI_ENTRYPOINT}" not in command
+    assert f"--main={build.CLI_ENTRYPOINT}" not in command
+    wrapper_command = commands[1]
+    assert "-municode" in wrapper_command
+    assert str(build.WRAPPER_SOURCE) in wrapper_command
+    assert (build.SIDECAR_RELEASE_DIR / "nte-gacha-python-core.exe").read_text(encoding="utf-8") == "wrapper"
+    assert (build.SIDECAR_RELEASE_BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
+    assert not (build.SIDECAR_RELEASE_BIN_DIR / "nte-gacha-sidecar.exe").exists()
+    assert (build.SIDECAR_RELEASE_DIR / "resources" / "maps").is_dir()
+    assert (build.SIDECAR_RELEASE_DIR / "resources" / "automation").is_dir()
+
+
+def test_stage_core_release_clears_existing_build_owned_paths(monkeypatch, tmp_path):
     build = _load_build_module()
 
     monkeypatch.setattr(build, "OUTPUT_DIR", tmp_path / "dist")
-    monkeypatch.setattr(build, "RELEASE_DIR", tmp_path / "dist" / "nte-gacha-0.1.0")
-    monkeypatch.setattr(build, "BIN_DIR", tmp_path / "dist" / "nte-gacha-0.1.0" / "bin")
+    monkeypatch.setattr(build, "CORE_RELEASE_DIR", tmp_path / "dist" / "nte-gacha-core-0.1.0")
+    monkeypatch.setattr(build, "CORE_RELEASE_BIN_DIR", tmp_path / "dist" / "nte-gacha-core-0.1.0" / "bin")
     monkeypatch.setattr(build, "CORE_DIST_DIR", tmp_path / "dist" / "nte-gacha-core.dist")
     core_exe = build.CORE_DIST_DIR / build.CORE_EXE_NAME
     core_exe.parent.mkdir(parents=True)
     core_exe.write_text("core", encoding="utf-8")
-    for name in build.WRAPPER_EXE_NAMES:
-        (build.CORE_DIST_DIR / name).write_text("wrapper", encoding="utf-8")
+    for name in build.NUITKA_GENERATED_EXE_NAMES:
+        (build.CORE_DIST_DIR / name).write_text("generated", encoding="utf-8")
     maps_dir = build.CORE_DIST_DIR / "resources" / "maps"
     automation_dir = build.CORE_DIST_DIR / "resources" / "automation"
     maps_dir.mkdir(parents=True)
     automation_dir.mkdir(parents=True)
-    build.BIN_DIR.mkdir(parents=True)
-    (build.BIN_DIR / "old.exe").write_text("old", encoding="utf-8")
-    (build.RELEASE_DIR / "resources" / "stale.json").parent.mkdir()
-    (build.RELEASE_DIR / "resources" / "stale.json").write_text("old", encoding="utf-8")
-    (build.RELEASE_DIR / "nte-gacha.exe").write_text("old", encoding="utf-8")
-    (build.RELEASE_DIR / "nte-gacha-cli.exe").write_text("old", encoding="utf-8")
-    (build.RELEASE_DIR / "debug.txt").write_text("old", encoding="utf-8")
-    output_marker = build.RELEASE_DIR / "output" / "history.json"
-    output_marker.parent.mkdir()
-    output_marker.write_text("export", encoding="utf-8")
+    build.CORE_RELEASE_BIN_DIR.mkdir(parents=True)
+    (build.CORE_RELEASE_BIN_DIR / "old.exe").write_text("old", encoding="utf-8")
+    (build.CORE_RELEASE_DIR / "resources" / "stale.json").parent.mkdir()
+    (build.CORE_RELEASE_DIR / "resources" / "stale.json").write_text("old", encoding="utf-8")
+    (build.CORE_RELEASE_DIR / "debug.txt").write_text("old", encoding="utf-8")
 
     assert build._stage_release() == 0
 
-    assert (build.BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
-    assert not (build.BIN_DIR / "old.exe").exists()
-    assert not (build.RELEASE_DIR / "resources" / "stale.json").exists()
-    assert not (build.RELEASE_DIR / "debug.txt").exists()
-    assert (build.RELEASE_DIR / "nte-gacha.exe").read_text(encoding="utf-8") == "wrapper"
-    assert (build.RELEASE_DIR / "nte-gacha-cli.exe").read_text(encoding="utf-8") == "wrapper"
-    assert (build.RELEASE_DIR / "nte-gacha-python-core.exe").read_text(encoding="utf-8") == "wrapper"
-    assert output_marker.read_text(encoding="utf-8") == "export"
+    assert (build.CORE_RELEASE_BIN_DIR / "nte-gacha-core.exe").read_text(encoding="utf-8") == "core"
+    assert not (build.CORE_RELEASE_BIN_DIR / "old.exe").exists()
+    assert not (build.CORE_RELEASE_BIN_DIR / "nte-gacha.exe").exists()
+    assert not (build.CORE_RELEASE_DIR / "resources" / "stale.json").exists()
+    assert not (build.CORE_RELEASE_DIR / "debug.txt").exists()
     assert not list((tmp_path / "dist").glob("nte-gacha.previous-*"))
 
 
@@ -135,37 +166,45 @@ def test_clear_build_owned_release_paths_rejects_unscoped_paths(monkeypatch, tmp
     build = _load_build_module()
 
     monkeypatch.setattr(build, "OUTPUT_DIR", tmp_path / "dist")
-    monkeypatch.setattr(build, "RELEASE_DIR", tmp_path / "dist" / "nte-gacha-0.1.0")
-    monkeypatch.setattr(build, "BIN_DIR", tmp_path / "dist" / "nte-gacha-0.1.0" / "bin")
+    monkeypatch.setattr(build, "CORE_RELEASE_DIR", tmp_path / "dist" / "nte-gacha-core-0.1.0")
 
     with pytest.raises(RuntimeError, match="outside release build-owned scope"):
-        build._assert_build_owned_release_path(build.RELEASE_DIR / "output")
+        build._assert_build_owned_release_path(
+            build.CORE_RELEASE_DIR / "nested" / "file.txt",
+            release_dir=build.CORE_RELEASE_DIR,
+            target=build.CORE_TARGET,
+        )
 
 
 def test_clear_build_owned_release_paths_rejects_unexpected_release_dir(monkeypatch, tmp_path):
     build = _load_build_module()
 
     monkeypatch.setattr(build, "OUTPUT_DIR", tmp_path / "dist")
-    monkeypatch.setattr(build, "RELEASE_DIR", tmp_path / "dist" / "nte-gacha")
-    build.RELEASE_DIR.mkdir(parents=True)
+    monkeypatch.setattr(build, "CORE_RELEASE_DIR", tmp_path / "dist" / "nte-gacha")
+    build.CORE_RELEASE_DIR.mkdir(parents=True)
 
     with pytest.raises(RuntimeError, match="unexpected release directory"):
-        build._build_owned_release_paths()
+        build._build_owned_release_paths(
+            release_dir=build.CORE_RELEASE_DIR,
+            target=build.CORE_TARGET,
+        )
 
 
 def test_validate_release_rejects_unexpected_root_entries(monkeypatch, tmp_path, capsys):
     build = _load_build_module()
 
-    monkeypatch.setattr(build, "RELEASE_DIR", tmp_path / "dist" / "nte-gacha-0.1.0")
-    monkeypatch.setattr(build, "BIN_DIR", tmp_path / "dist" / "nte-gacha-0.1.0" / "bin")
+    monkeypatch.setattr(build, "SIDECAR_RELEASE_DIR", tmp_path / "dist" / "nte-gacha-sidecar-0.1.0")
+    monkeypatch.setattr(
+        build,
+        "SIDECAR_RELEASE_BIN_DIR",
+        tmp_path / "dist" / "nte-gacha-sidecar-0.1.0" / "bin",
+    )
     for path in (
-        build.RELEASE_DIR / "nte-gacha.exe",
-        build.RELEASE_DIR / "nte-gacha-cli.exe",
-        build.BIN_DIR / build.CORE_EXE_NAME,
-        build.RELEASE_DIR / "resources" / "maps",
-        build.RELEASE_DIR / "resources" / "automation",
-        build.RELEASE_DIR / "output",
-        build.RELEASE_DIR / "debug.txt",
+        build.SIDECAR_RELEASE_DIR / "nte-gacha-python-core.exe",
+        build.SIDECAR_RELEASE_BIN_DIR / build.CORE_EXE_NAME,
+        build.SIDECAR_RELEASE_DIR / "resources" / "maps",
+        build.SIDECAR_RELEASE_DIR / "resources" / "automation",
+        build.SIDECAR_RELEASE_DIR / "debug.txt",
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         if "." in path.name:
@@ -173,7 +212,7 @@ def test_validate_release_rejects_unexpected_root_entries(monkeypatch, tmp_path,
         else:
             path.mkdir(exist_ok=True)
 
-    assert build._validate_release() == 2
+    assert build._validate_release(build.SIDECAR_TARGET) == 2
     assert "unexpected" in capsys.readouterr().out
 
 

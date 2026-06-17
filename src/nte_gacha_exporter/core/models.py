@@ -96,6 +96,13 @@ class GachaRecord:
     secondary_item_name: str | None
     secondary_count: int | None
     source: SourceRef
+    banner_id: str | None = None
+    banner_name: str | None = None
+    banner_type: str | None = None
+    banner_version: str | None = None
+    banner_phase: str | None = None
+    banner_source_confidence: str | None = None
+    banner_resolution_status: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)

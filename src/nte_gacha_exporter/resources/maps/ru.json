@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "csv_headers": {
     "count": "Количество",
     "item_name": "Название предмета",
@@ -14,372 +14,915 @@
     "1003": {
       "name": "Персонаж·Сакири",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F3655F",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_zaowu.YH_lihui_character_zaowu"
+      }
     },
     "1004": {
       "name": "Персонаж·Лакримоза",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#E7495A",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
+      }
     },
     "1008": {
       "name": "Персонаж·Ския",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#5D667B",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_langren.YH_lihui_character_langren"
+      }
     },
     "1010": {
       "name": "Персонаж·Наналли",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F24B7E",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
+      }
     },
     "1019": {
       "name": "Персонаж·Минт",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#79E6EB",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_bohe.YH_lihui_character_bohe"
+      }
     },
     "1020": {
       "name": "Персонаж·Ханиэль",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F5C7EC",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
+      }
     },
     "1021": {
       "name": "Персонаж·Эдгар",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#D5EFFF",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_aidejia.YH_lihui_character_aidejia"
+      }
     },
     "1023": {
       "name": "Персонаж·Байканг",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#CBC2D9",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_baizhang.YH_lihui_character_baizhang"
+      }
     },
     "1025": {
       "name": "Персонаж·Хатор",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#FFFFFF",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_hahuosuoer.YH_lihui_character_hahuosuoer"
+      }
     },
     "1033": {
       "name": "Персонаж·Адлер",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#EDCA95",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_adele.YH_lihui_character_adele"
+      }
     },
     "1039": {
       "name": "Персонаж·Фадия",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#B095D9",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_fadiya.YH_lihui_character_fadiya"
+      }
     },
     "1052": {
       "name": "Персонаж·Хотори",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#E7495A",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
+      }
     },
     "1054": {
       "name": "Персонаж·Даффодил",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#42A6FF",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_dafudier.YH_lihui_character_dafudier"
+      }
     },
     "1055": {
       "name": "Персонаж·Цзююань",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#A595D1",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_jiuyuan.YH_lihui_character_jiuyuan"
+      }
     },
     "1070": {
       "name": "Персонаж·Аурелия",
       "rarity": 4,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#40CEFE",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_haiyue1.YH_lihui_fashionshop_haiyue1"
+      }
     },
     "1073": {
       "name": "Персонаж·Чиз",
       "rarity": 5,
-      "category": "character"
+      "category": "character",
+      "domain_type": "character",
+      "color": "#D9A5BC",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xiaozhi.YH_lihui_character_xiaozhi"
+      }
     },
     "Characterawaken_Adler": {
       "name": "Предмет·Осколок разума – Адлер",
       "rarity": 4,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Adler.Characterawaken_Adler",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Adler.Characterawaken_Adler",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_015_256.YH_UI_awaken_015_256"
+      }
     },
     "Characterawaken_Hathor": {
       "name": "Предмет·Осколок разума – Хатор",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Hathor.Characterawaken_Hathor",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Hathor.Characterawaken_Hathor",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_025_256.YH_UI_awaken_025_256"
+      }
     },
     "Characterawaken_Jin": {
       "name": "Предмет·Осколок разума – Хотори",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Jin.Characterawaken_Jin",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Jin.Characterawaken_Jin",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_052_256.YH_UI_awaken_052_256"
+      }
     },
     "Characterawaken_Mint": {
       "name": "Предмет·Осколок разума – Минт",
       "rarity": 4,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Mint.Characterawaken_Mint",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Mint.Characterawaken_Mint",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_019_256.YH_UI_awaken_019_256"
+      }
     },
     "Characterawaken_Nanally": {
       "name": "Предмет·Осколок разума – Наналли",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Nanally.Characterawaken_Nanally",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Nanally.Characterawaken_Nanally",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_010_256.YH_UI_awaken_010_256"
+      }
     },
     "Characterawaken_Sagiri": {
       "name": "Предмет·Осколок разума – Сакири",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_003_256.YH_UI_awaken_003_256"
+      }
     },
     "Characterawaken_cang": {
       "name": "Предмет·Осколок разума – Байканг",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_cang.Characterawaken_cang",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_cang.Characterawaken_cang",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_023_256.YH_UI_awaken_023_256"
+      }
     },
     "Characterawaken_daffodill": {
       "name": "Предмет·Осколок разума – Даффодил",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_daffodill.Characterawaken_daffodill",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_daffodill.Characterawaken_daffodill",
+        "portrait": "/Game/UI/UI_Icon/Item/UI_YH_Item_Icon_linshi_Oversea.UI_YH_Item_Icon_linshi_Oversea"
+      }
     },
     "Characterawaken_fadia": {
       "name": "Предмет·Осколок разума – Фадия",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_fadia.Characterawaken_fadia",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_fadia.Characterawaken_fadia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_027_256.YH_UI_awaken_027_256"
+      }
     },
     "Characterawaken_lacrimosa": {
       "name": "Предмет·Осколок разума – Лакримоза",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_004_256.YH_UI_awaken_004_256"
+      }
     },
     "Characterawaken_skia": {
       "name": "Предмет·Осколок разума – Ския",
       "rarity": 4,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_skia.Characterawaken_skia",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_skia.Characterawaken_skia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_008_256.YH_UI_awaken_008_256"
+      }
     },
     "DiceNormal": {
       "name": "Предмет·Шулерские кубики",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/DiceNormal_100.DiceNormal_100",
+        "icon": "/Game/UI/UI_Icon/item_100/DiceNormal_256.DiceNormal_256",
+        "portrait": "/Game/UI/UI_Icon/Item/DiceNormal.DIceNormal"
+      }
     },
     "Dice_ticket_01": {
       "name": "Предмет·Фрагмент искривления",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/gold_chequer_100.gold_chequer_100",
+        "icon": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer",
+        "portrait": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer"
+      }
     },
     "Dice_ticket_02": {
       "name": "Предмет·Потерянный фрагмент",
       "rarity": 4,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/silver_chequer_100.silver_chequer_100",
+        "icon": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer",
+        "portrait": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer"
+      }
     },
     "Dicelimite": {
       "name": "Предмет·Твердый кубик",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Dicelimite_100.Dicelimite_100",
+        "icon": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256",
+        "portrait": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256"
+      }
     },
     "Fashion_Glide_1004": {
       "name": "Планер·Томатный дуэт",
       "rarity": 4,
-      "category": "appearance"
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly09.YH_UI_shizhuang_big_fly09",
+        "head_icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
+        "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu1.YH_UI_1024_anhunqu1"
+      }
     },
     "Fashion_Glide_1010": {
       "name": "Планер·Заместитель младшего босса",
       "rarity": 4,
-      "category": "appearance"
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly05.YH_UI_shizhuang_big_fly05",
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi1.YH_lihui_fashionshop_huaxiangyi1"
+      }
     },
     "Fashion_Glide_1052": {
       "name": "Планер·Орхидеевый бриз",
       "rarity": 4,
-      "category": "appearance"
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly07.YH_UI_shizhuang_big_fly07",
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi2.YH_lihui_fashionshop_huaxiangyi2"
+      }
     },
     "Fashion_character_1004_01": {
       "name": "Костюм·Позолоченная рапсодия",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu4.YH_lihui_fashionshopi_anhunqu4"
+      }
     },
     "Fashion_character_1010": {
       "name": "Костюм·Удар Феникса",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali3.YH_lihui_character_nanali3"
+      }
     },
     "Fashion_character_1052_01": {
       "name": "Костюм·Бесценная орхидея",
       "rarity": 5,
-      "category": "item"
+      "category": "item",
+      "domain_type": "item",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_xun1.YH_lihui_fashionshop_xun1"
+      }
     },
     "Fashion_vehicleSkin_1052_V016": {
       "name": "Детали модификации·Окраска «Золотой бриз»",
       "rarity": 5,
-      "category": "vehicle_module"
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai11.YH_lihui_character_cai11"
+      }
     },
     "Fashion_vehicle_1004_V021": {
       "name": "Детали модификации·Окраска «Томатный круиз»",
       "rarity": 5,
-      "category": "vehicle_module"
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu2.YH_UI_1024_anhunqu2"
+      }
     },
     "Fashion_vehicle_1010_V008": {
       "name": "Детали модификации·Окраска «Атакующий тигр!»",
       "rarity": 5,
-      "category": "vehicle_module"
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai3.YH_lihui_character_cai3"
+      }
     },
     "Fashion_vehicle_1052_V024": {
       "name": "Детали модификации·Окраска «Осенняя дымка»",
       "rarity": 5,
-      "category": "vehicle_module"
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai5.YH_lihui_character_cai5"
+      }
     },
     "fork_Arachne": {
       "name": "Дуга·Вечный вальс",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_100.fork_Arachne_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256"
+      }
     },
     "fork_BitGame": {
       "name": "Дуга·Взорвать толпу",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_100.fork_BitGame_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256"
+      }
     },
     "fork_BitterCake": {
       "name": "Дуга·Хороший, плохой, горький",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_100.fork_BitterCake_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256"
+      }
     },
     "fork_BlackBook": {
       "name": "Дуга·Ребяческая фантазия",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_100.fork_BlackBook_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256"
+      }
     },
     "fork_Butterfly": {
       "name": "Дуга·Убежище реальности",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_100.fork_Butterfly_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_256.fork_Butterfly_256"
+      }
     },
     "fork_GoldWool": {
       "name": "Дуга·Заветное желание",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_100.fork_GoldWool_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_256.fork_GoldWool_256"
+      }
     },
     "fork_Kite": {
       "name": "Дуга·Берегите головы!",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Kite_100.fork_Kite_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256"
+      }
     },
     "fork_Nakupeda": {
       "name": "Дуга·Твое счастье бесценно",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_100.fork_Nakupeda_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256"
+      }
     },
     "fork_PaperPlane": {
       "name": "Дуга·Чистое небо",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_100.fork_PaperPlane_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256"
+      }
     },
     "fork_PoliceRat": {
       "name": "Дуга·Хранитель Этеро",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_100.fork_PoliceRat_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256"
+      }
     },
     "fork_Prokaryon": {
       "name": "Дуга·Мы.",
       "rarity": 3,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_100.fork_yuanheti_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256"
+      }
     },
     "fork_Rose": {
       "name": "Дуга·Последняя роза",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Rose_100.fork_Rose_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Rose_256.fork_Rose_256"
+      }
     },
     "fork_TigerTally": {
       "name": "Дуга·Полная готовность",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_100.fork_TigerTally_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_256.fork_TigerTally_256"
+      }
     },
     "fork_Time": {
       "name": "Дуга·За пределы времени",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Time_100.fork_Time_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Time_256.fork_Time_256"
+      }
     },
     "fork_appliance": {
       "name": "Дуга·«Настоящая музыка»",
       "rarity": 3,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_100.fork_fudianling_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256"
+      }
     },
     "fork_bopu": {
       "name": "Дуга·Космический восторг, дикая греза",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_bopu_100.fork_bopu_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256"
+      }
     },
     "fork_dustbin": {
       "name": "Дуга·Опасная игра",
       "rarity": 3,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_100.fork_dustbin_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256"
+      }
     },
     "fork_jiaojuan": {
       "name": "Дуга·Блестящие дни",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_100.fork_jiaojuan_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256"
+      }
     },
     "fork_jingmotingyuan": {
       "name": "Дуга·Сообщество Камелии",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_100.fork_jingmotingyuan_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256"
+      }
     },
     "fork_koinobori": {
       "name": "Дуга·Время придет",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_100.fork_koinobori_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256"
+      }
     },
     "fork_lingganzhongjiezhe": {
       "name": "Дуга·Королевский разум",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_100.fork_lingganzhongjiezhe_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256"
+      }
     },
     "fork_mamen": {
       "name": "Дуга·Созерцательная кошка",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mamen_100.fork_mamen_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256"
+      }
     },
     "fork_mofeikesi": {
       "name": "Дуга·Большой квест хорошего мальчика",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_100.fork_mofeikesi_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256"
+      }
     },
     "fork_nonos": {
       "name": "Дуга·Первый шаг к успеху",
       "rarity": 3,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_nonos_100.fork_nonos_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256"
+      }
     },
     "fork_oulaquantao": {
       "name": "Дуга·Ора-ора!",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_100.fork_oulaquantao_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256"
+      }
     },
     "fork_rishi": {
       "name": "Дуга·Выходной",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_rishi_100.fork_rishi_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256"
+      }
     },
     "fork_spider": {
       "name": "Дуга·Я подвожу тебя с тяжестью в сердце",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_spider_100.fork_spider_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256"
+      }
     },
     "fork_tuansanlang": {
       "name": "Дуга·Великий вор",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_100.fork_tuansanlang_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256"
+      }
     },
     "fork_vine": {
       "name": "Дуга·Будь счастлив",
       "rarity": 3,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_100.fork_HugVine_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256"
+      }
     },
     "fork_wuhuakuang": {
       "name": "Дуга·Забытое",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_100.fork_wuhuakuang_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256"
+      }
     },
     "fork_wushoutieyu": {
       "name": "Дуга·Бушующее пламя",
       "rarity": 5,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_100.fork_wushoutieyu_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256"
+      }
     },
     "fork_yaodao": {
       "name": "Дуга·Обнаженный клинок",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_100.fork_yaodao_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256"
+      }
     },
     "fork_yuren": {
       "name": "Дуга·Зонтик",
       "rarity": 4,
-      "category": "fork"
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuren_100.fork_yuren_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256"
+      }
     }
   },
   "item_aliases": {
@@ -416,12 +959,21 @@
           "end_at_tz8": "2026-07-08 05:59:00",
           "title": "Заброшенная тропа"
         }
+      ],
+      "banner_ids": [
+        "monopoly_limited_AnHunQu",
+        "monopoly_limited_Kaesi",
+        "monopoly_limited_Nanali",
+        "monopoly_limited_Xun"
       ]
     },
     "CardPool_NewRole": {
       "name": "Стандартная доска",
       "group_label": "Стандартная доска",
-      "title": "Странные встречи"
+      "title": "Странные встречи",
+      "banner_ids": [
+        "monopoly_standard"
+      ]
     },
     "ForkLottery_AnHunQu": {
       "name": "Чудо-коробка",
@@ -429,6 +981,13 @@
       "title": "Особый фонд Ноктюрна",
       "pickup_item_ids": [
         "fork_Rose"
+      ],
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+      },
+      "banner_ids": [
+        "ForkLottery_AnHunQu"
       ]
     },
     "ForkLottery_Kaesi": {
@@ -437,6 +996,13 @@
       "title": "Особый фонд Погони",
       "pickup_item_ids": [
         "fork_GoldWool"
+      ],
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+      },
+      "banner_ids": [
+        "ForkLottery_Kaesi"
       ]
     },
     "ForkLottery_Nanali": {
@@ -445,6 +1011,13 @@
       "title": "Особый фонд Тигра",
       "pickup_item_ids": [
         "fork_TigerTally"
+      ],
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+      },
+      "banner_ids": [
+        "ForkLottery_Nanali"
       ]
     },
     "ForkLottery_Xun": {
@@ -453,7 +1026,384 @@
       "title": "Особый фонд Яркой луны",
       "pickup_item_ids": [
         "fork_Time"
+      ],
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+      },
+      "banner_ids": [
+        "ForkLottery_Xun"
       ]
+    }
+  },
+  "banners": {
+    "ForkLottery_AnHunQu": {
+      "banner_id": "ForkLottery_AnHunQu",
+      "pool_id": "ForkLottery_AnHunQu",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Особый фонд Ноктюрна",
+      "rate_up_5": [
+        "fork_Rose"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_Kaesi": {
+      "banner_id": "ForkLottery_Kaesi",
+      "pool_id": "ForkLottery_Kaesi",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Особый фонд Погони",
+      "rate_up_5": [
+        "fork_GoldWool"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_Nanali": {
+      "banner_id": "ForkLottery_Nanali",
+      "pool_id": "ForkLottery_Nanali",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Особый фонд Тигра",
+      "rate_up_5": [
+        "fork_TigerTally"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_Xun": {
+      "banner_id": "ForkLottery_Xun",
+      "pool_id": "ForkLottery_Xun",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Особый фонд Яркой луны",
+      "rate_up_5": [
+        "fork_Time"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "monopoly_limited_AnHunQu": {
+      "banner_id": "monopoly_limited_AnHunQu",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Угасающие грёзы",
+      "end_at": "2026-06-24 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1004"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ]
+      },
+      "phase": "limited_2026_06_24",
+      "start_at": "2026-06-03 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
+      }
+    },
+    "monopoly_limited_Kaesi": {
+      "banner_id": "monopoly_limited_Kaesi",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Заброшенная тропа",
+      "end_at": "2026-07-08 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1020"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ]
+      },
+      "phase": "limited_2026_07_08",
+      "start_at": "2026-06-24 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
+      }
+    },
+    "monopoly_limited_Nanali": {
+      "banner_id": "monopoly_limited_Nanali",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Ити-дайме",
+      "end_at": "2026-05-13 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1010"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ]
+      },
+      "phase": "limited_2026_05_13",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
+      }
+    },
+    "monopoly_limited_Xun": {
+      "banner_id": "monopoly_limited_Xun",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Пьяный стиль Мисти",
+      "end_at": "2026-06-03 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1052"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ]
+      },
+      "phase": "limited_2026_06_03",
+      "start_at": "2026-05-13 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
+      }
+    },
+    "monopoly_standard": {
+      "banner_id": "monopoly_standard",
+      "pool_id": "CardPool_NewRole",
+      "pool_kind": "monopoly_standard",
+      "banner_type": "standard",
+      "title": "Странные встречи",
+      "rate_up_5": [],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_standard",
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
+        ]
+      }
+    }
+  },
+  "gacha_rules": {
+    "fork_lottery_s": {
+      "rule_id": "fork_lottery_s",
+      "pool_kind": "fork_lottery",
+      "hard_pity_5": 80,
+      "pickup_win_rate_5": 25,
+      "has_guarantee_5": true,
+      "guarantee_scope": "pool_kind",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "ui_forklottery_rule_04_AnHunQu",
+        "rule_desc_2": "ui_forklottery_rule_05_AnHunQu",
+        "probability_desc": "ui_forkshop_12_anhunqu"
+      },
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json",
+          "DataTable/Drop/Client/ClientDropGroupDataTable.json",
+          "DataTable/Drop/DropSequenceDataTable.json"
+        ],
+        "notes": [
+          "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
+        ]
+      }
+    },
+    "monopoly_limited": {
+      "rule_id": "monopoly_limited",
+      "pool_kind": "monopoly_limited",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "guarantee_scope": "unknown",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
+      },
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
+        ]
+      }
+    },
+    "monopoly_standard": {
+      "rule_id": "monopoly_standard",
+      "pool_kind": "monopoly_standard",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "guarantee_scope": "unknown",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
+      },
+      "source": {
+        "confidence": "curated",
+        "tables": [
+          "Localization/ru/game.json"
+        ],
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
+        ]
+      }
     }
   },
   "labels": {

@@ -1,4 +1,5 @@
 mod analysis;
+mod derived;
 mod export;
 mod maps;
 mod model;
@@ -7,16 +8,23 @@ mod rules;
 mod store;
 mod updater;
 
+pub use derived::derive_records;
 pub use maps::{available_locales, load_map};
 pub use model::{
-    BackupReport, DashboardOverview, DisplayRecord, FiveStarRecord, FiveStarResult, GuiError,
-    ImportReport, InternalRecord, ItemRank, MapLocaleList, PoolKind, PoolKindDetail,
-    PoolKindSummary, Profile, RarityBucket, RecordFilter, RecordFilterOptions, RecordList,
-    RecordPoolOption, RecordSortKey, RecordTypeOption, RestoreReport, Settings, SettingsPatch,
-    SortDirection, UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest,
-    UpdatePackage, UpdateStageReport, UpdateStatus,
+    BackupReport, BannerResolutionStatus, BannerSummary, DashboardOverview, DisplayRecord,
+    FiveStarRecord, FiveStarResult, FourStarRecord, GachaRuleView, GuiError, ImportReport,
+    InternalRecord, ItemRank, MapLocaleList, PhaseSummary, PoolKind, PoolKindDetail,
+    PoolKindSummary, Profile, RarityBucket, RateUpResult, RecordBannerOption, RecordDerived,
+    RecordFilter, RecordFilterOptions, RecordList, RecordPoolOption, RecordSortKey,
+    RecordTypeOption, ResolvedBanner, ResourcePoolKindSummary, ResourceSummary, RestoreReport,
+    RuleResolutionStatus, Settings, SettingsPatch, SortDirection, TimeBucketSummary, TimeStats,
+    UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage,
+    UpdateStageReport, UpdateStatus,
 };
-pub use rules::{classify_pool_id, rule_for, GachaRule};
+pub use rules::{
+    classify_pool_id, derive_pool_kind_hits, fallback_rule_for, rule_for, rule_for_record,
+    rule_for_resolved_banner, DerivedHit, GachaRule, PoolKindDerivedStats, RuleResolution,
+};
 pub use store::{load_locale_or_settings, DataBackup, JsonStore};
 pub use updater::{
     apply_staged_update, check_update_manifest, prepare_update_install, stage_update_archive,
