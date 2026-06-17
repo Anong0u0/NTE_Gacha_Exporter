@@ -232,6 +232,14 @@ def test_pyproject_declares_winrt_ocr_dependencies():
         assert f'"{package}" = {{ version = ">=3.2,<4.0", markers = "sys_platform == \'win32\'" }}' in pyproject
 
 
+def test_desktop_release_artifact_name_omits_tag_prefix_and_platform_suffix():
+    script = (Path(__file__).parents[1] / "packaging" / "nuitka" / "build-win-release.ps1").read_text(encoding="utf-8")
+
+    old_name = "nte-gacha-desktop-" + "v$Version" + "-windows" + "-x64"
+    assert 'return "nte-gacha-desktop-$Version"' in script
+    assert old_name not in script
+
+
 def test_nuitka_cli_entrypoint_calls_cli_main(monkeypatch):
     seen: dict[str, object] = {}
 

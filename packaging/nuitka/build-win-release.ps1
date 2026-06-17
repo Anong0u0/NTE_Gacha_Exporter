@@ -47,6 +47,12 @@ function Write-JsonNoBom {
     [System.IO.File]::WriteAllText($Path, "$json`n", $encoding)
 }
 
+function Get-DesktopReleaseArtifactName {
+    param([string]$Version)
+
+    return "nte-gacha-desktop-$Version"
+}
+
 function Assert-WindowsHost {
     $isWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
     if (-not $isWindows) {
@@ -300,7 +306,7 @@ function Clear-PortableStageBuildOwnedPaths {
     if (-not (Test-Path -LiteralPath $ReleaseRoot)) {
         return
     }
-    $expectedName = "nte-gacha-desktop-v$Version-windows-x64"
+    $expectedName = Get-DesktopReleaseArtifactName -Version $Version
     $item = Get-Item -LiteralPath $ReleaseRoot
     if ($item.Parent.FullName -ne (Join-Path $ProjectRoot "dist") -or $item.Name -ne $expectedName) {
         throw "Refusing to clear unexpected portable stage: $ReleaseRoot"
@@ -357,8 +363,9 @@ function New-PortableStage {
     )
 
     $distRoot = Join-Path $ProjectRoot "dist"
-    $releaseRoot = Join-Path $distRoot "nte-gacha-desktop-v$Version-windows-x64"
-    $zipPath = Join-Path $distRoot "nte-gacha-desktop-v$Version-windows-x64.zip"
+    $artifactName = Get-DesktopReleaseArtifactName -Version $Version
+    $releaseRoot = Join-Path $distRoot $artifactName
+    $zipPath = Join-Path $distRoot "$artifactName.zip"
     $manifestPath = Join-Path $distRoot "nte-gacha-update.json"
     Clear-PortableStageBuildOwnedPaths -ProjectRoot $ProjectRoot -ReleaseRoot $releaseRoot -Version $Version
     if (-not (Test-Path -LiteralPath $distRoot)) {

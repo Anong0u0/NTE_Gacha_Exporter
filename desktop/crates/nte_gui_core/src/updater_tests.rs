@@ -16,7 +16,7 @@ fn manifest(version: &str, channel: UpdateChannel) -> UpdateManifest {
         version: version.to_string(),
         channel,
         release_url: "https://example.invalid/release".to_string(),
-        asset_name: format!("nte-gacha-desktop-v{version}-windows-x64.zip"),
+        asset_name: format!("nte-gacha-desktop-{version}.zip"),
         download_url: "https://example.invalid/download.zip".to_string(),
         sha256: "0".repeat(64),
         size: 1,
