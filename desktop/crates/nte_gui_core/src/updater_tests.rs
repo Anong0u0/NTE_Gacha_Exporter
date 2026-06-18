@@ -63,6 +63,7 @@ fn package_for_archive(path: &Path, version: &str) -> UpdatePackage {
 fn portable_entries(prefix: &str, version: &str) -> Vec<(String, Vec<u8>)> {
     vec![
         (format!("{prefix}nte-gacha.exe"), b"launcher".to_vec()),
+        (format!("{prefix}nte-gacha-cli.exe"), b"cli".to_vec()),
         (
             format!("{prefix}app/nte-gacha-desktop.exe"),
             b"desktop".to_vec(),

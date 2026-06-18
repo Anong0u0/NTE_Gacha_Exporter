@@ -61,7 +61,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use python
-          poetry install --extras live
+          poetry install
 
       - name: Lint
         run: poetry run ruff check .
@@ -125,30 +125,16 @@ jobs:
 
           "tagName=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - name: Install Poetry
-        run: pipx install poetry
-
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: "poetry"
-
-      - name: Install dependencies
-        run: |
-          poetry env use python
-          poetry install --extras live
-
       - name: Build, smoke, and stage portable package
         id: package
         shell: pwsh
-        run: .\packaging\nuitka\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}"
+        run: .\packaging\windows\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}"
 
       - name: Upload release assets
         uses: actions/upload-artifact@v7

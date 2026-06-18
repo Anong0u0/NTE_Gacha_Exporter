@@ -15,6 +15,7 @@ use crate::model::{
 const MANIFEST_SCHEMA: &str = "nte-gacha-update";
 const MANIFEST_SCHEMA_VERSION: u32 = 1;
 const ROOT_LAUNCHER: &str = "nte-gacha.exe";
+const ROOT_CLI: &str = "nte-gacha-cli.exe";
 const APP_DIR: &str = "app";
 const LEGACY_SIDECAR_DIR: &str = "sidecars";
 const DATA_DIR: &str = "data";
@@ -319,6 +320,7 @@ fn normalized_payload_root(extract_root: &Path) -> Result<PathBuf, GuiError> {
 fn validate_payload_layout(payload: &Path) -> Result<(), GuiError> {
     for path in [
         payload.join(ROOT_LAUNCHER),
+        payload.join(ROOT_CLI),
         payload.join(APP_DIR),
         payload.join(APP_DIR).join(APP_EXE),
         payload.join(APP_DIR).join(UPDATER_EXE),
@@ -487,7 +489,7 @@ fn validate_existing_data_preserved(root: &Path) -> Result<(), GuiError> {
 }
 
 fn backup_current_release(root: &Path, rollback: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR, LEGACY_SIDECAR_DIR] {
+    for name in [ROOT_LAUNCHER, ROOT_CLI, APP_DIR, LEGACY_SIDECAR_DIR] {
         let source = root.join(name);
         if source.exists() {
             fs::rename(source, rollback.join(name))?;
@@ -497,14 +499,14 @@ fn backup_current_release(root: &Path, rollback: &Path) -> Result<(), GuiError> 
 }
 
 fn install_payload(root: &Path, payload: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR] {
+    for name in [ROOT_LAUNCHER, ROOT_CLI, APP_DIR] {
         fs::rename(payload.join(name), root.join(name))?;
     }
     Ok(())
 }
 
 fn restore_rollback(root: &Path, rollback: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR, LEGACY_SIDECAR_DIR] {
+    for name in [ROOT_LAUNCHER, ROOT_CLI, APP_DIR, LEGACY_SIDECAR_DIR] {
         let target = root.join(name);
         if target.exists() {
             remove_path(&target)?;

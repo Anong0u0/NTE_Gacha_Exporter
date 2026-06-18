@@ -1,19 +1,12 @@
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 
-use crate::capture_protocol::{row_public_time, ParseWarning, ParsedRow};
+use crate::capture_protocol::{row_public_time, ParsedRow};
 use crate::maps::{load_map, MapData};
 use crate::model::GuiError;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RawReplayResult {
-    pub document: Value,
-    pub records_count: u64,
-}
 
 #[derive(Debug, Clone)]
 pub struct CapturePublicRecord {
@@ -74,12 +67,7 @@ impl CaptureRecordBuilder {
     }
 }
 
-pub fn build_capture_document(
-    rows: &[ParsedRow],
-    warnings: &[ParseWarning],
-    locale: &str,
-    source: &str,
-) -> Result<Value, GuiError> {
+pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value, GuiError> {
     let map = load_map(locale)?;
     let canonical_rows = rows
         .iter()
@@ -91,26 +79,6 @@ pub fn build_capture_document(
         .zip(record_ids)
         .map(|(row, record_id)| public_record(row, record_id))
         .collect::<Vec<_>>();
-    let mut by_record_type: BTreeMap<String, u64> = BTreeMap::new();
-    let mut by_pool: BTreeMap<String, u64> = BTreeMap::new();
-    let mut times = Vec::new();
-    for record in &records {
-        if let Some(record_type) = record.get("record_type").and_then(Value::as_str) {
-            *by_record_type.entry(record_type.to_string()).or_default() += 1;
-        }
-        if let Some(pool_id) = record.get("pool_id").and_then(Value::as_str) {
-            *by_pool.entry(pool_id.to_string()).or_default() += 1;
-        }
-        if let Some(time) = record.get("time").and_then(Value::as_str) {
-            times.push(time.to_string());
-        }
-    }
-    times.sort();
-    let time_range = if times.is_empty() {
-        Value::Null
-    } else {
-        json!([times[0], times[times.len() - 1]])
-    };
     Ok(json!({
         "info": {
             "schema": "nte-gacha-export",
@@ -125,18 +93,6 @@ pub fn build_capture_document(
         },
         "nte": {
             "list": records
-        },
-        "_debug": {
-            "source": source,
-            "summary": {
-                "record_count": records.len(),
-                "time_range": time_range,
-                "by_record_type": by_record_type,
-                "by_pool": by_pool,
-                "warning_count": warnings.len()
-            },
-            "warnings": warnings,
-            "raw_rows": rows
         }
     }))
 }
@@ -270,8 +226,7 @@ mod tests {
             .unwrap();
         let raw_path = root.join("tests/fixtures/sample.raw.jsonl");
         let rows = capture_raw::read_raw_capture(&raw_path).unwrap();
-        let document =
-            build_capture_document(&rows.rows, &rows.warnings, "zh-Hant", "test").unwrap();
+        let document = build_capture_document(&rows.rows, "zh-Hant").unwrap();
         let records = document["nte"]["list"].as_array().unwrap();
         assert_eq!(records.len(), 2);
         assert_eq!(

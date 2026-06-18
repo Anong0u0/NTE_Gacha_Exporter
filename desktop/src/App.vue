@@ -583,8 +583,8 @@ async function runRestore() {
   });
 }
 
-async function pingSidecar() {
-  await runTask("Runtime responded", () => api.sidecarPing());
+async function pingRuntime() {
+  await runTask("Runtime responded", () => api.runtimePing());
 }
 
 async function runDoctor() {
@@ -1510,7 +1510,7 @@ function formatError(error: unknown) {
               <Settings :size="17" />
               <span>Save settings</span>
             </button>
-            <button type="button" :disabled="isWorkflowBusy" @click="pingSidecar">
+            <button type="button" :disabled="isWorkflowBusy" @click="pingRuntime">
               <Database :size="17" />
               <span>Ping runtime</span>
             </button>

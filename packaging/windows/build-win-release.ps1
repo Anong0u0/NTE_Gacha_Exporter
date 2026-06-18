@@ -2,7 +2,6 @@
 param(
     [switch]$ChecksOnly,
     [switch]$SkipInstall,
-    [switch]$SkipSidecarBuild,
     [switch]$SkipTauriBuild,
     [switch]$SkipPortableStage,
     [switch]$SkipSmoke,
@@ -287,7 +286,7 @@ function Clear-PortableStageBuildOwnedPaths {
     if ($item.Parent.FullName -ne (Join-Path $ProjectRoot "dist") -or $item.Name -ne $expectedName) {
         throw "Refusing to clear unexpected portable stage: $ReleaseRoot"
     }
-    foreach ($name in @("nte-gacha.exe", "app", "sidecars", "update")) {
+    foreach ($name in @("nte-gacha.exe", "nte-gacha-cli.exe", "app", "sidecars", "update")) {
         $path = Join-Path $ReleaseRoot $name
         if (Test-Path -LiteralPath $path) {
             Remove-Item -LiteralPath $path -Force -Recurse
@@ -300,6 +299,7 @@ function Assert-PortableStageContent {
 
     $requiredPaths = @(
         (Join-Path $ReleaseRoot "nte-gacha.exe"),
+        (Join-Path $ReleaseRoot "nte-gacha-cli.exe"),
         (Join-Path $ReleaseRoot "app\nte-gacha-desktop.exe"),
         (Join-Path $ReleaseRoot "app\nte-gacha-updater.exe"),
         (Join-Path $ReleaseRoot "app\release.json")
@@ -346,9 +346,10 @@ function New-PortableStage {
 
     $targetRelease = Join-Path $DesktopRoot "target\release"
     $launcher = Join-Path $targetRelease "nte-gacha.exe"
+    $cli = Join-Path $targetRelease "nte-gacha-cli.exe"
     $desktopExe = Join-Path $targetRelease "nte-gacha-desktop.exe"
     $updater = Join-Path $targetRelease "nte-gacha-updater.exe"
-    foreach ($path in @($launcher, $desktopExe, $updater)) {
+    foreach ($path in @($launcher, $cli, $desktopExe, $updater)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Portable artifact missing: $path"
         }
@@ -361,6 +362,7 @@ function New-PortableStage {
     New-Item -ItemType Directory -Force -Path (Join-Path $releaseRoot "update\staging") | Out-Null
 
     Copy-Item -LiteralPath $launcher -Destination (Join-Path $releaseRoot "nte-gacha.exe")
+    Copy-Item -LiteralPath $cli -Destination (Join-Path $releaseRoot "nte-gacha-cli.exe")
     Copy-Item -LiteralPath $desktopExe -Destination (Join-Path $appDir "nte-gacha-desktop.exe")
     Copy-Item -LiteralPath $updater -Destination (Join-Path $appDir "nte-gacha-updater.exe")
     New-ReleaseJson -Path (Join-Path $appDir "release.json") -Version $Version
@@ -391,6 +393,11 @@ function New-PortableStage {
 
 function Invoke-PortableRunSmoke {
     param([string]$ReleaseRoot)
+
+    $cli = Join-Path $ReleaseRoot "nte-gacha-cli.exe"
+    Write-Step "Portable CLI smoke"
+    Invoke-External -Name "Portable CLI version" -FilePath $cli -Arguments @("--version") -WorkingDirectory $ReleaseRoot
+    Write-Ok "Portable CLI responded"
 
     $launcher = Join-Path $ReleaseRoot "nte-gacha.exe"
     Write-Step "portable app launch smoke"
@@ -440,10 +447,6 @@ foreach ($name in $requiredCommands) {
     Assert-Command -Name $name
 }
 Assert-RustHost
-
-if ($SkipSidecarBuild) {
-    Write-Warning "-SkipSidecarBuild is ignored because desktop release no longer builds a Python sidecar."
-}
 
 if ($ChecksOnly) {
     Write-Ok "ChecksOnly complete. Native Windows release toolchain looks usable."

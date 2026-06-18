@@ -258,8 +258,7 @@ fn import_raw_jsonl(
 ) -> Result<ImportReport, ApiError> {
     let locale = with_store(&state, |store| load_locale_or_settings(store, locale))?;
     let rows = read_raw_capture(Path::new(&path)).map_err(api_error)?;
-    let document = build_capture_document(&rows.rows, &rows.warnings, &locale, "raw-replay")
-        .map_err(api_error)?;
+    let document = build_capture_document(&rows.rows, &locale).map_err(api_error)?;
     let document_text = serde_json::to_string(&document).map_err(api_error)?;
     with_store(&state, |store| {
         store.import_public_document(&profile_name, &document_text, "raw_jsonl", Some(&path))
@@ -437,7 +436,7 @@ fn doctor_run(_state: State<'_, AppState>) -> Result<DoctorReport, ApiError> {
 }
 
 #[tauri::command]
-fn sidecar_ping(_state: State<'_, AppState>) -> Result<Value, ApiError> {
+fn runtime_ping(_state: State<'_, AppState>) -> Result<Value, ApiError> {
     Ok(json!({ "ok": true, "runtime": "rust" }))
 }
 
@@ -602,7 +601,7 @@ pub fn run() {
             updater_install_staged,
             maps_list,
             doctor_run,
-            sidecar_ping,
+            runtime_ping,
             request_admin_capture_start,
             take_pending_admin_capture,
             capture_start,
@@ -1181,14 +1180,13 @@ fn finish_capture_result(
     runtime: &Arc<CaptureRuntimeSession>,
     result: Result<nte_gui_core::CaptureResult, String>,
     locale: &str,
-    source_kind: &str,
+    _source_kind: &str,
     auto_page: Option<Value>,
     final_error: Option<RuntimeError>,
 ) {
     match result {
         Ok(result) => {
-            let document =
-                build_capture_document(&result.rows, &result.warnings, locale, source_kind);
+            let document = build_capture_document(&result.rows, locale);
             if let Ok(mut status) = runtime.status.lock() {
                 status.auto_page = auto_page;
                 match document {

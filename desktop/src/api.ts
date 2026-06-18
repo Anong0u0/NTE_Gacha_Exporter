@@ -497,7 +497,7 @@ export type AppApi = {
   restoreBackup(path: string): Promise<RestoreReport>;
   mapsList(): Promise<MapLocaleList>;
   doctorRun(): Promise<DoctorReport>;
-  sidecarPing(): Promise<unknown>;
+  runtimePing(): Promise<unknown>;
   updaterStatus(): Promise<UpdateStatus>;
   updaterCheck(channel?: string): Promise<UpdateCheckReport>;
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;
@@ -1142,7 +1142,7 @@ const mockApi: AppApi = {
   async doctorRun() {
     return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };
   },
-  async sidecarPing() {
+  async runtimePing() {
     return { ok: true, runtime: "rust" };
   },
   async updaterStatus() {
@@ -1222,7 +1222,7 @@ const tauriApi: AppApi = {
   restoreBackup: (path) => invoke<RestoreReport>("restore_backup", { path }),
   mapsList: () => invoke<MapLocaleList>("maps_list"),
   doctorRun: () => invoke<DoctorReport>("doctor_run"),
-  sidecarPing: () => invoke<unknown>("sidecar_ping"),
+  runtimePing: () => invoke<unknown>("runtime_ping"),
   updaterStatus: () => invoke<UpdateStatus>("updater_status"),
   updaterCheck: (channel) => invoke<UpdateCheckReport>("updater_check", { channel }),
   updaterDownloadAndStage: (packageInfo) =>

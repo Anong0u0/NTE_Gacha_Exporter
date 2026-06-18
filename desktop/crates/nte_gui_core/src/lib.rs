@@ -6,6 +6,7 @@ mod capture_protocol;
 mod capture_raw;
 mod derived;
 mod export;
+mod map_build;
 mod maps;
 mod model;
 mod public_json;
@@ -13,17 +14,19 @@ mod rules;
 mod store;
 mod updater;
 
-pub use capture_document::{
-    build_capture_document, CapturePublicRecord, CaptureRecordBuilder, RawReplayResult,
-};
+pub use capture_document::{build_capture_document, CapturePublicRecord, CaptureRecordBuilder};
 pub use capture_live::{
     capture_live, CaptureCounters, CaptureOptions, CaptureProgress, CaptureResult, CaptureTarget,
 };
 pub use capture_net::{
     candidate_ports, capture_doctor, find_process_pid, is_admin, CaptureDoctorReport,
 };
+pub use capture_protocol::{ParseWarning, ParsedRow};
 pub use capture_raw::read_raw_capture;
 pub use derived::derive_records;
+pub use map_build::{
+    build_asset_map, build_asset_maps, discover_asset_locales, find_assets_root, AssetMapBuild,
+};
 pub use maps::{available_locales, load_map};
 pub use model::{
     BackupReport, BannerResolutionStatus, BannerSummary, DashboardOverview, DisplayRecord,

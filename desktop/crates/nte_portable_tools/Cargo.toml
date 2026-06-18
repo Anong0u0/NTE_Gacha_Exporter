@@ -12,5 +12,25 @@ path = "src/bin/nte-gacha.rs"
 name = "nte-gacha-updater"
 path = "src/bin/nte-gacha-updater.rs"
 
+[[bin]]
+name = "nte-gacha-cli"
+path = "src/bin/nte-gacha-cli.rs"
+
 [dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive"] }
+ctrlc = "3"
+crossterm = "0.28"
+nte_automation = { path = "../nte_automation" }
 nte_gui_core = { path = "../nte_gui_core" }
+serde_json = "1"
+tempfile = "3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile = "3"
