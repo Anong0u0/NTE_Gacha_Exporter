@@ -240,6 +240,15 @@ def test_desktop_release_artifact_name_omits_tag_prefix_and_platform_suffix():
     assert old_name not in script
 
 
+def test_desktop_release_script_does_not_build_or_smoke_python_sidecar():
+    script = (Path(__file__).parents[1] / "packaging" / "nuitka" / "build-win-release.ps1").read_text(encoding="utf-8")
+
+    assert "Nuitka sidecar build" not in script
+    assert "Invoke-SidecarSmoke" not in script
+    assert "poetry" not in script
+    assert 'Portable stage must not contain legacy Python sidecars' in script
+
+
 def test_nuitka_cli_entrypoint_calls_cli_main(monkeypatch):
     seen: dict[str, object] = {}
 

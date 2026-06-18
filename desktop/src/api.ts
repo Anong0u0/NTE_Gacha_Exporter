@@ -70,10 +70,12 @@ export type CaptureCounters = {
   packets_seen: number;
   decoded_packets: number;
   dropped_packets: number;
+  duplicate_packets?: number;
+  filter_restarts?: number;
 };
 
 export type CaptureTarget = {
-  pid?: string;
+  pid?: string | number;
   interface?: string;
   ports?: number[];
   bpf?: string;
@@ -1141,7 +1143,7 @@ const mockApi: AppApi = {
     return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };
   },
   async sidecarPing() {
-    return { ok: true };
+    return { ok: true, runtime: "rust" };
   },
   async updaterStatus() {
     return {
@@ -1176,7 +1178,7 @@ const mockApi: AppApi = {
   async takePendingAdminCapture() {
     return null;
   },
-  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "auto_page_incremental") {
+  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only") {
     const sessionId = `mock-capture-${Date.now()}`;
     mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode });
     return mockCaptureStatus(sessionId);
@@ -1251,7 +1253,7 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
   const session = mockCaptureSessions.get(sessionId);
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
   const profileName = session?.profileName ?? "default";
-  const mode = session?.mode ?? "auto_page_incremental";
+  const mode = session?.mode ?? "live_only";
   const recordsCount = completed ? mockRecords.length : Math.min(2, Math.max(0, session?.polls ?? 0));
   return {
     session_id: sessionId,

@@ -93,7 +93,7 @@ const exportPath = ref("");
 const exportMode = ref<ExportMode>("json");
 const backupPath = ref("");
 const restorePath = ref("");
-const captureMode = ref<CaptureMode>("auto_page_incremental");
+const captureMode = ref<CaptureMode>("live_only");
 const lastReport = ref<ImportReport | null>(null);
 const lastBackup = ref<BackupReport | null>(null);
 const lastRestore = ref<RestoreReport | null>(null);
@@ -169,10 +169,10 @@ const isCaptureActive = computed(() => {
 const isWorkflowBusy = computed(() => busy.value || isCaptureActive.value || captureActionBusy.value);
 const captureTitle = computed(() => {
   if (!captureStatus.value) return summary.value?.total_records ? "Merge new records" : "Import records to start tracking";
-  if (captureStatus.value.state === "completed") return "Live capture completed";
-  if (captureStatus.value.state === "failed") return "Live capture failed";
-  if (captureStatus.value.state === "stopping") return "Stopping live capture";
-  return "Live capture running";
+  if (captureStatus.value.state === "completed") return "Capture completed";
+  if (captureStatus.value.state === "failed") return "Capture failed";
+  if (captureStatus.value.state === "stopping") return "Stopping capture";
+  return "Capture running";
 });
 const captureSubtitle = computed(() => {
   if (!captureStatus.value) {
@@ -421,7 +421,7 @@ async function startLiveCapture(options: { skipAdminRequest?: boolean; pending?:
   captureActionBusy.value = true;
   errorText.value = "";
   try {
-    if (!options.skipAdminRequest && captureMode.value !== "live_only") {
+    if (!options.skipAdminRequest) {
       const relaunching = await api.requestAdminCaptureStart(activeProfileName.value, locale.value, captureMode.value);
       if (relaunching) {
         statusText.value = "Waiting for administrator window";
@@ -584,7 +584,7 @@ async function runRestore() {
 }
 
 async function pingSidecar() {
-  await runTask("Sidecar responded", () => api.sidecarPing());
+  await runTask("Runtime responded", () => api.sidecarPing());
 }
 
 async function runDoctor() {
@@ -858,6 +858,7 @@ function formatError(error: unknown) {
                 <span>{{ captureStatus.counters.packets_seen }} packets</span>
                 <span>{{ captureStatus.counters.decoded_packets }} decoded</span>
                 <span>{{ captureStatus.counters.dropped_packets }} dropped</span>
+                <span v-if="captureStatus.counters.duplicate_packets">{{ captureStatus.counters.duplicate_packets }} duplicates</span>
               </div>
               <div v-if="autoPageStatusLine" class="capture-target">{{ autoPageStatusLine }}</div>
               <div v-if="captureStatus.auto_page" class="capture-stats">
@@ -1511,7 +1512,7 @@ function formatError(error: unknown) {
             </button>
             <button type="button" :disabled="isWorkflowBusy" @click="pingSidecar">
               <Database :size="17" />
-              <span>Ping sidecar</span>
+              <span>Ping runtime</span>
             </button>
             <button type="button" :disabled="isWorkflowBusy" @click="runDoctor">
               <Stethoscope :size="17" />

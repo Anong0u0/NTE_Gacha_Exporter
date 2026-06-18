@@ -1,0 +1,343 @@
+{
+  "schema": "nte-gacha-auto-profile",
+  "schemaVersion": 2,
+  "profile": "default",
+  "baseClientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "aspectRatio": "16:9",
+  "window": {
+    "exe": "HTGame.exe",
+    "className": "UnrealWindow"
+  },
+  "points": {
+    "homeBoardFile": {
+      "x": 450,
+      "y": 1000
+    },
+    "homeForkEntry": {
+      "x": 120,
+      "y": 970
+    },
+    "boardRecordTab": {
+      "x": 1345,
+      "y": 298
+    },
+    "boardTypeDropdown": {
+      "x": 1020,
+      "y": 370
+    },
+    "boardLimitedOption": {
+      "x": 1020,
+      "y": 431
+    },
+    "boardStandardOption": {
+      "x": 1020,
+      "y": 486
+    },
+    "boardNextButton": {
+      "x": 1230,
+      "y": 890
+    },
+    "forkDetailFile": {
+      "x": 1738,
+      "y": 293
+    },
+    "forkActivityCard": {
+      "x": 420,
+      "y": 560
+    },
+    "forkRecordTab": {
+      "x": 1345,
+      "y": 298
+    },
+    "forkNextButton": {
+      "x": 1230,
+      "y": 864
+    }
+  },
+  "rects": {
+    "boardPageNumber": {
+      "x": 915,
+      "y": 860,
+      "width": 95,
+      "height": 60
+    },
+    "forkPageNumber": {
+      "x": 915,
+      "y": 835,
+      "width": 95,
+      "height": 60
+    }
+  },
+  "templates": {
+    "homeBoardFileIcon": {
+      "file": "templates/home_board_file_icon.png",
+      "rect": {
+        "x": 421,
+        "y": 970,
+        "width": 54,
+        "height": 50
+      },
+      "searchPadding": {
+        "x": 60,
+        "y": 50
+      },
+      "threshold": 12.0
+    },
+    "homeForkEntryIcon": {
+      "file": "templates/home_fork_entry_icon.png",
+      "rect": {
+        "x": 76,
+        "y": 928,
+        "width": 74,
+        "height": 70
+      },
+      "searchPadding": {
+        "x": 70,
+        "y": 60
+      },
+      "threshold": 12.0
+    },
+    "recordTabSelectedCap": {
+      "file": "templates/record_tab_selected_cap.png",
+      "rect": {
+        "x": 1455,
+        "y": 274,
+        "width": 88,
+        "height": 50
+      },
+      "searchPadding": {
+        "x": 80,
+        "y": 40
+      },
+      "threshold": 45.0
+    },
+    "forkShopSelectedIcon": {
+      "file": "templates/fork_shop_selected_icon.png",
+      "rect": {
+        "x": 46,
+        "y": 368,
+        "width": 82,
+        "height": 92
+      },
+      "searchPadding": {
+        "x": 70,
+        "y": 60
+      },
+      "threshold": 12.0
+    },
+    "forkActivityTimeIcon": {
+      "file": "templates/fork_activity_time_icon.png",
+      "rect": {
+        "x": 407,
+        "y": 546,
+        "width": 26,
+        "height": 28
+      },
+      "searchPadding": {
+        "x": 80,
+        "y": 80
+      },
+      "threshold": 24.0
+    },
+    "forkDetailFileIcon": {
+      "file": "templates/fork_detail_file_icon.png",
+      "rect": {
+        "x": 1708,
+        "y": 262,
+        "width": 66,
+        "height": 66
+      },
+      "searchPadding": {
+        "x": 80,
+        "y": 60
+      },
+      "threshold": 2.0
+    }
+  },
+  "workflow": [
+    {
+      "action": "verifyTemplate",
+      "status": "verifyMarketHome",
+      "point": null,
+      "pointSequence": [],
+      "template": "homeBoardFileIcon",
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": null
+    },
+    {
+      "action": "click",
+      "status": "boardDetails",
+      "point": "homeBoardFile",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": null
+    },
+    {
+      "action": "click",
+      "status": "diceRecords",
+      "point": "boardRecordTab",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": null
+    },
+    {
+      "action": "verifyTemplate",
+      "status": "verifyDiceRecords",
+      "point": null,
+      "pointSequence": [],
+      "template": "recordTabSelectedCap",
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": null
+    },
+    {
+      "action": "click",
+      "status": "boardType",
+      "point": "boardTypeDropdown",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.35
+    },
+    {
+      "action": "click",
+      "status": "limitedBoard",
+      "point": "boardLimitedOption",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.8
+    },
+    {
+      "action": "page",
+      "status": "limitedBoardPages",
+      "point": null,
+      "pointSequence": [],
+      "template": null,
+      "pageRect": "boardPageNumber",
+      "nextButton": "boardNextButton",
+      "pool": "limited",
+      "settle": null
+    },
+    {
+      "action": "click",
+      "status": "boardType",
+      "point": "boardTypeDropdown",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.35
+    },
+    {
+      "action": "click",
+      "status": "standardBoard",
+      "point": "boardStandardOption",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.8
+    },
+    {
+      "action": "page",
+      "status": "standardBoardPages",
+      "point": null,
+      "pointSequence": [],
+      "template": null,
+      "pageRect": "boardPageNumber",
+      "nextButton": "boardNextButton",
+      "pool": "standard",
+      "settle": null
+    },
+    {
+      "action": "pressEsc",
+      "status": "marketHome",
+      "point": null,
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": null
+    },
+    {
+      "action": "clickUntilTemplate",
+      "status": "arcShop",
+      "point": null,
+      "pointSequence": [
+        "homeForkEntry"
+      ],
+      "template": "forkShopSelectedIcon",
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.03
+    },
+    {
+      "action": "clickTemplateUntilTemplate",
+      "status": "arcResearch",
+      "point": "forkActivityCard",
+      "pointSequence": [],
+      "template": "forkActivityTimeIcon",
+      "targetTemplate": "forkDetailFileIcon",
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.2
+    },
+    {
+      "action": "click",
+      "status": "arcResearchDetails",
+      "point": "forkDetailFile",
+      "pointSequence": [],
+      "template": null,
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.8
+    },
+    {
+      "action": "clickUntilTemplate",
+      "status": "arcResearchRecords",
+      "point": null,
+      "pointSequence": [
+        "forkRecordTab"
+      ],
+      "template": "recordTabSelectedCap",
+      "pageRect": null,
+      "nextButton": null,
+      "pool": null,
+      "settle": 0.03
+    },
+    {
+      "action": "page",
+      "status": "arcResearchPages",
+      "point": null,
+      "pointSequence": [],
+      "template": null,
+      "pageRect": "forkPageNumber",
+      "nextButton": "forkNextButton",
+      "pool": "fork",
+      "settle": null
+    }
+  ]
+}

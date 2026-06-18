@@ -16,13 +16,11 @@ const MANIFEST_SCHEMA: &str = "nte-gacha-update";
 const MANIFEST_SCHEMA_VERSION: u32 = 1;
 const ROOT_LAUNCHER: &str = "nte-gacha.exe";
 const APP_DIR: &str = "app";
-const SIDECAR_DIR: &str = "sidecars";
+const LEGACY_SIDECAR_DIR: &str = "sidecars";
 const DATA_DIR: &str = "data";
 const UPDATE_DIR: &str = "update";
 const APP_EXE: &str = "nte-gacha-desktop.exe";
 const UPDATER_EXE: &str = "nte-gacha-updater.exe";
-const SIDECAR_EXE: &str = "nte-gacha-python-core.exe";
-const SIDECAR_CORE_EXE: &str = "nte-gacha-core.exe";
 const RELEASE_JSON: &str = "release.json";
 const RELEASE_SCHEMA: &str = "nte-gacha-release";
 const RELEASE_SCHEMA_VERSION: u32 = 1;
@@ -322,17 +320,9 @@ fn validate_payload_layout(payload: &Path) -> Result<(), GuiError> {
     for path in [
         payload.join(ROOT_LAUNCHER),
         payload.join(APP_DIR),
-        payload.join(SIDECAR_DIR),
         payload.join(APP_DIR).join(APP_EXE),
         payload.join(APP_DIR).join(UPDATER_EXE),
         payload.join(APP_DIR).join(RELEASE_JSON),
-        payload.join(SIDECAR_DIR).join(SIDECAR_EXE),
-        payload.join(SIDECAR_DIR).join("bin").join(SIDECAR_CORE_EXE),
-        payload.join(SIDECAR_DIR).join("resources").join("maps"),
-        payload
-            .join(SIDECAR_DIR)
-            .join("resources")
-            .join("automation"),
     ] {
         if !path.exists() {
             return Err(GuiError::InvalidUpdate(format!(
@@ -351,7 +341,10 @@ fn validate_payload_layout(payload: &Path) -> Result<(), GuiError> {
 }
 
 fn validate_no_dev_sidecar_artifacts(payload: &Path) -> Result<(), GuiError> {
-    let sidecars = payload.join(SIDECAR_DIR);
+    let sidecars = payload.join(LEGACY_SIDECAR_DIR);
+    if !sidecars.exists() {
+        return Ok(());
+    }
     if sidecars.join("nte-gacha-python-core.cmd").exists() {
         return Err(GuiError::InvalidUpdate(
             "update package must not contain development sidecar command files".to_string(),
@@ -451,9 +444,7 @@ fn walk_files(path: &Path) -> Result<Vec<PathBuf>, GuiError> {
 }
 
 fn is_supported_portable_layout(root: &Path) -> bool {
-    root.join(ROOT_LAUNCHER).is_file()
-        && root.join(APP_DIR).join(APP_EXE).is_file()
-        && root.join(SIDECAR_DIR).is_dir()
+    root.join(ROOT_LAUNCHER).is_file() && root.join(APP_DIR).join(APP_EXE).is_file()
 }
 
 fn latest_child_name(path: &Path) -> Result<Option<String>, GuiError> {
@@ -496,7 +487,7 @@ fn validate_existing_data_preserved(root: &Path) -> Result<(), GuiError> {
 }
 
 fn backup_current_release(root: &Path, rollback: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR, SIDECAR_DIR] {
+    for name in [ROOT_LAUNCHER, APP_DIR, LEGACY_SIDECAR_DIR] {
         let source = root.join(name);
         if source.exists() {
             fs::rename(source, rollback.join(name))?;
@@ -506,14 +497,14 @@ fn backup_current_release(root: &Path, rollback: &Path) -> Result<(), GuiError> 
 }
 
 fn install_payload(root: &Path, payload: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR, SIDECAR_DIR] {
+    for name in [ROOT_LAUNCHER, APP_DIR] {
         fs::rename(payload.join(name), root.join(name))?;
     }
     Ok(())
 }
 
 fn restore_rollback(root: &Path, rollback: &Path) -> Result<(), GuiError> {
-    for name in [ROOT_LAUNCHER, APP_DIR, SIDECAR_DIR] {
+    for name in [ROOT_LAUNCHER, APP_DIR, LEGACY_SIDECAR_DIR] {
         let target = root.join(name);
         if target.exists() {
             remove_path(&target)?;

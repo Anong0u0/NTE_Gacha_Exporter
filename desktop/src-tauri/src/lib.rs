@@ -1,18 +1,28 @@
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
-use std::sync::Mutex;
+use std::process::{Command, Stdio};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use nte_automation::{
+    run_auto_page, AutoPageOptions as AutomationOptions, AutoPageResult as AutoPageRunResult,
+    AutoPageStatus as AutomationStatus, RecordSnapshot as AutomationRecordSnapshot,
+};
 use nte_gui_core::{
-    available_locales, check_update_manifest, load_locale_or_settings, prepare_update_install,
-    stage_update_archive, update_status, BackupReport, DashboardOverview, GuiError, ImportReport,
-    JsonStore, MapLocaleList, PoolKind, PoolKindDetail, Profile, RecordFilter, RecordFilterOptions,
-    RecordList, RestoreReport, Settings, SettingsPatch, UpdateChannel, UpdateCheckReport,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
+    available_locales, build_capture_document, candidate_ports, capture_doctor, capture_live,
+    check_update_manifest, find_process_pid, load_locale_or_settings, prepare_update_install,
+    read_raw_capture, stage_update_archive, update_status, BackupReport, CaptureOptions,
+    CaptureTarget, DashboardOverview, GuiError, ImportReport, JsonStore, MapLocaleList, PoolKind,
+    PoolKindDetail, Profile, RecordFilter, RecordFilterOptions, RecordList, RestoreReport,
+    Settings, SettingsPatch, UpdateChannel, UpdateCheckReport, UpdateManifest, UpdatePackage,
+    UpdateStageReport, UpdateStatus,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -20,19 +30,13 @@ use tauri::{Manager, State};
 
 struct AppState {
     store: Mutex<JsonStore>,
-    sidecar: Mutex<Option<SidecarClient>>,
+    capture_sessions: Mutex<HashMap<String, Arc<CaptureRuntimeSession>>>,
     captures: Mutex<HashMap<String, CaptureSessionMeta>>,
     pending_admin_capture: Mutex<Option<PendingAdminCapture>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct SidecarResponse {
-    result: Option<Value>,
-    error: Option<SidecarError>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct SidecarError {
+struct RuntimeError {
     code: String,
     message: String,
 }
@@ -44,24 +48,18 @@ struct ApiError {
 }
 
 #[derive(Debug, Clone)]
-struct SidecarCommand {
-    program: String,
-}
-
-struct SidecarClient {
-    child: Child,
-    stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
-    next_id: u64,
-}
-
-#[derive(Debug, Clone)]
 struct CaptureSessionMeta {
     profile_name: String,
     source_kind: String,
     source_path: Option<String>,
     full_update: bool,
     import_report: Option<ImportReport>,
+}
+
+struct CaptureRuntimeSession {
+    status: Mutex<CaptureStatus>,
+    stop: Arc<AtomicBool>,
+    handle: Mutex<Option<JoinHandle<()>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,6 +78,14 @@ enum CaptureMode {
 }
 
 impl CaptureMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::LiveOnly => "live_only",
+            Self::AutoPageIncremental => "auto_page_incremental",
+            Self::AutoPageFull => "auto_page_full",
+        }
+    }
+
     fn auto_page(self) -> bool {
         matches!(self, Self::AutoPageIncremental | Self::AutoPageFull)
     }
@@ -98,23 +104,21 @@ impl CaptureMode {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct RawReplayResult {
-    document: Value,
-    records_count: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 struct DoctorReport {
     ok: bool,
     exit_code: i64,
     lines: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct CaptureCounters {
     packets_seen: u64,
     decoded_packets: u64,
     dropped_packets: u64,
+    #[serde(default)]
+    duplicate_packets: u64,
+    #[serde(default)]
+    filter_restarts: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,7 +134,7 @@ struct CaptureStatus {
     target: Option<Value>,
     auto_page: Option<Value>,
     raw_path: Option<String>,
-    error: Option<SidecarError>,
+    error: Option<RuntimeError>,
     #[serde(default, skip_serializing)]
     document: Option<Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -190,13 +194,10 @@ fn import_raw_jsonl(
     locale: Option<String>,
 ) -> Result<ImportReport, ApiError> {
     let locale = with_store(&state, |store| load_locale_or_settings(store, locale))?;
-    let value = sidecar_call(
-        &state,
-        "raw.replay",
-        json!({ "path": path, "locale": locale }),
-    )?;
-    let replay: RawReplayResult = serde_json::from_value(value).map_err(api_error)?;
-    let document_text = serde_json::to_string(&replay.document).map_err(api_error)?;
+    let rows = read_raw_capture(Path::new(&path)).map_err(api_error)?;
+    let document = build_capture_document(&rows.rows, &rows.warnings, &locale, "raw-replay")
+        .map_err(api_error)?;
+    let document_text = serde_json::to_string(&document).map_err(api_error)?;
     with_store(&state, |store| {
         store.import_public_document(&profile_name, &document_text, "raw_jsonl", Some(&path))
     })
@@ -351,14 +352,30 @@ fn maps_list() -> MapLocaleList {
 }
 
 #[tauri::command]
-fn doctor_run(state: State<'_, AppState>) -> Result<DoctorReport, ApiError> {
-    let value = sidecar_call(&state, "doctor.run", json!({}))?;
-    serde_json::from_value(value).map_err(api_error)
+fn doctor_run(_state: State<'_, AppState>) -> Result<DoctorReport, ApiError> {
+    let report = capture_doctor("HTGame.exe").map_err(api_error)?;
+    let mut lines = Vec::new();
+    lines.push(format!("Windows: {}", report.windows));
+    lines.push(format!("Administrator: {}", report.admin));
+    lines.push(format!(
+        "HTGame.exe: {}",
+        report
+            .pid
+            .map(|pid| format!("pid {pid}"))
+            .unwrap_or_else(|| "not found".to_string())
+    ));
+    lines.push(format!("Ports: {:?}", report.ports));
+    lines.extend(report.notes);
+    Ok(DoctorReport {
+        ok: report.windows && report.admin && report.pid.is_some() && !report.ports.is_empty(),
+        exit_code: if report.windows && report.admin { 0 } else { 3 },
+        lines,
+    })
 }
 
 #[tauri::command]
-fn sidecar_ping(state: State<'_, AppState>) -> Result<Value, ApiError> {
-    sidecar_call(&state, "app.ping", json!({}))
+fn sidecar_ping(_state: State<'_, AppState>) -> Result<Value, ApiError> {
+    Ok(json!({ "ok": true, "runtime": "rust" }))
 }
 
 #[tauri::command]
@@ -368,8 +385,8 @@ fn request_admin_capture_start(
     locale: Option<String>,
     mode: Option<CaptureMode>,
 ) -> Result<bool, ApiError> {
-    let mode = mode.unwrap_or(CaptureMode::AutoPageIncremental);
-    if !mode.auto_page() || !admin_relaunch_required()? {
+    let mode = mode.unwrap_or(CaptureMode::LiveOnly);
+    if !admin_relaunch_required()? {
         return Ok(false);
     }
     let locale = with_store(&state, |store| {
@@ -408,11 +425,11 @@ fn capture_start(
     locale: Option<String>,
     mode: Option<CaptureMode>,
 ) -> Result<CaptureStatus, ApiError> {
-    let mode = mode.unwrap_or(CaptureMode::AutoPageIncremental);
-    if mode.auto_page() && admin_relaunch_required()? {
+    let mode = mode.unwrap_or(CaptureMode::LiveOnly);
+    if admin_relaunch_required()? {
         return Err(api_error_message(
             "admin_required",
-            "auto page requires administrator permission",
+            "pktmon capture requires administrator permission",
         ));
     }
     let locale = with_store(&state, |store| {
@@ -420,31 +437,21 @@ fn capture_start(
         store.dashboard_overview(&profile_name, &locale)?;
         Ok(locale)
     })?;
-    let (known_record_ids, output_raw) = with_store(&state, |store| {
-        let ids = if mode == CaptureMode::AutoPageIncremental {
-            store.profile_record_ids(&profile_name)?
-        } else {
-            Vec::new()
-        };
+    let output_raw = with_store(&state, |store| {
         let raw_path = if mode.auto_page() {
             Some(store.default_run_raw_path().to_string_lossy().to_string())
         } else {
             None
         };
-        Ok((ids, raw_path))
+        Ok(raw_path)
     })?;
-    let value = sidecar_call(
-        &state,
-        "capture.start",
-        json!({
-            "locale": locale,
-            "auto_page": mode.auto_page(),
-            "full_update": mode.full_update(),
-            "known_record_ids": known_record_ids,
-            "output_raw": output_raw,
-        }),
-    )?;
-    let mut status = parse_capture_status(value)?;
+    let known_record_ids = if mode == CaptureMode::AutoPageIncremental {
+        with_store(&state, |store| store.profile_record_ids(&profile_name))?
+    } else {
+        Vec::new()
+    };
+    let mut status =
+        start_rust_capture_session(&state, &locale, mode, output_raw.clone(), known_record_ids)?;
     status.import_report = None;
     let source_path = status.raw_path.clone().or(output_raw);
     state
@@ -477,7 +484,18 @@ fn capture_status(
 
 #[tauri::command]
 fn capture_stop(state: State<'_, AppState>, session_id: String) -> Result<CaptureStatus, ApiError> {
-    let _ = sidecar_call(&state, "capture.stop", json!({ "session_id": session_id }))?;
+    let session = capture_runtime_session(&state, &session_id)?;
+    session.stop.store(true, Ordering::SeqCst);
+    {
+        let mut status = session
+            .status
+            .lock()
+            .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+        if matches!(status.state.as_str(), "starting" | "running") {
+            status.state = "stopping".to_string();
+            status.updated_at = now_seconds();
+        }
+    }
     capture_status_with_merge(&state, &session_id)
 }
 
@@ -493,7 +511,7 @@ pub fn run() {
                 JsonStore::open(root).map_err(|err| format!("failed to open JSON store: {err}"))?;
             app.manage(AppState {
                 store: Mutex::new(store),
-                sidecar: Mutex::new(None),
+                capture_sessions: Mutex::new(HashMap::new()),
                 captures: Mutex::new(HashMap::new()),
                 pending_admin_capture: Mutex::new(pending_admin_capture.clone()),
             });
@@ -696,34 +714,378 @@ fn schedule_process_exit() {
     });
 }
 
-fn sidecar_call(
-    state: &State<'_, AppState>,
-    method: &str,
-    params: Value,
-) -> Result<Value, ApiError> {
-    let mut sidecar = state
-        .sidecar
-        .lock()
-        .map_err(|_| api_error_message("sidecar_lock_poisoned", "sidecar lock poisoned"))?;
-    if sidecar.is_none() {
-        *sidecar = Some(SidecarClient::connect_candidates()?);
+fn now_seconds() -> f64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_secs_f64())
+        .unwrap_or_default()
+}
+
+fn new_session_id() -> String {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis())
+        .unwrap_or_default();
+    format!("rust-capture-{}-{stamp}", std::process::id())
+}
+
+impl From<nte_gui_core::CaptureCounters> for CaptureCounters {
+    fn from(value: nte_gui_core::CaptureCounters) -> Self {
+        Self {
+            packets_seen: value.packets_seen,
+            decoded_packets: value.decoded_packets,
+            dropped_packets: value.dropped_packets,
+            duplicate_packets: value.duplicate_packets,
+            filter_restarts: value.filter_restarts,
+        }
     }
-    sidecar
-        .as_mut()
-        .ok_or_else(|| api_error_message("sidecar_unavailable", "sidecar unavailable"))?
-        .call(method, params)
+}
+
+fn start_rust_capture_session(
+    state: &State<'_, AppState>,
+    locale: &str,
+    mode: CaptureMode,
+    output_raw: Option<String>,
+    known_record_ids: Vec<String>,
+) -> Result<CaptureStatus, ApiError> {
+    let pid = find_process_pid("HTGame.exe")
+        .map_err(api_error)?
+        .ok_or_else(|| api_error_message("capture_environment", "HTGame.exe not found"))?;
+    let ports = candidate_ports(pid).map_err(api_error)?;
+    if ports.is_empty() {
+        return Err(api_error_message(
+            "capture_environment",
+            "no HTGame.exe candidate ports",
+        ));
+    }
+    let session_id = new_session_id();
+    let now = now_seconds();
+    let target = CaptureTarget {
+        pid,
+        exe: "HTGame.exe".to_string(),
+        interface: "pktmon".to_string(),
+        ports: ports.clone(),
+        bpf: ports
+            .iter()
+            .map(|port| format!("port {port}"))
+            .collect::<Vec<_>>()
+            .join(" or "),
+    };
+    let initial_status = CaptureStatus {
+        session_id: session_id.clone(),
+        state: "starting".to_string(),
+        mode: mode.as_str().to_string(),
+        records_count: 0,
+        latest_records: Vec::new(),
+        counters: CaptureCounters::default(),
+        started_at: now,
+        updated_at: now,
+        target: Some(serde_json::to_value(&target).map_err(api_error)?),
+        auto_page: None,
+        raw_path: output_raw.clone(),
+        error: None,
+        document: None,
+        import_report: None,
+    };
+    let stop = Arc::new(AtomicBool::new(false));
+    let runtime = Arc::new(CaptureRuntimeSession {
+        status: Mutex::new(initial_status.clone()),
+        stop: Arc::clone(&stop),
+        handle: Mutex::new(None),
+    });
+    state
+        .capture_sessions
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
+        .insert(session_id.clone(), Arc::clone(&runtime));
+
+    let raw_out = output_raw.map(PathBuf::from);
+    let locale_for_thread = locale.to_string();
+    let snapshots = Arc::new(Mutex::new(Vec::<AutomationRecordSnapshot>::new()));
+    let progress_snapshots = mode.auto_page().then(|| Arc::clone(&snapshots));
+    let callback =
+        capture_progress_callback(Arc::clone(&runtime), locale.to_string(), progress_snapshots);
+    let runtime_for_thread = Arc::clone(&runtime);
+    let stop_for_thread = Arc::clone(&stop);
+    let handle = std::thread::spawn(move || {
+        if mode.auto_page() {
+            run_auto_page_capture_thread(
+                runtime_for_thread,
+                pid,
+                ports,
+                raw_out,
+                locale_for_thread,
+                stop_for_thread,
+                callback,
+                mode,
+                known_record_ids,
+                snapshots,
+            );
+        } else {
+            let result = capture_live(
+                CaptureOptions {
+                    pid,
+                    exe: "HTGame.exe".to_string(),
+                    ports,
+                    raw_out,
+                    max_packets: 0,
+                    max_decoded: 0,
+                    on_progress: Some(callback),
+                },
+                stop_for_thread,
+            );
+            finish_capture_result(
+                &runtime_for_thread,
+                result.map_err(|error| error.to_string()),
+                &locale_for_thread,
+                "pktmon-live-capture",
+                None,
+                None,
+            );
+        }
+    });
+    *runtime
+        .handle
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))? =
+        Some(handle);
+    Ok(initial_status)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_auto_page_capture_thread(
+    runtime: Arc<CaptureRuntimeSession>,
+    pid: u32,
+    ports: Vec<u16>,
+    raw_out: Option<PathBuf>,
+    locale: String,
+    stop: Arc<AtomicBool>,
+    callback: Arc<dyn Fn(nte_gui_core::CaptureProgress) + Send + Sync + 'static>,
+    mode: CaptureMode,
+    known_record_ids: Vec<String>,
+    snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
+) {
+    let capture_stop = Arc::clone(&stop);
+    let capture_handle = std::thread::spawn(move || {
+        capture_live(
+            CaptureOptions {
+                pid,
+                exe: "HTGame.exe".to_string(),
+                ports,
+                raw_out,
+                max_packets: 0,
+                max_decoded: 0,
+                on_progress: Some(callback),
+            },
+            capture_stop,
+        )
+        .map_err(|error| error.to_string())
+    });
+
+    let auto_runtime = Arc::clone(&runtime);
+    let auto_status_callback = Arc::new(move |status: AutomationStatus| {
+        if let Ok(mut capture_status) = auto_runtime.status.lock() {
+            capture_status.auto_page = Some(auto_page_status_value(&status, "running"));
+            if capture_status.state != "stopping" {
+                capture_status.state = "running".to_string();
+            }
+            capture_status.updated_at = now_seconds();
+        }
+    });
+    let snapshot_callback = {
+        let snapshots = Arc::clone(&snapshots);
+        Arc::new(move || {
+            snapshots
+                .lock()
+                .map(|records| records.clone())
+                .unwrap_or_default()
+        })
+    };
+    let mut options = AutomationOptions::new(pid, Arc::clone(&stop));
+    options.full_update = mode.full_update();
+    options.non_interactive = true;
+    options.known_record_ids = known_record_ids;
+    options.record_snapshot = Some(snapshot_callback);
+    options.on_status = Some(auto_status_callback);
+    let auto_result = run_auto_page(options);
+    stop.store(true, Ordering::SeqCst);
+
+    let capture_result = capture_handle
+        .join()
+        .map_err(|_| "capture worker panicked".to_string())
+        .and_then(|result| result);
+    let auto_page = Some(auto_page_result_value(&auto_result));
+    let error = (!auto_result.succeeded()).then(|| RuntimeError {
+        code: "auto_page_failed".to_string(),
+        message: auto_result.message.clone(),
+    });
+    finish_capture_result(
+        &runtime,
+        capture_result,
+        &locale,
+        "pktmon-auto-page-capture",
+        auto_page,
+        error,
+    );
+}
+
+fn capture_progress_callback(
+    runtime: Arc<CaptureRuntimeSession>,
+    locale: String,
+    snapshots: Option<Arc<Mutex<Vec<AutomationRecordSnapshot>>>>,
+) -> Arc<dyn Fn(nte_gui_core::CaptureProgress) + Send + Sync + 'static> {
+    Arc::new(move |progress: nte_gui_core::CaptureProgress| {
+        let document = build_capture_document(
+            &progress.rows,
+            &progress.warnings,
+            &locale,
+            "pktmon-live-capture",
+        )
+        .ok();
+        let records = document
+            .as_ref()
+            .and_then(|value| value.get("nte"))
+            .and_then(|nte| nte.get("list"))
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        if let Some(snapshots) = &snapshots {
+            if let Ok(mut snapshot_records) = snapshots.lock() {
+                *snapshot_records = automation_snapshots_from_values(&records);
+            }
+        }
+        if let Ok(mut status) = runtime.status.lock() {
+            status.state = if status.state == "stopping" {
+                "stopping".to_string()
+            } else {
+                "running".to_string()
+            };
+            status.records_count = records.len() as u64;
+            status.latest_records = latest_records(records);
+            status.counters = CaptureCounters::from(progress.counters);
+            status.target = serde_json::to_value(progress.target).ok();
+            status.updated_at = now_seconds();
+        }
+    })
+}
+
+fn finish_capture_result(
+    runtime: &Arc<CaptureRuntimeSession>,
+    result: Result<nte_gui_core::CaptureResult, String>,
+    locale: &str,
+    source_kind: &str,
+    auto_page: Option<Value>,
+    final_error: Option<RuntimeError>,
+) {
+    match result {
+        Ok(result) => {
+            let document =
+                build_capture_document(&result.rows, &result.warnings, locale, source_kind);
+            if let Ok(mut status) = runtime.status.lock() {
+                status.auto_page = auto_page;
+                match document {
+                    Ok(document) => {
+                        let records = document
+                            .get("nte")
+                            .and_then(|nte| nte.get("list"))
+                            .and_then(Value::as_array)
+                            .cloned()
+                            .unwrap_or_default();
+                        status.records_count = records.len() as u64;
+                        status.latest_records = latest_records(records);
+                        status.counters = CaptureCounters::from(result.counters);
+                        status.target = serde_json::to_value(result.target).ok();
+                        status.document = Some(document);
+                        status.error = final_error;
+                        status.state = if status.error.is_some() {
+                            "failed".to_string()
+                        } else {
+                            "completed".to_string()
+                        };
+                    }
+                    Err(error) => {
+                        status.error = Some(RuntimeError {
+                            code: "capture_document_failed".to_string(),
+                            message: error.to_string(),
+                        });
+                        status.state = "failed".to_string();
+                    }
+                }
+                status.updated_at = now_seconds();
+            }
+        }
+        Err(error) => {
+            if let Ok(mut status) = runtime.status.lock() {
+                status.auto_page = auto_page;
+                status.error = Some(RuntimeError {
+                    code: "capture_failed".to_string(),
+                    message: error,
+                });
+                status.state = "failed".to_string();
+                status.updated_at = now_seconds();
+            }
+        }
+    }
+}
+
+fn latest_records(records: Vec<Value>) -> Vec<Value> {
+    records
+        .into_iter()
+        .rev()
+        .take(12)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
+}
+
+fn automation_snapshots_from_values(records: &[Value]) -> Vec<AutomationRecordSnapshot> {
+    records
+        .iter()
+        .filter_map(|record| {
+            Some(AutomationRecordSnapshot {
+                record_id: record.get("record_id")?.as_str()?.to_string(),
+                pool_id: record.get("pool_id")?.as_str()?.to_string(),
+                record_type: record.get("record_type")?.as_str()?.to_string(),
+            })
+        })
+        .collect()
+}
+
+fn auto_page_status_value(status: &AutomationStatus, state: &str) -> Value {
+    json!({
+        "state": state,
+        "message": status.message,
+        "kind": status.kind,
+        "step": status.step,
+        "pool": status.pool,
+        "current_page": status.current_page,
+        "total_pages": status.total_pages,
+        "technical_detail": status.technical_detail,
+        "replaceable": status.replaceable,
+    })
+}
+
+fn auto_page_result_value(result: &AutoPageRunResult) -> Value {
+    json!({
+        "state": result.status,
+        "message": result.message,
+        "kind": result.status,
+        "completed_pools": result.completed_pools,
+        "skipped_pools": result.skipped_pools,
+    })
 }
 
 fn capture_status_with_merge(
     state: &State<'_, AppState>,
     session_id: &str,
 ) -> Result<CaptureStatus, ApiError> {
-    let value = sidecar_call(
-        state,
-        "capture.status",
-        json!({ "session_id": session_id, "include_document": true }),
-    )?;
-    let mut status = parse_capture_status(value)?;
+    let session = capture_runtime_session(state, session_id)?;
+    let mut status = session
+        .status
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
+        .clone();
     if status.state == "completed" {
         merge_completed_capture(state, &mut status)?;
     } else if let Some(report) = state
@@ -736,6 +1098,24 @@ fn capture_status_with_merge(
         status.import_report = Some(report);
     }
     Ok(status)
+}
+
+fn capture_runtime_session(
+    state: &State<'_, AppState>,
+    session_id: &str,
+) -> Result<Arc<CaptureRuntimeSession>, ApiError> {
+    state
+        .capture_sessions
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
+        .get(session_id)
+        .cloned()
+        .ok_or_else(|| {
+            api_error_message(
+                "capture_session_unknown",
+                format!("capture session not found: {session_id}"),
+            )
+        })
 }
 
 fn merge_completed_capture(
@@ -786,168 +1166,6 @@ fn merge_completed_capture(
     meta.import_report = Some(report.clone());
     status.import_report = Some(report);
     Ok(())
-}
-
-fn parse_capture_status(value: Value) -> Result<CaptureStatus, ApiError> {
-    serde_json::from_value(value).map_err(api_error)
-}
-
-impl SidecarClient {
-    fn connect_candidates() -> Result<Self, ApiError> {
-        let mut spawn_errors = Vec::new();
-        for sidecar in sidecar_candidates() {
-            match Self::connect(sidecar.clone()) {
-                Ok(client) => return Ok(client),
-                Err(error) => spawn_errors.push(format!(
-                    "{}: {}: {}",
-                    sidecar.label(),
-                    error.code,
-                    error.message
-                )),
-            }
-        }
-        Err(api_error_message(
-            "sidecar_start_failed",
-            format!("failed to start sidecar: {}", spawn_errors.join("; ")),
-        ))
-    }
-
-    fn connect(sidecar: SidecarCommand) -> Result<Self, ApiError> {
-        let mut command = Command::new(&sidecar.program);
-        command
-            .env("PYTHONUTF8", "1")
-            .env("PYTHONIOENCODING", "utf-8")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null());
-        let mut child = command.spawn().map_err(api_error)?;
-        let stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| api_error_message("sidecar_io", "sidecar stdin unavailable"))?;
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| api_error_message("sidecar_io", "sidecar stdout unavailable"))?;
-        Ok(Self {
-            child,
-            stdin,
-            stdout: BufReader::new(stdout),
-            next_id: 1,
-        })
-    }
-
-    fn call(&mut self, method: &str, params: Value) -> Result<Value, ApiError> {
-        let request_id = self.next_id;
-        self.next_id += 1;
-        let request = json!({
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "method": method,
-            "params": params
-        });
-        writeln!(self.stdin, "{request}").map_err(api_error)?;
-        self.stdin.flush().map_err(api_error)?;
-
-        let mut line = Vec::new();
-        let read = self
-            .stdout
-            .read_until(b'\n', &mut line)
-            .map_err(api_error)?;
-        if read == 0 {
-            return Err(api_error_message(
-                "sidecar_exited",
-                format!("sidecar exited while handling {method}"),
-            ));
-        }
-        let line = String::from_utf8(line).map_err(|error| {
-            api_error_message(
-                "sidecar_bad_encoding",
-                format!("sidecar returned non-UTF-8 response while handling {method}: {error}"),
-            )
-        })?;
-        parse_sidecar_response(&line)
-    }
-}
-
-impl Drop for SidecarClient {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
-}
-
-fn parse_sidecar_response(line: &str) -> Result<Value, ApiError> {
-    if line.trim().is_empty() {
-        return Err(api_error_message(
-            "sidecar_empty_response",
-            "sidecar returned no response",
-        ));
-    }
-    let response: SidecarResponse = serde_json::from_str(line).map_err(api_error)?;
-    if let Some(error) = response.error {
-        return Err(ApiError {
-            code: error.code,
-            message: error.message,
-        });
-    }
-    response
-        .result
-        .ok_or_else(|| api_error_message("sidecar_bad_response", "sidecar response missing result"))
-}
-
-fn sidecar_candidates() -> Vec<SidecarCommand> {
-    if let Ok(program) = std::env::var("NTE_GACHA_SIDECAR") {
-        return vec![SidecarCommand { program }];
-    }
-
-    let mut candidates = Vec::new();
-    if let Ok(root) =
-        std::env::var("NTE_GACHA_PORTABLE_ROOT").or_else(|_| std::env::var("NTE_GACHA_ROOT"))
-    {
-        let sidecars = PathBuf::from(root).join("sidecars");
-        push_existing_sidecar(&mut candidates, sidecars.join(sidecar_exe_name()));
-    }
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            push_existing_sidecar(
-                &mut candidates,
-                exe_dir.join("sidecars").join(sidecar_exe_name()),
-            );
-        }
-    }
-    if let Ok(current_dir) = std::env::current_dir() {
-        push_existing_sidecar(
-            &mut candidates,
-            current_dir.join("sidecars").join(sidecar_exe_name()),
-        );
-    }
-    candidates.push(SidecarCommand {
-        program: "nte-gacha-sidecar".to_string(),
-    });
-    candidates
-}
-
-fn push_existing_sidecar(candidates: &mut Vec<SidecarCommand>, path: PathBuf) {
-    if path.is_file() {
-        candidates.push(SidecarCommand {
-            program: path.to_string_lossy().to_string(),
-        });
-    }
-}
-
-fn sidecar_exe_name() -> &'static str {
-    if cfg!(windows) {
-        "nte-gacha-python-core.exe"
-    } else {
-        "nte-gacha-python-core"
-    }
-}
-
-impl SidecarCommand {
-    fn label(&self) -> String {
-        self.program.clone()
-    }
 }
 
 #[cfg(not(windows))]

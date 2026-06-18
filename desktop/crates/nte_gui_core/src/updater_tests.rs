@@ -81,22 +81,6 @@ fn portable_entries(prefix: &str, version: &str) -> Vec<(String, Vec<u8>)> {
             .to_string()
             .into_bytes(),
         ),
-        (
-            format!("{prefix}sidecars/nte-gacha-python-core.exe"),
-            b"sidecar".to_vec(),
-        ),
-        (
-            format!("{prefix}sidecars/bin/nte-gacha-core.exe"),
-            b"python core".to_vec(),
-        ),
-        (
-            format!("{prefix}sidecars/resources/maps/zh-Hant.json"),
-            b"{}".to_vec(),
-        ),
-        (
-            format!("{prefix}sidecars/resources/automation/default.json"),
-            b"{}".to_vec(),
-        ),
     ]
 }
 
@@ -253,26 +237,6 @@ D:\game\nte_tool\nte_gacha_exporter\.local\pybin\python.exe
 "#
         .to_vec(),
     ));
-    let borrowed = entries
-        .iter()
-        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
-        .collect::<Vec<_>>();
-    write_zip(&archive, &borrowed);
-    let package = package_for_archive(&archive, "0.2.0");
-
-    assert!(stage_update_archive(&root, &package, &archive).is_err());
-}
-
-#[test]
-fn stage_update_rejects_incomplete_sidecar_layout() {
-    let tmp = tempfile::tempdir().unwrap();
-    let root = tmp.path().join("install");
-    std::fs::create_dir_all(&root).unwrap();
-    let archive = tmp.path().join("incomplete-sidecar.zip");
-    let entries = portable_entries("nte-gacha-0.2.0/", "0.2.0")
-        .into_iter()
-        .filter(|(name, _bytes)| !name.ends_with("sidecars/bin/nte-gacha-core.exe"))
-        .collect::<Vec<_>>();
     let borrowed = entries
         .iter()
         .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))

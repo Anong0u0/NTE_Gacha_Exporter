@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/nte_automation",
     "crates/nte_gui_core",
     "crates/nte_portable_tools",
     "src-tauri",

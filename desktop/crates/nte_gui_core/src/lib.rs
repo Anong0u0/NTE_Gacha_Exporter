@@ -1,4 +1,9 @@
 mod analysis;
+mod capture_document;
+mod capture_live;
+mod capture_net;
+mod capture_protocol;
+mod capture_raw;
 mod derived;
 mod export;
 mod maps;
@@ -8,6 +13,14 @@ mod rules;
 mod store;
 mod updater;
 
+pub use capture_document::{build_capture_document, RawReplayResult};
+pub use capture_live::{
+    capture_live, CaptureCounters, CaptureOptions, CaptureProgress, CaptureResult, CaptureTarget,
+};
+pub use capture_net::{
+    candidate_ports, capture_doctor, find_process_pid, is_admin, CaptureDoctorReport,
+};
+pub use capture_raw::read_raw_capture;
 pub use derived::derive_records;
 pub use maps::{available_locales, load_map};
 pub use model::{
