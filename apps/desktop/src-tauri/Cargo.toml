@@ -1,0 +1,26 @@
+[package]
+name = "nte-gacha-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "nte_gacha_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "nte-gacha-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+nte_automation = { path = "../../../crates/nte_automation" }
+nte_gui_core = { path = "../../../crates/nte_gui_core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2.7.1"
+thiserror = "2"
+ureq = "2.12"

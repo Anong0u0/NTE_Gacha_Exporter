@@ -312,7 +312,7 @@ function Assert-PortableStageContent {
 
     $sidecarsPath = Join-Path $ReleaseRoot "sidecars"
     if (Test-Path -LiteralPath $sidecarsPath) {
-        throw "Portable stage must not contain legacy Python sidecars: $sidecarsPath"
+        throw "Portable stage must not contain legacy sidecars: $sidecarsPath"
     }
 
     Get-ChildItem -LiteralPath $ReleaseRoot -File -Recurse | Where-Object {
@@ -328,7 +328,6 @@ function Assert-PortableStageContent {
 function New-PortableStage {
     param(
         [string]$ProjectRoot,
-        [string]$DesktopRoot,
         [string]$Version,
         [string]$TagName,
         [bool]$IsPrerelease
@@ -344,7 +343,7 @@ function New-PortableStage {
         New-Item -ItemType Directory -Path $distRoot | Out-Null
     }
 
-    $targetRelease = Join-Path $DesktopRoot "target\release"
+    $targetRelease = Join-Path $ProjectRoot "target\release"
     $launcher = Join-Path $targetRelease "nte-gacha.exe"
     $cli = Join-Path $targetRelease "nte-gacha-cli.exe"
     $desktopExe = Join-Path $targetRelease "nte-gacha-desktop.exe"
@@ -425,12 +424,8 @@ Assert-WindowsHost
 
 $scriptDir = Split-Path -Parent $PSCommandPath
 $projectRoot = (Resolve-Path (Join-Path $scriptDir "..\..")).Path
-$desktopRoot = Join-Path $projectRoot "desktop"
-$desktopVersion = Read-VersionFromToml -Path (Join-Path $desktopRoot "Cargo.toml")
-$pythonVersion = Read-VersionFromToml -Path (Join-Path $projectRoot "pyproject.toml")
-if ($desktopVersion -ne $pythonVersion) {
-    throw "Desktop and Python release versions must match: desktop=$desktopVersion python=$pythonVersion"
-}
+$desktopRoot = Join-Path $projectRoot "apps\desktop"
+$desktopVersion = Read-VersionFromToml -Path (Join-Path $projectRoot "Cargo.toml")
 $normalizedTagName = Normalize-TagName -Value $TagName
 Assert-TagMatchesVersion -Tag $normalizedTagName -Version $desktopVersion
 if ([string]::IsNullOrWhiteSpace($normalizedTagName)) {
@@ -465,12 +460,12 @@ if (-not $SkipTauriBuild) {
     else {
         Invoke-External -Name "Tauri build via bunx" -FilePath "bunx" -Arguments @("@tauri-apps/cli", "build") -WorkingDirectory $desktopRoot
     }
-    Invoke-External -Name "Portable tools build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte_portable_tools") -WorkingDirectory $desktopRoot
+    Invoke-External -Name "Portable tools build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte_portable_tools") -WorkingDirectory $projectRoot
 }
 
 $portableRoot = $null
 if (-not $SkipPortableStage) {
-    $portableRoot = New-PortableStage -ProjectRoot $projectRoot -DesktopRoot $desktopRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease
+    $portableRoot = New-PortableStage -ProjectRoot $projectRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease
 }
 
 if (-not $SkipSmoke) {

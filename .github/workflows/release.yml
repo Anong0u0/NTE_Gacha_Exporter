@@ -41,9 +41,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
 
-      - name: Install Poetry
-        run: pipx install poetry
-
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
@@ -52,41 +49,21 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: "poetry"
-
-      - name: Install dependencies
-        run: |
-          poetry env use python
-          poetry install
-
-      - name: Lint
-        run: poetry run ruff check .
-
-      - name: Test
-        run: poetry run pytest
-
       - name: Desktop install
-        working-directory: desktop
+        working-directory: apps/desktop
         run: bun install --frozen-lockfile
 
-      - name: Desktop format
-        working-directory: desktop
+      - name: Rust format
         run: cargo fmt --check
 
-      - name: Desktop test
-        working-directory: desktop
+      - name: Rust test
         run: cargo test --workspace
 
-      - name: Desktop clippy
-        working-directory: desktop
+      - name: Rust clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Desktop build
-        working-directory: desktop
+        working-directory: apps/desktop
         run: bun run build
 
   build-windows:
