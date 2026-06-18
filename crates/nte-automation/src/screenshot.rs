@@ -8,15 +8,25 @@ use crate::model::Point;
 use crate::model::{Rect, Size};
 use crate::window;
 
+#[cfg(windows)]
 #[derive(Debug, Clone)]
 pub struct WindowCaptureClient {
-    #[cfg_attr(not(windows), allow(dead_code))]
     hwnd: usize,
 }
 
+#[cfg(not(windows))]
+#[derive(Debug, Clone, Default)]
+pub struct WindowCaptureClient;
+
 impl WindowCaptureClient {
+    #[cfg(windows)]
     pub fn new(hwnd: usize) -> Self {
         Self { hwnd }
+    }
+
+    #[cfg(not(windows))]
+    pub fn new(_hwnd: usize) -> Self {
+        Self
     }
 
     pub fn capture_client(&self, size: Size) -> AutomationResult<RgbaImage> {

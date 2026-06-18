@@ -59,7 +59,7 @@ impl AutoPager {
             options,
             window: window.clone(),
             capture: WindowCaptureClient::new(window.hwnd),
-            ocr: WindowsOcrClient::default(),
+            ocr: WindowsOcrClient::new("en-US"),
             matcher: ImageTemplateMatcher::new(scaled_profile.clone()),
             profile: scaled_profile,
             started_at: Instant::now(),
@@ -67,14 +67,9 @@ impl AutoPager {
         if let Some(reason) = pager.tooltip.unavailable_reason() {
             if reason != "disabled" {
                 pager.status(
-                    "tooltip unavailable",
-                    "diagnostic",
-                    None,
-                    None,
-                    None,
-                    None,
-                    reason,
-                    false,
+                    StatusEvent::new("tooltip unavailable", "diagnostic")
+                        .technical_detail(reason)
+                        .persistent(),
                 );
             }
         }
@@ -86,16 +81,7 @@ impl AutoPager {
         let mut skipped = Vec::new();
         let mut visited_pages_by_pool = BTreeMap::new();
         let mut last_page_by_pool = BTreeMap::new();
-        self.status(
-            "auto page started",
-            "started",
-            Some("started"),
-            None,
-            None,
-            None,
-            "",
-            true,
-        );
+        self.status(StatusEvent::new("auto page started", "started").step("started"));
         self.focus_window()?;
         for step in self.profile.workflow.clone() {
             if self.should_stop() {
@@ -111,16 +97,7 @@ impl AutoPager {
                 }
             }
         }
-        self.status(
-            "auto page completed",
-            "completed",
-            Some("completed"),
-            None,
-            None,
-            None,
-            "",
-            true,
-        );
+        self.status(StatusEvent::new("auto page completed", "completed").step("completed"));
         Ok(AutoPageResult::completed_with_pages(
             completed,
             skipped,
@@ -131,16 +108,7 @@ impl AutoPager {
 
     fn run_step(&mut self, step: &WorkflowStep) -> AutomationResult<Option<PoolPageRun>> {
         if !step.status.is_empty() {
-            self.status(
-                &step.status,
-                "step",
-                Some(&step.status),
-                None,
-                None,
-                None,
-                "",
-                true,
-            );
+            self.status(StatusEvent::new(&step.status, "step").step(&step.status));
         }
         match step.action.as_str() {
             "verifyTemplate" => {
@@ -179,21 +147,16 @@ impl AutoPager {
         let started = Instant::now();
         let (matched, attempts) = self.wait_for_template(name)?;
         self.status(
-            "template verified",
-            "template",
-            Some(step),
-            None,
-            None,
-            None,
-            &format!(
-                "{name} edge={:.3} gray={:.3} at={},{} wait={:.2}s tries={attempts}",
-                matched.edge_score,
-                matched.gray_score,
-                matched.point.x,
-                matched.point.y,
-                started.elapsed().as_secs_f64()
-            ),
-            true,
+            StatusEvent::new("template verified", "template")
+                .step(step)
+                .technical_detail(&format!(
+                    "{name} edge={:.3} gray={:.3} at={},{} wait={:.2}s tries={attempts}",
+                    matched.edge_score,
+                    matched.gray_score,
+                    matched.point.x,
+                    matched.point.y,
+                    started.elapsed().as_secs_f64()
+                )),
         );
         Ok(())
     }
@@ -258,21 +221,16 @@ impl AutoPager {
                 match self.try_template(template) {
                     Ok(matched) => {
                         self.status(
-                            "template verified",
-                            "template",
-                            Some(&step.status),
-                            None,
-                            None,
-                            None,
-                            &format!(
+                            StatusEvent::new("template verified", "template")
+                                .step(&step.status)
+                                .technical_detail(&format!(
                                 "{template} edge={:.3} gray={:.3} at={},{} wait={:.2}s clicks={clicks}",
                                 matched.edge_score,
                                 matched.gray_score,
                                 matched.point.x,
                                 matched.point.y,
                                 started.elapsed().as_secs_f64()
-                            ),
-                            true,
+                            )),
                         );
                         return Ok(());
                     }
@@ -318,21 +276,16 @@ impl AutoPager {
                         },
                     );
                     self.status(
-                        "template verified",
-                        "template",
-                        Some(&step.status),
-                        None,
-                        None,
-                        None,
-                        &format!(
+                        StatusEvent::new("template verified", "template")
+                            .step(&step.status)
+                            .technical_detail(&format!(
                             "{source_detail}{target_template} edge={:.3} gray={:.3} at={},{} wait={:.2}s clicks={clicks}",
                             target.edge_score,
                             target.gray_score,
                             target.point.x,
                             target.point.y,
                             started.elapsed().as_secs_f64()
-                        ),
-                        true,
+                        )),
                     );
                     return Ok(());
                 }
@@ -380,14 +333,10 @@ impl AutoPager {
         let next_button = self.point(required(step.next_button.as_deref(), "nextButton")?)?;
         let mut page = self.wait_for_fresh_page(page_rect, &pool)?;
         self.status(
-            "page ready",
-            "page",
-            Some(&step.status),
-            Some(&pool),
-            Some(page.current),
-            Some(page.total),
-            "",
-            true,
+            StatusEvent::new("page ready", "page")
+                .step(&step.status)
+                .pool(&pool)
+                .page(page.current, page.total),
         );
         let mut visited_pages = 1_u32;
         if self.should_skip_pool(&pool, &step.status, &page) {
@@ -404,14 +353,10 @@ impl AutoPager {
             }
             let expected = page.current + 1;
             self.status(
-                "page next",
-                "page",
-                Some(&step.status),
-                Some(&pool),
-                Some(expected),
-                Some(page.total),
-                "",
-                true,
+                StatusEvent::new("page next", "page")
+                    .step(&step.status)
+                    .pool(&pool)
+                    .page(expected, page.total),
             );
             page = self.click_page_button(page_rect, next_button, page, expected)?;
             visited_pages = page.current;
@@ -426,14 +371,10 @@ impl AutoPager {
             }
         }
         self.status(
-            "pool completed",
-            "pool_completed",
-            Some(&step.status),
-            Some(&pool),
-            Some(page.total),
-            Some(page.total),
-            "",
-            true,
+            StatusEvent::new("pool completed", "pool_completed")
+                .step(&step.status)
+                .pool(&pool)
+                .page(page.total, page.total),
         );
         Ok(PoolPageRun {
             pool,
@@ -463,14 +404,11 @@ impl AutoPager {
             let duplicate_count = consecutive_known_record_count(&pool_records, &known_ids);
             if duplicate_count >= INCREMENTAL_DUPLICATE_RECORD_THRESHOLD {
                 self.status(
-                    "known records found; skipping pool",
-                    "pool_skipped",
-                    Some(step),
-                    Some(pool),
-                    Some(page.current),
-                    Some(page.total),
-                    &format!("duplicate_records={duplicate_count}"),
-                    true,
+                    StatusEvent::new("known records found; skipping pool", "pool_skipped")
+                        .step(step)
+                        .pool(pool)
+                        .page(page.current, page.total)
+                        .technical_detail(&format!("duplicate_records={duplicate_count}")),
                 );
                 return true;
             }
@@ -513,14 +451,9 @@ impl AutoPager {
             }
             if attempt < 2 {
                 self.status(
-                    "page did not change; retrying click",
-                    "retry",
-                    None,
-                    None,
-                    Some(previous.current),
-                    Some(previous.total),
-                    &format!("attempt={}/2", attempt + 1),
-                    true,
+                    StatusEvent::new("page did not change; retrying click", "retry")
+                        .page(previous.current, previous.total)
+                        .technical_detail(&format!("attempt={}/2", attempt + 1)),
                 );
             }
         }
@@ -557,14 +490,11 @@ impl AutoPager {
                 return Ok(());
             }
             self.status(
-                "capture lag waiting",
-                "diagnostic",
-                None,
-                Some(pool),
-                Some(visited_pages),
-                Some(total_pages),
-                &format!("decoded_pages={decoded} max_lag={max_lag}"),
-                false,
+                StatusEvent::new("capture lag waiting", "diagnostic")
+                    .pool(pool)
+                    .page(visited_pages, total_pages)
+                    .technical_detail(&format!("decoded_pages={decoded} max_lag={max_lag}"))
+                    .persistent(),
             );
             thread::sleep(Duration::from_millis(100));
         }
@@ -620,14 +550,8 @@ impl AutoPager {
         }
         if let Some(error) = last_error {
             self.status(
-                "OCR waiting ended",
-                "diagnostic",
-                None,
-                None,
-                None,
-                None,
-                &error.to_string(),
-                true,
+                StatusEvent::new("OCR waiting ended", "diagnostic")
+                    .technical_detail(&error.to_string()),
             );
             if !saw_previous {
                 return Err(AutomationError::message(format!(
@@ -755,49 +679,86 @@ impl AutoPager {
         window::force_foreground(&self.window)
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn status(
-        &self,
-        message: &str,
-        kind: &str,
-        step: Option<&str>,
-        pool: Option<&str>,
-        current_page: Option<u32>,
-        total_pages: Option<u32>,
-        technical_detail: &str,
-        replaceable: bool,
-    ) {
+    fn status(&self, event: StatusEvent<'_>) {
         if let Some(callback) = &self.options.on_status {
-            let status = AutoPageStatus {
-                elapsed_seconds: self.started_at.elapsed().as_secs_f64(),
-                message: message.to_string(),
-                kind: kind.to_string(),
-                step: step.map(str::to_string),
-                pool: pool.map(str::to_string),
-                current_page,
-                total_pages,
-                technical_detail: technical_detail.to_string(),
-                replaceable,
-            };
+            let status = event.to_status(self.started_at.elapsed().as_secs_f64());
             self.tooltip.show(&status_text(&status));
             callback(status);
         } else {
-            self.tooltip.show(&status_text(&AutoPageStatus {
-                elapsed_seconds: self.started_at.elapsed().as_secs_f64(),
-                message: message.to_string(),
-                kind: kind.to_string(),
-                step: step.map(str::to_string),
-                pool: pool.map(str::to_string),
-                current_page,
-                total_pages,
-                technical_detail: technical_detail.to_string(),
-                replaceable,
-            }));
+            let status = event.to_status(self.started_at.elapsed().as_secs_f64());
+            self.tooltip.show(&status_text(&status));
         }
     }
 
     fn sleep_poll(&self) {
         thread::sleep(Duration::from_secs_f64(self.options.click_poll_interval));
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct StatusEvent<'a> {
+    message: &'a str,
+    kind: &'a str,
+    step: Option<&'a str>,
+    pool: Option<&'a str>,
+    current_page: Option<u32>,
+    total_pages: Option<u32>,
+    technical_detail: &'a str,
+    replaceable: bool,
+}
+
+impl<'a> StatusEvent<'a> {
+    fn new(message: &'a str, kind: &'a str) -> Self {
+        Self {
+            message,
+            kind,
+            step: None,
+            pool: None,
+            current_page: None,
+            total_pages: None,
+            technical_detail: "",
+            replaceable: true,
+        }
+    }
+
+    fn step(mut self, step: &'a str) -> Self {
+        self.step = Some(step);
+        self
+    }
+
+    fn pool(mut self, pool: &'a str) -> Self {
+        self.pool = Some(pool);
+        self
+    }
+
+    fn page(mut self, current_page: u32, total_pages: u32) -> Self {
+        self.current_page = Some(current_page);
+        self.total_pages = Some(total_pages);
+        self
+    }
+
+    fn technical_detail(mut self, technical_detail: &'a str) -> Self {
+        self.technical_detail = technical_detail;
+        self
+    }
+
+    fn persistent(mut self) -> Self {
+        self.replaceable = false;
+        self
+    }
+
+    fn to_status(self, elapsed_seconds: f64) -> AutoPageStatus {
+        AutoPageStatus {
+            elapsed_seconds,
+            message: self.message.to_string(),
+            kind: self.kind.to_string(),
+            step: self.step.map(str::to_string),
+            pool: self.pool.map(str::to_string),
+            current_page: self.current_page,
+            total_pages: self.total_pages,
+            technical_detail: self.technical_detail.to_string(),
+            replaceable: self.replaceable,
+        }
     }
 }
 

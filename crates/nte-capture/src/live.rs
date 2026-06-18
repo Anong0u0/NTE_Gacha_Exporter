@@ -1,18 +1,15 @@
-#![cfg_attr(not(windows), allow(dead_code))]
-
 use std::sync::{Arc, atomic::AtomicBool};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::Result;
 use serde::Serialize;
 
 #[cfg(windows)]
-use crate::capture_net;
-use crate::capture_protocol::{ParseWarning, ParsedRow};
+use crate::net;
+use crate::protocol::{ParseWarning, ParsedRow};
 #[cfg(windows)]
-use crate::capture_protocol::{ProtocolAssembler, parse_payload_blocks};
+use crate::protocol::{ProtocolAssembler, parse_payload_blocks};
 #[cfg(windows)]
-use crate::capture_raw::{
+use crate::raw::{
     PacketKind, ParsedNetworkPacket, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet,
 };
 
@@ -20,6 +17,8 @@ use crate::capture_raw::{
 use std::sync::atomic::Ordering;
 #[cfg(windows)]
 use std::time::Duration;
+#[cfg(windows)]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct CaptureOptions {
     pub pid: u32,
@@ -96,7 +95,7 @@ pub fn capture_live(_options: CaptureOptions, _stop: Arc<AtomicBool>) -> Result<
 pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<CaptureResult> {
     use pktmon::filter::{PktMonFilter, TransportProtocol};
 
-    let mut ports = capture_net::limited_filter_ports(&options.ports);
+    let mut ports = net::limited_filter_ports(&options.ports);
     let mut target = CaptureTarget {
         pid: options.pid,
         exe: options.exe.clone(),
@@ -213,7 +212,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                         continue;
                     }
                     counters.decoded_packets += 1;
-                    let update = assembler.add_blocks(blocks);
+                    let update = assembler.add_blocks_with_update(blocks);
                     rows_snapshot = update.rows;
                     emit_progress(
                         &options,
@@ -229,9 +228,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     idle_ticks += 1;
                     if idle_ticks >= 3 {
                         idle_ticks = 0;
-                        let latest = capture_net::limited_filter_ports(
-                            &capture_net::candidate_ports(options.pid)?,
-                        );
+                        let latest = net::limited_filter_ports(&net::candidate_ports(options.pid)?);
                         if latest.iter().any(|port| !ports.contains(port)) {
                             ports = latest;
                             target.ports = ports.clone();
@@ -342,6 +339,7 @@ fn is_timeout(error: &impl std::fmt::Display) -> bool {
         .contains("timed out")
 }
 
+#[cfg(windows)]
 fn bpf(ports: &[u16]) -> String {
     ports
         .iter()
@@ -350,6 +348,7 @@ fn bpf(ports: &[u16]) -> String {
         .join(" or ")
 }
 
+#[cfg(windows)]
 fn now_seconds() -> f64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

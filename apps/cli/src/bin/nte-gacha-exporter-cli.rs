@@ -1,3 +1,4 @@
+#[cfg(windows)]
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io::IsTerminal;
@@ -566,7 +567,7 @@ fn wide_null(value: &OsStr) -> Vec<u16> {
     value.encode_wide().chain(std::iter::once(0)).collect()
 }
 
-#[cfg_attr(not(windows), allow(dead_code))]
+#[cfg(windows)]
 fn build_relaunch_parameters(args: impl IntoIterator<Item = OsString>) -> String {
     args.into_iter()
         .map(|arg| windows_quote_arg(&arg))
@@ -574,7 +575,7 @@ fn build_relaunch_parameters(args: impl IntoIterator<Item = OsString>) -> String
         .join(" ")
 }
 
-#[cfg_attr(not(windows), allow(dead_code))]
+#[cfg(windows)]
 fn windows_quote_arg(arg: &OsStr) -> String {
     let text = arg.to_string_lossy();
     if !text.is_empty() && !text.chars().any(|char| char.is_whitespace() || char == '"') {

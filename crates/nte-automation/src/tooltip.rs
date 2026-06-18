@@ -1,10 +1,10 @@
 #[derive(Debug)]
 pub struct AutomationTooltip {
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg(windows)]
     enabled: bool,
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg(windows)]
     offset_x: i32,
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg(windows)]
     offset_y: i32,
     unavailable_reason: Option<String>,
     #[cfg(windows)]
@@ -19,8 +19,11 @@ impl AutomationTooltip {
     pub fn with_offset(enabled: bool, offset_x: i32, offset_y: i32) -> Self {
         if !enabled {
             return Self {
+                #[cfg(windows)]
                 enabled,
+                #[cfg(windows)]
                 offset_x,
+                #[cfg(windows)]
                 offset_y,
                 unavailable_reason: Some("disabled".to_string()),
                 #[cfg(windows)]
@@ -35,11 +38,8 @@ impl AutomationTooltip {
     }
 
     #[cfg(not(windows))]
-    fn create(enabled: bool, offset_x: i32, offset_y: i32) -> Self {
+    fn create(_enabled: bool, _offset_x: i32, _offset_y: i32) -> Self {
         Self {
-            enabled,
-            offset_x,
-            offset_y,
             unavailable_reason: Some("Windows tooltip requires Windows".to_string()),
         }
     }

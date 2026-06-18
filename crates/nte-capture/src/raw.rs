@@ -1,15 +1,17 @@
-#![cfg_attr(not(windows), allow(dead_code))]
-
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader};
+#[cfg(windows)]
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result};
 use base64::Engine;
+#[cfg(any(windows, test))]
 use serde::{Deserialize, Serialize};
 
-use crate::capture_protocol::{ParseWarning, ParsedRow, ProtocolAssembler, parse_payload_blocks};
+use crate::protocol::{ParseWarning, ParsedRow, ProtocolAssembler, parse_payload_blocks};
 
+#[cfg(any(windows, test))]
 #[derive(Debug, Clone, Copy)]
 pub enum PacketKind {
     Unknown,
@@ -20,6 +22,7 @@ pub enum PacketKind {
     L4Payload,
 }
 
+#[cfg(any(windows, test))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawPacketRecord {
     #[serde(rename = "type")]
@@ -43,6 +46,7 @@ pub struct RawPacketRecord {
     pub payload_b64: String,
 }
 
+#[cfg(windows)]
 #[derive(Debug, Clone, Serialize)]
 pub struct CaptureStartRecord {
     #[serde(rename = "type")]
@@ -54,6 +58,7 @@ pub struct CaptureStartRecord {
     bpf: String,
 }
 
+#[cfg(windows)]
 #[derive(Debug, Clone, Serialize)]
 pub struct CaptureStopRecord {
     #[serde(rename = "type")]
@@ -71,6 +76,7 @@ pub struct RawReadResult {
     pub warnings: Vec<ParseWarning>,
 }
 
+#[cfg(any(windows, test))]
 #[derive(Debug)]
 pub(crate) struct ParsedNetworkPacket {
     pub(crate) proto: String,
@@ -83,10 +89,12 @@ pub(crate) struct ParsedNetworkPacket {
     pub(crate) parser: String,
 }
 
+#[cfg(windows)]
 pub struct RawWriter {
     writer: BufWriter<File>,
 }
 
+#[cfg(windows)]
 impl RawWriter {
     pub fn open(path: &Path, pid: u32, ports: &[u16]) -> Result<Self> {
         if let Some(parent) = path.parent() {
@@ -210,6 +218,7 @@ pub fn read_raw_capture(path: &Path) -> Result<RawReadResult> {
     Ok(RawReadResult { rows, warnings })
 }
 
+#[cfg(any(windows, test))]
 pub(crate) fn raw_record_from_parsed_packet(
     parsed: &ParsedNetworkPacket,
     capture_index: u64,
@@ -232,10 +241,12 @@ pub(crate) fn raw_record_from_parsed_packet(
     }
 }
 
+#[cfg(any(windows, test))]
 pub(crate) fn parse_packet_bytes(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
     parse_network_packet(bytes, kind)
 }
 
+#[cfg(any(windows, test))]
 fn parse_network_packet(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
     match kind {
         PacketKind::Ethernet => parse_ethernet(bytes),
@@ -252,6 +263,7 @@ fn parse_network_packet(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkP
     .or_else(|| parse_raw_ipv4_offsets(bytes))
 }
 
+#[cfg(any(windows, test))]
 fn parse_ethernet(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     if bytes.len() < 14 {
         return None;
@@ -271,16 +283,19 @@ fn parse_ethernet(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     }
 }
 
+#[cfg(any(windows, test))]
 fn parse_raw_ipv4_offsets(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     [14_usize, 0]
         .into_iter()
         .find_map(|offset| parse_ip_at(bytes, offset, "pktmon-raw-ip"))
 }
 
+#[cfg(any(windows, test))]
 fn parse_ip(bytes: &[u8], parser: &str) -> Option<ParsedNetworkPacket> {
     parse_ip_at(bytes, 0, parser)
 }
 
+#[cfg(any(windows, test))]
 fn parse_ip_at(bytes: &[u8], offset: usize, parser: &str) -> Option<ParsedNetworkPacket> {
     let version = bytes.get(offset)? >> 4;
     match version {
@@ -290,6 +305,7 @@ fn parse_ip_at(bytes: &[u8], offset: usize, parser: &str) -> Option<ParsedNetwor
     }
 }
 
+#[cfg(any(windows, test))]
 fn parse_ipv4_at(bytes: &[u8], ip_off: usize, parser: &str) -> Option<ParsedNetworkPacket> {
     if bytes.len() < ip_off + 20 {
         return None;
@@ -309,6 +325,7 @@ fn parse_ipv4_at(bytes: &[u8], ip_off: usize, parser: &str) -> Option<ParsedNetw
     }
 }
 
+#[cfg(any(windows, test))]
 fn parse_ipv6_at(bytes: &[u8], ip_off: usize, parser: &str) -> Option<ParsedNetworkPacket> {
     if bytes.len() < ip_off + 40 {
         return None;
@@ -341,14 +358,17 @@ fn parse_ipv6_at(bytes: &[u8], ip_off: usize, parser: &str) -> Option<ParsedNetw
     }
 }
 
+#[cfg(any(windows, test))]
 fn parse_udp_l4(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     parse_udp_at(bytes, 0, bytes.len(), "pktmon-udp")
 }
 
+#[cfg(any(windows, test))]
 fn parse_tcp_l4(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     parse_tcp_at(bytes, 0, bytes.len(), "pktmon-tcp")
 }
 
+#[cfg(any(windows, test))]
 fn parse_udp_at(
     bytes: &[u8],
     l4_off: usize,
@@ -381,6 +401,7 @@ fn parse_udp_at(
     })
 }
 
+#[cfg(any(windows, test))]
 fn parse_tcp_at(
     bytes: &[u8],
     l4_off: usize,
@@ -425,6 +446,7 @@ fn parse_tcp_at(
     })
 }
 
+#[cfg(any(windows, test))]
 fn assume_l4_payload(bytes: &[u8], parser: &str) -> Option<ParsedNetworkPacket> {
     if bytes.is_empty() {
         return None;
@@ -466,5 +488,19 @@ mod tests {
         assert_eq!(record.sport, Some(30230));
         assert_eq!(record.dport, Some(49310));
         assert_eq!(record.size, 5);
+    }
+
+    #[test]
+    fn packet_kind_variants_are_covered() {
+        let empty = [];
+        for kind in [
+            PacketKind::Unknown,
+            PacketKind::Ethernet,
+            PacketKind::Tcp,
+            PacketKind::Udp,
+            PacketKind::L4Payload,
+        ] {
+            assert!(parse_packet_bytes(&empty, kind).is_none());
+        }
     }
 }

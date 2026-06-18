@@ -1,9 +1,8 @@
-#![cfg_attr(not(windows), allow(dead_code))]
-
 use anyhow::Result;
 use serde::Serialize;
 
 const KNOWN_TARGET_PORTS: &[u16] = &[30031, 10012, 30230];
+#[cfg(windows)]
 const TCP_STATE_ESTAB: u32 = 5;
 
 #[derive(Debug, Clone, Serialize)]
@@ -118,6 +117,7 @@ pub fn candidate_ports(pid: u32) -> Result<Vec<u16>> {
     Ok(ports)
 }
 
+#[cfg(windows)]
 pub fn limited_filter_ports(ports: &[u16]) -> Vec<u16> {
     let mut selected = ports.to_vec();
     selected.sort_unstable();

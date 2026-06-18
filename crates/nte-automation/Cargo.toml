@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 image = { workspace = true, default-features = false, features = ["png"] }
 serde = { workspace = true, features = ["derive"] }

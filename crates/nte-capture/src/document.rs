@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::capture_protocol::{ParsedRow, row_public_time};
+use crate::protocol::{ParsedRow, row_public_time};
 use nte_core::GuiError;
 use nte_core::{MapData, load_map};
 
@@ -213,7 +213,7 @@ fn now_stamp() -> u64 {
 mod tests {
     use std::path::Path;
 
-    use crate::capture_raw;
+    use crate::raw;
 
     use super::*;
 
@@ -224,7 +224,7 @@ mod tests {
             .and_then(Path::parent)
             .unwrap();
         let raw_path = root.join("fixtures/sample.raw.jsonl");
-        let rows = capture_raw::read_raw_capture(&raw_path).unwrap();
+        let rows = raw::read_raw_capture(&raw_path).unwrap();
         let document = build_capture_document(&rows.rows, "zh-Hant").unwrap();
         let records = document["nte"]["list"].as_array().unwrap();
         assert_eq!(records.len(), 2);

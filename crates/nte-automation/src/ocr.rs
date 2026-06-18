@@ -18,11 +18,15 @@ impl PageReadHint {
     }
 }
 
+#[cfg(windows)]
 #[derive(Debug, Clone)]
 pub struct WindowsOcrClient {
-    #[cfg_attr(not(windows), allow(dead_code))]
     language: String,
 }
+
+#[cfg(not(windows))]
+#[derive(Debug, Clone)]
+pub struct WindowsOcrClient;
 
 impl Default for WindowsOcrClient {
     fn default() -> Self {
@@ -31,10 +35,16 @@ impl Default for WindowsOcrClient {
 }
 
 impl WindowsOcrClient {
+    #[cfg(windows)]
     pub fn new(language: impl Into<String>) -> Self {
         Self {
             language: language.into(),
         }
+    }
+
+    #[cfg(not(windows))]
+    pub fn new(_language: impl Into<String>) -> Self {
+        Self
     }
 
     pub fn read_page_number(&self, image: &RgbaImage) -> AutomationResult<PageNumber> {

@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "nte-gacha-exporter"
 path = "src/bin/nte-gacha-exporter.rs"

@@ -263,7 +263,23 @@ fn parse_payload_view(
 }
 
 impl ProtocolAssembler {
-    pub fn add_blocks(&mut self, blocks: impl IntoIterator<Item = ParsedBlock>) -> AssemblerUpdate {
+    pub(crate) fn add_blocks(&mut self, blocks: impl IntoIterator<Item = ParsedBlock>) {
+        let _ = self.apply_blocks(blocks);
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn add_blocks_with_update(
+        &mut self,
+        blocks: impl IntoIterator<Item = ParsedBlock>,
+    ) -> AssemblerUpdate {
+        let (rows, new_rows) = self.apply_blocks(blocks);
+        AssemblerUpdate { rows, new_rows }
+    }
+
+    fn apply_blocks(
+        &mut self,
+        blocks: impl IntoIterator<Item = ParsedBlock>,
+    ) -> (Vec<ParsedRow>, Vec<ParsedRow>) {
         self.refresh_rows();
         let previous_rows = std::mem::take(&mut self.rows_cache);
         let mut changed = false;
@@ -273,15 +289,12 @@ impl ProtocolAssembler {
         if !changed {
             let rows = previous_rows.clone();
             self.rows_cache = previous_rows;
-            return AssemblerUpdate {
-                rows,
-                new_rows: Vec::new(),
-            };
+            return (rows, Vec::new());
         }
         self.refresh_rows();
         let rows = self.rows_cache.clone();
         let new_rows = new_prefix_rows(&previous_rows, &rows);
-        AssemblerUpdate { rows, new_rows }
+        (rows, new_rows)
     }
 
     pub fn add_block(&mut self, block: ParsedBlock) -> bool {
@@ -447,10 +460,10 @@ impl ProtocolAssembler {
     }
 }
 
-#[cfg_attr(not(windows), allow(dead_code))]
-pub struct AssemblerUpdate {
-    pub rows: Vec<ParsedRow>,
-    pub new_rows: Vec<ParsedRow>,
+#[cfg(windows)]
+pub(crate) struct AssemblerUpdate {
+    pub(crate) rows: Vec<ParsedRow>,
+    pub(crate) new_rows: Vec<ParsedRow>,
 }
 
 impl StreamState {
