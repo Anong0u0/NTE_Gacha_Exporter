@@ -72,15 +72,15 @@ pub struct RawReadResult {
 }
 
 #[derive(Debug)]
-struct ParsedNetworkPacket {
-    proto: String,
-    sport: Option<u16>,
-    dport: Option<u16>,
-    seq: Option<u32>,
-    ack: Option<u32>,
-    flags: Option<u16>,
-    payload: Vec<u8>,
-    parser: String,
+pub(crate) struct ParsedNetworkPacket {
+    pub(crate) proto: String,
+    pub(crate) sport: Option<u16>,
+    pub(crate) dport: Option<u16>,
+    pub(crate) seq: Option<u32>,
+    pub(crate) ack: Option<u32>,
+    pub(crate) flags: Option<u16>,
+    pub(crate) payload: Vec<u8>,
+    pub(crate) parser: String,
 }
 
 pub struct RawWriter {
@@ -137,7 +137,6 @@ impl RawWriter {
     fn write_json(&mut self, value: &impl Serialize) -> Result<()> {
         serde_json::to_writer(&mut self.writer, value)?;
         self.writer.write_all(b"\n")?;
-        self.writer.flush()?;
         Ok(())
     }
 }
@@ -211,28 +210,30 @@ pub fn read_raw_capture(path: &Path) -> Result<RawReadResult> {
     Ok(RawReadResult { rows, warnings })
 }
 
-pub fn raw_record_from_packet_bytes(
-    bytes: &[u8],
-    kind: PacketKind,
+pub(crate) fn raw_record_from_parsed_packet(
+    parsed: &ParsedNetworkPacket,
     capture_index: u64,
     captured_at: f64,
-) -> Option<RawPacketRecord> {
-    let parsed = parse_network_packet(bytes, kind)?;
-    Some(RawPacketRecord {
+) -> RawPacketRecord {
+    RawPacketRecord {
         typ: "packet".to_string(),
         schema_version: 1,
         captured_at,
         capture_index,
-        proto: parsed.proto,
+        proto: parsed.proto.clone(),
         sport: parsed.sport,
         dport: parsed.dport,
         seq: parsed.seq,
         ack: parsed.ack,
         flags: parsed.flags,
-        parser: parsed.parser,
+        parser: parsed.parser.clone(),
         size: parsed.payload.len(),
-        payload_b64: base64::engine::general_purpose::STANDARD.encode(parsed.payload),
-    })
+        payload_b64: base64::engine::general_purpose::STANDARD.encode(&parsed.payload),
+    }
+}
+
+pub(crate) fn parse_packet_bytes(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
+    parse_network_packet(bytes, kind)
 }
 
 fn parse_network_packet(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
@@ -458,7 +459,8 @@ mod tests {
         packet[24..26].copy_from_slice(&(udp_len as u16).to_be_bytes());
         packet[28..].copy_from_slice(payload);
 
-        let record = raw_record_from_packet_bytes(&packet, PacketKind::Ip, 1, 1.0).unwrap();
+        let parsed = parse_packet_bytes(&packet, PacketKind::Ip).unwrap();
+        let record = raw_record_from_parsed_packet(&parsed, 1, 1.0);
 
         assert_eq!(record.proto, "udp");
         assert_eq!(record.sport, Some(30230));

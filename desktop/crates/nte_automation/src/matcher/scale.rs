@@ -2,7 +2,7 @@ use image::{imageops, RgbaImage};
 
 use crate::model::Size;
 
-pub const CANDIDATE_SCALES: &[f32] = &[0.94, 0.97, 1.0, 1.03, 1.06];
+pub const CANDIDATE_SCALES: &[f32] = &[1.0, 0.97, 1.03, 0.94, 1.06];
 
 pub fn resize_template(template: &RgbaImage, size: Size) -> RgbaImage {
     if template.width() == size.width && template.height() == size.height {

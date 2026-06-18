@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::sync::atomic::Ordering;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -14,6 +14,10 @@ use crate::profile::{load_profile, AutomationProfile, WorkflowStep};
 use crate::screenshot::WindowCaptureClient;
 use crate::tooltip::AutomationTooltip;
 use crate::window::{self, GameWindow};
+
+const PAGE_RECORD_MIN_WAIT: Duration = Duration::from_millis(200);
+const FRESH_PAGE_STABLE_WAIT: Duration = Duration::from_millis(600);
+const INCREMENTAL_DUPLICATE_RECORD_THRESHOLD: usize = 6;
 
 pub fn run_auto_page(options: AutoPageOptions) -> AutoPageResult {
     let non_interactive = options.non_interactive;
@@ -35,6 +39,13 @@ struct AutoPager {
     matcher: ImageTemplateMatcher,
     tooltip: AutomationTooltip,
     started_at: Instant,
+}
+
+struct PoolPageRun {
+    pool: String,
+    skipped: bool,
+    visited_pages: u32,
+    last_page: u32,
 }
 
 impl AutoPager {
@@ -73,6 +84,8 @@ impl AutoPager {
     fn run(&mut self) -> AutomationResult<AutoPageResult> {
         let mut completed = Vec::new();
         let mut skipped = Vec::new();
+        let mut visited_pages_by_pool = BTreeMap::new();
+        let mut last_page_by_pool = BTreeMap::new();
         self.status(
             "auto page started",
             "started",
@@ -88,15 +101,16 @@ impl AutoPager {
             if self.should_stop() {
                 return Err(AutomationError::message("auto page stopped"));
             }
-            if let Some((pool, was_skipped)) = self.run_step(&step)? {
-                if was_skipped {
-                    skipped.push(pool);
+            if let Some(result) = self.run_step(&step)? {
+                visited_pages_by_pool.insert(result.pool.clone(), result.visited_pages);
+                last_page_by_pool.insert(result.pool.clone(), result.last_page);
+                if result.skipped {
+                    skipped.push(result.pool);
                 } else {
-                    completed.push(pool);
+                    completed.push(result.pool);
                 }
             }
         }
-        self.options.stop.store(true, Ordering::SeqCst);
         self.status(
             "auto page completed",
             "completed",
@@ -107,10 +121,15 @@ impl AutoPager {
             "",
             true,
         );
-        Ok(AutoPageResult::completed(completed, skipped))
+        Ok(AutoPageResult::completed_with_pages(
+            completed,
+            skipped,
+            visited_pages_by_pool,
+            last_page_by_pool,
+        ))
     }
 
-    fn run_step(&mut self, step: &WorkflowStep) -> AutomationResult<Option<(String, bool)>> {
+    fn run_step(&mut self, step: &WorkflowStep) -> AutomationResult<Option<PoolPageRun>> {
         if !step.status.is_empty() {
             self.status(
                 &step.status,
@@ -257,7 +276,10 @@ impl AutoPager {
                         );
                         return Ok(());
                     }
-                    Err(error) => last_error = Some(error),
+                    Err(error) => {
+                        last_error = Some(error);
+                        self.sleep_poll();
+                    }
                 }
             }
         }
@@ -277,7 +299,7 @@ impl AutoPager {
         let started = Instant::now();
         let mut clicks = 0_u32;
         let mut source: Option<TemplateMatch> = None;
-        let mut clicked_source = false;
+        let mut next_source_click = Instant::now();
         let mut last_source_error = None;
         let mut last_target_error = None;
         while Instant::now() < deadline {
@@ -316,7 +338,7 @@ impl AutoPager {
                 }
                 Err(error) => last_target_error = Some(error),
             }
-            if clicked_source {
+            if Instant::now() < next_source_click {
                 self.sleep_poll();
                 continue;
             }
@@ -330,7 +352,8 @@ impl AutoPager {
                     self.click(click_point, Some(settle))?;
                     clicks += 1;
                     source = Some(matched);
-                    clicked_source = true;
+                    next_source_click =
+                        Instant::now() + Duration::from_secs_f64(self.options.click_poll_interval);
                 }
                 Err(error) => {
                     last_source_error = Some(error);
@@ -347,7 +370,7 @@ impl AutoPager {
         )))
     }
 
-    fn capture_pages(&mut self, step: &WorkflowStep) -> AutomationResult<(String, bool)> {
+    fn capture_pages(&mut self, step: &WorkflowStep) -> AutomationResult<PoolPageRun> {
         let pool = required(step.pool.as_deref(), "pool")?.to_string();
         let page_rect = *self
             .profile
@@ -366,8 +389,14 @@ impl AutoPager {
             "",
             true,
         );
+        let mut visited_pages = 1_u32;
         if self.should_skip_pool(&pool, &step.status, &page) {
-            return Ok((pool, true));
+            return Ok(PoolPageRun {
+                pool,
+                skipped: true,
+                visited_pages,
+                last_page: page.current,
+            });
         }
         while page.current < page.total {
             if self.should_stop() {
@@ -385,8 +414,15 @@ impl AutoPager {
                 true,
             );
             page = self.click_page_button(page_rect, next_button, page, expected)?;
+            visited_pages = page.current;
+            self.wait_for_capture_lag(&pool, visited_pages, page.total)?;
             if self.should_skip_pool(&pool, &step.status, &page) {
-                return Ok((pool, true));
+                return Ok(PoolPageRun {
+                    pool,
+                    skipped: true,
+                    visited_pages,
+                    last_page: page.current,
+                });
             }
         }
         self.status(
@@ -399,7 +435,12 @@ impl AutoPager {
             "",
             true,
         );
-        Ok((pool, false))
+        Ok(PoolPageRun {
+            pool,
+            skipped: false,
+            visited_pages,
+            last_page: page.current,
+        })
     }
 
     fn should_skip_pool(&mut self, pool: &str, step: &str, page: &PageNumber) -> bool {
@@ -418,27 +459,25 @@ impl AutoPager {
         let deadline =
             Instant::now() + Duration::from_secs_f64(self.options.duplicate_check_timeout);
         while Instant::now() <= deadline {
-            let page_records = self.latest_pool_page_records(pool);
-            if page_records.len() >= 5 {
-                let ids = page_records
-                    .iter()
-                    .rev()
-                    .take(5)
-                    .map(|record| record.record_id.as_str())
-                    .collect::<Vec<_>>();
-                if !ids.is_empty() && ids.iter().all(|record_id| known_ids.contains(*record_id)) {
-                    self.status(
-                        "known page found; skipping pool",
-                        "pool_skipped",
-                        Some(step),
-                        Some(pool),
-                        Some(page.current),
-                        Some(page.total),
-                        "",
-                        true,
-                    );
-                    return true;
-                }
+            let pool_records = self.pool_records(pool);
+            let duplicate_count = consecutive_known_record_count(&pool_records, &known_ids);
+            if duplicate_count >= INCREMENTAL_DUPLICATE_RECORD_THRESHOLD {
+                self.status(
+                    "known records found; skipping pool",
+                    "pool_skipped",
+                    Some(step),
+                    Some(pool),
+                    Some(page.current),
+                    Some(page.total),
+                    &format!("duplicate_records={duplicate_count}"),
+                    true,
+                );
+                return true;
+            }
+            if pool_records
+                .last()
+                .is_some_and(|record| !known_ids.contains(record.record_id.as_str()))
+            {
                 return false;
             }
             self.sleep_poll();
@@ -446,18 +485,13 @@ impl AutoPager {
         false
     }
 
-    fn latest_pool_page_records(&self, pool: &str) -> Vec<RecordSnapshot> {
+    fn pool_records(&self, pool: &str) -> Vec<RecordSnapshot> {
         let Some(callback) = &self.options.record_snapshot else {
             return Vec::new();
         };
         callback()
             .into_iter()
             .filter(|record| record_pool(record).as_deref() == Some(pool))
-            .rev()
-            .take(5)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
             .collect()
     }
 
@@ -469,10 +503,12 @@ impl AutoPager {
         expected_page: u32,
     ) -> AutomationResult<PageNumber> {
         for attempt in 1..=2 {
+            let clicked_at = Instant::now();
             window::foreground_click(&self.window, point)?;
             if let Some(page) =
                 self.wait_for_page(page_rect, previous.current, expected_page, previous.total)?
             {
+                self.settle_after_page_click(clicked_at);
                 return Ok(page);
             }
             if attempt < 2 {
@@ -492,6 +528,47 @@ impl AutoPager {
             "page did not change after retry: expected {expected_page}, still {}",
             previous.current
         )))
+    }
+
+    fn settle_after_page_click(&self, clicked_at: Instant) {
+        sleep_until(clicked_at + PAGE_RECORD_MIN_WAIT);
+    }
+
+    fn wait_for_capture_lag(
+        &mut self,
+        pool: &str,
+        visited_pages: u32,
+        total_pages: u32,
+    ) -> AutomationResult<()> {
+        let Some(decoded_page_count) = &self.options.decoded_page_count else {
+            return Ok(());
+        };
+        let max_lag = self.options.max_capture_page_lag;
+        if decoded_page_count(pool).saturating_add(max_lag) >= visited_pages as usize {
+            return Ok(());
+        }
+        let deadline = Instant::now() + Duration::from_secs_f64(self.options.click_timeout);
+        while Instant::now() < deadline {
+            if self.should_stop() {
+                return Err(AutomationError::message("auto page stopped"));
+            }
+            let decoded = decoded_page_count(pool);
+            if decoded.saturating_add(max_lag) >= visited_pages as usize {
+                return Ok(());
+            }
+            self.status(
+                "capture lag waiting",
+                "diagnostic",
+                None,
+                Some(pool),
+                Some(visited_pages),
+                Some(total_pages),
+                &format!("decoded_pages={decoded} max_lag={max_lag}"),
+                false,
+            );
+            thread::sleep(Duration::from_millis(100));
+        }
+        Ok(())
     }
 
     fn wait_for_page(
@@ -573,6 +650,7 @@ impl AutoPager {
         pool: &str,
     ) -> AutomationResult<PageNumber> {
         let deadline = Instant::now() + Duration::from_secs_f64(self.options.template_timeout);
+        let mut stable_page = None::<(PageNumber, Instant)>;
         let mut last_page = None;
         let mut last_error = None;
         while Instant::now() < deadline {
@@ -580,8 +658,25 @@ impl AutoPager {
                 return Err(AutomationError::message("auto page stopped"));
             }
             match self.read_page_with_hint(page_rect, PageReadHint::default()) {
-                Ok(page) if page.current == 1 => return Ok(page),
-                Ok(page) => last_page = Some(page),
+                Ok(page) if page.current == 1 => {
+                    let now = Instant::now();
+                    let stable_since = stable_page.as_ref().map_or(now, |(stable, since)| {
+                        if stable.current == page.current && stable.total == page.total {
+                            *since
+                        } else {
+                            now
+                        }
+                    });
+                    stable_page = Some((page.clone(), stable_since));
+                    last_page = Some(page.clone());
+                    if now.duration_since(stable_since) >= FRESH_PAGE_STABLE_WAIT {
+                        return Ok(page);
+                    }
+                }
+                Ok(page) => {
+                    stable_page = None;
+                    last_page = Some(page);
+                }
                 Err(error) => last_error = Some(error),
             }
             self.sleep_poll();
@@ -608,14 +703,16 @@ impl AutoPager {
 
     fn try_template(&mut self, name: &str) -> AutomationResult<TemplateMatch> {
         self.focus_window()?;
-        let image = self.capture.capture_client(self.window.client_size())?;
-        self.matcher.verify(name, &image)
+        let search_rect = self.matcher.search_rect(name, self.window.client_size())?;
+        let image = self.capture.capture_rect(search_rect)?;
+        self.matcher.verify_in_rect(name, &image, search_rect)
     }
 
     fn find_template(&mut self, name: &str) -> AutomationResult<TemplateMatch> {
         self.focus_window()?;
-        let image = self.capture.capture_client(self.window.client_size())?;
-        self.matcher.find(name, &image)
+        let search_rect = self.matcher.search_rect(name, self.window.client_size())?;
+        let image = self.capture.capture_rect(search_rect)?;
+        self.matcher.find_in_rect(name, &image, search_rect)
     }
 
     fn template_center(&self, name: &str, top_left: Point) -> AutomationResult<Point> {
@@ -708,6 +805,24 @@ fn required<'a>(value: Option<&'a str>, name: &str) -> AutomationResult<&'a str>
     value.ok_or_else(|| AutomationError::message(format!("workflow step missing {name}")))
 }
 
+fn sleep_until(deadline: Instant) {
+    let now = Instant::now();
+    if deadline > now {
+        thread::sleep(deadline - now);
+    }
+}
+
+fn consecutive_known_record_count(
+    records: &[RecordSnapshot],
+    known_ids: &HashSet<String>,
+) -> usize {
+    records
+        .iter()
+        .rev()
+        .take_while(|record| known_ids.contains(record.record_id.as_str()))
+        .count()
+}
+
 fn status_text(status: &AutoPageStatus) -> String {
     let mut text = status.message.clone();
     if let (Some(current), Some(total)) = (status.current_page, status.total_pages) {
@@ -763,5 +878,38 @@ mod tests {
             }),
             Some("fork".to_string())
         );
+    }
+
+    #[test]
+    fn consecutive_known_record_count_only_counts_latest_run() {
+        let records = vec![
+            snapshot("new", "CardPool_Character", "monopoly"),
+            snapshot("old-1", "CardPool_Character", "monopoly"),
+            snapshot("old-2", "CardPool_Character", "monopoly"),
+        ];
+        let known_ids = ["old-1".to_string(), "old-2".to_string()]
+            .into_iter()
+            .collect::<HashSet<_>>();
+
+        assert_eq!(consecutive_known_record_count(&records, &known_ids), 2);
+    }
+
+    #[test]
+    fn consecutive_known_record_count_stops_at_latest_unknown() {
+        let records = vec![
+            snapshot("old-1", "CardPool_Character", "monopoly"),
+            snapshot("new", "CardPool_Character", "monopoly"),
+        ];
+        let known_ids = ["old-1".to_string()].into_iter().collect::<HashSet<_>>();
+
+        assert_eq!(consecutive_known_record_count(&records, &known_ids), 0);
+    }
+
+    fn snapshot(record_id: &str, pool_id: &str, record_type: &str) -> RecordSnapshot {
+        RecordSnapshot {
+            record_id: record_id.to_string(),
+            pool_id: pool_id.to_string(),
+            record_type: record_type.to_string(),
+        }
     }
 }

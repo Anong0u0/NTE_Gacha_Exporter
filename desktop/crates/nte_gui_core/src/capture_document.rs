@@ -6,7 +6,7 @@ use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 
 use crate::capture_protocol::{row_public_time, ParseWarning, ParsedRow};
-use crate::maps::load_map;
+use crate::maps::{load_map, MapData};
 use crate::model::GuiError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,10 +15,63 @@ pub struct RawReplayResult {
     pub records_count: u64,
 }
 
+#[derive(Debug, Clone)]
+pub struct CapturePublicRecord {
+    pub record_id: String,
+    pub record_type: String,
+    pub pool_id: Option<String>,
+    pub value: Value,
+}
+
+pub struct CaptureRecordBuilder {
+    map: MapData,
+    seen_record_ids: BTreeMap<String, u64>,
+}
+
 struct CanonicalRow<'a> {
     row: &'a ParsedRow,
     item_id: String,
     secondary_item_id: Option<String>,
+}
+
+impl CaptureRecordBuilder {
+    pub fn new(locale: &str) -> Result<Self, GuiError> {
+        Ok(Self {
+            map: load_map(locale)?,
+            seen_record_ids: BTreeMap::new(),
+        })
+    }
+
+    pub fn build_records(&mut self, rows: &[ParsedRow]) -> Vec<CapturePublicRecord> {
+        rows.iter().map(|row| self.build_record(row)).collect()
+    }
+
+    pub fn build_record(&mut self, row: &ParsedRow) -> CapturePublicRecord {
+        let canonical = canonical_row(row, &self.map);
+        let record_id = self.next_record_id(&canonical);
+        let value = public_record(&canonical, record_id.clone());
+        CapturePublicRecord {
+            record_id,
+            record_type: row.record_type.as_str().to_string(),
+            pool_id: row.pool_id.clone(),
+            value,
+        }
+    }
+
+    fn next_record_id(&mut self, row: &CanonicalRow<'_>) -> String {
+        let base_id = record_id_from_material(&record_id_material(row));
+        let occurrence = self.seen_record_ids.entry(base_id.clone()).or_default();
+        let record_id = if *occurrence == 0 {
+            base_id
+        } else {
+            let mut material = record_id_material(row);
+            material.push("duplicate_occurrence".to_string());
+            material.push(occurrence.to_string());
+            record_id_from_material(&material)
+        };
+        *occurrence += 1;
+        record_id
+    }
 }
 
 pub fn build_capture_document(
@@ -30,14 +83,7 @@ pub fn build_capture_document(
     let map = load_map(locale)?;
     let canonical_rows = rows
         .iter()
-        .map(|row| CanonicalRow {
-            row,
-            item_id: map.canonical_item_id(&row.item_id).to_string(),
-            secondary_item_id: row
-                .secondary_item_id
-                .as_deref()
-                .map(|value| map.canonical_item_id(value).to_string()),
-        })
+        .map(|row| canonical_row(row, &map))
         .collect::<Vec<_>>();
     let record_ids = record_ids(&canonical_rows);
     let records = canonical_rows
@@ -93,6 +139,17 @@ pub fn build_capture_document(
             "raw_rows": rows
         }
     }))
+}
+
+fn canonical_row<'a>(row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
+    CanonicalRow {
+        row,
+        item_id: map.canonical_item_id(&row.item_id).to_string(),
+        secondary_item_id: row
+            .secondary_item_id
+            .as_deref()
+            .map(|value| map.canonical_item_id(value).to_string()),
+    }
 }
 
 fn public_record(row: &CanonicalRow<'_>, record_id: String) -> Value {
@@ -225,5 +282,13 @@ mod tests {
             records[1]["record_id"],
             "c56d8202675fe561fbfaca53f78f01eaa5184c66e48b20573841f883e8c84fbc"
         );
+
+        let mut builder = CaptureRecordBuilder::new("zh-Hant").unwrap();
+        let incremental_records = builder
+            .build_records(&rows.rows)
+            .into_iter()
+            .map(|record| record.value)
+            .collect::<Vec<_>>();
+        assert_eq!(incremental_records.as_slice(), records.as_slice());
     }
 }

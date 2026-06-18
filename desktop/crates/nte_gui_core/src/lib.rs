@@ -13,7 +13,9 @@ mod rules;
 mod store;
 mod updater;
 
-pub use capture_document::{build_capture_document, RawReplayResult};
+pub use capture_document::{
+    build_capture_document, CapturePublicRecord, CaptureRecordBuilder, RawReplayResult,
+};
 pub use capture_live::{
     capture_live, CaptureCounters, CaptureOptions, CaptureProgress, CaptureResult, CaptureTarget,
 };

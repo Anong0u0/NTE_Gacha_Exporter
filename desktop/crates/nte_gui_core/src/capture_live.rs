@@ -12,7 +12,9 @@ use crate::capture_net;
 use crate::capture_protocol::{parse_payload_blocks, ProtocolAssembler};
 use crate::capture_protocol::{ParseWarning, ParsedRow};
 #[cfg(windows)]
-use crate::capture_raw::{raw_record_from_packet_bytes, PacketKind, RawWriter};
+use crate::capture_raw::{
+    parse_packet_bytes, raw_record_from_parsed_packet, PacketKind, ParsedNetworkPacket, RawWriter,
+};
 
 #[cfg(windows)]
 use std::sync::atomic::Ordering;
@@ -61,8 +63,9 @@ pub struct CaptureResult {
 pub struct CaptureProgress {
     pub target: CaptureTarget,
     pub counters: CaptureCounters,
-    pub rows: Vec<ParsedRow>,
-    pub warnings: Vec<ParseWarning>,
+    pub new_rows: Vec<ParsedRow>,
+    pub row_count: usize,
+    pub warning_count: usize,
 }
 
 #[cfg(windows)]
@@ -71,7 +74,7 @@ struct RawSignature {
     proto: String,
     sport: Option<u16>,
     dport: Option<u16>,
-    payload_b64: String,
+    payload: Vec<u8>,
 }
 
 #[cfg(windows)]
@@ -111,7 +114,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
     let mut last_packet: Option<RecentPacket> = None;
     let mut rows_snapshot: Vec<ParsedRow> = Vec::new();
     let mut last_progress_seen = 0_u64;
-    emit_progress(&options, &target, &counters, &rows_snapshot, &warnings);
+    emit_progress(&options, &target, &counters, &[], 0, 0);
 
     while !stop.load(Ordering::SeqCst) {
         let mut capture = pktmon::Capture::new()?;
@@ -130,17 +133,6 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
             })?;
         }
         capture.start()?;
-        eprintln!(
-            "capture started pid={} ports={} max_packets={} max_decoded={}",
-            options.pid,
-            ports
-                .iter()
-                .map(u16::to_string)
-                .collect::<Vec<_>>()
-                .join(","),
-            options.max_packets,
-            options.max_decoded
-        );
 
         let mut restart_for_ports = false;
         let mut idle_ticks = 0_u32;
@@ -162,42 +154,45 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     idle_ticks = 0;
                     counters.packets_seen += 1;
                     let kind = packet_kind(&packet.payload);
-                    let bytes = packet.payload.to_vec().clone();
-                    let Some(record) = raw_record_from_packet_bytes(
-                        &bytes,
-                        kind,
-                        counters.packets_seen,
-                        now_seconds(),
-                    ) else {
+                    let bytes = packet.payload.to_vec();
+                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
                         counters.dropped_packets += 1;
                         continue;
                     };
-                    let signature = RawSignature::from_record(&record);
-                    if last_packet.as_ref().is_some_and(|last| {
-                        last.signature == signature
-                            && record.captured_at - last.captured_at
-                                <= PKTMON_DUPLICATE_WINDOW_SECONDS
-                    }) {
+                    let captured_at = now_seconds();
+                    if last_packet
+                        .as_ref()
+                        .is_some_and(|last| last.matches(&parsed_packet, captured_at))
+                    {
                         counters.duplicate_packets += 1;
                         if counters.packets_seen.saturating_sub(last_progress_seen) >= 250 {
-                            emit_progress(&options, &target, &counters, &rows_snapshot, &warnings);
+                            emit_progress(
+                                &options,
+                                &target,
+                                &counters,
+                                &[],
+                                rows_snapshot.len(),
+                                warnings.len(),
+                            );
                             last_progress_seen = counters.packets_seen;
                         }
                         continue;
                     }
+                    let signature = RawSignature::from_packet(&parsed_packet);
                     last_packet = Some(RecentPacket {
                         signature,
-                        captured_at: record.captured_at,
+                        captured_at,
                     });
+                    let record = raw_record_from_parsed_packet(
+                        &parsed_packet,
+                        counters.packets_seen,
+                        captured_at,
+                    );
                     if let Some(writer) = raw_writer.as_mut() {
                         writer.write_packet(&record)?;
                     }
-                    let payload = base64::Engine::decode(
-                        &base64::engine::general_purpose::STANDARD,
-                        &record.payload_b64,
-                    )?;
                     let (blocks, found_warnings) = parse_payload_blocks(
-                        &payload,
+                        &parsed_packet.payload,
                         0,
                         counters.packets_seen,
                         counters.packets_seen - 1,
@@ -205,24 +200,30 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     warnings.extend(found_warnings);
                     if blocks.is_empty() {
                         if counters.packets_seen.saturating_sub(last_progress_seen) >= 250 {
-                            emit_progress(&options, &target, &counters, &rows_snapshot, &warnings);
+                            emit_progress(
+                                &options,
+                                &target,
+                                &counters,
+                                &[],
+                                rows_snapshot.len(),
+                                warnings.len(),
+                            );
                             last_progress_seen = counters.packets_seen;
                         }
                         continue;
                     }
                     counters.decoded_packets += 1;
-                    let new_rows = assembler.add_blocks(blocks);
-                    rows_snapshot = assembler.rows();
-                    emit_progress(&options, &target, &counters, &rows_snapshot, &warnings);
+                    let update = assembler.add_blocks(blocks);
+                    rows_snapshot = update.rows;
+                    emit_progress(
+                        &options,
+                        &target,
+                        &counters,
+                        &update.new_rows,
+                        rows_snapshot.len(),
+                        warnings.len(),
+                    );
                     last_progress_seen = counters.packets_seen;
-                    if !new_rows.is_empty() {
-                        eprintln!(
-                            "decoded rows total={} packet={} decoded_packets={}",
-                            rows_snapshot.len(),
-                            counters.packets_seen,
-                            counters.decoded_packets
-                        );
-                    }
                 }
                 Err(error) if is_timeout(&error) => {
                     idle_ticks += 1;
@@ -237,14 +238,6 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                             target.bpf = bpf(&ports);
                             counters.filter_restarts += 1;
                             restart_for_ports = true;
-                            eprintln!(
-                                "ports changed; restarting filters: {}",
-                                ports
-                                    .iter()
-                                    .map(u16::to_string)
-                                    .collect::<Vec<_>>()
-                                    .join(",")
-                            );
                             break;
                         }
                     }
@@ -270,7 +263,14 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
     let mut rows = assembler.rows();
     warnings.extend(assembler.warnings);
     rows.shrink_to_fit();
-    emit_progress(&options, &target, &counters, &rows, &warnings);
+    emit_progress(
+        &options,
+        &target,
+        &counters,
+        &[],
+        rows.len(),
+        warnings.len(),
+    );
     Ok(CaptureResult {
         target,
         counters,
@@ -281,13 +281,24 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
 
 #[cfg(windows)]
 impl RawSignature {
-    fn from_record(record: &crate::capture_raw::RawPacketRecord) -> Self {
+    fn from_packet(packet: &ParsedNetworkPacket) -> Self {
         Self {
-            proto: record.proto.clone(),
-            sport: record.sport,
-            dport: record.dport,
-            payload_b64: record.payload_b64.clone(),
+            proto: packet.proto.clone(),
+            sport: packet.sport,
+            dport: packet.dport,
+            payload: packet.payload.clone(),
         }
+    }
+}
+
+#[cfg(windows)]
+impl RecentPacket {
+    fn matches(&self, packet: &ParsedNetworkPacket, captured_at: f64) -> bool {
+        self.signature.proto.as_str() == packet.proto.as_str()
+            && self.signature.sport == packet.sport
+            && self.signature.dport == packet.dport
+            && self.signature.payload.as_slice() == packet.payload.as_slice()
+            && captured_at - self.captured_at <= PKTMON_DUPLICATE_WINDOW_SECONDS
     }
 }
 
@@ -296,8 +307,9 @@ fn emit_progress(
     options: &CaptureOptions,
     target: &CaptureTarget,
     counters: &CaptureCounters,
-    rows: &[ParsedRow],
-    warnings: &[ParseWarning],
+    new_rows: &[ParsedRow],
+    row_count: usize,
+    warning_count: usize,
 ) {
     let Some(callback) = options.on_progress.as_ref() else {
         return;
@@ -305,8 +317,9 @@ fn emit_progress(
     callback(CaptureProgress {
         target: target.clone(),
         counters: counters.clone(),
-        rows: rows.to_vec(),
-        warnings: warnings.to_vec(),
+        new_rows: new_rows.to_vec(),
+        row_count,
+        warning_count,
     });
 }
 

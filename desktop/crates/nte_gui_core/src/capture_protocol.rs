@@ -182,6 +182,8 @@ pub struct ProtocolAssembler {
     streams: BTreeMap<String, StreamState>,
     legacy_rows: Vec<ParsedRow>,
     legacy_blocks: BTreeSet<BlockSignature>,
+    rows_cache: Vec<ParsedRow>,
+    rows_dirty: bool,
     pub warnings: Vec<ParseWarning>,
     warning_keys: BTreeSet<(String, String, u32)>,
 }
@@ -194,56 +196,97 @@ pub fn parse_payload_blocks(
 ) -> (Vec<ParsedBlock>, Vec<ParseWarning>) {
     let mut blocks = Vec::new();
     let mut warnings = Vec::new();
-    for (view_name, data) in packet_views(payload) {
-        for (marker, kind) in [
-            (MONOPOLY_MARKER, RecordType::Monopoly),
-            (FORK_MARKER, RecordType::Fork),
-        ] {
-            let mut pos = 0;
-            while let Some(found) = find_bytes(&data[pos..], marker) {
-                let marker_pos = pos + found;
-                let ctx = ParseContext {
-                    session,
-                    line,
-                    packet_index,
-                    view: view_name.clone(),
-                };
-                let parsed = match kind {
-                    RecordType::Monopoly => parse_monopoly_block(&data, marker_pos, &ctx),
-                    RecordType::Fork => parse_fork_block(&data, marker_pos, &ctx),
-                };
-                match parsed {
-                    Ok(block) => blocks.push(block),
-                    Err(error) => warnings.push(ParseWarning::at(
-                        "parse_error",
-                        format!("{}: {error}", String::from_utf8_lossy(marker)),
-                        session,
-                        line,
-                        packet_index,
-                        view_name.clone(),
-                    )),
-                }
-                pos = marker_pos + marker.len();
-            }
-        }
+    parse_payload_view(
+        "raw",
+        payload,
+        session,
+        line,
+        packet_index,
+        &mut blocks,
+        &mut warnings,
+    );
+    for shift in 1..8 {
+        let data = decode_shifted_bytes(payload, 8, shift, payload.len().saturating_sub(8));
+        parse_payload_view(
+            &format!("shift8:{shift}"),
+            &data,
+            session,
+            line,
+            packet_index,
+            &mut blocks,
+            &mut warnings,
+        );
     }
     (blocks, warnings)
 }
 
-impl ProtocolAssembler {
-    pub fn add_blocks(&mut self, blocks: impl IntoIterator<Item = ParsedBlock>) -> Vec<ParsedRow> {
-        let before = self.rows();
-        for block in blocks {
-            self.add_block(block);
+fn parse_payload_view(
+    view_name: &str,
+    data: &[u8],
+    session: u64,
+    line: u64,
+    packet_index: u64,
+    blocks: &mut Vec<ParsedBlock>,
+    warnings: &mut Vec<ParseWarning>,
+) {
+    for (marker, kind) in [
+        (MONOPOLY_MARKER, RecordType::Monopoly),
+        (FORK_MARKER, RecordType::Fork),
+    ] {
+        let mut pos = 0;
+        while let Some(found) = find_bytes(&data[pos..], marker) {
+            let marker_pos = pos + found;
+            let ctx = ParseContext {
+                session,
+                line,
+                packet_index,
+                view: view_name.to_string(),
+            };
+            let parsed = match kind {
+                RecordType::Monopoly => parse_monopoly_block(data, marker_pos, &ctx),
+                RecordType::Fork => parse_fork_block(data, marker_pos, &ctx),
+            };
+            match parsed {
+                Ok(block) => blocks.push(block),
+                Err(error) => warnings.push(ParseWarning::at(
+                    "parse_error",
+                    format!("{}: {error}", String::from_utf8_lossy(marker)),
+                    session,
+                    line,
+                    packet_index,
+                    view_name,
+                )),
+            }
+            pos = marker_pos + marker.len();
         }
-        let after = self.rows();
-        new_prefix_rows(&before, &after)
+    }
+}
+
+impl ProtocolAssembler {
+    pub fn add_blocks(&mut self, blocks: impl IntoIterator<Item = ParsedBlock>) -> AssemblerUpdate {
+        self.refresh_rows();
+        let previous_rows = std::mem::take(&mut self.rows_cache);
+        let mut changed = false;
+        for block in blocks {
+            changed |= self.add_block(block);
+        }
+        if !changed {
+            let rows = previous_rows.clone();
+            self.rows_cache = previous_rows;
+            return AssemblerUpdate {
+                rows,
+                new_rows: Vec::new(),
+            };
+        }
+        self.refresh_rows();
+        let rows = self.rows_cache.clone();
+        let new_rows = new_prefix_rows(&previous_rows, &rows);
+        AssemblerUpdate { rows, new_rows }
     }
 
-    pub fn add_block(&mut self, block: ParsedBlock) {
+    pub fn add_block(&mut self, block: ParsedBlock) -> bool {
         let Some(envelope) = block.envelope.clone() else {
-            self.add_legacy_block(block);
-            return;
+            return self.add_legacy_block(block);
         };
 
         if !self.streams.contains_key(&envelope.stream_key) {
@@ -272,7 +315,7 @@ impl ProtocolAssembler {
         let current = stream.generations.last_mut().expect("generation exists");
         if let Some(existing) = current.segments.get(&segment.index) {
             if existing.signature == segment.signature {
-                return;
+                return false;
             }
             stream.start_generation();
         }
@@ -282,9 +325,19 @@ impl ProtocolAssembler {
             .expect("generation exists")
             .segments
             .insert(segment.index, segment);
+        self.rows_dirty = true;
+        true
     }
 
     pub fn rows(&mut self) -> Vec<ParsedRow> {
+        self.refresh_rows();
+        self.rows_cache.clone()
+    }
+
+    fn refresh_rows(&mut self) {
+        if !self.rows_dirty {
+            return;
+        }
         let mut rows = Vec::new();
         for key in self.order.clone() {
             if key == "__legacy__" {
@@ -295,19 +348,22 @@ impl ProtocolAssembler {
                 rows.extend(self.assemble_stream(&key, &stream));
             }
         }
-        rows
+        self.rows_cache = rows;
+        self.rows_dirty = false;
     }
 
-    fn add_legacy_block(&mut self, block: ParsedBlock) {
+    fn add_legacy_block(&mut self, block: ParsedBlock) -> bool {
         let signature = block_signature(block.record_type, &block.rows);
         if self.legacy_blocks.contains(&signature) {
-            return;
+            return false;
         }
         if self.legacy_rows.is_empty() {
             self.order.push("__legacy__".to_string());
         }
         self.legacy_blocks.insert(signature);
         self.legacy_rows.extend(block.rows);
+        self.rows_dirty = true;
+        true
     }
 
     fn assemble_stream(&mut self, key: &str, stream: &StreamState) -> Vec<ParsedRow> {
@@ -389,6 +445,12 @@ impl ProtocolAssembler {
             view: Some(row.source.view.clone()),
         });
     }
+}
+
+#[cfg_attr(not(windows), allow(dead_code))]
+pub struct AssemblerUpdate {
+    pub rows: Vec<ParsedRow>,
+    pub new_rows: Vec<ParsedRow>,
 }
 
 impl StreamState {
@@ -633,17 +695,6 @@ impl Reader<'_> {
     }
 }
 
-fn packet_views(data: &[u8]) -> Vec<(String, Vec<u8>)> {
-    let mut views = vec![("raw".to_string(), data.to_vec())];
-    for shift in 1..8 {
-        views.push((
-            format!("shift8:{shift}"),
-            decode_shifted_bytes(data, 8, shift, data.len().saturating_sub(8)),
-        ));
-    }
-    views
-}
-
 fn decode_shifted_bytes(data: &[u8], byte_off: usize, bit_shift: usize, count: usize) -> Vec<u8> {
     let mut out = Vec::with_capacity(count);
     for i in 0..count {
@@ -766,6 +817,21 @@ fn new_prefix_rows(before: &[ParsedRow], after: &[ParsedRow]) -> Vec<ParsedRow> 
     let after_signatures = row_signatures(after);
     if before_signatures == after_signatures {
         return Vec::new();
+    }
+
+    if after_signatures.len() >= before_signatures.len() {
+        let full_matches = (0..=after_signatures.len() - before_signatures.len())
+            .filter(|position| {
+                after_signatures[*position..*position + before_signatures.len()]
+                    == before_signatures
+            })
+            .collect::<Vec<_>>();
+        if full_matches.len() == 1 {
+            let position = full_matches[0];
+            let mut rows = after[..position].to_vec();
+            rows.extend_from_slice(&after[position + before_signatures.len()..]);
+            return rows;
+        }
     }
 
     let mut matches = Vec::new();
@@ -896,6 +962,34 @@ mod tests {
         out
     }
 
+    fn row(item_id: &str, row_index: u32) -> ParsedRow {
+        ParsedRow {
+            record_type: RecordType::Monopoly,
+            ticks: 639_131_653_353_040_000,
+            time: None,
+            pool_id: Some("CardPool_Character".to_string()),
+            item_id: item_id.to_string(),
+            count: 1,
+            roll_points: Some(row_index),
+            roll_label_id: None,
+            secondary_item_id: None,
+            secondary_count: None,
+            source: SourceRef {
+                session: 0,
+                line: 1,
+                packet_index: 1,
+                view: "test".to_string(),
+                row_index,
+                offset: row_index as usize,
+                stream_key: Some("monopoly:256".to_string()),
+                page_index: Some(row_index),
+                query_high: Some(false),
+                segment_index: Some(row_index),
+                generation_index: Some(0),
+            },
+        }
+    }
+
     #[test]
     fn decodes_monopoly_record() {
         let mut row = Vec::new();
@@ -938,5 +1032,25 @@ mod tests {
             row_public_time(&blocks[0].rows[0]).as_deref(),
             Some("2026-06-03 17:15:58")
         );
+    }
+
+    #[test]
+    fn new_rows_detects_appended_pages() {
+        let before = vec![row("a", 0), row("b", 1)];
+        let after = vec![row("a", 0), row("b", 1), row("c", 2), row("d", 3)];
+
+        let delta = new_prefix_rows(&before, &after);
+
+        assert_eq!(delta, vec![row("c", 2), row("d", 3)]);
+    }
+
+    #[test]
+    fn new_rows_detects_prepended_pages() {
+        let before = vec![row("c", 2), row("d", 3)];
+        let after = vec![row("a", 0), row("b", 1), row("c", 2), row("d", 3)];
+
+        let delta = new_prefix_rows(&before, &after);
+
+        assert_eq!(delta, vec![row("a", 0), row("b", 1)]);
     }
 }

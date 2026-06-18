@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::env;
 use std::fs;
 use std::io::{Read, Write};
@@ -9,7 +9,7 @@ use std::sync::{
     Arc, Mutex,
 };
 use std::thread::JoinHandle;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use nte_automation::{
     run_auto_page, AutoPageOptions as AutomationOptions, AutoPageResult as AutoPageRunResult,
@@ -19,10 +19,10 @@ use nte_gui_core::{
     available_locales, build_capture_document, candidate_ports, capture_doctor, capture_live,
     check_update_manifest, find_process_pid, load_locale_or_settings, prepare_update_install,
     read_raw_capture, stage_update_archive, update_status, BackupReport, CaptureOptions,
-    CaptureTarget, DashboardOverview, GuiError, ImportReport, JsonStore, MapLocaleList, PoolKind,
-    PoolKindDetail, Profile, RecordFilter, RecordFilterOptions, RecordList, RestoreReport,
-    Settings, SettingsPatch, UpdateChannel, UpdateCheckReport, UpdateManifest, UpdatePackage,
-    UpdateStageReport, UpdateStatus,
+    CaptureRecordBuilder, CaptureTarget, DashboardOverview, GuiError, ImportReport, JsonStore,
+    MapLocaleList, PoolKind, PoolKindDetail, Profile, RecordFilter, RecordFilterOptions,
+    RecordList, RestoreReport, Settings, SettingsPatch, UpdateChannel, UpdateCheckReport,
+    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -121,6 +121,67 @@ struct CaptureCounters {
     filter_restarts: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct CapturePageKey {
+    stream_key: String,
+    generation_index: u32,
+    page_index: u32,
+}
+
+#[derive(Debug, Default)]
+struct CapturePageTracker {
+    pages_by_pool: BTreeMap<String, BTreeSet<CapturePageKey>>,
+    last_decoded_at: Option<f64>,
+}
+
+impl CapturePageTracker {
+    fn add_progress(&mut self, progress: &nte_gui_core::CaptureProgress) {
+        let mut changed = false;
+        for row in &progress.new_rows {
+            let Some(pool) = capture_pool(row.record_type.as_str(), row.pool_id.as_deref()) else {
+                continue;
+            };
+            let Some(page_index) = row.source.segment_index.or(row.source.page_index) else {
+                continue;
+            };
+            let stream_key = row.source.stream_key.clone().unwrap_or_else(|| {
+                format!(
+                    "{}:{}",
+                    row.record_type.as_str(),
+                    row.pool_id.as_deref().unwrap_or_default()
+                )
+            });
+            let key = CapturePageKey {
+                stream_key,
+                generation_index: row.source.generation_index.unwrap_or_default(),
+                page_index,
+            };
+            changed |= self
+                .pages_by_pool
+                .entry(pool.to_string())
+                .or_default()
+                .insert(key);
+        }
+        if changed {
+            self.last_decoded_at = Some(now_seconds());
+        }
+    }
+
+    fn count(&self, pool: &str) -> usize {
+        self.pages_by_pool
+            .get(pool)
+            .map(BTreeSet::len)
+            .unwrap_or_default()
+    }
+
+    fn counts(&self) -> BTreeMap<String, usize> {
+        self.pages_by_pool
+            .iter()
+            .map(|(pool, pages)| (pool.clone(), pages.len()))
+            .collect()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CaptureStatus {
     session_id: String,
@@ -145,6 +206,8 @@ const GITHUB_RELEASES_API: &str =
     "https://api.github.com/repos/Anong0u0/nte_gacha_exporter/releases";
 const UPDATE_MANIFEST_ASSET: &str = "nte-gacha-update.json";
 const USER_AGENT: &str = "nte-gacha-exporter-updater";
+const CAPTURE_DRAIN_TIMEOUT: Duration = Duration::from_secs(20);
+const CAPTURE_DRAIN_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 #[tauri::command]
 fn get_settings(state: State<'_, AppState>) -> Result<Settings, ApiError> {
@@ -803,8 +866,14 @@ fn start_rust_capture_session(
     let locale_for_thread = locale.to_string();
     let snapshots = Arc::new(Mutex::new(Vec::<AutomationRecordSnapshot>::new()));
     let progress_snapshots = mode.auto_page().then(|| Arc::clone(&snapshots));
-    let callback =
-        capture_progress_callback(Arc::clone(&runtime), locale.to_string(), progress_snapshots);
+    let page_tracker = Arc::new(Mutex::new(CapturePageTracker::default()));
+    let progress_page_tracker = mode.auto_page().then(|| Arc::clone(&page_tracker));
+    let callback = capture_progress_callback(
+        Arc::clone(&runtime),
+        locale.to_string(),
+        progress_snapshots,
+        progress_page_tracker,
+    );
     let runtime_for_thread = Arc::clone(&runtime);
     let stop_for_thread = Arc::clone(&stop);
     let handle = std::thread::spawn(move || {
@@ -820,6 +889,7 @@ fn start_rust_capture_session(
                 mode,
                 known_record_ids,
                 snapshots,
+                page_tracker,
             );
         } else {
             let result = capture_live(
@@ -864,6 +934,7 @@ fn run_auto_page_capture_thread(
     mode: CaptureMode,
     known_record_ids: Vec<String>,
     snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
+    page_tracker: Arc<Mutex<CapturePageTracker>>,
 ) {
     let capture_stop = Arc::clone(&stop);
     let capture_handle = std::thread::spawn(move || {
@@ -901,13 +972,27 @@ fn run_auto_page_capture_thread(
                 .unwrap_or_default()
         })
     };
+    let decoded_page_count = {
+        let page_tracker = Arc::clone(&page_tracker);
+        Arc::new(move |pool: &str| {
+            page_tracker
+                .lock()
+                .map(|tracker| tracker.count(pool))
+                .unwrap_or_default()
+        })
+    };
     let mut options = AutomationOptions::new(pid, Arc::clone(&stop));
     options.full_update = mode.full_update();
     options.non_interactive = true;
     options.known_record_ids = known_record_ids;
     options.record_snapshot = Some(snapshot_callback);
+    options.decoded_page_count = Some(decoded_page_count);
     options.on_status = Some(auto_status_callback);
     let auto_result = run_auto_page(options);
+    let drain_error = auto_result
+        .succeeded()
+        .then(|| wait_for_capture_drain(&runtime, &page_tracker, &auto_result, &stop))
+        .flatten();
     stop.store(true, Ordering::SeqCst);
 
     let capture_result = capture_handle
@@ -915,10 +1000,14 @@ fn run_auto_page_capture_thread(
         .map_err(|_| "capture worker panicked".to_string())
         .and_then(|result| result);
     let auto_page = Some(auto_page_result_value(&auto_result));
-    let error = (!auto_result.succeeded()).then(|| RuntimeError {
-        code: "auto_page_failed".to_string(),
-        message: auto_result.message.clone(),
-    });
+    let error = if auto_result.succeeded() {
+        drain_error
+    } else {
+        Some(RuntimeError {
+            code: "auto_page_failed".to_string(),
+            message: auto_result.message.clone(),
+        })
+    };
     finish_capture_result(
         &runtime,
         capture_result,
@@ -929,29 +1018,111 @@ fn run_auto_page_capture_thread(
     );
 }
 
+fn wait_for_capture_drain(
+    runtime: &Arc<CaptureRuntimeSession>,
+    page_tracker: &Arc<Mutex<CapturePageTracker>>,
+    auto_result: &AutoPageRunResult,
+    stop: &Arc<AtomicBool>,
+) -> Option<RuntimeError> {
+    let required = auto_result.visited_pages_by_pool.clone();
+    if required.is_empty() {
+        return None;
+    }
+
+    let started = Instant::now();
+    loop {
+        if stop.load(Ordering::SeqCst) {
+            return Some(RuntimeError {
+                code: "capture_stopped".to_string(),
+                message: "capture stopped before packet drain completed".to_string(),
+            });
+        }
+
+        let (decoded, last_decoded_at) = page_tracker
+            .lock()
+            .map(|tracker| (tracker.counts(), tracker.last_decoded_at))
+            .unwrap_or_default();
+        let missing = missing_capture_pages(&required, &decoded);
+        if missing.is_empty() {
+            return None;
+        }
+
+        if started.elapsed() >= CAPTURE_DRAIN_TIMEOUT {
+            return Some(RuntimeError {
+                code: "capture_incomplete".to_string(),
+                message: format!(
+                    "capture drain timed out: required={required:?} decoded={decoded:?}"
+                ),
+            });
+        }
+
+        if let Ok(mut status) = runtime.status.lock() {
+            if status.state != "stopping" {
+                status.state = "running".to_string();
+            }
+            status.auto_page = Some(json!({
+                "state": "draining",
+                "message": "waiting for capture drain",
+                "kind": "draining",
+                "required_pages_by_pool": required.clone(),
+                "decoded_pages_by_pool": decoded.clone(),
+                "missing_pages_by_pool": missing.clone(),
+                "last_decoded_at": last_decoded_at,
+            }));
+            status.updated_at = now_seconds();
+        }
+        std::thread::sleep(CAPTURE_DRAIN_POLL_INTERVAL);
+    }
+}
+
+fn missing_capture_pages(
+    required: &BTreeMap<String, u32>,
+    decoded: &BTreeMap<String, usize>,
+) -> BTreeMap<String, u32> {
+    required
+        .iter()
+        .filter_map(|(pool, required_count)| {
+            let decoded_count = decoded.get(pool).copied().unwrap_or_default() as u32;
+            (decoded_count < *required_count)
+                .then(|| (pool.clone(), required_count - decoded_count))
+        })
+        .collect()
+}
+
 fn capture_progress_callback(
     runtime: Arc<CaptureRuntimeSession>,
     locale: String,
     snapshots: Option<Arc<Mutex<Vec<AutomationRecordSnapshot>>>>,
+    page_tracker: Option<Arc<Mutex<CapturePageTracker>>>,
 ) -> Arc<dyn Fn(nte_gui_core::CaptureProgress) + Send + Sync + 'static> {
+    let progress_state = Arc::new(Mutex::new(LiveProgressState::new(&locale)));
     Arc::new(move |progress: nte_gui_core::CaptureProgress| {
-        let document = build_capture_document(
-            &progress.rows,
-            &progress.warnings,
-            &locale,
-            "pktmon-live-capture",
-        )
-        .ok();
-        let records = document
-            .as_ref()
-            .and_then(|value| value.get("nte"))
-            .and_then(|nte| nte.get("list"))
-            .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        if let Some(snapshots) = &snapshots {
-            if let Ok(mut snapshot_records) = snapshots.lock() {
-                *snapshot_records = automation_snapshots_from_values(&records);
+        if let Some(page_tracker) = &page_tracker {
+            if let Ok(mut tracker) = page_tracker.lock() {
+                tracker.add_progress(&progress);
+            }
+        }
+        let (records_count, latest, snapshot_delta) = progress_state
+            .lock()
+            .map(|mut state| {
+                let snapshot_delta = state.apply(&progress);
+                let records_count = if state.records.is_empty() {
+                    progress.row_count as u64
+                } else {
+                    state.records.len() as u64
+                };
+                (
+                    records_count,
+                    latest_records(&state.records),
+                    snapshot_delta,
+                )
+            })
+            .unwrap_or_else(|_| (progress.row_count as u64, Vec::new(), None));
+        if let Some(snapshot_delta) = snapshot_delta {
+            if let Some(snapshots) = &snapshots {
+                if let Ok(mut snapshot_records) = snapshots.lock() {
+                    snapshot_records.extend(snapshot_delta);
+                }
             }
         }
         if let Ok(mut status) = runtime.status.lock() {
@@ -960,13 +1131,50 @@ fn capture_progress_callback(
             } else {
                 "running".to_string()
             };
-            status.records_count = records.len() as u64;
-            status.latest_records = latest_records(records);
+            status.records_count = records_count;
+            status.latest_records = latest;
             status.counters = CaptureCounters::from(progress.counters);
             status.target = serde_json::to_value(progress.target).ok();
             status.updated_at = now_seconds();
         }
     })
+}
+
+struct LiveProgressState {
+    builder: Option<CaptureRecordBuilder>,
+    records: Vec<Value>,
+}
+
+impl LiveProgressState {
+    fn new(locale: &str) -> Self {
+        Self {
+            builder: CaptureRecordBuilder::new(locale).ok(),
+            records: Vec::new(),
+        }
+    }
+
+    fn apply(
+        &mut self,
+        progress: &nte_gui_core::CaptureProgress,
+    ) -> Option<Vec<AutomationRecordSnapshot>> {
+        let builder = self.builder.as_mut()?;
+        let records = builder.build_records(&progress.new_rows);
+        if records.is_empty() {
+            return None;
+        }
+        let mut snapshot_delta = Vec::new();
+        for record in records {
+            if let Some(pool_id) = record.pool_id.clone() {
+                snapshot_delta.push(AutomationRecordSnapshot {
+                    record_id: record.record_id,
+                    pool_id,
+                    record_type: record.record_type,
+                });
+            }
+            self.records.push(record.value);
+        }
+        Some(snapshot_delta)
+    }
 }
 
 fn finish_capture_result(
@@ -992,7 +1200,7 @@ fn finish_capture_result(
                             .cloned()
                             .unwrap_or_default();
                         status.records_count = records.len() as u64;
-                        status.latest_records = latest_records(records);
+                        status.latest_records = latest_records(&records);
                         status.counters = CaptureCounters::from(result.counters);
                         status.target = serde_json::to_value(result.target).ok();
                         status.document = Some(document);
@@ -1028,28 +1236,26 @@ fn finish_capture_result(
     }
 }
 
-fn latest_records(records: Vec<Value>) -> Vec<Value> {
+fn latest_records(records: &[Value]) -> Vec<Value> {
     records
-        .into_iter()
+        .iter()
         .rev()
         .take(12)
+        .cloned()
         .collect::<Vec<_>>()
         .into_iter()
         .rev()
         .collect()
 }
 
-fn automation_snapshots_from_values(records: &[Value]) -> Vec<AutomationRecordSnapshot> {
-    records
-        .iter()
-        .filter_map(|record| {
-            Some(AutomationRecordSnapshot {
-                record_id: record.get("record_id")?.as_str()?.to_string(),
-                pool_id: record.get("pool_id")?.as_str()?.to_string(),
-                record_type: record.get("record_type")?.as_str()?.to_string(),
-            })
-        })
-        .collect()
+fn capture_pool(record_type: &str, pool_id: Option<&str>) -> Option<&'static str> {
+    match pool_id {
+        Some("CardPool_Character") => Some("limited"),
+        Some("CardPool_NewRole") => Some("standard"),
+        Some(pool_id) if pool_id.starts_with("ForkLottery_") => Some("fork"),
+        _ if record_type == "fork" => Some("fork"),
+        _ => None,
+    }
 }
 
 fn auto_page_status_value(status: &AutomationStatus, state: &str) -> Value {
@@ -1073,6 +1279,8 @@ fn auto_page_result_value(result: &AutoPageRunResult) -> Value {
         "kind": result.status,
         "completed_pools": result.completed_pools,
         "skipped_pools": result.skipped_pools,
+        "visited_pages_by_pool": result.visited_pages_by_pool,
+        "last_page_by_pool": result.last_page_by_pool,
     })
 }
 

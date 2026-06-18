@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::{atomic::AtomicBool, Arc};
 
 use serde::{Deserialize, Serialize};
@@ -110,6 +111,7 @@ pub struct RecordSnapshot {
 
 pub type StatusCallback = Arc<dyn Fn(AutoPageStatus) + Send + Sync + 'static>;
 pub type RecordSnapshotCallback = Arc<dyn Fn() -> Vec<RecordSnapshot> + Send + Sync + 'static>;
+pub type DecodedPageCountCallback = Arc<dyn Fn(&str) -> usize + Send + Sync + 'static>;
 
 pub struct AutoPageOptions {
     pub pid: u32,
@@ -119,10 +121,12 @@ pub struct AutoPageOptions {
     pub tooltip: bool,
     pub known_record_ids: Vec<String>,
     pub record_snapshot: Option<RecordSnapshotCallback>,
+    pub decoded_page_count: Option<DecodedPageCountCallback>,
     pub on_status: Option<StatusCallback>,
     pub click_timeout: f64,
     pub click_poll_interval: f64,
     pub duplicate_check_timeout: f64,
+    pub max_capture_page_lag: usize,
     pub template_timeout: f64,
 }
 
@@ -136,10 +140,12 @@ impl AutoPageOptions {
             tooltip: true,
             known_record_ids: Vec::new(),
             record_snapshot: None,
+            decoded_page_count: None,
             on_status: None,
-            click_timeout: 2.4,
-            click_poll_interval: 0.3,
+            click_timeout: 5.0,
+            click_poll_interval: 0.2,
             duplicate_check_timeout: 1.5,
+            max_capture_page_lag: 8,
             template_timeout: 5.0,
         }
     }
@@ -151,15 +157,33 @@ pub struct AutoPageResult {
     pub message: String,
     pub completed_pools: Vec<String>,
     pub skipped_pools: Vec<String>,
+    pub visited_pages_by_pool: BTreeMap<String, u32>,
+    pub last_page_by_pool: BTreeMap<String, u32>,
 }
 
 impl AutoPageResult {
     pub fn completed(completed_pools: Vec<String>, skipped_pools: Vec<String>) -> Self {
+        Self::completed_with_pages(
+            completed_pools,
+            skipped_pools,
+            BTreeMap::new(),
+            BTreeMap::new(),
+        )
+    }
+
+    pub fn completed_with_pages(
+        completed_pools: Vec<String>,
+        skipped_pools: Vec<String>,
+        visited_pages_by_pool: BTreeMap<String, u32>,
+        last_page_by_pool: BTreeMap<String, u32>,
+    ) -> Self {
         Self {
             status: "completed".to_string(),
             message: "auto page completed".to_string(),
             completed_pools,
             skipped_pools,
+            visited_pages_by_pool,
+            last_page_by_pool,
         }
     }
 
@@ -173,6 +197,8 @@ impl AutoPageResult {
             message: message.into(),
             completed_pools,
             skipped_pools,
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
         }
     }
 
@@ -186,6 +212,8 @@ impl AutoPageResult {
             message: message.into(),
             completed_pools,
             skipped_pools,
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
         }
     }
 
