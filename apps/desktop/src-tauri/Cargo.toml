@@ -1,26 +1,30 @@
 [package]
-name = "nte-gacha-desktop"
+name = "nte-gacha-exporter-desktop"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+rust-version.workspace = true
 
 [lib]
-name = "nte_gacha_desktop_lib"
+name = "nte_gacha_exporter_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "nte-gacha-desktop"
+name = "nte-gacha-exporter-desktop"
 path = "src/main.rs"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build.workspace = true
 
 [dependencies]
-nte_automation = { path = "../../../crates/nte_automation" }
-nte_gui_core = { path = "../../../crates/nte_gui_core" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tauri = { version = "2", features = [] }
-tauri-plugin-dialog = "2.7.1"
-thiserror = "2"
-ureq = "2.12"
+nte-automation = { path = "../../../crates/nte-automation" }
+nte-capture = { path = "../../../crates/nte-capture" }
+nte-core = { path = "../../../crates/nte-core" }
+nte-store = { path = "../../../crates/nte-store" }
+nte-update = { path = "../../../crates/nte-update" }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tauri.workspace = true
+tauri-plugin-dialog.workspace = true
+thiserror.workspace = true
+ureq.workspace = true

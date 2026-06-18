@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "nte-gacha-desktop",
+      "name": "nte-gacha-exporter-desktop",
       "dependencies": {
         "@tauri-apps/api": "^2.9.0",
         "@tauri-apps/plugin-dialog": "^2.7.1",

@@ -1,0 +1,42 @@
+[package]
+name = "nte-gacha-exporter-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "nte-gacha-exporter"
+path = "src/bin/nte-gacha-exporter.rs"
+
+[[bin]]
+name = "nte-gacha-exporter-cli"
+path = "src/bin/nte-gacha-exporter-cli.rs"
+
+[[bin]]
+name = "nte-gacha-exporter-updater"
+path = "src/bin/nte-gacha-exporter-updater.rs"
+
+[dependencies]
+chrono = { workspace = true, default-features = false, features = ["clock"] }
+clap = { workspace = true, features = ["derive"] }
+crossterm.workspace = true
+ctrlc.workspace = true
+nte-assets = { path = "../../crates/nte-assets" }
+nte-automation = { path = "../../crates/nte-automation" }
+nte-capture = { path = "../../crates/nte-capture" }
+nte-core = { path = "../../crates/nte-core" }
+nte-store = { path = "../../crates/nte-store" }
+nte-update = { path = "../../crates/nte-update" }
+serde_json.workspace = true
+tempfile.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true

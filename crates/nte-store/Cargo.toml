@@ -1,0 +1,16 @@
+[package]
+name = "nte-store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+atomic-write-file.workspace = true
+nte-core = { path = "../nte-core" }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+zip = { workspace = true, default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+tempfile.workspace = true

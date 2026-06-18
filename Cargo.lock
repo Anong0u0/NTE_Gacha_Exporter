@@ -2061,22 +2061,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "nte-gacha-desktop"
+name = "nte-assets"
 version = "0.1.0"
 dependencies = [
- "nte_automation",
- "nte_gui_core",
- "serde",
+ "nte-core",
+ "regex",
  "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "thiserror 2.0.18",
- "ureq",
+ "tempfile",
 ]
 
 [[package]]
-name = "nte_automation"
+name = "nte-automation"
 version = "0.1.0"
 dependencies = [
  "image",
@@ -2088,39 +2083,92 @@ dependencies = [
 ]
 
 [[package]]
-name = "nte_gui_core"
+name = "nte-capture"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "atomic-write-file",
  "base64 0.22.1",
  "chrono",
  "hex",
+ "nte-core",
  "pktmon",
- "regex",
- "semver",
  "serde",
  "serde_json",
  "sha2",
- "tempfile",
  "thiserror 2.0.18",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "nte-core"
+version = "0.1.0"
+dependencies = [
+ "atomic-write-file",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
  "zip",
 ]
 
 [[package]]
-name = "nte_portable_tools"
+name = "nte-gacha-exporter-cli"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "clap",
  "crossterm",
  "ctrlc",
- "nte_automation",
- "nte_gui_core",
+ "nte-assets",
+ "nte-automation",
+ "nte-capture",
+ "nte-core",
+ "nte-store",
+ "nte-update",
  "serde_json",
  "tempfile",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "nte-gacha-exporter-desktop"
+version = "0.1.0"
+dependencies = [
+ "nte-automation",
+ "nte-capture",
+ "nte-core",
+ "nte-store",
+ "nte-update",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "thiserror 2.0.18",
+ "ureq",
+]
+
+[[package]]
+name = "nte-store"
+version = "0.1.0"
+dependencies = [
+ "atomic-write-file",
+ "nte-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "zip",
+]
+
+[[package]]
+name = "nte-update"
+version = "0.1.0"
+dependencies = [
+ "nte-core",
+ "semver",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "zip",
 ]
 
 [[package]]

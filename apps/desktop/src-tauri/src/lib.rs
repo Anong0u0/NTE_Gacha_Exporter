@@ -5,27 +5,32 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
 };
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use nte_automation::{
-    run_auto_page, AutoPageOptions as AutomationOptions, AutoPageResult as AutoPageRunResult,
-    AutoPageStatus as AutomationStatus, RecordSnapshot as AutomationRecordSnapshot,
+    AutoPageOptions as AutomationOptions, AutoPageResult as AutoPageRunResult,
+    AutoPageStatus as AutomationStatus, RecordSnapshot as AutomationRecordSnapshot, run_auto_page,
 };
-use nte_gui_core::{
-    available_locales, build_capture_document, candidate_ports, capture_doctor, capture_live,
-    check_update_manifest, find_process_pid, load_locale_or_settings, prepare_update_install,
-    read_raw_capture, stage_update_archive, update_status, BackupReport, CaptureOptions,
-    CaptureRecordBuilder, CaptureTarget, DashboardOverview, GuiError, ImportReport, JsonStore,
-    MapLocaleList, PoolKind, PoolKindDetail, Profile, RecordFilter, RecordFilterOptions,
-    RecordList, RestoreReport, Settings, SettingsPatch, UpdateChannel, UpdateCheckReport,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
+use nte_capture::{
+    CaptureOptions, CaptureRecordBuilder, CaptureTarget, build_capture_document, candidate_ports,
+    capture_doctor, capture_live, find_process_pid, read_raw_capture,
+};
+use nte_core::{
+    BackupReport, DashboardOverview, GuiError, ImportReport, MapLocaleList, PoolKind,
+    PoolKindDetail, Profile, RecordFilter, RecordFilterOptions, RecordList, RestoreReport,
+    Settings, SettingsPatch, UpdateChannel, UpdateCheckReport, UpdateManifest, UpdatePackage,
+    UpdateStageReport, UpdateStatus, available_locales,
+};
+use nte_store::{JsonStore, load_locale_or_settings};
+use nte_update::{
+    check_update_manifest, prepare_update_install, stage_update_archive, update_status,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use tauri::{Manager, State};
 
 struct AppState {
@@ -135,7 +140,7 @@ struct CapturePageTracker {
 }
 
 impl CapturePageTracker {
-    fn add_progress(&mut self, progress: &nte_gui_core::CaptureProgress) {
+    fn add_progress(&mut self, progress: &nte_capture::CaptureProgress) {
         let mut changed = false;
         for row in &progress.new_rows {
             let Some(pool) = capture_pool(row.record_type.as_str(), row.pool_id.as_deref()) else {
@@ -204,7 +209,7 @@ struct CaptureStatus {
 
 const GITHUB_RELEASES_API: &str =
     "https://api.github.com/repos/Anong0u0/nte_gacha_exporter/releases";
-const UPDATE_MANIFEST_ASSET: &str = "nte-gacha-update.json";
+const UPDATE_MANIFEST_ASSET: &str = "nte-gacha-exporter-update.json";
 const USER_AGENT: &str = "nte-gacha-exporter-updater";
 const CAPTURE_DRAIN_TIMEOUT: Duration = Duration::from_secs(20);
 const CAPTURE_DRAIN_POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -642,7 +647,7 @@ fn update_channel_or_settings(
 }
 
 fn fetch_update_manifest(channel: UpdateChannel) -> Result<UpdateManifest, ApiError> {
-    if let Ok(source) = std::env::var("NTE_GACHA_UPDATE_MANIFEST") {
+    if let Ok(source) = std::env::var("NTE_GACHA_EXPORTER_UPDATE_MANIFEST") {
         if !source.trim().is_empty() {
             if source.starts_with("http://") || source.starts_with("https://") {
                 return http_get_json(&source);
@@ -724,7 +729,7 @@ struct GithubAsset {
 }
 
 fn portable_root() -> Result<PathBuf, std::io::Error> {
-    if let Ok(root) = env::var("NTE_GACHA_PORTABLE_ROOT") {
+    if let Ok(root) = env::var("NTE_GACHA_EXPORTER_PORTABLE_ROOT") {
         if !root.trim().is_empty() {
             return Ok(PathBuf::from(root));
         }
@@ -791,8 +796,8 @@ fn new_session_id() -> String {
     format!("rust-capture-{}-{stamp}", std::process::id())
 }
 
-impl From<nte_gui_core::CaptureCounters> for CaptureCounters {
-    fn from(value: nte_gui_core::CaptureCounters) -> Self {
+impl From<nte_capture::CaptureCounters> for CaptureCounters {
+    fn from(value: nte_capture::CaptureCounters) -> Self {
         Self {
             packets_seen: value.packets_seen,
             decoded_packets: value.decoded_packets,
@@ -929,7 +934,7 @@ fn run_auto_page_capture_thread(
     raw_out: Option<PathBuf>,
     locale: String,
     stop: Arc<AtomicBool>,
-    callback: Arc<dyn Fn(nte_gui_core::CaptureProgress) + Send + Sync + 'static>,
+    callback: Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static>,
     mode: CaptureMode,
     known_record_ids: Vec<String>,
     snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
@@ -1093,9 +1098,9 @@ fn capture_progress_callback(
     locale: String,
     snapshots: Option<Arc<Mutex<Vec<AutomationRecordSnapshot>>>>,
     page_tracker: Option<Arc<Mutex<CapturePageTracker>>>,
-) -> Arc<dyn Fn(nte_gui_core::CaptureProgress) + Send + Sync + 'static> {
+) -> Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static> {
     let progress_state = Arc::new(Mutex::new(LiveProgressState::new(&locale)));
-    Arc::new(move |progress: nte_gui_core::CaptureProgress| {
+    Arc::new(move |progress: nte_capture::CaptureProgress| {
         if let Some(page_tracker) = &page_tracker {
             if let Ok(mut tracker) = page_tracker.lock() {
                 tracker.add_progress(&progress);
@@ -1154,7 +1159,7 @@ impl LiveProgressState {
 
     fn apply(
         &mut self,
-        progress: &nte_gui_core::CaptureProgress,
+        progress: &nte_capture::CaptureProgress,
     ) -> Option<Vec<AutomationRecordSnapshot>> {
         let builder = self.builder.as_mut()?;
         let records = builder.build_records(&progress.new_rows);
@@ -1178,7 +1183,7 @@ impl LiveProgressState {
 
 fn finish_capture_result(
     runtime: &Arc<CaptureRuntimeSession>,
-    result: Result<nte_gui_core::CaptureResult, String>,
+    result: Result<nte_capture::CaptureResult, String>,
     locale: &str,
     _source_kind: &str,
     auto_page: Option<Value>,
@@ -1394,15 +1399,15 @@ fn relaunch_admin_with_capture_payload(_path: &Path) -> Result<(), ApiError> {
 
 #[cfg(windows)]
 fn relaunch_admin_with_capture_payload(path: &Path) -> Result<(), ApiError> {
-    let executable = env::var_os("NTE_GACHA_LAUNCHER")
+    let executable = env::var_os("NTE_GACHA_EXPORTER_LAUNCHER")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
         .or_else(|| env::current_exe().ok())
         .ok_or_else(|| {
             api_error_message("admin_relaunch_failed", "cannot resolve launcher path")
         })?;
-    let working_dir = env::var_os("NTE_GACHA_PORTABLE_ROOT")
-        .or_else(|| env::var_os("NTE_GACHA_ROOT"))
+    let working_dir = env::var_os("NTE_GACHA_EXPORTER_PORTABLE_ROOT")
+        .or_else(|| env::var_os("NTE_GACHA_EXPORTER_ROOT"))
         .map(PathBuf::from)
         .or_else(|| env::current_dir().ok());
     windows_admin::runas(
@@ -1422,12 +1427,12 @@ mod windows_admin {
     use std::path::Path;
     use std::ptr;
 
-    use super::{api_error_message, ApiError};
+    use super::{ApiError, api_error_message};
 
     const SW_SHOWNORMAL: i32 = 1;
 
     #[link(name = "shell32")]
-    extern "system" {
+    unsafe extern "system" {
         fn IsUserAnAdmin() -> i32;
         fn ShellExecuteW(
             hwnd: *mut std::ffi::c_void,

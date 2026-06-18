@@ -111,7 +111,7 @@ jobs:
       - name: Build, smoke, and stage portable package
         id: package
         shell: pwsh
-        run: .\packaging\windows\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}"
+        run: .\packaging\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}"
 
       - name: Upload release assets
         uses: actions/upload-artifact@v7
@@ -173,7 +173,7 @@ jobs:
             fi
             echo
             echo "### Download / 下載說明"
-            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha.exe\`。"
+            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha-exporter.exe\`。"
             echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) Updater manifest for the desktop app."
             echo "* Do not download Source code zip as the application package. 不要把 Source code zip 當作應用程式下載。"
           } > release-notes.md
