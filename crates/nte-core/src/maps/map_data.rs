@@ -1,0 +1,180 @@
+impl MapData {
+    pub fn canonical_item_id<'a>(&'a self, item_id: &'a str) -> &'a str {
+        self.item_aliases
+            .get(item_id)
+            .map(String::as_str)
+            .unwrap_or(item_id)
+    }
+
+    pub fn item<'a>(&'a self, item_id: &'a str) -> Option<(&'a str, &'a MapItem)> {
+        let canonical = self.canonical_item_id(item_id);
+        self.items
+            .get(canonical)
+            .map(|item| (canonical, item))
+            .or_else(|| self.items.get(item_id).map(|item| (item_id, item)))
+    }
+
+    pub fn item_name(&self, item_id: &str) -> String {
+        self.item(item_id)
+            .map(|(_, item)| item.name.clone())
+            .unwrap_or_else(|| item_id.to_string())
+    }
+
+    pub fn item_rarity(&self, item_id: &str) -> Option<u8> {
+        self.item(item_id).map(|(_, item)| item.rarity)
+    }
+
+    pub fn gacha_rule(&self, rule_id: &str) -> Option<&MapGachaRule> {
+        self.gacha_rules.get(rule_id)
+    }
+
+    pub fn rule_source_confidence(&self, rule_id: &str) -> Option<&str> {
+        self.gacha_rule(rule_id)
+            .map(|rule| rule.source.confidence.as_str())
+    }
+
+    pub fn pool_label(&self, pool_id: &str, time: Option<&str>) -> String {
+        self.banner_label(pool_id, time)
+    }
+
+    pub fn banner_label(&self, pool_id: &str, time: Option<&str>) -> String {
+        let resolved = self.resolve_banner(pool_id, time);
+        if resolved.status == BannerResolutionStatus::Matched {
+            if let Some(title) = resolved.title {
+                return title;
+            }
+        }
+        self.pool_fallback_label(pool_id, time)
+    }
+
+    fn pool_fallback_label(&self, pool_id: &str, time: Option<&str>) -> String {
+        let Some(pool) = self.pools.get(pool_id) else {
+            return pool_id.to_string();
+        };
+        if let (Some(record_time), Some(windows)) =
+            (normalize_game_time(time), pool.title_windows.as_ref())
+        {
+            for window in windows {
+                if let Some(end_at) = normalize_game_time(Some(&window.end_at_tz8)) {
+                    if record_time.as_str() <= end_at.as_str() {
+                        return window.title.clone();
+                    }
+                } else if record_time.as_str() <= window.end_at_tz8.as_str() {
+                    return window.title.clone();
+                }
+            }
+        }
+        pool.title
+            .clone()
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| pool.name.clone())
+    }
+
+    pub fn pool_kind_label(&self, kind: PoolKind) -> String {
+        let pool_id = match kind {
+            PoolKind::MonopolyLimited => "CardPool_Character",
+            PoolKind::MonopolyStandard => "CardPool_NewRole",
+            PoolKind::ForkLottery => self
+                .pools
+                .keys()
+                .find(|pool_id| pool_id.starts_with("ForkLottery_"))
+                .map(String::as_str)
+                .unwrap_or("ForkLottery"),
+        };
+        self.pools
+            .get(pool_id)
+            .map(|pool| {
+                pool.group_label
+                    .clone()
+                    .filter(|value| !value.is_empty())
+                    .unwrap_or_else(|| pool.name.clone())
+            })
+            .unwrap_or_else(|| kind.as_str().to_string())
+    }
+
+    pub fn has_pool_id(&self, pool_id: &str) -> bool {
+        self.pools.contains_key(pool_id)
+    }
+
+    pub fn is_pickup_item(&self, pool_id: &str, item_id: &str) -> bool {
+        let canonical = self.canonical_item_id(item_id);
+        self.pools
+            .get(pool_id)
+            .and_then(|pool| pool.pickup_item_ids.as_ref())
+            .is_some_and(|items| items.iter().any(|candidate| candidate == canonical))
+    }
+
+    pub fn is_banner_rate_up(
+        &self,
+        pool_id: &str,
+        time: Option<&str>,
+        item_id: &str,
+        rarity: Option<u8>,
+    ) -> bool {
+        let canonical = self.canonical_item_id(item_id);
+        let resolved = self.resolve_banner(pool_id, time);
+        if resolved.status != BannerResolutionStatus::Matched {
+            return self.is_pickup_item(pool_id, item_id);
+        }
+        match rarity {
+            Some(5) => resolved
+                .rate_up_5
+                .iter()
+                .any(|candidate| candidate == canonical),
+            Some(4) => resolved
+                .rate_up_4
+                .iter()
+                .any(|candidate| candidate == canonical),
+            _ => false,
+        }
+    }
+
+    pub fn resolve_banner(&self, pool_id: &str, time: Option<&str>) -> ResolvedBanner {
+        let Some(pool) = self.pools.get(pool_id) else {
+            return unresolved(
+                BannerResolutionStatus::UnknownPool,
+                format!("pool is not in localization map: {pool_id}"),
+            );
+        };
+        let Some(banner_ids) = pool.banner_ids.as_ref() else {
+            return unresolved(
+                BannerResolutionStatus::UnknownPool,
+                format!("pool has no linked banners: {pool_id}"),
+            );
+        };
+
+        let candidates = banner_ids
+            .iter()
+            .filter_map(|banner_id| self.banners.get(banner_id))
+            .filter(|banner| banner.pool_id == pool_id)
+            .collect::<Vec<_>>();
+        if candidates.is_empty() {
+            return unresolved(
+                BannerResolutionStatus::UnknownPool,
+                format!("pool has no usable linked banners: {pool_id}"),
+            );
+        }
+
+        match pool_id {
+            "CardPool_NewRole" => single_banner(candidates, "standard", "standard"),
+            "CardPool_Character" => resolve_limited_banner(candidates, time),
+            value if value.starts_with("ForkLottery_") => {
+                let exact = candidates
+                    .iter()
+                    .copied()
+                    .filter(|banner| banner.banner_id == pool_id)
+                    .collect::<Vec<_>>();
+                if exact.is_empty() {
+                    single_banner(candidates, "fork", "fork")
+                } else {
+                    single_banner(exact, "fork", "fork")
+                }
+            }
+            _ => unresolved(
+                BannerResolutionStatus::UnknownPool,
+                format!("pool has unsupported banner resolution: {pool_id}"),
+            ),
+        }
+    }
+}
+

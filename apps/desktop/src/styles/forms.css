@@ -1,0 +1,52 @@
+.pager select {
+  width: 76px;
+}
+
+.pager button {
+  width: 36px;
+  padding: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.form-grid button {
+  justify-self: start;
+}
+
+.manual-path {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 96px;
+  gap: 10px;
+  align-items: end;
+}
+
+.manual-path.compact-path {
+  grid-template-columns: minmax(0, 1fr) 120px;
+}
+
+.check-field {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-field input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.check-field span {
+  color: #42524c;
+  font-size: 13px;
+}
+
+.asset-pack-note {
+  margin-top: 12px;
+  color: #66776f;
+  font-size: 13px;
+}

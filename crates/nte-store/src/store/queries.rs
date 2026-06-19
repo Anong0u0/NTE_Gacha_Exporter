@@ -1,0 +1,92 @@
+impl JsonStore {
+pub fn dashboard_overview(
+        &self,
+        profile_name: &str,
+        locale: &str,
+    ) -> Result<DashboardOverview, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        let last_run = self.read_last_run(&profile.name)?;
+        dashboard_overview(profile, last_run, &records, &map)
+    }
+
+    pub fn pool_kind_detail(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        pool_kind: PoolKind,
+    ) -> Result<PoolKindDetail, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        pool_kind_detail(&records, &map, pool_kind)
+    }
+
+    pub fn list_records(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        filter: &RecordFilter,
+    ) -> Result<RecordList, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        list_records(&records, &map, filter)
+    }
+
+    pub fn record_filter_options(
+        &self,
+        profile_name: &str,
+        locale: &str,
+    ) -> Result<RecordFilterOptions, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        record_filter_options(&records, &map)
+    }
+
+    pub fn export_public_json(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        path: impl AsRef<Path>,
+    ) -> Result<(), GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        export_public_json(path.as_ref(), &records, &map, locale)
+    }
+
+    pub fn export_csv(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        path: impl AsRef<Path>,
+    ) -> Result<(), GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        export_csv(path.as_ref(), &records, &map)
+    }
+
+    fn bootstrap(&self) -> Result<(), GuiError> {
+        fs::create_dir_all(self.root.join("data"))?;
+        fs::create_dir_all(self.profiles_dir())?;
+        fs::create_dir_all(self.root.join("data/backups"))?;
+        fs::create_dir_all(self.root.join("data/runs"))?;
+        if !self.settings_path().exists() {
+            self.write_settings(&DiskSettings {
+                schema_version: 1,
+                active_profile: DEFAULT_PROFILE.to_string(),
+                locale: DEFAULT_LOCALE.to_string(),
+                update_channel: DEFAULT_UPDATE_CHANNEL.to_string(),
+                check_updates_on_startup: false,
+            })?;
+        }
+        if !self.profile_dir(DEFAULT_PROFILE).exists() {
+            self.create_profile(DEFAULT_PROFILE)?;
+        }
+        Ok(())
+    }
+}
