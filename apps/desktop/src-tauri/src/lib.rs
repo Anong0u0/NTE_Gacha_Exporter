@@ -1,4 +1,6 @@
 mod admin;
+#[cfg(feature = "agent-smoke")]
+mod agent_smoke;
 mod assets_commands;
 mod capture;
 mod error;
@@ -29,6 +31,8 @@ pub fn run() {
             let store =
                 JsonStore::open(root).map_err(|err| format!("failed to open JSON store: {err}"))?;
             app.manage(AppState::new(store, pending_admin_capture.clone()));
+            #[cfg(feature = "agent-smoke")]
+            agent_smoke::maybe_start(app);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

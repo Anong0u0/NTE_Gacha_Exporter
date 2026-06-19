@@ -35,6 +35,7 @@ const app = useAppContext();
         <button
           v-for="item in app.navItems"
           :key="item.id"
+          :data-agent-id="`nav-${item.id}`"
           :class="{ active: app.activeView === item.id }"
           type="button"
           @click="app.activeView = item.id"

@@ -15,7 +15,7 @@ use crate::screenshot::WindowCaptureClient;
 use crate::tooltip::AutomationTooltip;
 use crate::window::{self, GameWindow};
 
-const PAGE_RECORD_MIN_WAIT: Duration = Duration::from_millis(250);
+const PAGE_RECORD_MIN_WAIT: Duration = Duration::from_millis(300);
 const FRESH_PAGE_STABLE_WAIT: Duration = Duration::from_millis(600);
 const INCREMENTAL_DUPLICATE_RECORD_THRESHOLD: usize = 6;
 

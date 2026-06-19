@@ -28,6 +28,8 @@ import {
   mockTimeStats,
 } from "./mock-data";
 
+const MOCK_APP_VERSION = __NTE_APP_VERSION__;
+
 export const mockApi: AppApi = {
   async getSettings() {
     return {
@@ -209,7 +211,7 @@ export const mockApi: AppApi = {
   async updaterStatus() {
     return {
       portable_root: "mock-root",
-      current_version: "0.1.0",
+      current_version: MOCK_APP_VERSION,
       supported_layout: true,
       staged_version: null,
       rollback_version: null,
@@ -217,7 +219,7 @@ export const mockApi: AppApi = {
   },
   async updaterCheck() {
     return {
-      current_version: "0.1.0",
+      current_version: MOCK_APP_VERSION,
       channel: "stable",
       available: false,
       package: null,
@@ -237,9 +239,9 @@ export const mockApi: AppApi = {
     return {
       installed: true,
       compatible: true,
-      current_app_version: "0.1.0",
+      current_app_version: MOCK_APP_VERSION,
       expected_map_hash: "mock-map-hash",
-      installed_app_version: "0.1.0",
+      installed_app_version: MOCK_APP_VERSION,
       installed_map_hash: "mock-map-hash",
       source_commit: "mock-source",
       file_count: 4,
@@ -248,7 +250,7 @@ export const mockApi: AppApi = {
   },
   async assetsPackCheck() {
     return {
-      current_app_version: "0.1.0",
+      current_app_version: MOCK_APP_VERSION,
       expected_map_hash: "mock-map-hash",
       channel: "stable",
       installed: true,
@@ -269,7 +271,7 @@ export const mockApi: AppApi = {
     return {
       installed: false,
       compatible: false,
-      current_app_version: "0.1.0",
+      current_app_version: MOCK_APP_VERSION,
       expected_map_hash: "mock-map-hash",
       installed_app_version: null,
       installed_map_hash: null,

@@ -6,7 +6,7 @@ const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack">
+      <section class="view-stack" data-agent-id="view-records">
         <section class="toolbar dense">
           <div class="segmented">
             <button :class="{ active: app.recordPoolKind === 'all' }" type="button" @click="app.recordPoolKind = 'all'">All</button>
@@ -120,7 +120,7 @@ const app = useAppContext();
           </label>
         </section>
 
-        <section class="panel">
+        <section class="panel" data-agent-id="records-history">
           <div class="panel-head">
             <div>
               <span class="eyebrow">{{ app.recordPageStart }}-{{ app.recordPageEnd }} of {{ app.recordTotal }}</span>

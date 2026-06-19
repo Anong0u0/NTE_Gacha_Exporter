@@ -5,6 +5,7 @@ param(
     [switch]$SkipTauriBuild,
     [switch]$SkipPortableStage,
     [switch]$SkipSmoke,
+    [switch]$AgentSmoke,
     [switch]$AllowGnuRust,
     [string]$TagName = ""
 )
@@ -492,6 +493,13 @@ if (-not $SkipInstall) {
 }
 
 if (-not $SkipTauriBuild) {
+    $tauriBuildArgs = @("run", "tauri", "build")
+    $bunxTauriBuildArgs = @("@tauri-apps/cli", "build")
+    if ($AgentSmoke) {
+        $tauriBuildArgs += @("--", "--features", "agent-smoke")
+        $bunxTauriBuildArgs += @("--features", "agent-smoke")
+    }
+
     $localTauriCandidates = @(
         (Join-Path $desktopRoot "node_modules\.bin\tauri.cmd"),
         (Join-Path $desktopRoot "node_modules\.bin\tauri.exe"),
@@ -505,10 +513,10 @@ if (-not $SkipTauriBuild) {
         }
     }
     if ($hasLocalTauri) {
-        Invoke-External -Name "Tauri build" -FilePath "bun" -Arguments @("run", "tauri", "build") -WorkingDirectory $desktopRoot
+        Invoke-External -Name "Tauri build" -FilePath "bun" -Arguments $tauriBuildArgs -WorkingDirectory $desktopRoot
     }
     else {
-        Invoke-External -Name "Tauri build via bunx" -FilePath "bunx" -Arguments @("@tauri-apps/cli", "build") -WorkingDirectory $desktopRoot
+        Invoke-External -Name "Tauri build via bunx" -FilePath "bunx" -Arguments $bunxTauriBuildArgs -WorkingDirectory $desktopRoot
     }
     Invoke-External -Name "Portable tools build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte-gacha-exporter-cli") -WorkingDirectory $projectRoot
 }

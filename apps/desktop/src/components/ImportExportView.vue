@@ -6,7 +6,7 @@ const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack narrow">
+      <section class="view-stack narrow" data-agent-id="view-import-export">
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -27,13 +27,13 @@ const app = useAppContext();
           <div class="manual-path">
             <label class="field">
               <span>Selected import path</span>
-              <input v-model="app.importPath" placeholder="D:\\path\\history.raw.jsonl" />
+              <input v-model="app.importPath" data-agent-id="import-path" placeholder="D:\\path\\history.raw.jsonl" />
             </label>
-            <select v-model="app.importMode">
+            <select v-model="app.importMode" data-agent-id="import-mode">
               <option value="raw">Raw JSONL</option>
               <option value="public">Public JSON</option>
             </select>
-            <button type="button" :disabled="app.isWorkflowBusy || !app.importPath.trim()" @click="app.runImport">Import</button>
+            <button type="button" data-agent-id="import-run" :disabled="app.isWorkflowBusy || !app.importPath.trim()" @click="app.runImport">Import</button>
           </div>
         </section>
 
@@ -100,7 +100,7 @@ const app = useAppContext();
           </div>
         </section>
 
-        <section v-if="app.lastReport" class="panel">
+        <section v-if="app.lastReport" class="panel" data-agent-id="last-import-panel">
           <div class="panel-head">
             <div>
               <span class="eyebrow">{{ app.lastReport.source_kind }}</span>

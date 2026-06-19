@@ -6,7 +6,7 @@ const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack">
+      <section class="view-stack" data-agent-id="view-dashboard">
         <section class="update-band">
           <div>
             <span class="eyebrow">Update Data</span>
@@ -84,7 +84,7 @@ const app = useAppContext();
           </div>
         </section>
 
-        <section class="metrics-grid">
+        <section class="metrics-grid" data-agent-id="dashboard-metrics">
           <div class="metric">
             <span>Total pulls</span>
             <strong>{{ app.summary?.total_records ?? 0 }}</strong>

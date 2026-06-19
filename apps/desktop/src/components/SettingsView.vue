@@ -6,7 +6,7 @@ const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack narrow">
+      <section class="view-stack narrow" data-agent-id="view-settings">
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -44,11 +44,11 @@ const app = useAppContext();
               <Settings :size="17" />
               <span>Save settings</span>
             </button>
-            <button type="button" :disabled="app.isWorkflowBusy" @click="app.pingRuntime">
+            <button type="button" data-agent-id="runtime-ping" :disabled="app.isWorkflowBusy" @click="app.pingRuntime">
               <Database :size="17" />
               <span>Ping runtime</span>
             </button>
-            <button type="button" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
+            <button type="button" data-agent-id="doctor-run" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
               <Stethoscope :size="17" />
               <span>Doctor</span>
             </button>
@@ -109,7 +109,7 @@ const app = useAppContext();
             <div><span>Map</span><strong class="stat-text">{{ app.assetsPackStatus?.installed_map_hash?.slice(0, 12) ?? "-" }}</strong></div>
           </div>
           <div class="action-row">
-            <button type="button" :disabled="app.isWorkflowBusy" @click="app.checkAssetsPack">
+            <button type="button" data-agent-id="assets-check" :disabled="app.isWorkflowBusy" @click="app.checkAssetsPack">
               <RefreshCw :size="17" />
               <span>Check assets</span>
             </button>
