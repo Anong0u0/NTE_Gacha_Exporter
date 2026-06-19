@@ -17,17 +17,23 @@ import {
   FileJson,
   FolderInput,
   History,
+  Image,
   Plus,
   RadioTower,
   RefreshCw,
   Search,
   Settings,
   Stethoscope,
+  Trash2,
   Upload,
 } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   api,
+  type AssetResolveRequest,
+  type AssetsPackCheckReport,
+  type AssetsPackInstallReport,
+  type AssetsPackStatus,
   type BackupReport,
   type BannerSummary,
   type CaptureMode,
@@ -101,6 +107,10 @@ const doctorReport = ref<DoctorReport | null>(null);
 const updateStatus = ref<UpdateStatus | null>(null);
 const updateCheckReport = ref<UpdateCheckReport | null>(null);
 const stagedUpdate = ref<UpdateStageReport | null>(null);
+const assetsPackStatus = ref<AssetsPackStatus | null>(null);
+const assetsPackCheckReport = ref<AssetsPackCheckReport | null>(null);
+const lastAssetsPackInstall = ref<AssetsPackInstallReport | null>(null);
+const assetUrlCache = ref<Record<string, string>>({});
 const captureStatus = ref<CaptureStatus | null>(null);
 const captureActionBusy = ref(false);
 const capturePollInFlight = ref(false);
@@ -197,6 +207,11 @@ const autoPageStatusLine = computed(() => {
   return `${auto.message}${pool}${page}`;
 });
 const captureModeLabel = computed(() => formatCaptureMode(captureStatus.value?.mode ?? captureMode.value));
+const assetsPackSummary = computed(() => {
+  if (!assetsPackStatus.value?.installed) return "Not installed";
+  if (!assetsPackStatus.value.compatible) return "Installed pack does not match this build";
+  return `${assetsPackStatus.value.file_count} images installed`;
+});
 
 onMounted(async () => {
   await bootstrap();
@@ -270,6 +285,7 @@ async function bootstrap() {
     await loadProfiles();
     await refreshAll();
     await loadUpdaterStatus();
+    await loadAssetsPackStatus();
     const startedPendingCapture = await startPendingAdminCapture();
     if (!startedPendingCapture && settings.check_updates_on_startup) {
       void checkForUpdates(false);
@@ -348,6 +364,7 @@ async function refreshAll() {
   selectedBannerId.value = firstBanner ?? selectedBannerId.value;
   await Promise.all([loadDetail(), loadFilterOptions(), loadRecords()]);
   statusText.value = "Dashboard updated";
+  await resolveVisibleAssets();
   await nextTick();
   renderChart();
 }
@@ -355,6 +372,7 @@ async function refreshAll() {
 async function loadDetail() {
   if (!activeProfileName.value) return;
   detail.value = await api.poolKindDetail(activeProfileName.value, selectedPoolKind.value, locale.value);
+  await resolveVisibleAssets();
 }
 
 async function loadFilterOptions() {
@@ -386,6 +404,7 @@ async function loadRecords() {
   const result = await api.listRecords(activeProfileName.value, filter, locale.value);
   records.value = result.records;
   recordTotal.value = result.total;
+  await resolveVisibleAssets();
 }
 
 async function pickImportFile(mode: ImportMode) {
@@ -619,6 +638,37 @@ async function installUpdate() {
   await runTask("Restarting for update", () => api.updaterInstallStaged(version, true));
 }
 
+async function loadAssetsPackStatus() {
+  assetsPackStatus.value = await api.assetsPackStatus();
+}
+
+async function checkAssetsPack() {
+  await runTask("Assets pack check completed", async () => {
+    assetsPackCheckReport.value = await api.assetsPackCheck(settingsUpdateChannel.value);
+    await loadAssetsPackStatus();
+  });
+}
+
+async function downloadAssetsPack() {
+  const packageInfo = assetsPackCheckReport.value?.package;
+  if (!packageInfo) return;
+  await runTask("Assets pack installed", async () => {
+    lastAssetsPackInstall.value = await api.assetsPackDownloadAndInstall(packageInfo);
+    assetUrlCache.value = {};
+    await loadAssetsPackStatus();
+    await resolveVisibleAssets();
+  });
+}
+
+async function removeAssetsPack() {
+  await runTask("Assets pack removed", async () => {
+    assetsPackStatus.value = await api.assetsPackRemove();
+    assetsPackCheckReport.value = null;
+    lastAssetsPackInstall.value = null;
+    assetUrlCache.value = {};
+  });
+}
+
 async function runTask(done: string, task: () => Promise<unknown>) {
   busy.value = true;
   errorText.value = "";
@@ -713,7 +763,13 @@ function formatGuarantee(record: DisplayRecord) {
   return `${before} / ${after}`;
 }
 
-function assetRefEntries(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
+type AssetRefEntry = {
+  key: string;
+  kind: string;
+  value: unknown;
+};
+
+function assetRefEntries(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []): AssetRefEntry[] {
   if (!assetRefs) return [];
   const all = Object.entries(assetRefs);
   const preferred = preferredKeys
@@ -722,39 +778,103 @@ function assetRefEntries(assetRefs?: Record<string, unknown> | null, preferredKe
   const rest = all.filter(([key]) => !preferredKeys.includes(key));
   return [...preferred, ...rest].flatMap(([key, value]) => {
     if (Array.isArray(value)) {
-      return value.map((item, index) => ({ key: `${key}[${index}]`, value: item }));
+      return value.map((item, index) => ({ key: `${key}[${index}]`, kind: key, value: item }));
     }
-    return [{ key, value }];
+    return [{ key, kind: key, value }];
   });
 }
 
-function shortAssetRef(value: unknown) {
-  const raw = typeof value === "string" ? value : JSON.stringify(value);
-  if (!raw) return "-";
-  const compact = raw.split("/").pop() ?? raw;
-  return compact.length > 34 ? `${compact.slice(0, 31)}...` : compact;
+function assetCacheKey(assetRef: string, kind?: string | null) {
+  return `${kind ?? ""}\u0000${assetRef}`;
 }
 
-function assetRefTitle(value: unknown) {
-  return typeof value === "string" ? value : JSON.stringify(value);
+function cachedAssetUrl(assetRef: string, kind?: string | null) {
+  return assetUrlCache.value[assetCacheKey(assetRef, kind)] ?? assetUrlCache.value[assetCacheKey(assetRef, null)];
 }
 
 function assetRefsCount(assetRefs?: Record<string, unknown> | null) {
   return assetRefEntries(assetRefs).length;
 }
 
-function itemAssetEntries(record: DisplayRecord) {
-  return assetRefEntries(record.item_asset_refs, ["portrait", "icon", "head_icon"]);
+function firstAssetUrl(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
+  for (const entry of assetRefEntries(assetRefs, preferredKeys)) {
+    if (typeof entry.value !== "string") continue;
+    const url = cachedAssetUrl(entry.value, entry.kind);
+    if (url) return url;
+  }
+  return "";
 }
 
-function bannerAssetEntries(record: DisplayRecord | BannerSummary) {
-  const assetRefs = "banner" in record ? record.banner.asset_refs : record.asset_refs;
-  return assetRefEntries(assetRefs, [
-    "image",
-    "background",
-    "icon",
-    "featured_portraits",
-  ]);
+function assetUrls(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
+  const urls: string[] = [];
+  for (const entry of assetRefEntries(assetRefs, preferredKeys)) {
+    if (typeof entry.value !== "string") continue;
+    const url = cachedAssetUrl(entry.value, entry.kind);
+    if (url && !urls.includes(url)) urls.push(url);
+  }
+  return urls;
+}
+
+function itemVisualUrl(record?: DisplayRecord | null) {
+  if (!record) return "";
+  return firstAssetUrl(record.item_asset_refs, ["portrait", "icon", "head_icon"]);
+}
+
+function bannerVisualUrl(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  return firstAssetUrl(banner?.asset_refs, ["image", "background", "banner", "icon"]);
+}
+
+function selectedBannerPortraitUrls() {
+  return assetUrls(selectedBanner.value?.asset_refs, ["featured_portraits", "portrait", "icon"]).slice(0, 4);
+}
+
+function collectAssetRequestsFromRefs(assetRefs?: Record<string, unknown> | null) {
+  return assetRefEntries(assetRefs).flatMap((entry): AssetResolveRequest[] => {
+    if (typeof entry.value !== "string") return [];
+    return [{ asset_ref: entry.value, kind: entry.kind }];
+  });
+}
+
+function collectRecordAssetRequests(record: DisplayRecord) {
+  return [
+    ...collectAssetRequestsFromRefs(record.item_asset_refs),
+    ...collectAssetRequestsFromRefs(record.secondary_item_asset_refs),
+    ...collectAssetRequestsFromRefs(record.banner.asset_refs),
+  ];
+}
+
+function collectVisibleAssetRequests() {
+  const requests: AssetResolveRequest[] = [];
+  for (const banner of bannerSummaries.value) requests.push(...collectAssetRequestsFromRefs(banner.asset_refs));
+  for (const record of latest.value) requests.push(...collectRecordAssetRequests(record));
+  for (const record of records.value) requests.push(...collectRecordAssetRequests(record));
+  for (const hit of detail.value?.five_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
+  for (const hit of detail.value?.four_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
+  if (selectedBanner.value) requests.push(...collectAssetRequestsFromRefs(selectedBanner.value.asset_refs));
+  const seen = new Set<string>();
+  return requests.filter((request) => {
+    const key = assetCacheKey(request.asset_ref, request.kind);
+    if (seen.has(key) || assetUrlCache.value[key]) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function resolveVisibleAssets() {
+  const requests = collectVisibleAssetRequests();
+  if (!requests.length) return;
+  try {
+    const resolved = await api.assetsResolveRefs(requests);
+    const next = { ...assetUrlCache.value };
+    for (const item of resolved) {
+      if (item.url) {
+        next[assetCacheKey(item.asset_ref, item.kind)] = item.url;
+      }
+    }
+    assetUrlCache.value = next;
+  } catch (error) {
+    if (!errorText.value) errorText.value = formatError(error);
+  }
 }
 
 function formatCaptureState(value?: string | null) {
@@ -972,6 +1092,10 @@ function formatError(error: unknown) {
               selectedPoolKind = banner.pool_kind;
             "
           >
+            <span class="banner-visual">
+              <img v-if="bannerVisualUrl(banner)" :src="bannerVisualUrl(banner)" alt="" />
+              <span v-else class="asset-placeholder"><Image :size="20" /></span>
+            </span>
             <span class="banner-card-head">
               <span>
                 <strong>{{ banner.title }}</strong>
@@ -988,17 +1112,6 @@ function formatError(error: unknown) {
             </span>
             <span class="banner-hit-line">
               5★ {{ banner.five_star_count }} · 4★ {{ banner.four_star_count }} · UP {{ banner.rate_up_5_count }}/{{ banner.off_rate_5_count }}
-            </span>
-            <span class="asset-ref-list">
-              <span
-                v-for="entry in bannerAssetEntries(banner).slice(0, 3)"
-                :key="`${banner.banner_id}-${entry.key}`"
-                class="asset-ref-chip"
-                :title="assetRefTitle(entry.value)"
-              >
-                {{ entry.key }}: {{ shortAssetRef(entry.value) }}
-              </span>
-              <span v-if="bannerAssetEntries(banner).length === 0" class="muted">No refs</span>
             </span>
           </button>
         </section>
@@ -1065,6 +1178,20 @@ function formatError(error: unknown) {
                 <h2>Selected banner</h2>
               </div>
             </div>
+            <div class="selected-banner-visual">
+              <div class="selected-banner-hero">
+                <img v-if="bannerVisualUrl(selectedBanner)" :src="bannerVisualUrl(selectedBanner)" alt="" />
+                <span v-else class="asset-placeholder"><Image :size="24" /></span>
+              </div>
+              <div class="portrait-strip">
+                <span v-for="url in selectedBannerPortraitUrls()" :key="url" class="portrait-thumb">
+                  <img :src="url" alt="" />
+                </span>
+                <span v-if="selectedBannerPortraitUrls().length === 0" class="portrait-thumb placeholder">
+                  <Image :size="18" />
+                </span>
+              </div>
+            </div>
             <div class="stat-table compact">
               <div><span>Title</span><strong class="stat-text">{{ selectedBanner?.title ?? "-" }}</strong></div>
               <div><span>Pulls</span><strong>{{ selectedBanner?.total_pulls ?? 0 }}</strong></div>
@@ -1128,21 +1255,14 @@ function formatError(error: unknown) {
           </div>
           <div class="record-list compact">
             <div v-for="record in latest" :key="record.record_id" class="record-row">
+              <span class="item-thumb">
+                <img v-if="itemVisualUrl(record)" :src="itemVisualUrl(record)" alt="" />
+                <span v-else class="asset-placeholder"><Image :size="17" /></span>
+              </span>
               <div>
                 <strong>{{ record.item_name }}</strong>
                 <span>{{ bannerTitle(record.banner) }} · {{ record.rarity ? `${record.rarity}★` : "unknown" }} · pull {{ formatPullNo(record) }}</span>
                 <span class="derived-chip">{{ formatResult(record.derived.rate_up_result) }} · {{ formatPity(record) }}</span>
-                <span class="asset-ref-list">
-                  <span
-                    v-for="entry in itemAssetEntries(record).slice(0, 2)"
-                    :key="`${record.record_id}-${entry.key}`"
-                    class="asset-ref-chip"
-                    :title="assetRefTitle(entry.value)"
-                  >
-                    {{ entry.key }}: {{ shortAssetRef(entry.value) }}
-                  </span>
-                  <span v-if="itemAssetEntries(record).length === 0" class="muted">No refs</span>
-                </span>
               </div>
               <small>{{ formatTime(record.time) }}</small>
             </div>
@@ -1294,7 +1414,7 @@ function formatError(error: unknown) {
               <span>Pity</span>
               <span>Result</span>
               <span>Rolls</span>
-              <span>Assets</span>
+              <span>Visual</span>
             </div>
             <div v-for="record in records" :key="record.record_id" class="record-line history-line">
               <span>{{ formatTime(record.time) }}</span>
@@ -1314,19 +1434,12 @@ function formatError(error: unknown) {
                 <small>{{ formatGuarantee(record) }}</small>
               </span>
               <span>{{ record.roll_points ?? "-" }}</span>
-              <span class="asset-ref-list">
-                <span
-                  v-for="entry in itemAssetEntries(record).slice(0, 2)"
-                  :key="`${record.record_id}-history-${entry.key}`"
-                  class="asset-ref-chip"
-                  :title="assetRefTitle(entry.value)"
-                >
-                  {{ entry.key }}: {{ shortAssetRef(entry.value) }}
+              <span class="history-visual">
+                <span class="item-thumb small">
+                  <img v-if="itemVisualUrl(record)" :src="itemVisualUrl(record)" alt="" />
+                  <span v-else class="asset-placeholder"><Image :size="15" /></span>
                 </span>
-                <span v-if="itemAssetEntries(record).length === 0 && assetRefsCount(record.banner.asset_refs) === 0" class="muted">No refs</span>
-                <span v-else-if="assetRefsCount(record.banner.asset_refs)" class="asset-ref-chip">
-                  banner refs {{ assetRefsCount(record.banner.asset_refs) }}
-                </span>
+                <span class="history-visual-meta">{{ assetRefsCount(record.item_asset_refs) + assetRefsCount(record.banner.asset_refs) }} refs</span>
               </span>
             </div>
             <div v-if="records.length === 0" class="empty-row">No records match current filters.</div>
@@ -1556,6 +1669,49 @@ function formatError(error: unknown) {
               <HardDriveUpload :size="17" />
               <span>Restart to update</span>
             </button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">Assets Pack</span>
+              <h2>Visual assets</h2>
+            </div>
+          </div>
+          <div class="stat-table compact">
+            <div><span>Status</span><strong class="stat-text">{{ assetsPackSummary }}</strong></div>
+            <div><span>Version</span><strong>{{ assetsPackStatus?.installed_app_version ?? "-" }}</strong></div>
+            <div><span>Images</span><strong>{{ assetsPackStatus?.file_count ?? 0 }}</strong></div>
+            <div><span>Available</span><strong class="stat-text">{{ assetsPackCheckReport?.package?.app_version ?? "-" }}</strong></div>
+            <div><span>Source</span><strong class="stat-text">{{ assetsPackStatus?.source_commit?.slice(0, 12) ?? "-" }}</strong></div>
+            <div><span>Map</span><strong class="stat-text">{{ assetsPackStatus?.installed_map_hash?.slice(0, 12) ?? "-" }}</strong></div>
+          </div>
+          <div class="action-row">
+            <button type="button" :disabled="isWorkflowBusy" @click="checkAssetsPack">
+              <RefreshCw :size="17" />
+              <span>Check assets</span>
+            </button>
+            <button
+              class="primary"
+              type="button"
+              :disabled="isWorkflowBusy || !assetsPackCheckReport?.package"
+              @click="downloadAssetsPack"
+            >
+              <Download :size="17" />
+              <span>Download assets</span>
+            </button>
+            <button
+              type="button"
+              :disabled="isWorkflowBusy || !assetsPackStatus?.installed"
+              @click="removeAssetsPack"
+            >
+              <Trash2 :size="17" />
+              <span>Remove</span>
+            </button>
+          </div>
+          <div v-if="lastAssetsPackInstall" class="asset-pack-note">
+            Installed {{ lastAssetsPackInstall.file_count }} images from {{ lastAssetsPackInstall.source_commit.slice(0, 12) }}.
           </div>
         </section>
 

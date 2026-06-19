@@ -23,6 +23,8 @@ pub enum GuiError {
     InvalidBackup(String),
     #[error("invalid update: {0}")]
     InvalidUpdate(String),
+    #[error("invalid assets pack: {0}")]
+    InvalidAssetsPack(String),
     #[error("zip error: {0}")]
     Zip(#[from] zip::result::ZipError),
 }
@@ -588,4 +590,76 @@ pub struct RecordTypeOption {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MapLocaleList {
     pub locales: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackManifest {
+    pub schema: String,
+    pub schema_version: u32,
+    pub app_version: String,
+    pub map_hash: String,
+    pub source_repo: String,
+    pub source_commit: String,
+    pub format: String,
+    pub quality: u8,
+    pub file_count: u64,
+    pub assets: Vec<AssetsPackAsset>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackAsset {
+    pub asset_ref: String,
+    pub kind: String,
+    pub source_path: String,
+    pub pack_path: String,
+    pub width: u32,
+    pub height: u32,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackStatus {
+    pub installed: bool,
+    pub compatible: bool,
+    pub current_app_version: String,
+    pub expected_map_hash: String,
+    pub installed_app_version: Option<String>,
+    pub installed_map_hash: Option<String>,
+    pub source_commit: Option<String>,
+    pub file_count: u64,
+    pub install_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackPackage {
+    pub app_version: String,
+    pub map_hash: String,
+    pub release_url: String,
+    pub asset_name: String,
+    pub download_url: String,
+    pub manifest_name: String,
+    pub manifest_url: String,
+    pub sha256: String,
+    pub size: u64,
+    pub source_commit: String,
+    pub file_count: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackCheckReport {
+    pub current_app_version: String,
+    pub expected_map_hash: String,
+    pub channel: UpdateChannel,
+    pub installed: bool,
+    pub compatible: bool,
+    pub package: Option<AssetsPackPackage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AssetsPackInstallReport {
+    pub app_version: String,
+    pub map_hash: String,
+    pub source_commit: String,
+    pub file_count: u64,
+    pub install_path: String,
 }

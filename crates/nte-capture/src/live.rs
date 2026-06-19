@@ -213,7 +213,9 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     }
                     counters.decoded_packets += 1;
                     let update = assembler.add_blocks_with_update(blocks);
-                    rows_snapshot = update.rows;
+                    if let Some(rows) = update.rows {
+                        rows_snapshot = rows;
+                    }
                     emit_progress(
                         &options,
                         &target,

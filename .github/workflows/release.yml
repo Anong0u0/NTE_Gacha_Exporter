@@ -122,10 +122,113 @@ jobs:
             ${{ steps.package.outputs.manifestPath }}
           if-no-files-found: error
 
+  build-assets-pack:
+    name: Build Assets Pack
+    runs-on: ubuntu-latest
+    needs: checks
+    outputs:
+      assetPackName: ${{ steps.package.outputs.assetPackName }}
+      manifestName: ${{ steps.package.outputs.manifestName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve release tag
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_name=""
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            tag_name="${{ github.ref_name }}"
+          elif [[ -n "${{ github.event.inputs.tagName }}" ]]; then
+            tag_name="${{ github.event.inputs.tagName }}"
+          fi
+          echo "tagName=${tag_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout pinned NTE_Assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_commit="$(tr -d '\r\n' < crates/nte-assets/resources/NTE_ASSETS_COMMIT)"
+          git clone --filter=blob:none --sparse https://github.com/Waifus-Grace/NTE_Assets.git nte-assets-src
+          git -C nte-assets-src checkout "$source_commit"
+          git -C nte-assets-src sparse-checkout set DataTable Localization UI UI_Icon
+
+      - name: Build assets pack
+        id: package
+        shell: bash
+        env:
+          TAG_NAME: ${{ steps.resolve.outputs.tagName }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name=="nte-gacha-exporter-cli") | .version')"
+          tag_name="${TAG_NAME:-v${version}}"
+          source_commit="$(tr -d '\r\n' < crates/nte-assets/resources/NTE_ASSETS_COMMIT)"
+          temp_pack="dist/nte-assets-pack.zip"
+          build_output="$(
+            cargo run -p nte-gacha-exporter-cli -- assets pack build \
+              --assets-root nte-assets-src \
+              --out "$temp_pack" \
+              --source-commit "$source_commit"
+          )"
+          printf '%s\n' "$build_output"
+          map_hash="$(awk -F= '$1 == "map_hash" { print $2 }' <<< "$build_output")"
+          file_count="$(awk -F= '$1 == "assets" { print $2 }' <<< "$build_output")"
+          if [[ -z "$map_hash" || -z "$file_count" ]]; then
+            echo "assets pack build output missing map_hash/assets" >&2
+            exit 1
+          fi
+          short_hash="${map_hash:0:12}"
+          asset_name="nte-assets-pack-${version}-${short_hash}.zip"
+          manifest_name="nte-assets-pack-manifest.json"
+          mv "$temp_pack" "dist/${asset_name}"
+          sha256="$(sha256sum "dist/${asset_name}" | awk '{ print $1 }')"
+          size="$(stat -c%s "dist/${asset_name}")"
+          download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag_name}/${asset_name}"
+          manifest_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag_name}/${manifest_name}"
+          release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag_name}"
+          cat > "dist/${manifest_name}" <<JSON
+          {
+            "schema": "nte-gacha-exporter-assets-pack-release",
+            "schema_version": 1,
+            "app_version": "${version}",
+            "map_hash": "${map_hash}",
+            "release_url": "${release_url}",
+            "asset_name": "${asset_name}",
+            "download_url": "${download_url}",
+            "manifest_name": "${manifest_name}",
+            "manifest_url": "${manifest_url}",
+            "sha256": "${sha256}",
+            "size": ${size},
+            "source_commit": "${source_commit}",
+            "file_count": ${file_count}
+          }
+          JSON
+          echo "assetPackName=${asset_name}" >> "$GITHUB_OUTPUT"
+          echo "manifestName=${manifest_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload assets pack
+        uses: actions/upload-artifact@v7
+        with:
+          name: assets-pack-release-assets
+          path: |
+            dist/${{ steps.package.outputs.assetPackName }}
+            dist/${{ steps.package.outputs.manifestName }}
+          if-no-files-found: error
+
   release:
     name: Publish Release
     runs-on: ubuntu-latest
-    needs: build-windows
+    needs:
+      - build-windows
+      - build-assets-pack
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'release') }}
     permissions:
       contents: write
@@ -142,6 +245,12 @@ jobs:
           name: windows-release-assets
           path: release-assets
 
+      - name: Download assets pack
+        uses: actions/download-artifact@v8
+        with:
+          name: assets-pack-release-assets
+          path: release-assets
+
       - name: Build release notes
         id: notes
         shell: bash
@@ -149,6 +258,8 @@ jobs:
           TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
           ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
           MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+          ASSETS_PACK_NAME: ${{ needs.build-assets-pack.outputs.assetPackName }}
+          ASSETS_PACK_MANIFEST_NAME: ${{ needs.build-assets-pack.outputs.manifestName }}
         run: |
           set -euo pipefail
 
@@ -175,6 +286,8 @@ jobs:
             echo "### Download / 下載說明"
             echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha-exporter.exe\`。"
             echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) Updater manifest for the desktop app."
+            echo "* [${ASSETS_PACK_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSETS_PACK_NAME}) Optional assets pack for GUI images. The app can also download it from Settings."
+            echo "* [${ASSETS_PACK_MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSETS_PACK_MANIFEST_NAME}) Assets pack manifest for the desktop app."
             echo "* Do not download Source code zip as the application package. 不要把 Source code zip 當作應用程式下載。"
           } > release-notes.md
 
@@ -201,6 +314,8 @@ jobs:
           TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
           ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
           MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+          ASSETS_PACK_NAME: ${{ needs.build-assets-pack.outputs.assetPackName }}
+          ASSETS_PACK_MANIFEST_NAME: ${{ needs.build-assets-pack.outputs.manifestName }}
           PRERELEASE_FLAG: ${{ steps.flags.outputs.prereleaseFlag }}
         run: |
           set -euo pipefail
@@ -213,6 +328,8 @@ jobs:
           gh release create "$TAG_NAME" \
             "release-assets/${ASSET_NAME}#Windows portable package" \
             "release-assets/${MANIFEST_NAME}#Desktop updater manifest" \
+            "release-assets/${ASSETS_PACK_NAME}#Optional GUI assets pack" \
+            "release-assets/${ASSETS_PACK_MANIFEST_NAME}#GUI assets pack manifest" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG_NAME" \
             --notes-file release-notes.md \

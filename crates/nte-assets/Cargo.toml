@@ -9,9 +9,14 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+image = { workspace = true, default-features = false, features = ["png"] }
 nte-core = { path = "../nte-core" }
 regex.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+sha2.workspace = true
+webp.workspace = true
+zip = { workspace = true, default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 tempfile.workspace = true

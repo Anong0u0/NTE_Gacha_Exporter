@@ -206,6 +206,9 @@ pub fn parse_payload_blocks(
         &mut warnings,
     );
     for shift in 1..8 {
+        if !shifted_view_contains_marker(payload, 8, shift, payload.len().saturating_sub(8)) {
+            continue;
+        }
         let data = decode_shifted_bytes(payload, 8, shift, payload.len().saturating_sub(8));
         parse_payload_view(
             &format!("shift8:{shift}"),
@@ -267,12 +270,12 @@ impl ProtocolAssembler {
         let _ = self.apply_blocks(blocks);
     }
 
-    #[cfg(windows)]
+    #[cfg(any(windows, test))]
     pub(crate) fn add_blocks_with_update(
         &mut self,
         blocks: impl IntoIterator<Item = ParsedBlock>,
     ) -> AssemblerUpdate {
-        let (rows, new_rows) = self.apply_blocks(blocks);
+        let (rows, new_rows) = self.apply_blocks_with_optional_rows(blocks);
         AssemblerUpdate { rows, new_rows }
     }
 
@@ -280,6 +283,14 @@ impl ProtocolAssembler {
         &mut self,
         blocks: impl IntoIterator<Item = ParsedBlock>,
     ) -> (Vec<ParsedRow>, Vec<ParsedRow>) {
+        let (rows, new_rows) = self.apply_blocks_with_optional_rows(blocks);
+        (rows.unwrap_or_else(|| self.rows_cache.clone()), new_rows)
+    }
+
+    fn apply_blocks_with_optional_rows(
+        &mut self,
+        blocks: impl IntoIterator<Item = ParsedBlock>,
+    ) -> (Option<Vec<ParsedRow>>, Vec<ParsedRow>) {
         self.refresh_rows();
         let previous_rows = std::mem::take(&mut self.rows_cache);
         let mut changed = false;
@@ -287,14 +298,13 @@ impl ProtocolAssembler {
             changed |= self.add_block(block);
         }
         if !changed {
-            let rows = previous_rows.clone();
             self.rows_cache = previous_rows;
-            return (rows, Vec::new());
+            return (None, Vec::new());
         }
         self.refresh_rows();
         let rows = self.rows_cache.clone();
         let new_rows = new_prefix_rows(&previous_rows, &rows);
-        (rows, new_rows)
+        (Some(rows), new_rows)
     }
 
     pub fn add_block(&mut self, block: ParsedBlock) -> bool {
@@ -460,9 +470,9 @@ impl ProtocolAssembler {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 pub(crate) struct AssemblerUpdate {
-    pub(crate) rows: Vec<ParsedRow>,
+    pub(crate) rows: Option<Vec<ParsedRow>>,
     pub(crate) new_rows: Vec<ParsedRow>,
 }
 
@@ -726,6 +736,50 @@ fn decode_shifted_bytes(data: &[u8], byte_off: usize, bit_shift: usize, count: u
         out.push(value);
     }
     out
+}
+
+fn shifted_view_contains_marker(
+    data: &[u8],
+    byte_off: usize,
+    bit_shift: usize,
+    count: usize,
+) -> bool {
+    shifted_view_contains_bytes(data, byte_off, bit_shift, count, MONOPOLY_MARKER)
+        || shifted_view_contains_bytes(data, byte_off, bit_shift, count, FORK_MARKER)
+}
+
+fn shifted_view_contains_bytes(
+    data: &[u8],
+    byte_off: usize,
+    bit_shift: usize,
+    count: usize,
+    needle: &[u8],
+) -> bool {
+    if needle.is_empty() || count < needle.len() {
+        return false;
+    }
+    for start in 0..=count - needle.len() {
+        if needle.iter().enumerate().all(|(index, byte)| {
+            shifted_byte(data, byte_off, bit_shift, start + index) == Some(*byte)
+        }) {
+            return true;
+        }
+    }
+    false
+}
+
+fn shifted_byte(data: &[u8], byte_off: usize, bit_shift: usize, index: usize) -> Option<u8> {
+    let bit_pos = (byte_off + index) * 8 + bit_shift;
+    let b_off = bit_pos / 8;
+    let b_shift = bit_pos % 8;
+    let first = data.get(b_off)?;
+    let mut value = first >> b_shift;
+    if b_shift != 0 {
+        if let Some(next) = data.get(b_off + 1) {
+            value |= next << (8 - b_shift);
+        }
+    }
+    Some(value)
 }
 
 fn source_with_envelope(
@@ -1003,6 +1057,17 @@ mod tests {
         }
     }
 
+    fn legacy_block(rows: Vec<ParsedRow>) -> ParsedBlock {
+        ParsedBlock {
+            record_type: RecordType::Monopoly,
+            marker_offset: 0,
+            declared_size: 0,
+            row_count: rows.len() as u32,
+            rows,
+            envelope: None,
+        }
+    }
+
     #[test]
     fn decodes_monopoly_record() {
         let mut row = Vec::new();
@@ -1065,5 +1130,34 @@ mod tests {
         let delta = new_prefix_rows(&before, &after);
 
         assert_eq!(delta, vec![row("a", 0), row("b", 1)]);
+    }
+
+    #[test]
+    fn add_blocks_with_update_returns_no_full_rows_for_duplicate_block() {
+        let mut assembler = ProtocolAssembler::default();
+        let block = legacy_block(vec![row("a", 0)]);
+
+        let first = assembler.add_blocks_with_update([block.clone()]);
+        let second = assembler.add_blocks_with_update([block]);
+
+        assert_eq!(first.rows.as_ref().map(Vec::len), Some(1));
+        assert_eq!(first.new_rows, vec![row("a", 0)]);
+        assert!(second.rows.is_none());
+        assert!(second.new_rows.is_empty());
+    }
+
+    #[test]
+    fn shifted_prefilter_skips_payload_without_markers() {
+        let payload = vec![0x55_u8; 128];
+
+        assert!(!shifted_view_contains_marker(
+            &payload,
+            8,
+            1,
+            payload.len().saturating_sub(8)
+        ));
+        let (blocks, warnings) = parse_payload_blocks(&payload, 0, 1, 0);
+        assert!(blocks.is_empty());
+        assert!(warnings.is_empty());
     }
 }

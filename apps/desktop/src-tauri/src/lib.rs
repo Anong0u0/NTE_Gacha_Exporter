@@ -1,4 +1,5 @@
 mod admin;
+mod assets_commands;
 mod capture;
 mod error;
 mod state;
@@ -17,6 +18,11 @@ pub fn run() {
         .unwrap_or_else(|error| panic!("failed to read pending admin capture: {error:?}"));
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .register_uri_scheme_protocol("nteasset", |_ctx, request| {
+            let root = portable_root()
+                .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| ".".into()));
+            assets_commands::assets_protocol_response(&root, request)
+        })
         .setup(move |app| {
             let root =
                 portable_root().map_err(|err| format!("failed to resolve portable root: {err}"))?;
@@ -45,6 +51,11 @@ pub fn run() {
             update_commands::updater_check,
             update_commands::updater_download_and_stage,
             update_commands::updater_install_staged,
+            assets_commands::assets_pack_status,
+            assets_commands::assets_pack_check,
+            assets_commands::assets_pack_download_and_install,
+            assets_commands::assets_pack_remove,
+            assets_commands::assets_resolve_refs,
             system_commands::maps_list,
             system_commands::doctor_run,
             system_commands::runtime_ping,

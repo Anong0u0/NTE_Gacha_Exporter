@@ -21,13 +21,16 @@ tauri-build.workspace = true
 
 [dependencies]
 nte-automation = { path = "../../../crates/nte-automation" }
+nte-assets = { path = "../../../crates/nte-assets" }
 nte-capture = { path = "../../../crates/nte-capture" }
 nte-core = { path = "../../../crates/nte-core" }
 nte-store = { path = "../../../crates/nte-store" }
 nte-update = { path = "../../../crates/nte-update" }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+sha2.workspace = true
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
+zip = { workspace = true, default-features = false, features = ["deflate"] }

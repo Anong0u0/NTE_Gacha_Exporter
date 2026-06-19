@@ -13,7 +13,10 @@ use std::time::Duration;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use nte_assets::{build_asset_maps, find_assets_root};
+use nte_assets::{
+    AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, PINNED_NTE_ASSETS_COMMIT, build_asset_maps,
+    build_assets_pack, find_assets_root,
+};
 use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
 use nte_capture::{
     CaptureOptions, CaptureProgress, CaptureRecordBuilder, ParsedRow, build_capture_document,
@@ -55,6 +58,11 @@ fn run() -> CliResult<()> {
             }
             MapsCommand::Build(args) => maps_build(args),
         },
+        Some(Command::Assets { command }) => match command {
+            AssetsCommand::Pack { command } => match command {
+                AssetsPackCommand::Build(args) => assets_pack_build(args),
+            },
+        },
         None => {
             let mut command = Cli::command();
             command.print_help().map_err(CliError::from_error)?;
@@ -85,12 +93,29 @@ enum Command {
         #[command(subcommand)]
         command: MapsCommand,
     },
+    Assets {
+        #[command(subcommand)]
+        command: AssetsCommand,
+    },
 }
 
 #[derive(Subcommand)]
 enum MapsCommand {
     List,
     Build(MapBuildArgs),
+}
+
+#[derive(Subcommand)]
+enum AssetsCommand {
+    Pack {
+        #[command(subcommand)]
+        command: AssetsPackCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum AssetsPackCommand {
+    Build(AssetsPackBuildArgs),
 }
 
 #[derive(Args)]
@@ -101,6 +126,20 @@ struct MapBuildArgs {
     locale: Option<String>,
     #[arg(long)]
     out_dir: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct AssetsPackBuildArgs {
+    #[arg(long)]
+    assets_root: Option<PathBuf>,
+    #[arg(long)]
+    maps_dir: Option<PathBuf>,
+    #[arg(long)]
+    out: PathBuf,
+    #[arg(long)]
+    source_commit: Option<String>,
+    #[arg(long, default_value_t = DEFAULT_WEBP_QUALITY)]
+    quality: u8,
 }
 
 #[derive(Args)]
@@ -330,6 +369,29 @@ fn maps_build(args: MapBuildArgs) -> CliResult<()> {
             build.locale, build.item_count, build.pool_count, build.label_count
         );
     }
+    Ok(())
+}
+
+fn assets_pack_build(args: AssetsPackBuildArgs) -> CliResult<()> {
+    let assets_root =
+        find_assets_root(args.assets_root.as_deref()).map_err(CliError::from_error)?;
+    let source_commit = args
+        .source_commit
+        .unwrap_or_else(|| PINNED_NTE_ASSETS_COMMIT.trim().to_string());
+    let maps_dir = args.maps_dir.unwrap_or_else(default_maps_output_dir);
+    let build = build_assets_pack(&AssetPackBuildOptions {
+        assets_root,
+        maps_dir,
+        out_path: args.out,
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        source_commit,
+        webp_quality: args.quality,
+    })
+    .map_err(CliError::from_error)?;
+    println!("assets={}", build.manifest.file_count);
+    println!("map_hash={}", build.manifest.map_hash);
+    println!("source_commit={}", build.manifest.source_commit);
+    println!("pack={}", build.out_path.display());
     Ok(())
 }
 

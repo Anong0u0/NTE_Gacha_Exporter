@@ -479,6 +479,60 @@ export type UpdateStageReport = {
   staging_path: string;
 };
 
+export type AssetsPackStatus = {
+  installed: boolean;
+  compatible: boolean;
+  current_app_version: string;
+  expected_map_hash: string;
+  installed_app_version?: string | null;
+  installed_map_hash?: string | null;
+  source_commit?: string | null;
+  file_count: number;
+  install_path: string;
+};
+
+export type AssetsPackPackage = {
+  app_version: string;
+  map_hash: string;
+  release_url: string;
+  asset_name: string;
+  download_url: string;
+  manifest_name: string;
+  manifest_url: string;
+  sha256: string;
+  size: number;
+  source_commit: string;
+  file_count: number;
+};
+
+export type AssetsPackCheckReport = {
+  current_app_version: string;
+  expected_map_hash: string;
+  channel: UpdateChannel;
+  installed: boolean;
+  compatible: boolean;
+  package?: AssetsPackPackage | null;
+};
+
+export type AssetsPackInstallReport = {
+  app_version: string;
+  map_hash: string;
+  source_commit: string;
+  file_count: number;
+  install_path: string;
+};
+
+export type AssetResolveRequest = {
+  asset_ref: string;
+  kind?: string | null;
+};
+
+export type AssetResolveResult = {
+  asset_ref: string;
+  kind?: string | null;
+  url?: string | null;
+};
+
 export type AppApi = {
   getSettings(): Promise<Settings>;
   updateSettings(patch: SettingsPatch): Promise<Settings>;
@@ -502,6 +556,11 @@ export type AppApi = {
   updaterCheck(channel?: string): Promise<UpdateCheckReport>;
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;
   updaterInstallStaged(version: string, relaunch?: boolean): Promise<void>;
+  assetsPackStatus(): Promise<AssetsPackStatus>;
+  assetsPackCheck(channel?: string): Promise<AssetsPackCheckReport>;
+  assetsPackDownloadAndInstall(packageInfo: AssetsPackPackage): Promise<AssetsPackInstallReport>;
+  assetsPackRemove(): Promise<AssetsPackStatus>;
+  assetsResolveRefs(refs: AssetResolveRequest[]): Promise<AssetResolveResult[]>;
   requestAdminCaptureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<boolean>;
   takePendingAdminCapture(): Promise<PendingAdminCapture | null>;
   captureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<CaptureStatus>;
@@ -1172,6 +1231,57 @@ const mockApi: AppApi = {
   async updaterInstallStaged() {
     return undefined;
   },
+  async assetsPackStatus() {
+    return {
+      installed: true,
+      compatible: true,
+      current_app_version: "0.1.0",
+      expected_map_hash: "mock-map-hash",
+      installed_app_version: "0.1.0",
+      installed_map_hash: "mock-map-hash",
+      source_commit: "mock-source",
+      file_count: 4,
+      install_path: "mock/data/assets-pack/current",
+    };
+  },
+  async assetsPackCheck() {
+    return {
+      current_app_version: "0.1.0",
+      expected_map_hash: "mock-map-hash",
+      channel: "stable",
+      installed: true,
+      compatible: true,
+      package: null,
+    };
+  },
+  async assetsPackDownloadAndInstall(packageInfo: AssetsPackPackage) {
+    return {
+      app_version: packageInfo.app_version,
+      map_hash: packageInfo.map_hash,
+      source_commit: packageInfo.source_commit,
+      file_count: packageInfo.file_count,
+      install_path: "mock/data/assets-pack/current",
+    };
+  },
+  async assetsPackRemove() {
+    return {
+      installed: false,
+      compatible: false,
+      current_app_version: "0.1.0",
+      expected_map_hash: "mock-map-hash",
+      installed_app_version: null,
+      installed_map_hash: null,
+      source_commit: null,
+      file_count: 0,
+      install_path: "mock/data/assets-pack/current",
+    };
+  },
+  async assetsResolveRefs(refs: AssetResolveRequest[]) {
+    return refs.map((ref) => ({
+      ...ref,
+      url: mockAssetDataUrl(ref.asset_ref, ref.kind ?? "asset"),
+    }));
+  },
   async requestAdminCaptureStart() {
     return false;
   },
@@ -1229,6 +1339,12 @@ const tauriApi: AppApi = {
     invoke<UpdateStageReport>("updater_download_and_stage", { package: packageInfo }),
   updaterInstallStaged: (version, relaunch) =>
     invoke<void>("updater_install_staged", { version, relaunch }),
+  assetsPackStatus: () => invoke<AssetsPackStatus>("assets_pack_status"),
+  assetsPackCheck: (channel) => invoke<AssetsPackCheckReport>("assets_pack_check", { channel }),
+  assetsPackDownloadAndInstall: (packageInfo) =>
+    invoke<AssetsPackInstallReport>("assets_pack_download_and_install", { package: packageInfo }),
+  assetsPackRemove: () => invoke<AssetsPackStatus>("assets_pack_remove"),
+  assetsResolveRefs: (refs) => invoke<AssetResolveResult[]>("assets_resolve_refs", { refs }),
   requestAdminCaptureStart: (profileName, locale, mode) =>
     invoke<boolean>("request_admin_capture_start", { profileName, locale, mode }),
   takePendingAdminCapture: () => invoke<PendingAdminCapture | null>("take_pending_admin_capture"),
@@ -1291,6 +1407,17 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
     error: null,
     import_report: completed ? mockReport(profileName, mode === "live_only" ? "live_capture" : mode, "") : null,
   };
+}
+
+function mockAssetDataUrl(assetRef: string, kind: string) {
+  const hash = Array.from(`${kind}:${assetRef}`).reduce(
+    (acc, char) => (acc * 31 + char.charCodeAt(0)) % 360,
+    0,
+  );
+  const accent = (hash + 42) % 360;
+  const label = (kind || "asset").slice(0, 10).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="hsl(${hash} 56% 42%)"/><stop offset="1" stop-color="hsl(${accent} 66% 64%)"/></linearGradient></defs><rect width="256" height="256" rx="18" fill="url(#g)"/><circle cx="184" cy="70" r="44" fill="rgba(255,255,255,.22)"/><path d="M36 202c24-52 58-78 102-78 35 0 62 18 82 54v24H36z" fill="rgba(255,255,255,.3)"/><text x="128" y="128" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#fff">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 export const api: AppApi = isTauri() ? tauriApi : mockApi;

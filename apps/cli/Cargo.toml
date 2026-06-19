@@ -39,7 +39,3 @@ windows-sys = { workspace = true, features = [
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
-
-[dev-dependencies]
-tempfile.workspace = true
-serde_json.workspace = true

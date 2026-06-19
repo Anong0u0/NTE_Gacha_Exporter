@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::PathBuf;
 use std::sync::{
     Arc, Mutex,
@@ -27,6 +27,8 @@ use crate::state::{AppState, new_session_id, now_seconds, with_store};
 
 const CAPTURE_DRAIN_TIMEOUT: Duration = Duration::from_secs(20);
 const CAPTURE_DRAIN_POLL_INTERVAL: Duration = Duration::from_millis(100);
+const CAPTURE_SESSION_RETENTION_SECONDS: f64 = 30.0 * 60.0;
+const CAPTURE_TERMINAL_SESSION_LIMIT: usize = 20;
 
 #[derive(Debug, Clone)]
 pub(crate) struct CaptureSessionMeta {
@@ -660,14 +662,9 @@ fn finish_capture_result(
     match result {
         Ok(result) => match build_capture_document(&result.rows, locale) {
             Ok(document) => {
-                let document_value = serde_json::to_value(&document).ok();
+                let latest = latest_records_from_capture_document(&document);
                 final_status.records_count = result.rows.len() as u64;
-                final_status.latest_records = document_value
-                    .as_ref()
-                    .and_then(|value| value.get("records"))
-                    .and_then(Value::as_array)
-                    .map(|records| latest_records(records))
-                    .unwrap_or_default();
+                final_status.latest_records = latest;
                 final_status.counters = CaptureCounters::from(result.counters);
                 final_status.target = serde_json::to_value(result.target).ok();
                 final_status.state = if auto_error.is_some() {
@@ -677,7 +674,7 @@ fn finish_capture_result(
                 };
                 final_status.auto_page = auto_page;
                 final_status.error = auto_error;
-                final_status.document = document_value;
+                final_status.document = Some(document);
                 final_status.import_report = None;
             }
             Err(error) => {
@@ -712,6 +709,15 @@ fn automation_snapshot(
 
 fn latest_records(records: &[Value]) -> Vec<Value> {
     records.iter().rev().take(10).cloned().collect::<Vec<_>>()
+}
+
+fn latest_records_from_capture_document(document: &Value) -> Vec<Value> {
+    document
+        .get("nte")
+        .and_then(|value| value.get("list"))
+        .and_then(Value::as_array)
+        .map(|records| latest_records(records))
+        .unwrap_or_default()
 }
 
 fn capture_pool(record_type: &str, pool_id: Option<&str>) -> Option<&'static str> {
@@ -759,17 +765,20 @@ fn capture_status_with_merge(
         .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
         .clone();
     if status.state != "completed" {
+        cleanup_terminal_capture_session(state, session_id, &session, &status)?;
         return Ok(status);
     }
     let mut status = status;
-    let mut captures = state
-        .captures
-        .lock()
-        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
-    let Some(meta) = captures.get_mut(session_id) else {
-        return Ok(status);
-    };
-    merge_completed_capture(state, &mut status, meta)?;
+    {
+        let mut captures = state
+            .captures
+            .lock()
+            .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+        if let Some(meta) = captures.get_mut(session_id) {
+            merge_completed_capture(state, &mut status, meta)?;
+        }
+    }
+    cleanup_terminal_capture_session(state, session_id, &session, &status)?;
     Ok(status)
 }
 
@@ -821,4 +830,223 @@ fn merge_completed_capture(
     meta.import_report = Some(report.clone());
     status.import_report = Some(report);
     Ok(())
+}
+
+fn cleanup_terminal_capture_session(
+    state: &State<'_, AppState>,
+    session_id: &str,
+    session: &CaptureRuntimeSession,
+    status: &CaptureStatus,
+) -> Result<(), ApiError> {
+    if !capture_status_is_terminal(status) {
+        return Ok(());
+    }
+    let _ = try_join_finished_capture_thread(session);
+    let mut sessions = state
+        .capture_sessions
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+    let mut captures = state
+        .captures
+        .lock()
+        .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+    prune_capture_session_maps(&mut sessions, &mut captures, session_id, now_seconds());
+    Ok(())
+}
+
+fn prune_capture_session_maps(
+    sessions: &mut HashMap<String, Arc<CaptureRuntimeSession>>,
+    captures: &mut HashMap<String, CaptureSessionMeta>,
+    preserve_session_id: &str,
+    now: f64,
+) {
+    for session in sessions.values() {
+        let is_terminal = session
+            .status
+            .lock()
+            .map(|status| capture_status_is_terminal(&status))
+            .unwrap_or(false);
+        if is_terminal {
+            let _ = try_join_finished_capture_thread(session);
+        }
+    }
+
+    let removable = sessions
+        .iter()
+        .filter_map(|(session_id, session)| {
+            if session_id == preserve_session_id || !capture_handle_joined(session) {
+                return None;
+            }
+            let status = session.status.lock().ok()?;
+            capture_status_is_terminal(&status).then(|| (session_id.clone(), status.updated_at))
+        })
+        .collect::<Vec<_>>();
+
+    let mut to_remove = BTreeSet::new();
+    for (session_id, updated_at) in &removable {
+        if now - *updated_at >= CAPTURE_SESSION_RETENTION_SECONDS {
+            to_remove.insert(session_id.clone());
+        }
+    }
+
+    let recent = removable
+        .into_iter()
+        .filter(|(session_id, _)| !to_remove.contains(session_id))
+        .collect::<Vec<_>>();
+    if recent.len() > CAPTURE_TERMINAL_SESSION_LIMIT {
+        let extra = recent.len() - CAPTURE_TERMINAL_SESSION_LIMIT;
+        let mut recent = recent;
+        recent.sort_by(|left, right| {
+            left.1
+                .total_cmp(&right.1)
+                .then_with(|| left.0.cmp(&right.0))
+        });
+        for (session_id, _) in recent.into_iter().take(extra) {
+            to_remove.insert(session_id);
+        }
+    }
+
+    for session_id in to_remove {
+        sessions.remove(&session_id);
+        captures.remove(&session_id);
+    }
+}
+
+fn capture_status_is_terminal(status: &CaptureStatus) -> bool {
+    matches!(status.state.as_str(), "completed" | "failed")
+}
+
+fn capture_handle_joined(session: &CaptureRuntimeSession) -> bool {
+    session
+        .handle
+        .lock()
+        .map(|handle| handle.is_none())
+        .unwrap_or(false)
+}
+
+fn try_join_finished_capture_thread(session: &CaptureRuntimeSession) -> bool {
+    let handle = session.handle.lock().ok().and_then(|mut guard| {
+        guard
+            .as_ref()
+            .is_some_and(std::thread::JoinHandle::is_finished)
+            .then(|| guard.take())
+            .flatten()
+    });
+    let Some(handle) = handle else {
+        return false;
+    };
+    handle.join().is_ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_status(session_id: &str, state: &str, updated_at: f64) -> CaptureStatus {
+        CaptureStatus {
+            session_id: session_id.to_string(),
+            state: state.to_string(),
+            mode: "live_only".to_string(),
+            records_count: 0,
+            latest_records: Vec::new(),
+            counters: CaptureCounters::default(),
+            started_at: updated_at,
+            updated_at,
+            target: None,
+            auto_page: None,
+            raw_path: None,
+            error: None,
+            document: None,
+            import_report: None,
+        }
+    }
+
+    fn test_session(status: CaptureStatus) -> Arc<CaptureRuntimeSession> {
+        Arc::new(CaptureRuntimeSession {
+            status: Mutex::new(status),
+            stop: Arc::new(AtomicBool::new(false)),
+            handle: Mutex::new(None),
+        })
+    }
+
+    fn test_meta() -> CaptureSessionMeta {
+        CaptureSessionMeta {
+            profile_name: "default".to_string(),
+            source_kind: "test".to_string(),
+            source_path: None,
+            full_update: false,
+            import_report: None,
+        }
+    }
+
+    #[test]
+    fn latest_records_read_capture_document_nte_list() {
+        let records = (0..12)
+            .map(|index| json!({ "record_id": format!("r{index}") }))
+            .collect::<Vec<_>>();
+        let document = json!({ "nte": { "list": records } });
+
+        let latest = latest_records_from_capture_document(&document);
+
+        assert_eq!(latest.len(), 10);
+        assert_eq!(latest[0]["record_id"], "r11");
+        assert_eq!(latest[9]["record_id"], "r2");
+    }
+
+    #[test]
+    fn latest_records_missing_capture_document_list_returns_empty() {
+        assert!(latest_records_from_capture_document(&json!({ "records": [] })).is_empty());
+    }
+
+    #[test]
+    fn prune_capture_session_maps_keeps_active_and_preserved_sessions() {
+        let mut sessions = HashMap::from([
+            (
+                "active".to_string(),
+                test_session(test_status("active", "running", 1.0)),
+            ),
+            (
+                "preserve".to_string(),
+                test_session(test_status("preserve", "completed", 1.0)),
+            ),
+            (
+                "old".to_string(),
+                test_session(test_status("old", "failed", 1.0)),
+            ),
+        ]);
+        let mut captures = HashMap::from([
+            ("active".to_string(), test_meta()),
+            ("preserve".to_string(), test_meta()),
+            ("old".to_string(), test_meta()),
+        ]);
+
+        prune_capture_session_maps(&mut sessions, &mut captures, "preserve", 2_000.0);
+
+        assert!(sessions.contains_key("active"));
+        assert!(sessions.contains_key("preserve"));
+        assert!(!sessions.contains_key("old"));
+        assert!(!captures.contains_key("old"));
+    }
+
+    #[test]
+    fn prune_capture_session_maps_retains_latest_terminal_limit() {
+        let mut sessions = HashMap::new();
+        let mut captures = HashMap::new();
+        for index in 0..25 {
+            let session_id = format!("s{index:02}");
+            sessions.insert(
+                session_id.clone(),
+                test_session(test_status(&session_id, "completed", f64::from(index))),
+            );
+            captures.insert(session_id, test_meta());
+        }
+
+        prune_capture_session_maps(&mut sessions, &mut captures, "s24", 100.0);
+
+        assert_eq!(sessions.len(), 21);
+        assert!(sessions.contains_key("s24"));
+        assert!(!sessions.contains_key("s00"));
+        assert!(!sessions.contains_key("s03"));
+        assert!(sessions.contains_key("s04"));
+    }
 }

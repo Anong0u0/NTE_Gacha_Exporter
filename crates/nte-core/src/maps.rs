@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
+use std::sync::OnceLock;
 
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 use crate::model::{BannerResolutionStatus, GuiError, PoolKind, ResolvedBanner};
 
@@ -47,6 +49,7 @@ const BUNDLED_MAPS: &[(&str, &str)] = &[
     ),
 ];
 const MAP_SCHEMA_VERSION: u64 = 4;
+static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct MapData {
@@ -156,23 +159,48 @@ pub fn available_locales() -> Vec<String> {
         .collect()
 }
 
+pub fn bundled_maps_hash() -> String {
+    let mut hasher = Sha256::new();
+    for (locale, text) in BUNDLED_MAPS {
+        hasher.update(locale.as_bytes());
+        hasher.update([0]);
+        hasher.update(text.as_bytes());
+        hasher.update([0]);
+    }
+    format!("{:x}", hasher.finalize())
+}
+
 pub fn load_map(locale: &str) -> Result<MapData, GuiError> {
-    let text = BUNDLED_MAPS
-        .iter()
-        .find(|(candidate, _)| *candidate == locale)
-        .map(|(_, text)| *text)
-        .ok_or_else(|| GuiError::LocaleNotFound(locale.to_string()))?;
-    let value: serde_json::Value = serde_json::from_str(text)?;
+    let maps = MAP_CACHE
+        .get_or_init(load_all_maps)
+        .as_ref()
+        .map_err(|error| GuiError::InvalidDocument(error.clone()))?;
+    maps.get(locale)
+        .cloned()
+        .ok_or_else(|| GuiError::LocaleNotFound(locale.to_string()))
+}
+
+fn load_all_maps() -> Result<BTreeMap<&'static str, MapData>, String> {
+    let mut maps = BTreeMap::new();
+    for (locale, text) in BUNDLED_MAPS {
+        maps.insert(*locale, parse_map(locale, text)?);
+    }
+    Ok(maps)
+}
+
+fn parse_map(locale: &str, text: &str) -> Result<MapData, String> {
+    let value: serde_json::Value =
+        serde_json::from_str(text).map_err(|error| format!("{locale}: {error}"))?;
     if value
         .get("schema_version")
         .and_then(serde_json::Value::as_u64)
         != Some(MAP_SCHEMA_VERSION)
     {
-        return Err(GuiError::InvalidDocument(format!(
+        return Err(format!(
             "map schema_version must be {MAP_SCHEMA_VERSION}: {locale}"
-        )));
+        ));
     }
-    Ok(serde_json::from_value(value)?)
+    serde_json::from_value(value).map_err(|error| format!("{locale}: {error}"))
 }
 
 impl MapData {
@@ -622,5 +650,18 @@ mod tests {
             Some("2026-06-03 05:59:01")
         );
         assert!(normalize_game_time(Some("2026-06-03T05:59:01+08:00")).is_none());
+    }
+
+    #[test]
+    fn load_map_returns_cached_clone_without_shared_mutation() {
+        let mut first = load_map("zh-Hant").expect("zh-Hant map should load");
+        first.items.get_mut("1010").expect("item should exist").name = "mutated".to_string();
+
+        let second = load_map("zh-Hant").expect("zh-Hant map should load again");
+
+        assert_ne!(
+            second.items.get("1010").map(|item| item.name.as_str()),
+            Some("mutated")
+        );
     }
 }
