@@ -59,6 +59,26 @@ mod tests {
     }
 
     #[test]
+    fn capture_pool_uses_auto_page_workflow_pool_keys() {
+        assert_eq!(
+            capture_pool("monopoly", Some("CardPool_Character")),
+            Some("limited")
+        );
+        assert_eq!(
+            capture_pool("monopoly", Some("CardPool_NewRole")),
+            Some("standard")
+        );
+        assert_eq!(
+            capture_pool("fork", Some("ForkLottery_AnHunQu")),
+            Some("fork")
+        );
+        assert_eq!(
+            capture_pool("monopoly", Some("CardPool_Weapon")),
+            None
+        );
+    }
+
+    #[test]
     fn prune_capture_session_maps_keeps_active_and_preserved_sessions() {
         let mut sessions = HashMap::from([
             (

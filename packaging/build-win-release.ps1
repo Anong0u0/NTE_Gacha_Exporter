@@ -88,6 +88,33 @@ function Invoke-External {
     }
 }
 
+function Invoke-ExternalOutput {
+    param(
+        [string]$Name,
+        [string]$FilePath,
+        [string[]]$Arguments = @(),
+        [string]$WorkingDirectory = ""
+    )
+
+    Write-Step $Name
+    if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+        $output = (& $FilePath @Arguments) -join "`n"
+    }
+    else {
+        Push-Location $WorkingDirectory
+        try {
+            $output = (& $FilePath @Arguments) -join "`n"
+        }
+        finally {
+            Pop-Location
+        }
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Name failed with exit code $LASTEXITCODE"
+    }
+    return $output.Trim()
+}
+
 function Assert-Command {
     param([string]$Name)
 
@@ -115,14 +142,21 @@ function Assert-RustHost {
     Write-Ok $hostLine
 }
 
-function Read-VersionFromToml {
+function Read-WorkspaceVersion {
     param([string]$Path)
 
-    $match = Select-String -Path $Path -Pattern '^version\s*=\s*"([^"]+)"' -List
-    if ($null -eq $match) {
-        throw "Version not found: $Path"
+    $inWorkspacePackage = $false
+    foreach ($line in [System.IO.File]::ReadLines($Path)) {
+        $trimmed = $line.Trim()
+        if ($trimmed -match '^\[(.+)\]$') {
+            $inWorkspacePackage = $Matches[1] -eq "workspace.package"
+            continue
+        }
+        if ($inWorkspacePackage -and $trimmed -match '^version\s*=\s*"([^"]+)"') {
+            return $Matches[1]
+        }
     }
-    return $match.Matches[0].Groups[1].Value
+    throw "Workspace package version not found: $Path"
 }
 
 function Normalize-TagName {
@@ -391,12 +425,17 @@ function New-PortableStage {
 }
 
 function Invoke-PortableRunSmoke {
-    param([string]$ReleaseRoot)
+    param(
+        [string]$ReleaseRoot,
+        [string]$Version
+    )
 
     $cli = Join-Path $ReleaseRoot "nte-gacha-exporter-cli.exe"
-    Write-Step "Portable CLI smoke"
-    Invoke-External -Name "Portable CLI version" -FilePath $cli -Arguments @("--version") -WorkingDirectory $ReleaseRoot
-    Write-Ok "Portable CLI responded"
+    $actualVersion = Invoke-ExternalOutput -Name "Portable CLI version" -FilePath $cli -Arguments @("--version") -WorkingDirectory $ReleaseRoot
+    if ($actualVersion -ne $Version) {
+        throw "Portable CLI version mismatch: expected $Version, got $actualVersion"
+    }
+    Write-Ok "Portable CLI version -> $actualVersion"
 
     $launcher = Join-Path $ReleaseRoot "nte-gacha-exporter.exe"
     Write-Step "portable app launch smoke"
@@ -425,7 +464,7 @@ Assert-WindowsHost
 $scriptDir = Split-Path -Parent $PSCommandPath
 $projectRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
 $desktopRoot = Join-Path $projectRoot "apps\desktop"
-$desktopVersion = Read-VersionFromToml -Path (Join-Path $projectRoot "Cargo.toml")
+$desktopVersion = Read-WorkspaceVersion -Path (Join-Path $projectRoot "Cargo.toml")
 $normalizedTagName = Normalize-TagName -Value $TagName
 Assert-TagMatchesVersion -Tag $normalizedTagName -Version $desktopVersion
 if ([string]::IsNullOrWhiteSpace($normalizedTagName)) {
@@ -483,7 +522,7 @@ if (-not $SkipSmoke) {
     if ($null -eq $portableRoot) {
         throw "Smoke requires portable stage. Remove -SkipPortableStage or pass -SkipSmoke."
     }
-    Invoke-PortableRunSmoke -ReleaseRoot $portableRoot
+    Invoke-PortableRunSmoke -ReleaseRoot $portableRoot -Version $desktopVersion
 }
 
 Write-Ok "Windows release package complete."

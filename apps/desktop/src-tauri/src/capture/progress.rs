@@ -102,12 +102,16 @@ fn latest_records_from_capture_document(document: &Value) -> Vec<Value> {
 }
 
 fn capture_pool(record_type: &str, pool_id: Option<&str>) -> Option<&'static str> {
-    match record_type {
-        "monopoly" if pool_id == Some("CardPool_Weapon") => Some("weapon"),
-        "monopoly" => Some("character"),
-        "fork" => Some("fork"),
-        _ => None,
+    if record_type == "monopoly" && pool_id == Some("CardPool_Character") {
+        return Some("limited");
     }
+    if record_type == "monopoly" && pool_id == Some("CardPool_NewRole") {
+        return Some("standard");
+    }
+    if record_type == "fork" || pool_id.is_some_and(|pool_id| pool_id.starts_with("ForkLottery_")) {
+        return Some("fork");
+    }
+    None
 }
 
 fn auto_page_status_value(status: &AutomationStatus, state: &str) -> Value {
@@ -134,4 +138,3 @@ fn auto_page_result_value(result: &AutoPageRunResult) -> Value {
         "last_page_by_pool": result.last_page_by_pool,
     })
 }
-

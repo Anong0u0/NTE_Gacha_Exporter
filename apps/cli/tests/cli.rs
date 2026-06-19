@@ -11,6 +11,10 @@ fn fixture() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/sample.raw.jsonl")
 }
 
+fn workspace_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
 #[test]
 fn version_prints_package_version() {
     let output = Command::new(bin()).arg("--version").output().unwrap();
@@ -20,6 +24,25 @@ fn version_prints_package_version() {
         String::from_utf8_lossy(&output.stdout).trim(),
         env!("CARGO_PKG_VERSION")
     );
+}
+
+#[test]
+fn product_version_is_managed_by_workspace_cargo_toml() {
+    let root = workspace_root();
+    let tauri_config: Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("apps/desktop/src-tauri/tauri.conf.json")).unwrap(),
+    )
+    .unwrap();
+    let package_json: Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("apps/desktop/package.json")).unwrap(),
+    )
+    .unwrap();
+    let cargo_toml = std::fs::read_to_string(root.join("Cargo.toml")).unwrap();
+
+    assert!(cargo_toml.contains("[workspace.package]"));
+    assert!(cargo_toml.contains(&format!("version = \"{}\"", env!("CARGO_PKG_VERSION"))));
+    assert!(tauri_config.get("version").is_none());
+    assert!(package_json.get("version").is_none());
 }
 
 #[test]

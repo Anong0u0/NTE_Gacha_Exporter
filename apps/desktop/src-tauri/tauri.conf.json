@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "NTE Gacha Exporter",
-  "version": "0.1.0",
   "identifier": "dev.nte-gacha-exporter.desktop",
   "build": {
     "beforeDevCommand": "bun run dev",
