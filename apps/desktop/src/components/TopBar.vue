@@ -9,10 +9,10 @@ const app = useAppContext();
       <header class="topbar">
         <div>
           <span class="eyebrow">{{ app.activeProfile?.name ?? app.activeProfileName }}</span>
-          <h1>{{ app.navItems.find((item) => item.id === app.activeView)?.label }}</h1>
+          <h1>{{ app.t(app.navItems.find((item) => item.id === app.activeView)?.labelKey ?? "nav.dashboard") }}</h1>
         </div>
         <div class="topbar-actions">
-          <button type="button" :disabled="app.isWorkflowBusy" title="Refresh" @click="app.runTask('Dashboard updated', app.refreshAll)">
+          <button type="button" :disabled="app.isWorkflowBusy" :title="app.t('status.dashboardUpdated')" @click="app.runTask(app.t('status.dashboardUpdated'), app.refreshAll)">
             <RefreshCw :size="17" />
           </button>
           <div class="status" :class="{ error: app.errorText }">{{ app.errorText || app.statusText }}</div>

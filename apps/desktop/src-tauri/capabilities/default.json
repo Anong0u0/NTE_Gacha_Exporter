@@ -3,5 +3,5 @@
   "identifier": "main",
   "description": "Main window access to app commands.",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-open", "dialog:allow-save"]
+  "permissions": ["core:default", "dialog:allow-open", "dialog:allow-save", "dialog:allow-message"]
 }

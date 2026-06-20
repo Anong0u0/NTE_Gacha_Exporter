@@ -17,6 +17,7 @@ export type CaptureMode = "live_only" | "auto_page_incremental" | "auto_page_ful
 export type Settings = {
   active_profile: string;
   locale: string;
+  ui_locale: string;
   update_channel: string;
   check_updates_on_startup: boolean;
 };
@@ -24,6 +25,7 @@ export type Settings = {
 export type SettingsPatch = {
   active_profile?: string | null;
   locale?: string | null;
+  ui_locale?: string | null;
   update_channel?: string | null;
   check_updates_on_startup?: boolean | null;
 };

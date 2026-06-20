@@ -34,8 +34,12 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
                 )));
             }
         }
-        let settings: DiskSettings = read_zip_json(&mut zip, "settings.json")?;
+        let mut settings: DiskSettings = read_zip_json(&mut zip, "settings.json")?;
         validate_locale(&settings.locale)?;
+        if settings.ui_locale.trim().is_empty() {
+            settings.ui_locale = DEFAULT_UI_LOCALE.to_string();
+        }
+        validate_ui_locale(&settings.ui_locale)?;
         validate_update_channel(&settings.update_channel)?;
 
         let mut profiles = BTreeMap::new();

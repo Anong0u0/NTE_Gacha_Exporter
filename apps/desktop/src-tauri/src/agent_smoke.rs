@@ -142,6 +142,11 @@ fn route_request<R: Runtime>(handle: AppHandle<R>, request: HttpRequest) -> Resu
         ("GET", "/health") => ok_response(json!({
             "schema": "nte-agent-smoke",
             "version": 1,
+            "pid": std::process::id(),
+            "app_version": env!("CARGO_PKG_VERSION"),
+            "portable_root": crate::state::portable_root()
+                .ok()
+                .map(|path| path.display().to_string()),
         })),
         ("POST", "/eval") => {
             let payload: EvalRequest =

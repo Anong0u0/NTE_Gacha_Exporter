@@ -33,6 +33,7 @@ pub enum GuiError {
 pub struct Settings {
     pub active_profile: String,
     pub locale: String,
+    pub ui_locale: String,
     pub update_channel: String,
     pub check_updates_on_startup: bool,
 }
@@ -41,6 +42,7 @@ pub struct Settings {
 pub struct SettingsPatch {
     pub active_profile: Option<String>,
     pub locale: Option<String>,
+    pub ui_locale: Option<String>,
     pub update_channel: Option<String>,
     pub check_updates_on_startup: Option<bool>,
 }

@@ -1,9 +1,16 @@
 impl JsonStore {
     pub fn open(root: impl AsRef<Path>) -> Result<Self, GuiError> {
+        Self::open_with_defaults(root, StoreDefaults::default())
+    }
+
+    pub fn open_with_defaults(
+        root: impl AsRef<Path>,
+        defaults: StoreDefaults,
+    ) -> Result<Self, GuiError> {
         let store = Self {
             root: root.as_ref().to_path_buf(),
         };
-        store.bootstrap()?;
+        store.bootstrap(&defaults)?;
         Ok(store)
     }
 
@@ -16,6 +23,7 @@ impl JsonStore {
         Ok(Settings {
             active_profile: settings.active_profile,
             locale: settings.locale,
+            ui_locale: settings.ui_locale,
             update_channel: settings.update_channel,
             check_updates_on_startup: settings.check_updates_on_startup,
         })
@@ -31,6 +39,9 @@ impl JsonStore {
         if let Some(locale) = patch.locale {
             validate_locale(&locale)?;
             settings.locale = locale;
+        }
+        if let Some(ui_locale) = patch.ui_locale {
+            settings.ui_locale = validate_ui_locale(&ui_locale)?;
         }
         if let Some(update_channel) = patch.update_channel {
             settings.update_channel = validate_update_channel(&update_channel)?;

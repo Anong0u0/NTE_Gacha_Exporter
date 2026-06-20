@@ -1,5 +1,307 @@
 {
-  "schema_version": 4,
+  "banners": {
+    "ForkLottery_AnHunQu": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+      },
+      "banner_id": "ForkLottery_AnHunQu",
+      "banner_type": "fork",
+      "currency_count": 10,
+      "currency_id": "WeaponGacha",
+      "pool_id": "ForkLottery_AnHunQu",
+      "pool_kind": "fork_lottery",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "fork_Rose"
+      ],
+      "roll_unit": 10,
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "title": "夜曲特刊"
+    },
+    "ForkLottery_Kaesi": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+      },
+      "banner_id": "ForkLottery_Kaesi",
+      "banner_type": "fork",
+      "currency_count": 10,
+      "currency_id": "WeaponGacha",
+      "pool_id": "ForkLottery_Kaesi",
+      "pool_kind": "fork_lottery",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "fork_GoldWool"
+      ],
+      "roll_unit": 10,
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "title": "追獵特刊"
+    },
+    "ForkLottery_Nanali": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+      },
+      "banner_id": "ForkLottery_Nanali",
+      "banner_type": "fork",
+      "currency_count": 10,
+      "currency_id": "WeaponGacha",
+      "pool_id": "ForkLottery_Nanali",
+      "pool_kind": "fork_lottery",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "fork_TigerTally"
+      ],
+      "roll_unit": 10,
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "title": "猛虎特刊"
+    },
+    "ForkLottery_Xun": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+      },
+      "banner_id": "ForkLottery_Xun",
+      "banner_type": "fork",
+      "currency_count": 10,
+      "currency_id": "WeaponGacha",
+      "pool_id": "ForkLottery_Xun",
+      "pool_kind": "fork_lottery",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "fork_Time"
+      ],
+      "roll_unit": 10,
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "confidence": "exact",
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "title": "名月特刊"
+    },
+    "monopoly_limited_AnHunQu": {
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
+      },
+      "banner_id": "monopoly_limited_AnHunQu",
+      "banner_type": "limited",
+      "end_at": "2026-06-24 05:59:00",
+      "phase": "limited_2026_06_24",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "1004"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ],
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/zh-Hant/game.json"
+        ]
+      },
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "start_at": "2026-06-03 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "title": "久夢初醒時"
+    },
+    "monopoly_limited_Kaesi": {
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
+      },
+      "banner_id": "monopoly_limited_Kaesi",
+      "banner_type": "limited",
+      "end_at": "2026-07-08 05:59:00",
+      "phase": "limited_2026_07_08",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "1020"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ],
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/zh-Hant/game.json"
+        ]
+      },
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "start_at": "2026-06-24 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "title": "無歸路"
+    },
+    "monopoly_limited_Nanali": {
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
+      },
+      "banner_id": "monopoly_limited_Nanali",
+      "banner_type": "limited",
+      "end_at": "2026-05-13 05:59:00",
+      "phase": "limited_2026_05_13",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "1010"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ],
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/zh-Hant/game.json"
+        ]
+      },
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "timezone": "Asia/Shanghai",
+      "title": "王牌一代目"
+    },
+    "monopoly_limited_Xun": {
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
+      },
+      "banner_id": "monopoly_limited_Xun",
+      "banner_type": "limited",
+      "end_at": "2026-06-03 05:59:00",
+      "phase": "limited_2026_06_03",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "rate_up_4": [],
+      "rate_up_5": [
+        "1052"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Schedule and rate-up are curated because no structured limited banner table was found.",
+          "Version/phase metadata is curated when present."
+        ],
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/zh-Hant/game.json"
+        ]
+      },
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "start_at": "2026-05-13 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "title": "獨酌朧月流"
+    },
+    "monopoly_standard": {
+      "banner_id": "monopoly_standard",
+      "banner_type": "standard",
+      "pool_id": "CardPool_NewRole",
+      "pool_kind": "monopoly_standard",
+      "rate_up_4": [],
+      "rate_up_5": [],
+      "rule_id": "monopoly_standard",
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
+        ],
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/zh-Hant/game.json"
+        ]
+      },
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "title": "世間奇遇"
+    }
+  },
   "csv_headers": {
     "count": "數量",
     "item_name": "道具名稱",
@@ -10,918 +312,70 @@
     "secondary_item_name": "額外獲得",
     "time": "獲得時間"
   },
-  "items": {
-    "1003": {
-      "name": "角色·早霧",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#F3655F",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_zaowu.YH_lihui_character_zaowu"
-      }
-    },
-    "1004": {
-      "name": "角色·安魂曲",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#E7495A",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
-      }
-    },
-    "1008": {
-      "name": "角色·翳",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#5D667B",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_langren.YH_lihui_character_langren"
-      }
-    },
-    "1010": {
-      "name": "角色·娜娜莉",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#F24B7E",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
-      }
-    },
-    "1019": {
-      "name": "角色·薄荷",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#79E6EB",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_bohe.YH_lihui_character_bohe"
-      }
-    },
-    "1020": {
-      "name": "角色·哈尼婭",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#F5C7EC",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
-      }
-    },
-    "1021": {
-      "name": "角色·埃德嘉",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#D5EFFF",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_aidejia.YH_lihui_character_aidejia"
-      }
-    },
-    "1023": {
-      "name": "角色·白藏",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#CBC2D9",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_baizhang.YH_lihui_character_baizhang"
-      }
-    },
-    "1025": {
-      "name": "角色·哈索爾",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#FFFFFF",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_hahuosuoer.YH_lihui_character_hahuosuoer"
-      }
-    },
-    "1033": {
-      "name": "角色·阿德勒",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#EDCA95",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_adele.YH_lihui_character_adele"
-      }
-    },
-    "1039": {
-      "name": "角色·法帝婭",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#B095D9",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_fadiya.YH_lihui_character_fadiya"
-      }
-    },
-    "1052": {
-      "name": "角色·潯",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#E7495A",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
-      }
-    },
-    "1054": {
-      "name": "角色·達芙蒂爾",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#42A6FF",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_dafudier.YH_lihui_character_dafudier"
-      }
-    },
-    "1055": {
-      "name": "角色·九原",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#A595D1",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_jiuyuan.YH_lihui_character_jiuyuan"
-      }
-    },
-    "1070": {
-      "name": "角色·海月",
-      "rarity": 4,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#40CEFE",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_haiyue1.YH_lihui_fashionshop_haiyue1"
-      }
-    },
-    "1073": {
-      "name": "角色·小吱",
-      "rarity": 5,
-      "category": "character",
-      "domain_type": "character",
-      "color": "#D9A5BC",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xiaozhi.YH_lihui_character_xiaozhi"
-      }
-    },
-    "Characterawaken_Adler": {
-      "name": "道具·心象碎片·阿德勒",
-      "rarity": 4,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Adler.Characterawaken_Adler",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Adler.Characterawaken_Adler",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_015_256.YH_UI_awaken_015_256"
-      }
-    },
-    "Characterawaken_Hathor": {
-      "name": "道具·心象碎片·哈索爾",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Hathor.Characterawaken_Hathor",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Hathor.Characterawaken_Hathor",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_025_256.YH_UI_awaken_025_256"
-      }
-    },
-    "Characterawaken_Jin": {
-      "name": "道具·心象碎片·潯",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Jin.Characterawaken_Jin",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Jin.Characterawaken_Jin",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_052_256.YH_UI_awaken_052_256"
-      }
-    },
-    "Characterawaken_Mint": {
-      "name": "道具·心象碎片·薄荷",
-      "rarity": 4,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Mint.Characterawaken_Mint",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Mint.Characterawaken_Mint",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_019_256.YH_UI_awaken_019_256"
-      }
-    },
-    "Characterawaken_Nanally": {
-      "name": "道具·心象碎片·娜娜莉",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Nanally.Characterawaken_Nanally",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Nanally.Characterawaken_Nanally",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_010_256.YH_UI_awaken_010_256"
-      }
-    },
-    "Characterawaken_Sagiri": {
-      "name": "道具·心象碎片·早霧",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Sagiri.Characterawaken_Sagiri",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Sagiri.Characterawaken_Sagiri",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_003_256.YH_UI_awaken_003_256"
-      }
-    },
-    "Characterawaken_cang": {
-      "name": "道具·心象碎片·白藏",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_cang.Characterawaken_cang",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_cang.Characterawaken_cang",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_023_256.YH_UI_awaken_023_256"
-      }
-    },
-    "Characterawaken_daffodill": {
-      "name": "道具·心象碎片·達芙蒂爾",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_daffodill.Characterawaken_daffodill",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_daffodill.Characterawaken_daffodill",
-        "portrait": "/Game/UI/UI_Icon/Item/UI_YH_Item_Icon_linshi_Oversea.UI_YH_Item_Icon_linshi_Oversea"
-      }
-    },
-    "Characterawaken_fadia": {
-      "name": "道具·心象碎片·法帝婭",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_fadia.Characterawaken_fadia",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_fadia.Characterawaken_fadia",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_027_256.YH_UI_awaken_027_256"
-      }
-    },
-    "Characterawaken_lacrimosa": {
-      "name": "道具·心象碎片·安魂曲",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_004_256.YH_UI_awaken_004_256"
-      }
-    },
-    "Characterawaken_skia": {
-      "name": "道具·心象碎片·翳",
-      "rarity": 4,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_skia.Characterawaken_skia",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_skia.Characterawaken_skia",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_008_256.YH_UI_awaken_008_256"
-      }
-    },
-    "DiceNormal": {
-      "name": "道具·捏造骰子",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/DiceNormal_100.DiceNormal_100",
-        "icon": "/Game/UI/UI_Icon/item_100/DiceNormal_256.DiceNormal_256",
-        "portrait": "/Game/UI/UI_Icon/Item/DiceNormal.DIceNormal"
-      }
-    },
-    "Dice_ticket_01": {
-      "name": "道具·失緯棋子",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/gold_chequer_100.gold_chequer_100",
-        "icon": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer",
-        "portrait": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer"
-      }
-    },
-    "Dice_ticket_02": {
-      "name": "道具·迷迭棋子",
-      "rarity": 4,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/silver_chequer_100.silver_chequer_100",
-        "icon": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer",
-        "portrait": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer"
-      }
-    },
-    "Dicelimite": {
-      "name": "道具·質實骰子",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Dicelimite_100.Dicelimite_100",
-        "icon": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256",
-        "portrait": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256"
-      }
-    },
-    "Fashion_Glide_1004": {
-      "name": "滑翔翼·好柿成雙",
-      "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
-      "color": "#000000",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly09.YH_UI_shizhuang_big_fly09",
-        "head_icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
-        "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
-        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu1.YH_UI_1024_anhunqu1"
-      }
-    },
-    "Fashion_Glide_1010": {
-      "name": "滑翔翼·副手的副手",
-      "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
-      "color": "#000000",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly05.YH_UI_shizhuang_big_fly05",
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi1.YH_lihui_fashionshop_huaxiangyi1"
-      }
-    },
-    "Fashion_Glide_1052": {
-      "name": "滑翔翼·幽蘭",
-      "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
-      "color": "#000000",
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly07.YH_UI_shizhuang_big_fly07",
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi2.YH_lihui_fashionshop_huaxiangyi2"
-      }
-    },
-    "Fashion_character_1004_01": {
-      "name": "時裝·鎏金交響詩",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu4.YH_lihui_fashionshopi_anhunqu4"
-      }
-    },
-    "Fashion_character_1010": {
-      "name": "時裝·華麗飛踢",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali3.YH_lihui_character_nanali3"
-      }
-    },
-    "Fashion_character_1052_01": {
-      "name": "時裝·蘭花不菲",
-      "rarity": 5,
-      "category": "item",
-      "domain_type": "item",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_xun1.YH_lihui_fashionshop_xun1"
-      }
-    },
-    "Fashion_vehicleSkin_1052_V016": {
-      "name": "改裝件·金風迎客來-塗裝",
-      "rarity": 5,
-      "category": "vehicle_module",
-      "domain_type": "vehicle_module",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai11.YH_lihui_character_cai11"
-      }
-    },
-    "Fashion_vehicle_1004_V021": {
-      "name": "改裝件·番茄醬巡航-塗裝",
-      "rarity": 5,
-      "category": "vehicle_module",
-      "domain_type": "vehicle_module",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
-        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu2.YH_UI_1024_anhunqu2"
-      }
-    },
-    "Fashion_vehicle_1010_V008": {
-      "name": "改裝件·萌虎來襲-塗裝",
-      "rarity": 5,
-      "category": "vehicle_module",
-      "domain_type": "vehicle_module",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai3.YH_lihui_character_cai3"
-      }
-    },
-    "Fashion_vehicle_1052_V024": {
-      "name": "改裝件·秋色殘影-塗裝",
-      "rarity": 5,
-      "category": "vehicle_module",
-      "domain_type": "vehicle_module",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai5.YH_lihui_character_cai5"
-      }
-    },
-    "fork_Arachne": {
-      "name": "弧盤·永恆圓舞曲",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_100.fork_Arachne_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256"
-      }
-    },
-    "fork_BitGame": {
-      "name": "弧盤·引爆全場",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_100.fork_BitGame_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256"
-      }
-    },
-    "fork_BitterCake": {
-      "name": "弧盤·良藥苦口",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_100.fork_BitterCake_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256"
-      }
-    },
-    "fork_BlackBook": {
-      "name": "弧盤·漆黑青春妄想",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_100.fork_BlackBook_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256"
-      }
-    },
-    "fork_Butterfly": {
-      "name": "弧盤·現實避難所",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_100.fork_Butterfly_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_256.fork_Butterfly_256"
-      }
-    },
-    "fork_GoldWool": {
-      "name": "弧盤·眾人追尋之物",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_100.fork_GoldWool_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_256.fork_GoldWool_256"
-      }
-    },
-    "fork_Kite": {
-      "name": "弧盤·小心頭頂",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Kite_100.fork_Kite_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256"
-      }
-    },
-    "fork_Nakupeda": {
-      "name": "弧盤·千金難買你開心",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_100.fork_Nakupeda_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256"
-      }
-    },
-    "fork_PaperPlane": {
-      "name": "弧盤·開始淨空",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_100.fork_PaperPlane_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256"
-      }
-    },
-    "fork_PoliceRat": {
-      "name": "弧盤·海特洛的安寧",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_100.fork_PoliceRat_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256"
-      }
-    },
-    "fork_Prokaryon": {
-      "name": "弧盤·「我們。」",
-      "rarity": 3,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_100.fork_yuanheti_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256"
-      }
-    },
-    "fork_Rose": {
-      "name": "弧盤·「最後一朵玫瑰」",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Rose_100.fork_Rose_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Rose_256.fork_Rose_256"
-      }
-    },
-    "fork_TigerTally": {
-      "name": "弧盤·預備備",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_100.fork_TigerTally_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_256.fork_TigerTally_256"
-      }
-    },
-    "fork_Time": {
-      "name": "弧盤·行進於時間之外",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Time_100.fork_Time_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Time_256.fork_Time_256"
-      }
-    },
-    "fork_appliance": {
-      "name": "弧盤·「電音」狂歡",
-      "rarity": 3,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_100.fork_fudianling_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256"
-      }
-    },
-    "fork_bopu": {
-      "name": "弧盤·光波暈眩，迷走狂歡",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_bopu_100.fork_bopu_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256"
-      }
-    },
-    "fork_dustbin": {
-      "name": "弧盤·危險遊戲",
-      "rarity": 3,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_100.fork_dustbin_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256"
-      }
-    },
-    "fork_jiaojuan": {
-      "name": "弧盤·閃耀的每一天",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_100.fork_jiaojuan_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256"
-      }
-    },
-    "fork_jingmotingyuan": {
-      "name": "弧盤·茶花會",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_100.fork_jingmotingyuan_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256"
-      }
-    },
-    "fork_koinobori": {
-      "name": "弧盤·終有時",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_100.fork_koinobori_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256"
-      }
-    },
-    "fork_lingganzhongjiezhe": {
-      "name": "弧盤·靈感大逃殺",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_100.fork_lingganzhongjiezhe_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256"
-      }
-    },
-    "fork_mamen": {
-      "name": "弧盤·思考喵",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mamen_100.fork_mamen_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256"
-      }
-    },
-    "fork_mofeikesi": {
-      "name": "弧盤·好狗狗走四方",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_100.fork_mofeikesi_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256"
-      }
-    },
-    "fork_nonos": {
-      "name": "弧盤·成功的第一步",
-      "rarity": 3,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_nonos_100.fork_nonos_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256"
-      }
-    },
-    "fork_oulaquantao": {
-      "name": "弧盤·歐拉歐拉！",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_100.fork_oulaquantao_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256"
-      }
-    },
-    "fork_rishi": {
-      "name": "弧盤·休假日",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_rishi_100.fork_rishi_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256"
-      }
-    },
-    "fork_spider": {
-      "name": "弧盤·掛你在心口難開",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_spider_100.fork_spider_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256"
-      }
-    },
-    "fork_tuansanlang": {
-      "name": "弧盤·該死的邂逅",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_100.fork_tuansanlang_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256"
-      }
-    },
-    "fork_vine": {
-      "name": "弧盤·笑口常開",
-      "rarity": 3,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_100.fork_HugVine_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256"
-      }
-    },
-    "fork_wuhuakuang": {
-      "name": "弧盤·被遺忘者",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_100.fork_wuhuakuang_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256"
-      }
-    },
-    "fork_wushoutieyu": {
-      "name": "弧盤·焰魂狂飆",
-      "rarity": 5,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_100.fork_wushoutieyu_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256"
-      }
-    },
-    "fork_yaodao": {
-      "name": "弧盤·拔刀",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_100.fork_yaodao_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256"
-      }
-    },
-    "fork_yuren": {
-      "name": "弧盤·勿忘傘",
-      "rarity": 4,
-      "category": "fork",
-      "domain_type": "fork",
-      "color": "#000000",
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuren_100.fork_yuren_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256"
+  "gacha_rules": {
+    "fork_lottery_s": {
+      "carry_scope": "pool_kind",
+      "guarantee_scope": "pool_kind",
+      "hard_pity_5": 80,
+      "has_guarantee_5": true,
+      "pickup_win_rate_5": 25,
+      "pool_kind": "fork_lottery",
+      "rule_id": "fork_lottery_s",
+      "rule_text_refs": {
+        "probability_desc": "ui_forkshop_12_anhunqu",
+        "rule_desc_1": "ui_forklottery_rule_04_AnHunQu",
+        "rule_desc_2": "ui_forklottery_rule_05_AnHunQu"
+      },
+      "source": {
+        "confidence": "exact",
+        "notes": [
+          "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
+        ],
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json",
+          "DataTable/Drop/Client/ClientDropGroupDataTable.json",
+          "DataTable/Drop/DropSequenceDataTable.json"
+        ]
+      }
+    },
+    "monopoly_limited": {
+      "carry_scope": "pool_kind",
+      "guarantee_scope": "unknown",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "pool_kind": "monopoly_limited",
+      "rule_id": "monopoly_limited",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
+      },
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
+        ],
+        "tables": [
+          "Localization/zh-Hant/game.json"
+        ]
+      }
+    },
+    "monopoly_standard": {
+      "carry_scope": "pool_kind",
+      "guarantee_scope": "unknown",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "pool_kind": "monopoly_standard",
+      "rule_id": "monopoly_standard",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
+      },
+      "source": {
+        "confidence": "curated",
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
+        ],
+        "tables": [
+          "Localization/zh-Hant/game.json"
+        ]
       }
     }
   },
@@ -935,475 +389,919 @@
     "Fork_TigerTally": "fork_TigerTally",
     "fork_Vine": "fork_vine"
   },
-  "pools": {
-    "1": {
-      "name": "奇蹟盒盒"
-    },
-    "CardPool_Character": {
-      "name": "限定棋盤",
-      "group_label": "限定棋盤",
-      "title_windows": [
-        {
-          "end_at_tz8": "2026-05-13 05:59:00",
-          "title": "王牌一代目"
-        },
-        {
-          "end_at_tz8": "2026-06-03 05:59:00",
-          "title": "獨酌朧月流"
-        },
-        {
-          "end_at_tz8": "2026-06-24 05:59:00",
-          "title": "久夢初醒時"
-        },
-        {
-          "end_at_tz8": "2026-07-08 05:59:00",
-          "title": "無歸路"
-        }
-      ],
-      "banner_ids": [
-        "monopoly_limited_AnHunQu",
-        "monopoly_limited_Kaesi",
-        "monopoly_limited_Nanali",
-        "monopoly_limited_Xun"
-      ]
-    },
-    "CardPool_NewRole": {
-      "name": "標準棋盤",
-      "group_label": "標準棋盤",
-      "title": "世間奇遇",
-      "banner_ids": [
-        "monopoly_standard"
-      ]
-    },
-    "ForkLottery_AnHunQu": {
-      "name": "奇蹟盒盒",
-      "group_label": "弧盤研募",
-      "title": "夜曲特刊",
-      "pickup_item_ids": [
-        "fork_Rose"
-      ],
+  "items": {
+    "1003": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_zaowu.YH_lihui_character_zaowu"
       },
-      "banner_ids": [
-        "ForkLottery_AnHunQu"
-      ]
+      "category": "character",
+      "color": "#F3655F",
+      "domain_type": "character",
+      "name": "角色·早霧",
+      "rarity": 5
     },
-    "ForkLottery_Kaesi": {
-      "name": "奇蹟盒盒",
-      "group_label": "弧盤研募",
-      "title": "追獵特刊",
-      "pickup_item_ids": [
-        "fork_GoldWool"
-      ],
+    "1004": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
       },
-      "banner_ids": [
-        "ForkLottery_Kaesi"
-      ]
+      "category": "character",
+      "color": "#E7495A",
+      "domain_type": "character",
+      "name": "角色·安魂曲",
+      "rarity": 5
     },
-    "ForkLottery_Nanali": {
-      "name": "奇蹟盒盒",
-      "group_label": "弧盤研募",
-      "title": "猛虎特刊",
-      "pickup_item_ids": [
-        "fork_TigerTally"
-      ],
+    "1008": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_langren.YH_lihui_character_langren"
       },
-      "banner_ids": [
-        "ForkLottery_Nanali"
-      ]
+      "category": "character",
+      "color": "#5D667B",
+      "domain_type": "character",
+      "name": "角色·翳",
+      "rarity": 4
     },
-    "ForkLottery_Xun": {
-      "name": "奇蹟盒盒",
-      "group_label": "弧盤研募",
-      "title": "名月特刊",
-      "pickup_item_ids": [
-        "fork_Time"
-      ],
+    "1010": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
       },
-      "banner_ids": [
-        "ForkLottery_Xun"
-      ]
-    }
-  },
-  "banners": {
-    "ForkLottery_AnHunQu": {
-      "banner_id": "ForkLottery_AnHunQu",
-      "pool_id": "ForkLottery_AnHunQu",
-      "pool_kind": "fork_lottery",
-      "banner_type": "fork",
-      "title": "夜曲特刊",
-      "rate_up_5": [
-        "fork_Rose"
-      ],
-      "rate_up_4": [],
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "confidence": "exact",
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
+      "category": "character",
+      "color": "#F24B7E",
+      "domain_type": "character",
+      "name": "角色·娜娜莉",
+      "rarity": 5
+    },
+    "1019": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_bohe.YH_lihui_character_bohe"
       },
-      "currency_id": "WeaponGacha",
-      "currency_count": 10,
-      "roll_unit": 10
+      "category": "character",
+      "color": "#79E6EB",
+      "domain_type": "character",
+      "name": "角色·薄荷",
+      "rarity": 4
     },
-    "ForkLottery_Kaesi": {
-      "banner_id": "ForkLottery_Kaesi",
-      "pool_id": "ForkLottery_Kaesi",
-      "pool_kind": "fork_lottery",
-      "banner_type": "fork",
-      "title": "追獵特刊",
-      "rate_up_5": [
-        "fork_GoldWool"
-      ],
-      "rate_up_4": [],
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "confidence": "exact",
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
+    "1020": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
       },
-      "currency_id": "WeaponGacha",
-      "currency_count": 10,
-      "roll_unit": 10
+      "category": "character",
+      "color": "#F5C7EC",
+      "domain_type": "character",
+      "name": "角色·哈尼婭",
+      "rarity": 4
     },
-    "ForkLottery_Nanali": {
-      "banner_id": "ForkLottery_Nanali",
-      "pool_id": "ForkLottery_Nanali",
-      "pool_kind": "fork_lottery",
-      "banner_type": "fork",
-      "title": "猛虎特刊",
-      "rate_up_5": [
-        "fork_TigerTally"
-      ],
-      "rate_up_4": [],
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "confidence": "exact",
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
+    "1021": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_aidejia.YH_lihui_character_aidejia"
       },
-      "currency_id": "WeaponGacha",
-      "currency_count": 10,
-      "roll_unit": 10
+      "category": "character",
+      "color": "#D5EFFF",
+      "domain_type": "character",
+      "name": "角色·埃德嘉",
+      "rarity": 4
     },
-    "ForkLottery_Xun": {
-      "banner_id": "ForkLottery_Xun",
-      "pool_id": "ForkLottery_Xun",
-      "pool_kind": "fork_lottery",
-      "banner_type": "fork",
-      "title": "名月特刊",
-      "rate_up_5": [
-        "fork_Time"
-      ],
-      "rate_up_4": [],
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "confidence": "exact",
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
+    "1023": {
       "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_baizhang.YH_lihui_character_baizhang"
       },
-      "currency_id": "WeaponGacha",
-      "currency_count": 10,
-      "roll_unit": 10
+      "category": "character",
+      "color": "#CBC2D9",
+      "domain_type": "character",
+      "name": "角色·白藏",
+      "rarity": 5
     },
-    "monopoly_limited_AnHunQu": {
-      "banner_id": "monopoly_limited_AnHunQu",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "banner_type": "limited",
-      "title": "久夢初醒時",
-      "end_at": "2026-06-24 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "rate_up_5": [
-        "1004"
-      ],
-      "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
-        ]
-      },
-      "phase": "limited_2026_06_24",
-      "start_at": "2026-06-03 05:59:00",
+    "1025": {
       "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
-      }
-    },
-    "monopoly_limited_Kaesi": {
-      "banner_id": "monopoly_limited_Kaesi",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "banner_type": "limited",
-      "title": "無歸路",
-      "end_at": "2026-07-08 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "rate_up_5": [
-        "1020"
-      ],
-      "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
-        ]
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_hahuosuoer.YH_lihui_character_hahuosuoer"
       },
-      "phase": "limited_2026_07_08",
-      "start_at": "2026-06-24 05:59:00",
+      "category": "character",
+      "color": "#FFFFFF",
+      "domain_type": "character",
+      "name": "角色·哈索爾",
+      "rarity": 5
+    },
+    "1033": {
       "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
-      }
-    },
-    "monopoly_limited_Nanali": {
-      "banner_id": "monopoly_limited_Nanali",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "banner_type": "limited",
-      "title": "王牌一代目",
-      "end_at": "2026-05-13 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "rate_up_5": [
-        "1010"
-      ],
-      "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
-        ]
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_adele.YH_lihui_character_adele"
       },
-      "phase": "limited_2026_05_13",
+      "category": "character",
+      "color": "#EDCA95",
+      "domain_type": "character",
+      "name": "角色·阿德勒",
+      "rarity": 4
+    },
+    "1039": {
       "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
-      }
-    },
-    "monopoly_limited_Xun": {
-      "banner_id": "monopoly_limited_Xun",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "banner_type": "limited",
-      "title": "獨酌朧月流",
-      "end_at": "2026-06-03 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "rate_up_5": [
-        "1052"
-      ],
-      "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
-        ]
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_fadiya.YH_lihui_character_fadiya"
       },
-      "phase": "limited_2026_06_03",
-      "start_at": "2026-05-13 05:59:00",
+      "category": "character",
+      "color": "#B095D9",
+      "domain_type": "character",
+      "name": "角色·法帝婭",
+      "rarity": 5
+    },
+    "1052": {
       "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
-      }
-    },
-    "monopoly_standard": {
-      "banner_id": "monopoly_standard",
-      "pool_id": "CardPool_NewRole",
-      "pool_kind": "monopoly_standard",
-      "banner_type": "standard",
-      "title": "世間奇遇",
-      "rate_up_5": [],
-      "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "rule_id": "monopoly_standard",
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
-        ]
-      }
-    }
-  },
-  "gacha_rules": {
-    "fork_lottery_s": {
-      "rule_id": "fork_lottery_s",
-      "pool_kind": "fork_lottery",
-      "hard_pity_5": 80,
-      "pickup_win_rate_5": 25,
-      "has_guarantee_5": true,
-      "guarantee_scope": "pool_kind",
-      "carry_scope": "pool_kind",
-      "rule_text_refs": {
-        "rule_desc_1": "ui_forklottery_rule_04_AnHunQu",
-        "rule_desc_2": "ui_forklottery_rule_05_AnHunQu",
-        "probability_desc": "ui_forkshop_12_anhunqu"
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
       },
-      "source": {
-        "confidence": "exact",
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json",
-          "DataTable/Drop/Client/ClientDropGroupDataTable.json",
-          "DataTable/Drop/DropSequenceDataTable.json"
-        ],
-        "notes": [
-          "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
-        ]
-      }
+      "category": "character",
+      "color": "#E7495A",
+      "domain_type": "character",
+      "name": "角色·潯",
+      "rarity": 5
     },
-    "monopoly_limited": {
-      "rule_id": "monopoly_limited",
-      "pool_kind": "monopoly_limited",
-      "hard_pity_5": 90,
-      "has_guarantee_5": false,
-      "guarantee_scope": "unknown",
-      "carry_scope": "pool_kind",
-      "rule_text_refs": {
-        "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
+    "1054": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_dafudier.YH_lihui_character_dafudier"
       },
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
-        ]
-      }
+      "category": "character",
+      "color": "#42A6FF",
+      "domain_type": "character",
+      "name": "角色·達芙蒂爾",
+      "rarity": 5
     },
-    "monopoly_standard": {
-      "rule_id": "monopoly_standard",
-      "pool_kind": "monopoly_standard",
-      "hard_pity_5": 90,
-      "has_guarantee_5": false,
-      "guarantee_scope": "unknown",
-      "carry_scope": "pool_kind",
-      "rule_text_refs": {
-        "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
+    "1055": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_jiuyuan.YH_lihui_character_jiuyuan"
       },
-      "source": {
-        "confidence": "curated",
-        "tables": [
-          "Localization/zh-Hant/game.json"
-        ],
-        "notes": [
-          "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
-        ]
-      }
+      "category": "character",
+      "color": "#A595D1",
+      "domain_type": "character",
+      "name": "角色·九原",
+      "rarity": 5
+    },
+    "1070": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_haiyue1.YH_lihui_fashionshop_haiyue1"
+      },
+      "category": "character",
+      "color": "#40CEFE",
+      "domain_type": "character",
+      "name": "角色·海月",
+      "rarity": 4
+    },
+    "1073": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xiaozhi.YH_lihui_character_xiaozhi"
+      },
+      "category": "character",
+      "color": "#D9A5BC",
+      "domain_type": "character",
+      "name": "角色·小吱",
+      "rarity": 5
+    },
+    "Characterawaken_Adler": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Adler.Characterawaken_Adler",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Adler.Characterawaken_Adler",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_015_256.YH_UI_awaken_015_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·阿德勒",
+      "rarity": 4
+    },
+    "Characterawaken_Hathor": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Hathor.Characterawaken_Hathor",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Hathor.Characterawaken_Hathor",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_025_256.YH_UI_awaken_025_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·哈索爾",
+      "rarity": 5
+    },
+    "Characterawaken_Jin": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Jin.Characterawaken_Jin",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Jin.Characterawaken_Jin",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_052_256.YH_UI_awaken_052_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·潯",
+      "rarity": 5
+    },
+    "Characterawaken_Mint": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Mint.Characterawaken_Mint",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Mint.Characterawaken_Mint",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_019_256.YH_UI_awaken_019_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·薄荷",
+      "rarity": 4
+    },
+    "Characterawaken_Nanally": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Nanally.Characterawaken_Nanally",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Nanally.Characterawaken_Nanally",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_010_256.YH_UI_awaken_010_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·娜娜莉",
+      "rarity": 5
+    },
+    "Characterawaken_Sagiri": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_003_256.YH_UI_awaken_003_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·早霧",
+      "rarity": 5
+    },
+    "Characterawaken_cang": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_cang.Characterawaken_cang",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_cang.Characterawaken_cang",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_023_256.YH_UI_awaken_023_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·白藏",
+      "rarity": 5
+    },
+    "Characterawaken_daffodill": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_daffodill.Characterawaken_daffodill",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_daffodill.Characterawaken_daffodill",
+        "portrait": "/Game/UI/UI_Icon/Item/UI_YH_Item_Icon_linshi_Oversea.UI_YH_Item_Icon_linshi_Oversea"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·達芙蒂爾",
+      "rarity": 5
+    },
+    "Characterawaken_fadia": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_fadia.Characterawaken_fadia",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_fadia.Characterawaken_fadia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_027_256.YH_UI_awaken_027_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·法帝婭",
+      "rarity": 5
+    },
+    "Characterawaken_lacrimosa": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_004_256.YH_UI_awaken_004_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·安魂曲",
+      "rarity": 5
+    },
+    "Characterawaken_skia": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_skia.Characterawaken_skia",
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_skia.Characterawaken_skia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_008_256.YH_UI_awaken_008_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·心象碎片·翳",
+      "rarity": 4
+    },
+    "DiceNormal": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/DiceNormal_100.DiceNormal_100",
+        "icon": "/Game/UI/UI_Icon/item_100/DiceNormal_256.DiceNormal_256",
+        "portrait": "/Game/UI/UI_Icon/Item/DiceNormal.DIceNormal"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·捏造骰子",
+      "rarity": 5
+    },
+    "Dice_ticket_01": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/gold_chequer_100.gold_chequer_100",
+        "icon": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer",
+        "portrait": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·失緯棋子",
+      "rarity": 5
+    },
+    "Dice_ticket_02": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/silver_chequer_100.silver_chequer_100",
+        "icon": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer",
+        "portrait": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·迷迭棋子",
+      "rarity": 4
+    },
+    "Dicelimite": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/item_100/Dicelimite_100.Dicelimite_100",
+        "icon": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256",
+        "portrait": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "道具·質實骰子",
+      "rarity": 5
+    },
+    "Fashion_Glide_1004": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly09.YH_UI_shizhuang_big_fly09",
+        "head_icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
+        "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu1.YH_UI_1024_anhunqu1"
+      },
+      "category": "appearance",
+      "color": "#000000",
+      "domain_type": "appearance",
+      "name": "滑翔翼·好柿成雙",
+      "rarity": 4
+    },
+    "Fashion_Glide_1010": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly05.YH_UI_shizhuang_big_fly05",
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi1.YH_lihui_fashionshop_huaxiangyi1"
+      },
+      "category": "appearance",
+      "color": "#000000",
+      "domain_type": "appearance",
+      "name": "滑翔翼·副手的副手",
+      "rarity": 4
+    },
+    "Fashion_Glide_1052": {
+      "asset_refs": {
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly07.YH_UI_shizhuang_big_fly07",
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi2.YH_lihui_fashionshop_huaxiangyi2"
+      },
+      "category": "appearance",
+      "color": "#000000",
+      "domain_type": "appearance",
+      "name": "滑翔翼·幽蘭",
+      "rarity": 4
+    },
+    "Fashion_character_1004_01": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu4.YH_lihui_fashionshopi_anhunqu4"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "時裝·鎏金交響詩",
+      "rarity": 5
+    },
+    "Fashion_character_1010": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali3.YH_lihui_character_nanali3"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "時裝·華麗飛踢",
+      "rarity": 5
+    },
+    "Fashion_character_1052_01": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_xun1.YH_lihui_fashionshop_xun1"
+      },
+      "category": "inventory",
+      "color": "#000000",
+      "domain_type": "inventory",
+      "name": "時裝·蘭花不菲",
+      "rarity": 5
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai11.YH_lihui_character_cai11"
+      },
+      "category": "vehicle_module",
+      "color": "#000000",
+      "domain_type": "vehicle_module",
+      "name": "改裝件·金風迎客來-塗裝",
+      "rarity": 5
+    },
+    "Fashion_vehicle_1004_V021": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu2.YH_UI_1024_anhunqu2"
+      },
+      "category": "vehicle_module",
+      "color": "#000000",
+      "domain_type": "vehicle_module",
+      "name": "改裝件·番茄醬巡航-塗裝",
+      "rarity": 5
+    },
+    "Fashion_vehicle_1010_V008": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai3.YH_lihui_character_cai3"
+      },
+      "category": "vehicle_module",
+      "color": "#000000",
+      "domain_type": "vehicle_module",
+      "name": "改裝件·萌虎來襲-塗裝",
+      "rarity": 5
+    },
+    "Fashion_vehicle_1052_V024": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai5.YH_lihui_character_cai5"
+      },
+      "category": "vehicle_module",
+      "color": "#000000",
+      "domain_type": "vehicle_module",
+      "name": "改裝件·秋色殘影-塗裝",
+      "rarity": 5
+    },
+    "fork_Arachne": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_100.fork_Arachne_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·永恆圓舞曲",
+      "rarity": 5
+    },
+    "fork_BitGame": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_100.fork_BitGame_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·引爆全場",
+      "rarity": 5
+    },
+    "fork_BitterCake": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_100.fork_BitterCake_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·良藥苦口",
+      "rarity": 4
+    },
+    "fork_BlackBook": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_100.fork_BlackBook_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·漆黑青春妄想",
+      "rarity": 5
+    },
+    "fork_Butterfly": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_100.fork_Butterfly_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_256.fork_Butterfly_256"
+      },
+      "category": "fork",
+      "domain_type": "fork",
+      "name": "弧盤·現實避難所",
+      "rarity": 5
+    },
+    "fork_GoldWool": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_100.fork_GoldWool_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_256.fork_GoldWool_256"
+      },
+      "category": "fork",
+      "domain_type": "fork",
+      "name": "弧盤·眾人追尋之物",
+      "rarity": 5
+    },
+    "fork_Kite": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Kite_100.fork_Kite_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·小心頭頂",
+      "rarity": 4
+    },
+    "fork_Nakupeda": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_100.fork_Nakupeda_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·千金難買你開心",
+      "rarity": 5
+    },
+    "fork_PaperPlane": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_100.fork_PaperPlane_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·開始淨空",
+      "rarity": 4
+    },
+    "fork_PoliceRat": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_100.fork_PoliceRat_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·海特洛的安寧",
+      "rarity": 5
+    },
+    "fork_Prokaryon": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_100.fork_yuanheti_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·「我們。」",
+      "rarity": 3
+    },
+    "fork_Rose": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Rose_100.fork_Rose_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Rose_256.fork_Rose_256"
+      },
+      "category": "fork",
+      "domain_type": "fork",
+      "name": "弧盤·「最後一朵玫瑰」",
+      "rarity": 5
+    },
+    "fork_TigerTally": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_100.fork_TigerTally_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_256.fork_TigerTally_256"
+      },
+      "category": "fork",
+      "domain_type": "fork",
+      "name": "弧盤·預備備",
+      "rarity": 5
+    },
+    "fork_Time": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Time_100.fork_Time_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Time_256.fork_Time_256"
+      },
+      "category": "fork",
+      "domain_type": "fork",
+      "name": "弧盤·行進於時間之外",
+      "rarity": 5
+    },
+    "fork_appliance": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_100.fork_fudianling_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·「電音」狂歡",
+      "rarity": 3
+    },
+    "fork_bopu": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_bopu_100.fork_bopu_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·光波暈眩，迷走狂歡",
+      "rarity": 4
+    },
+    "fork_dustbin": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_100.fork_dustbin_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·危險遊戲",
+      "rarity": 3
+    },
+    "fork_jiaojuan": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_100.fork_jiaojuan_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·閃耀的每一天",
+      "rarity": 4
+    },
+    "fork_jingmotingyuan": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_100.fork_jingmotingyuan_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·茶花會",
+      "rarity": 5
+    },
+    "fork_koinobori": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_100.fork_koinobori_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·終有時",
+      "rarity": 4
+    },
+    "fork_lingganzhongjiezhe": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_100.fork_lingganzhongjiezhe_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·靈感大逃殺",
+      "rarity": 4
+    },
+    "fork_mamen": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mamen_100.fork_mamen_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·思考喵",
+      "rarity": 5
+    },
+    "fork_mofeikesi": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_100.fork_mofeikesi_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·好狗狗走四方",
+      "rarity": 5
+    },
+    "fork_nonos": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_nonos_100.fork_nonos_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·成功的第一步",
+      "rarity": 3
+    },
+    "fork_oulaquantao": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_100.fork_oulaquantao_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·歐拉歐拉！",
+      "rarity": 4
+    },
+    "fork_rishi": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_rishi_100.fork_rishi_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·休假日",
+      "rarity": 5
+    },
+    "fork_spider": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_spider_100.fork_spider_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·掛你在心口難開",
+      "rarity": 4
+    },
+    "fork_tuansanlang": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_100.fork_tuansanlang_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·該死的邂逅",
+      "rarity": 4
+    },
+    "fork_vine": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_100.fork_HugVine_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·笑口常開",
+      "rarity": 3
+    },
+    "fork_wuhuakuang": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_100.fork_wuhuakuang_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·被遺忘者",
+      "rarity": 5
+    },
+    "fork_wushoutieyu": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_100.fork_wushoutieyu_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·焰魂狂飆",
+      "rarity": 5
+    },
+    "fork_yaodao": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_100.fork_yaodao_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·拔刀",
+      "rarity": 4
+    },
+    "fork_yuren": {
+      "asset_refs": {
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuren_100.fork_yuren_100",
+        "icon": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256",
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256"
+      },
+      "category": "fork",
+      "color": "#000000",
+      "domain_type": "fork",
+      "name": "弧盤·勿忘傘",
+      "rarity": 4
     }
   },
   "labels": {
@@ -1429,5 +1327,107 @@
     "ui_forkshop_03": "弧盤研募計畫",
     "ui_forkshop_07": "研募詳情",
     "ui_forkshop_10": "研募記錄"
-  }
+  },
+  "pools": {
+    "1": {
+      "name": "奇蹟盒盒"
+    },
+    "CardPool_Character": {
+      "banner_ids": [
+        "monopoly_limited_AnHunQu",
+        "monopoly_limited_Kaesi",
+        "monopoly_limited_Nanali",
+        "monopoly_limited_Xun"
+      ],
+      "group_label": "限定棋盤",
+      "name": "限定棋盤",
+      "title_windows": [
+        {
+          "end_at_tz8": "2026-05-13 05:59:00",
+          "title": "王牌一代目"
+        },
+        {
+          "end_at_tz8": "2026-06-03 05:59:00",
+          "title": "獨酌朧月流"
+        },
+        {
+          "end_at_tz8": "2026-06-24 05:59:00",
+          "title": "久夢初醒時"
+        },
+        {
+          "end_at_tz8": "2026-07-08 05:59:00",
+          "title": "無歸路"
+        }
+      ]
+    },
+    "CardPool_NewRole": {
+      "banner_ids": [
+        "monopoly_standard"
+      ],
+      "group_label": "標準棋盤",
+      "name": "標準棋盤",
+      "title": "世間奇遇"
+    },
+    "ForkLottery_AnHunQu": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+      },
+      "banner_ids": [
+        "ForkLottery_AnHunQu"
+      ],
+      "group_label": "弧盤研募",
+      "name": "奇蹟盒盒",
+      "pickup_item_ids": [
+        "fork_Rose"
+      ],
+      "title": "夜曲特刊"
+    },
+    "ForkLottery_Kaesi": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+      },
+      "banner_ids": [
+        "ForkLottery_Kaesi"
+      ],
+      "group_label": "弧盤研募",
+      "name": "奇蹟盒盒",
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ],
+      "title": "追獵特刊"
+    },
+    "ForkLottery_Nanali": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+      },
+      "banner_ids": [
+        "ForkLottery_Nanali"
+      ],
+      "group_label": "弧盤研募",
+      "name": "奇蹟盒盒",
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ],
+      "title": "猛虎特刊"
+    },
+    "ForkLottery_Xun": {
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+      },
+      "banner_ids": [
+        "ForkLottery_Xun"
+      ],
+      "group_label": "弧盤研募",
+      "name": "奇蹟盒盒",
+      "pickup_item_ids": [
+        "fork_Time"
+      ],
+      "title": "名月特刊"
+    }
+  },
+  "schema_version": 4
 }

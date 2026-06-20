@@ -24,6 +24,7 @@ export type AppApi = {
   createBackup(path?: string | null): Promise<BackupReport>;
   restoreBackup(path: string): Promise<RestoreReport>;
   mapsList(): Promise<MapLocaleList>;
+  systemLocale(): Promise<string | null>;
   doctorRun(): Promise<DoctorReport>;
   runtimePing(): Promise<unknown>;
   updaterStatus(): Promise<UpdateStatus>;

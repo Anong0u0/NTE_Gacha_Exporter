@@ -8,6 +8,7 @@ import type {
   RecordFilterOptions,
   Profile,
 } from "../api";
+import type { I18nKey } from "./i18n";
 import { formatCaptureMode } from "./viewHelpers";
 
 type PoolKindFilter = PoolKind | "all";
@@ -28,6 +29,7 @@ type ComputedDeps = {
   recordPoolKind: Ref<PoolKindFilter>;
   pageSize: Ref<number>;
   pageIndex: Ref<number>;
+  t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
 };
 
 export function createAppComputed(deps: ComputedDeps) {
@@ -83,40 +85,48 @@ export function createAppComputed(deps: ComputedDeps) {
   const isWorkflowBusy = computed(() => deps.busy.value || isCaptureActive.value || deps.captureActionBusy.value);
   const captureTitle = computed(() => {
     if (!deps.captureStatus.value) {
-      return deps.summary.value?.total_records ? "Merge new records" : "Import records to start tracking";
+      return deps.summary.value?.total_records ? deps.t("capture.mergePrompt") : deps.t("capture.importPrompt");
     }
-    if (deps.captureStatus.value.state === "completed") return "Capture completed";
-    if (deps.captureStatus.value.state === "failed") return "Capture failed";
-    if (deps.captureStatus.value.state === "stopping") return "Stopping capture";
-    return "Capture running";
+    if (deps.captureStatus.value.state === "completed") return deps.t("capture.completed");
+    if (deps.captureStatus.value.state === "failed") return deps.t("capture.failed");
+    if (deps.captureStatus.value.state === "stopping") return deps.t("capture.stopping");
+    return deps.t("capture.running");
   });
   const captureSubtitle = computed(() => {
     if (!deps.captureStatus.value) {
       return deps.summary.value?.last_run
-        ? `${deps.summary.value.last_run.records_inserted} inserted, ${deps.summary.value.last_run.records_skipped} skipped`
-        : "Live capture, raw replay, and public JSON merge into this profile.";
+        ? deps.t("capture.summary", {
+            inserted: deps.summary.value.last_run.records_inserted,
+            skipped: deps.summary.value.last_run.records_skipped,
+          })
+        : deps.t("capture.subtitleDefault");
     }
     if (deps.captureStatus.value.import_report) {
-      return `${deps.captureStatus.value.import_report.records_inserted} inserted, ${deps.captureStatus.value.import_report.records_skipped} skipped`;
+      return deps.t("capture.summary", {
+        inserted: deps.captureStatus.value.import_report.records_inserted,
+        skipped: deps.captureStatus.value.import_report.records_skipped,
+      });
     }
     if (deps.captureStatus.value.error) return deps.captureStatus.value.error.message;
-    return `${deps.captureStatus.value.records_count} records seen`;
+    return deps.t("capture.recordsSeen", { count: deps.captureStatus.value.records_count });
   });
   const autoPageStatusLine = computed(() => {
     const auto = deps.captureStatus.value?.auto_page;
     if (!auto) return "";
     const page =
-      auto.current_page && auto.total_pages ? ` page=${auto.current_page}/${auto.total_pages}` : "";
+      auto.current_page && auto.total_pages
+        ? ` ${deps.t("capture.page", { current: auto.current_page, total: auto.total_pages })}`
+        : "";
     const pool = auto.pool ? ` ${auto.pool}` : "";
     return `${auto.message}${pool}${page}`;
   });
   const captureModeLabel = computed(() =>
-    formatCaptureMode(deps.captureStatus.value?.mode ?? deps.captureMode.value),
+    formatCaptureMode(deps.captureStatus.value?.mode ?? deps.captureMode.value, deps.t),
   );
   const assetsPackSummary = computed(() => {
-    if (!deps.assetsPackStatus.value?.installed) return "Not installed";
-    if (!deps.assetsPackStatus.value.compatible) return "Installed pack does not match this build";
-    return `${deps.assetsPackStatus.value.file_count} images installed`;
+    if (!deps.assetsPackStatus.value?.installed) return deps.t("settings.assetsStatusNotInstalled");
+    if (!deps.assetsPackStatus.value.compatible) return deps.t("settings.assetsStatusMismatch");
+    return deps.t("settings.assetsStatusInstalled", { count: deps.assetsPackStatus.value.file_count });
   });
 
   return {

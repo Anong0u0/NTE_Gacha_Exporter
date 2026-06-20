@@ -28,8 +28,8 @@ pub fn run() {
         .setup(move |app| {
             let root =
                 portable_root().map_err(|err| format!("failed to resolve portable root: {err}"))?;
-            let store =
-                JsonStore::open(root).map_err(|err| format!("failed to open JSON store: {err}"))?;
+            let store = JsonStore::open_with_defaults(root, system_commands::store_defaults())
+                .map_err(|err| format!("failed to open JSON store: {err}"))?;
             app.manage(AppState::new(store, pending_admin_capture.clone()));
             #[cfg(feature = "agent-smoke")]
             agent_smoke::maybe_start(app);
@@ -63,6 +63,7 @@ pub fn run() {
             assets_commands::assets_pack_remove,
             assets_commands::assets_resolve_refs,
             system_commands::maps_list,
+            system_commands::system_locale,
             system_commands::doctor_run,
             system_commands::runtime_ping,
             admin::request_admin_capture_start,

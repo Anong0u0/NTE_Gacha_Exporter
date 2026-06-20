@@ -31,23 +31,33 @@ import {
 const MOCK_APP_VERSION = __NTE_APP_VERSION__;
 const mockProfiles = [{ ...mockProfile }];
 let mockActiveProfileName = mockProfile.name;
+let mockLocale = "zh-Hant";
+let mockUiLocale = "zh-Hant";
+let mockUpdateChannel = "stable";
+let mockCheckUpdatesOnStartup = false;
 
 export const mockApi: AppApi = {
   async getSettings() {
     return {
       active_profile: mockActiveProfileName,
-      locale: "zh-Hant",
-      update_channel: "stable",
-      check_updates_on_startup: false,
+      locale: mockLocale,
+      ui_locale: mockUiLocale,
+      update_channel: mockUpdateChannel,
+      check_updates_on_startup: mockCheckUpdatesOnStartup,
     };
   },
   async updateSettings(patch: SettingsPatch) {
     mockActiveProfileName = patch.active_profile ?? mockActiveProfileName;
+    mockLocale = patch.locale ?? mockLocale;
+    mockUiLocale = patch.ui_locale ?? mockUiLocale;
+    mockUpdateChannel = patch.update_channel ?? mockUpdateChannel;
+    mockCheckUpdatesOnStartup = patch.check_updates_on_startup ?? mockCheckUpdatesOnStartup;
     return {
       active_profile: mockActiveProfileName,
-      locale: patch.locale ?? "zh-Hant",
-      update_channel: patch.update_channel ?? "stable",
-      check_updates_on_startup: patch.check_updates_on_startup ?? false,
+      locale: mockLocale,
+      ui_locale: mockUiLocale,
+      update_channel: mockUpdateChannel,
+      check_updates_on_startup: mockCheckUpdatesOnStartup,
     };
   },
   async listProfiles() {
@@ -62,9 +72,10 @@ export const mockApi: AppApi = {
     mockActiveProfileName = profileName;
     return {
       active_profile: profileName,
-      locale: "zh-Hant",
-      update_channel: "stable",
-      check_updates_on_startup: false,
+      locale: mockLocale,
+      ui_locale: mockUiLocale,
+      update_channel: mockUpdateChannel,
+      check_updates_on_startup: mockCheckUpdatesOnStartup,
     };
   },
   async renameProfile(oldName: string, newName: string) {
@@ -83,9 +94,10 @@ export const mockApi: AppApi = {
     if (mockActiveProfileName === profileName) mockActiveProfileName = mockProfiles[0].name;
     return {
       active_profile: mockActiveProfileName,
-      locale: "zh-Hant",
-      update_channel: "stable",
-      check_updates_on_startup: false,
+      locale: mockLocale,
+      ui_locale: mockUiLocale,
+      update_channel: mockUpdateChannel,
+      check_updates_on_startup: mockCheckUpdatesOnStartup,
     };
   },
   async importPublicJson(profileName: string, path: string) {
@@ -228,6 +240,9 @@ export const mockApi: AppApi = {
   },
   async mapsList() {
     return { locales: ["zh-Hant", "en", "ja"] };
+  },
+  async systemLocale() {
+    return "zh-TW";
   },
   async doctorRun() {
     return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };

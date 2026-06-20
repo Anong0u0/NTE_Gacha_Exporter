@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Database, Download, FileJson, HardDriveUpload, Pencil, RefreshCw, Settings, Stethoscope, Trash2, X } from "lucide-vue-next";
+import { Database, Download, FileJson, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -10,47 +10,45 @@ const app = useAppContext();
         <section class="panel">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">Runtime</span>
-              <h2>Settings</h2>
+              <span class="eyebrow">{{ app.t("settings.runtime") }}</span>
+              <h2>{{ app.t("common.settings") }}</h2>
             </div>
           </div>
           <div class="form-grid">
             <label class="field">
-              <span>Profile</span>
-              <select v-model="app.activeProfileName" :disabled="app.isWorkflowBusy">
-                <option v-for="profile in app.profiles" :key="profile.name" :value="profile.name">
-                  {{ profile.name }}
-                </option>
+              <span>{{ app.t("settings.uiLocale") }}</span>
+              <select v-model="app.uiLocale" :disabled="app.isWorkflowBusy">
+                <option v-for="item in app.uiLocales" :key="item" :value="item">{{ app.uiLocaleName(item) }}</option>
               </select>
             </label>
             <label class="field">
-              <span>Locale</span>
+              <span>{{ app.t("settings.dataLocale") }}</span>
               <select v-model="app.locale" :disabled="app.isWorkflowBusy">
                 <option v-for="item in app.locales" :key="item" :value="item">{{ item }}</option>
               </select>
             </label>
             <label class="field">
-              <span>Update channel</span>
+              <span>{{ app.t("settings.updateChannel") }}</span>
               <select v-model="app.settingsUpdateChannel" :disabled="app.isWorkflowBusy">
-                <option value="stable">stable</option>
-                <option value="beta">beta</option>
+                <option value="stable">{{ app.t("update.stable") }}</option>
+                <option value="beta">{{ app.t("update.beta") }}</option>
               </select>
             </label>
             <label class="check-field">
               <input v-model="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" />
-              <span>Check updates on startup</span>
+              <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
             <button class="primary" type="button" :disabled="app.isWorkflowBusy" @click="app.saveSettings">
               <Settings :size="17" />
-              <span>Save settings</span>
+              <span>{{ app.t("common.save") }}</span>
             </button>
             <button type="button" data-agent-id="runtime-ping" :disabled="app.isWorkflowBusy" @click="app.pingRuntime">
               <Database :size="17" />
-              <span>Ping runtime</span>
+              <span>{{ app.t("settings.pingRuntime") }}</span>
             </button>
             <button type="button" data-agent-id="doctor-run" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
               <Stethoscope :size="17" />
-              <span>Doctor</span>
+              <span>{{ app.t("common.doctor") }}</span>
             </button>
           </div>
         </section>
@@ -58,65 +56,20 @@ const app = useAppContext();
         <section class="panel">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">Profiles</span>
-              <h2>Profile management</h2>
-            </div>
-          </div>
-          <div class="profile-list">
-            <div v-for="profile in app.profiles" :key="profile.name" class="profile-row">
-              <div class="profile-main">
-                <template v-if="app.profileRenameSource === profile.name">
-                  <input
-                    v-model="app.profileRenameName"
-                    :disabled="app.isWorkflowBusy"
-                    @keyup.enter="app.saveProfileRename"
-                    @keyup.esc="app.cancelRenameProfile"
-                  />
-                </template>
-                <template v-else>
-                  <strong>{{ profile.name }}</strong>
-                  <span>{{ profile.active ? "Active" : "Inactive" }} · created {{ profile.created_at }} · updated {{ profile.updated_at }}</span>
-                </template>
-              </div>
-              <div class="profile-actions">
-                <template v-if="app.profileRenameSource === profile.name">
-                  <button type="button" :disabled="app.isWorkflowBusy || !app.profileRenameName.trim()" title="Save profile name" @click="app.saveProfileRename">
-                    <Check :size="16" />
-                  </button>
-                  <button type="button" :disabled="app.isWorkflowBusy" title="Cancel rename" @click="app.cancelRenameProfile">
-                    <X :size="16" />
-                  </button>
-                </template>
-                <template v-else>
-                  <button type="button" :disabled="app.isWorkflowBusy" title="Rename profile" @click="app.startRenameProfile(profile)">
-                    <Pencil :size="16" />
-                  </button>
-                  <button type="button" :disabled="app.isWorkflowBusy || app.profiles.length <= 1" title="Delete profile" @click="app.deleteProfile(profile)">
-                    <Trash2 :size="16" />
-                  </button>
-                </template>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <span class="eyebrow">Updater</span>
-              <h2>Portable update</h2>
+              <span class="eyebrow">{{ app.t("settings.updater") }}</span>
+              <h2>{{ app.t("settings.portableUpdate") }}</h2>
             </div>
           </div>
           <div class="stat-table compact">
-            <div><span>Current</span><strong>{{ app.updateStatus?.current_version ?? "-" }}</strong></div>
-            <div><span>Layout</span><strong>{{ app.updateStatus?.supported_layout ? "Portable" : "Unsupported" }}</strong></div>
-            <div><span>Available</span><strong>{{ app.updateCheckReport?.package?.version ?? "-" }}</strong></div>
-            <div><span>Staged</span><strong>{{ app.stagedUpdate?.package.version ?? app.updateStatus?.staged_version ?? "-" }}</strong></div>
+            <div><span>{{ app.t("common.current") }}</span><strong>{{ app.updateStatus?.current_version ?? "-" }}</strong></div>
+            <div><span>{{ app.t("common.layout") }}</span><strong>{{ app.updateStatus?.supported_layout ? app.t("settings.portable") : app.t("settings.unsupported") }}</strong></div>
+            <div><span>{{ app.t("common.available") }}</span><strong>{{ app.updateCheckReport?.package?.version ?? "-" }}</strong></div>
+            <div><span>{{ app.t("common.staged") }}</span><strong>{{ app.stagedUpdate?.package.version ?? app.updateStatus?.staged_version ?? "-" }}</strong></div>
           </div>
           <div class="action-row">
             <button type="button" :disabled="app.isWorkflowBusy" @click="app.checkForUpdates(true)">
               <RefreshCw :size="17" />
-              <span>Check updates</span>
+              <span>{{ app.t("settings.checkUpdates") }}</span>
             </button>
             <button
               class="primary"
@@ -125,7 +78,7 @@ const app = useAppContext();
               @click="app.downloadUpdate"
             >
               <Download :size="17" />
-              <span>Download</span>
+              <span>{{ app.t("common.download") }}</span>
             </button>
             <button
               type="button"
@@ -133,7 +86,7 @@ const app = useAppContext();
               @click="app.installUpdate"
             >
               <HardDriveUpload :size="17" />
-              <span>Restart to update</span>
+              <span>{{ app.t("settings.restartUpdate") }}</span>
             </button>
           </div>
         </section>
@@ -141,22 +94,22 @@ const app = useAppContext();
         <section class="panel">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">Assets Pack</span>
-              <h2>Visual assets</h2>
+              <span class="eyebrow">{{ app.t("settings.assetsPack") }}</span>
+              <h2>{{ app.t("settings.visualAssets") }}</h2>
             </div>
           </div>
           <div class="stat-table compact">
-            <div><span>Status</span><strong class="stat-text">{{ app.assetsPackSummary }}</strong></div>
-            <div><span>Version</span><strong>{{ app.assetsPackStatus?.installed_app_version ?? "-" }}</strong></div>
-            <div><span>Images</span><strong>{{ app.assetsPackStatus?.file_count ?? 0 }}</strong></div>
-            <div><span>Available</span><strong class="stat-text">{{ app.assetsPackCheckReport?.package?.app_version ?? "-" }}</strong></div>
-            <div><span>Source</span><strong class="stat-text">{{ app.assetsPackStatus?.source_commit?.slice(0, 12) ?? "-" }}</strong></div>
-            <div><span>Map</span><strong class="stat-text">{{ app.assetsPackStatus?.installed_map_hash?.slice(0, 12) ?? "-" }}</strong></div>
+            <div><span>{{ app.t("common.status") }}</span><strong class="stat-text">{{ app.assetsPackSummary }}</strong></div>
+            <div><span>{{ app.t("common.version") }}</span><strong>{{ app.assetsPackStatus?.installed_app_version ?? "-" }}</strong></div>
+            <div><span>{{ app.t("settings.assetImages") }}</span><strong>{{ app.assetsPackStatus?.file_count ?? 0 }}</strong></div>
+            <div><span>{{ app.t("common.available") }}</span><strong class="stat-text">{{ app.assetsPackCheckReport?.package?.app_version ?? "-" }}</strong></div>
+            <div><span>{{ app.t("common.source") }}</span><strong class="stat-text">{{ app.assetsPackStatus?.source_commit?.slice(0, 12) ?? "-" }}</strong></div>
+            <div><span>{{ app.t("settings.map") }}</span><strong class="stat-text">{{ app.assetsPackStatus?.installed_map_hash?.slice(0, 12) ?? "-" }}</strong></div>
           </div>
           <div class="action-row">
             <button type="button" data-agent-id="assets-check" :disabled="app.isWorkflowBusy" @click="app.checkAssetsPack">
               <RefreshCw :size="17" />
-              <span>Check assets</span>
+              <span>{{ app.t("settings.checkAssets") }}</span>
             </button>
             <button
               class="primary"
@@ -165,7 +118,7 @@ const app = useAppContext();
               @click="app.downloadAssetsPack"
             >
               <Download :size="17" />
-              <span>Download assets</span>
+              <span>{{ app.t("settings.downloadAssets") }}</span>
             </button>
             <button
               type="button"
@@ -173,11 +126,11 @@ const app = useAppContext();
               @click="app.removeAssetsPack"
             >
               <Trash2 :size="17" />
-              <span>Remove</span>
+              <span>{{ app.t("common.remove") }}</span>
             </button>
           </div>
           <div v-if="app.lastAssetsPackInstall" class="asset-pack-note">
-            Installed {{ app.lastAssetsPackInstall.file_count }} images from {{ app.lastAssetsPackInstall.source_commit.slice(0, 12) }}.
+            {{ app.t("settings.installedAssets", { count: app.lastAssetsPackInstall.file_count, commit: app.lastAssetsPackInstall.source_commit.slice(0, 12) }) }}
           </div>
         </section>
 
@@ -185,7 +138,7 @@ const app = useAppContext();
           <div class="panel-head">
             <div>
               <span class="eyebrow">exit {{ app.doctorReport.exit_code }}</span>
-              <h2>Doctor</h2>
+              <h2>{{ app.t("common.doctor") }}</h2>
             </div>
             <FileJson :size="18" />
           </div>

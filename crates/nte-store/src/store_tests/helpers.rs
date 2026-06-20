@@ -2,7 +2,7 @@ use serde_json::json;
 
 use std::io::Write;
 
-use super::JsonStore;
+use super::{JsonStore, StoreDefaults};
 use nte_core::{PoolKind, RateUpResult, RecordFilter, RecordSortKey, SettingsPatch, SortDirection};
 
 fn public_document(records: Vec<serde_json::Value>) -> String {
@@ -80,4 +80,3 @@ fn write_backup_zip(path: &std::path::Path, files: &[(&str, String)]) {
     .unwrap();
     zip.finish().unwrap();
 }
-

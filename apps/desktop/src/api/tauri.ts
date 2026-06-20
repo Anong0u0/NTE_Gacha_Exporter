@@ -46,6 +46,7 @@ export const tauriApi: AppApi = {
   createBackup: (path) => invoke<BackupReport>("create_backup", { path }),
   restoreBackup: (path) => invoke<RestoreReport>("restore_backup", { path }),
   mapsList: () => invoke<MapLocaleList>("maps_list"),
+  systemLocale: () => invoke<string | null>("system_locale"),
   doctorRun: () => invoke<DoctorReport>("doctor_run"),
   runtimePing: () => invoke<unknown>("runtime_ping"),
   updaterStatus: () => invoke<UpdateStatus>("updater_status"),

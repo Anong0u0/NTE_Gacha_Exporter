@@ -37,4 +37,5 @@ tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
+windows-sys = { workspace = true, features = ["Win32_Globalization"] }
 zip = { workspace = true, default-features = false, features = ["deflate"] }

@@ -141,6 +141,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
         .update_settings(SettingsPatch {
             active_profile: Some("Extra".to_string()),
             locale: Some("en".to_string()),
+            ui_locale: Some("zh-Hant".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
         })
@@ -205,7 +206,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(extra_ids, vec!["extra".to_string()]);
     assert_eq!(settings.active_profile, "Extra");
     assert_eq!(settings.locale, "en");
+    assert_eq!(settings.ui_locale, "zh-Hant");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
 }
-

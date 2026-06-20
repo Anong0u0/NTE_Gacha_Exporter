@@ -48,6 +48,20 @@ fn validate_locale(locale: &str) -> Result<(), GuiError> {
     load_map(locale).map(|_| ())
 }
 
+fn validate_ui_locale(locale: &str) -> Result<String, GuiError> {
+    let locale = locale.trim();
+    if locale.is_empty() {
+        return Err(GuiError::LocaleNotFound(locale.to_string()));
+    }
+    if nte_core::available_locales()
+        .iter()
+        .any(|available| available == locale)
+    {
+        return Ok(locale.to_string());
+    }
+    Err(GuiError::LocaleNotFound(locale.to_string()))
+}
+
 fn validate_update_channel(channel: &str) -> Result<String, GuiError> {
     let channel = channel.trim();
     if channel.is_empty() || channel.len() > 32 {
@@ -265,4 +279,12 @@ fn now_unique_stamp() -> String {
 
 fn default_update_channel() -> String {
     DEFAULT_UPDATE_CHANNEL.to_string()
+}
+
+fn default_locale() -> String {
+    DEFAULT_LOCALE.to_string()
+}
+
+fn default_ui_locale() -> String {
+    String::new()
 }

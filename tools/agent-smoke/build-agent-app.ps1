@@ -1,10 +1,7 @@
 [CmdletBinding()]
 param(
     [switch]$SkipInstall,
-    [switch]$RunSmoke,
-    [switch]$AllowGnuRust,
-    [int]$KeepRuns = 1,
-    [switch]$KeepPortable
+    [switch]$AllowGnuRust
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,7 +58,7 @@ function Write-JsonNoBom {
 function Assert-WindowsHost {
     $isWindows = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
     if (-not $isWindows) {
-        throw "agent smoke portable build must run on Windows."
+        throw "agent app build must run on Windows."
     }
     if (-not [string]::IsNullOrWhiteSpace($env:WSL_DISTRO_NAME)) {
         throw "WSL environment detected. Run from native Windows PowerShell."
@@ -112,7 +109,7 @@ function Read-WorkspaceVersion {
     throw "Workspace package version not found: $Path"
 }
 
-function Clear-SmokeInput {
+function Clear-AgentAppBuildOwnedPaths {
     param(
         [string]$Path,
         [string]$ExpectedParent
@@ -125,10 +122,22 @@ function Clear-SmokeInput {
     $item = Get-Item -LiteralPath $Path
     $parent = Split-Path -Parent $item.FullName
     $leaf = Split-Path -Leaf $item.FullName
-    if ($leaf -ne "smoke-input-current" -or $parent -ne $ExpectedParent) {
-        throw "Refusing to clear unexpected smoke input path: $($item.FullName)"
+    if ($leaf -ne "app-current" -or $parent -ne $ExpectedParent) {
+        throw "Refusing to clear unexpected agent app path: $($item.FullName)"
     }
-    Remove-Item -LiteralPath $item.FullName -Force -Recurse
+
+    $buildOwnedFiles = @(
+        (Join-Path $item.FullName "nte-gacha-exporter.exe"),
+        (Join-Path $item.FullName "nte-gacha-exporter-cli.exe"),
+        (Join-Path $item.FullName "app\nte-gacha-exporter-desktop.exe"),
+        (Join-Path $item.FullName "app\nte-gacha-exporter-updater.exe"),
+        (Join-Path $item.FullName "app\release.json")
+    )
+    foreach ($file in $buildOwnedFiles) {
+        if (Test-Path -LiteralPath $file -PathType Leaf) {
+            Remove-Item -LiteralPath $file -Force
+        }
+    }
 }
 
 function New-ReleaseJson {
@@ -146,19 +155,16 @@ function New-ReleaseJson {
 }
 
 Assert-WindowsHost
-if ($KeepRuns -lt 1) {
-    throw "KeepRuns must be at least 1."
-}
 
 $scriptDir = Split-Path -Parent $PSCommandPath
 $projectRoot = (Resolve-Path (Join-Path $scriptDir "..\..")).Path
 $desktopRoot = Join-Path $projectRoot "apps\desktop"
 $version = Read-WorkspaceVersion -Path (Join-Path $projectRoot "Cargo.toml")
-$smokeTargetDir = Join-Path $projectRoot "target\agent-smoke-build"
-$agentSmokeDir = Join-Path $projectRoot "target\agent-smoke"
-$smokeInput = Join-Path $agentSmokeDir "smoke-input-current"
+$agentBuildTargetDir = Join-Path $projectRoot "target\agent-smoke-build"
+$agentOutDir = Join-Path $projectRoot "target\agent-smoke"
+$agentApp = Join-Path $agentOutDir "app-current"
 
-Write-Step "Agent smoke build environment"
+Write-Step "Agent app build environment"
 Write-Host "Repo: $projectRoot"
 Write-Ok "version -> $version"
 foreach ($name in @("bun", "cargo", "rustc", "node")) {
@@ -168,56 +174,45 @@ Assert-RustHost
 
 $previousTargetDir = $env:CARGO_TARGET_DIR
 try {
-    $env:CARGO_TARGET_DIR = $smokeTargetDir
+    $env:CARGO_TARGET_DIR = $agentBuildTargetDir
     Write-Ok "CARGO_TARGET_DIR -> $env:CARGO_TARGET_DIR"
 
     if (-not $SkipInstall) {
         Invoke-External -Name "bun install" -FilePath "bun" -Arguments @("install", "--frozen-lockfile") -WorkingDirectory $desktopRoot
     }
 
-    Invoke-External -Name "Tauri smoke build" -FilePath "bun" -Arguments @("run", "tauri", "build", "--no-bundle", "--features", "agent-smoke") -WorkingDirectory $desktopRoot
-    Invoke-External -Name "Portable tools smoke build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte-gacha-exporter-cli") -WorkingDirectory $projectRoot
+    Invoke-External -Name "Tauri agent app build" -FilePath "bun" -Arguments @("run", "tauri", "build", "--no-bundle", "--features", "agent-smoke") -WorkingDirectory $desktopRoot
+    Invoke-External -Name "Portable CLI build" -FilePath "cargo" -Arguments @("build", "--release", "-p", "nte-gacha-exporter-cli") -WorkingDirectory $projectRoot
 
-    $targetRelease = Join-Path $smokeTargetDir "release"
+    $targetRelease = Join-Path $agentBuildTargetDir "release"
     $launcher = Join-Path $targetRelease "nte-gacha-exporter.exe"
     $cli = Join-Path $targetRelease "nte-gacha-exporter-cli.exe"
     $desktopExe = Join-Path $targetRelease "nte-gacha-exporter-desktop.exe"
     $updater = Join-Path $targetRelease "nte-gacha-exporter-updater.exe"
     foreach ($path in @($launcher, $cli, $desktopExe, $updater)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "Smoke artifact missing: $path"
+            throw "Agent app artifact missing: $path"
         }
     }
 
-    if (-not (Test-Path -LiteralPath $agentSmokeDir)) {
-        New-Item -ItemType Directory -Path $agentSmokeDir | Out-Null
+    if (-not (Test-Path -LiteralPath $agentOutDir)) {
+        New-Item -ItemType Directory -Path $agentOutDir | Out-Null
     }
-    Clear-SmokeInput -Path $smokeInput -ExpectedParent $agentSmokeDir
+    if (-not (Test-Path -LiteralPath $agentApp)) {
+        New-Item -ItemType Directory -Path $agentApp | Out-Null
+    }
+    Clear-AgentAppBuildOwnedPaths -Path $agentApp -ExpectedParent $agentOutDir
 
-    $appDir = Join-Path $smokeInput "app"
+    $appDir = Join-Path $agentApp "app"
     New-Item -ItemType Directory -Force -Path $appDir | Out-Null
-    Copy-Item -LiteralPath $launcher -Destination (Join-Path $smokeInput "nte-gacha-exporter.exe")
-    Copy-Item -LiteralPath $cli -Destination (Join-Path $smokeInput "nte-gacha-exporter-cli.exe")
+    Copy-Item -LiteralPath $launcher -Destination (Join-Path $agentApp "nte-gacha-exporter.exe")
+    Copy-Item -LiteralPath $cli -Destination (Join-Path $agentApp "nte-gacha-exporter-cli.exe")
     Copy-Item -LiteralPath $desktopExe -Destination (Join-Path $appDir "nte-gacha-exporter-desktop.exe")
     Copy-Item -LiteralPath $updater -Destination (Join-Path $appDir "nte-gacha-exporter-updater.exe")
     New-ReleaseJson -Path (Join-Path $appDir "release.json") -Version $version
 
-    Write-Ok "Smoke portable: $smokeInput"
-    Write-Host "Run: cargo smoke"
-
-    if ($RunSmoke) {
-        $smokeArgs = @(
-            "smoke",
-            "--release-root",
-            "target\agent-smoke\smoke-input-current",
-            "--keep-runs",
-            "$KeepRuns"
-        )
-        if ($KeepPortable) {
-            $smokeArgs += "--keep-portable"
-        }
-        Invoke-External -Name "Agent smoke" -FilePath "cargo" -Arguments $smokeArgs -WorkingDirectory $projectRoot
-    }
+    Write-Ok "Agent app: $agentApp"
+    Write-Host "Run: cargo agent launch"
 }
 finally {
     $env:CARGO_TARGET_DIR = $previousTargetDir

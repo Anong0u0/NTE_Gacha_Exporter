@@ -70,7 +70,7 @@ pub fn dashboard_overview(
         export_csv(path.as_ref(), &records, &map)
     }
 
-    fn bootstrap(&self) -> Result<(), GuiError> {
+    fn bootstrap(&self, defaults: &StoreDefaults) -> Result<(), GuiError> {
         fs::create_dir_all(self.root.join("data"))?;
         fs::create_dir_all(self.profiles_dir())?;
         fs::create_dir_all(self.root.join("data/backups"))?;
@@ -79,10 +79,20 @@ pub fn dashboard_overview(
             self.write_settings(&DiskSettings {
                 schema_version: 1,
                 active_profile: DEFAULT_PROFILE.to_string(),
-                locale: DEFAULT_LOCALE.to_string(),
+                locale: defaults.locale.clone(),
+                ui_locale: defaults.ui_locale.clone(),
                 update_channel: DEFAULT_UPDATE_CHANNEL.to_string(),
                 check_updates_on_startup: false,
             })?;
+        } else {
+            let mut settings = self.read_settings()?;
+            if settings.locale.trim().is_empty() {
+                settings.locale = defaults.locale.clone();
+            }
+            if settings.ui_locale.trim().is_empty() {
+                settings.ui_locale = defaults.ui_locale.clone();
+            }
+            self.write_settings(&settings)?;
         }
         if !self.profile_dir(DEFAULT_PROFILE).exists() {
             self.create_profile(DEFAULT_PROFILE)?;

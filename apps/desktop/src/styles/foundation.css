@@ -52,6 +52,12 @@ button.primary {
   color: #ffffff;
 }
 
+button.danger {
+  background: #9c2f2f;
+  border-color: #9c2f2f;
+  color: #ffffff;
+}
+
 input,
 select {
   width: 100%;
@@ -150,6 +156,129 @@ pre {
 
 .inline-form button {
   padding: 0;
+}
+
+.profile-panel {
+  border: 1px solid #2a3d37;
+  border-radius: 8px;
+  background: #1b2a25;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.profile-panel-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-panel-head strong {
+  display: block;
+  margin-top: 2px;
+  max-width: 140px;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-count {
+  min-height: 24px;
+  border: 1px solid #36524a;
+  border-radius: 999px;
+  color: #c7d7cf;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.sidebar-profile-list {
+  max-height: 238px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.sidebar-profile-row {
+  border-color: #2d453e;
+  background: #17261f;
+}
+
+.sidebar-profile-row.active {
+  border-color: #efc45a;
+  background: #22332c;
+}
+
+.sidebar-profile-row.pending-delete {
+  border-color: #aa5555;
+  background: #2d2422;
+}
+
+.profile-select {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #e7eee8;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.profile-select:hover:not(:disabled) {
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.profile-select:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.profile-select span,
+.profile-select strong,
+.profile-select small {
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-select strong {
+  font-size: 13px;
+}
+
+.profile-select small {
+  color: #aab8b1;
+  font-size: 11px;
+}
+
+.profile-edit-field {
+  min-width: 0;
+}
+
+.profile-edit-field input {
+  min-height: 32px;
+}
+
+.sidebar .profile-actions button {
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.sidebar .profile-actions button.danger {
+  width: auto;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.profile-create-form {
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: end;
 }
 
 .nav-list {

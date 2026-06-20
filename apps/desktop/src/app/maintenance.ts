@@ -9,6 +9,7 @@ import {
   type UpdateStageReport,
   type UpdateStatus,
 } from "../api";
+import type { I18nKey } from "./i18n";
 
 type MaintenanceDeps = {
   doctorReport: Ref<DoctorReport | null>;
@@ -23,15 +24,16 @@ type MaintenanceDeps = {
   statusText: Ref<string>;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
   resolveVisibleAssets(): Promise<void>;
+  t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
 };
 
 export function createMaintenanceActions(deps: MaintenanceDeps) {
   async function pingRuntime() {
-    await deps.runTask("Runtime responded", () => api.runtimePing());
+    await deps.runTask(deps.t("status.runtimeResponded"), () => api.runtimePing());
   }
 
   async function runDoctor() {
-    await deps.runTask("Doctor completed", async () => {
+    await deps.runTask(deps.t("status.doctorCompleted"), async () => {
       deps.doctorReport.value = await api.doctorRun();
     });
   }
@@ -41,7 +43,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   }
 
   async function checkForUpdates(showStatus = true) {
-    await deps.runTask(showStatus ? "Update check completed" : deps.statusText.value, async () => {
+    await deps.runTask(showStatus ? deps.t("status.updateCheckCompleted") : deps.statusText.value, async () => {
       deps.updateCheckReport.value = await api.updaterCheck(deps.settingsUpdateChannel.value);
       await loadUpdaterStatus();
     });
@@ -50,7 +52,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   async function downloadUpdate() {
     const packageInfo = deps.updateCheckReport.value?.package;
     if (!packageInfo) return;
-    await deps.runTask("Update downloaded", async () => {
+    await deps.runTask(deps.t("status.updateDownloaded"), async () => {
       deps.stagedUpdate.value = await api.updaterDownloadAndStage(packageInfo);
       await loadUpdaterStatus();
     });
@@ -58,7 +60,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
 
   async function installUpdate() {
     const version = deps.stagedUpdate.value?.package.version ?? deps.updateStatus.value?.staged_version;
-    if (version) await deps.runTask("Restarting for update", () => api.updaterInstallStaged(version, true));
+    if (version) await deps.runTask(deps.t("status.updateRestarting"), () => api.updaterInstallStaged(version, true));
   }
 
   async function loadAssetsPackStatus() {
@@ -66,7 +68,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   }
 
   async function checkAssetsPack() {
-    await deps.runTask("Assets pack check completed", async () => {
+    await deps.runTask(deps.t("status.assetsCheckCompleted"), async () => {
       deps.assetsPackCheckReport.value = await api.assetsPackCheck(deps.settingsUpdateChannel.value);
       await loadAssetsPackStatus();
     });
@@ -75,7 +77,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   async function downloadAssetsPack() {
     const packageInfo = deps.assetsPackCheckReport.value?.package;
     if (!packageInfo) return;
-    await deps.runTask("Assets pack installed", async () => {
+    await deps.runTask(deps.t("status.assetsInstalled"), async () => {
       deps.lastAssetsPackInstall.value = await api.assetsPackDownloadAndInstall(packageInfo);
       deps.assetUrlCache.value = {};
       await loadAssetsPackStatus();
@@ -84,7 +86,7 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   }
 
   async function removeAssetsPack() {
-    await deps.runTask("Assets pack removed", async () => {
+    await deps.runTask(deps.t("status.assetsRemoved"), async () => {
       deps.assetsPackStatus.value = await api.assetsPackRemove();
       deps.assetsPackCheckReport.value = null;
       deps.lastAssetsPackInstall.value = null;

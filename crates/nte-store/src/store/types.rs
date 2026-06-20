@@ -20,12 +20,28 @@ use nte_core::{dashboard_overview, list_records, pool_kind_detail, record_filter
 use nte_core::{export_csv, export_public_json};
 
 const DEFAULT_PROFILE: &str = "default";
-const DEFAULT_LOCALE: &str = "zh-Hant";
+const DEFAULT_LOCALE: &str = "en";
+const DEFAULT_UI_LOCALE: &str = "en";
 const DEFAULT_UPDATE_CHANNEL: &str = "stable";
 static UNIQUE_STAMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub struct JsonStore {
     root: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoreDefaults {
+    pub locale: String,
+    pub ui_locale: String,
+}
+
+impl Default for StoreDefaults {
+    fn default() -> Self {
+        Self {
+            locale: DEFAULT_LOCALE.to_string(),
+            ui_locale: DEFAULT_UI_LOCALE.to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,7 +53,10 @@ pub struct DataBackup {
 struct DiskSettings {
     schema_version: u32,
     active_profile: String,
+    #[serde(default = "default_locale")]
     locale: String,
+    #[serde(default = "default_ui_locale")]
+    ui_locale: String,
     #[serde(default = "default_update_channel")]
     update_channel: String,
     #[serde(default)]
@@ -83,4 +102,3 @@ struct SnapshotProfile {
     records: Vec<InternalRecord>,
     last_run: Option<ImportReport>,
 }
-

@@ -2,7 +2,7 @@ import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { confirm, open, save } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   api,
@@ -33,9 +33,10 @@ import {
 import { createAssetTools } from "./assets";
 import { createChartTools } from "./chart";
 import { createAppComputed } from "./computed";
+import { createTranslator, uiLocaleDisplayName } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
-import { kindLabels, kindOrder, type ExportMode, type HitRarityFilter, type ImportMode, type PoolKindFilter, type RateUpFilter } from "./options";
+import { kindOrder, type ExportMode, type HitRarityFilter, type ImportMode, type PoolKindFilter, type RateUpFilter } from "./options";
 import { createTaskRunner } from "./task";
 import { bannerMeta, bannerTitle, captureRecordMeta, captureRecordName, formatBannerWindow, formatCaptureMode, formatCaptureState, formatError, formatGuarantee, formatPity, formatPullNo, formatResult, formatTime, numberOrDash, parseOptionalNumber, percent } from "./viewHelpers";
 
@@ -43,8 +44,8 @@ use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
 export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default"), newProfileName = ref("");
-  const profileRenameSource = ref(""), profileRenameName = ref("");
-  const locale = ref("zh-Hant"), locales = ref<string[]>(["zh-Hant"]), summary = ref<DashboardOverview | null>(null);
+  const profileRenameSource = ref(""), profileRenameName = ref(""), profileDeleteTarget = ref("");
+  const locale = ref("en"), uiLocale = ref("en"), locales = ref<string[]>(["en"]), uiLocales = ref<string[]>(["en"]), summary = ref<DashboardOverview | null>(null);
   const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedBannerId = ref(""), detail = ref<PoolKindDetail | null>(null);
   const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ pools: [], banners: [], record_types: [] });
   const importPath = ref(""), importMode = ref<ImportMode>("raw"), exportPath = ref(""), exportMode = ref<ExportMode>("json");
@@ -53,8 +54,30 @@ export function useApp() {
   const updateStatus = ref<UpdateStatus | null>(null), updateCheckReport = ref<UpdateCheckReport | null>(null), stagedUpdate = ref<UpdateStageReport | null>(null);
   const assetsPackStatus = ref<AssetsPackStatus | null>(null), assetsPackCheckReport = ref<AssetsPackCheckReport | null>(null), lastAssetsPackInstall = ref<AssetsPackInstallReport | null>(null);
   const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
-  const busy = ref(false), statusText = ref("Ready"), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
+  const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
   let capturePollTimer: ReturnType<typeof setInterval> | null = null;
+  const t = createTranslator(uiLocale);
+  statusText.value = t("status.ready");
+  const kindLabels = {
+    get monopoly_limited() {
+      return t("kind.limited");
+    },
+    get monopoly_standard() {
+      return t("kind.standard");
+    },
+    get fork_lottery() {
+      return t("kind.fork");
+    },
+  } as Record<PoolKind, string>;
+  const formatResultText = (value: string) => formatResult(value, t);
+  const bannerTitleText = (banner?: Parameters<typeof bannerTitle>[0]) => bannerTitle(banner, t);
+  const bannerMetaText = (banner?: Parameters<typeof bannerMeta>[0]) => bannerMeta(banner, t);
+  const formatBannerWindowText = (start?: string | null, end?: string | null) => formatBannerWindow(start, end, t);
+  const formatPityText = (record: DisplayRecord) => formatPity(record);
+  const formatGuaranteeText = (record: DisplayRecord) => formatGuarantee(record, t);
+  const formatCaptureStateText = (value?: string | null) => formatCaptureState(value, t);
+  const formatCaptureModeText = (value?: string | null) => formatCaptureMode(value, t);
+  const uiLocaleName = (value: string) => uiLocaleDisplayName(value, t);
 
   function setChartEl(element: unknown) {
     chartEl.value = element instanceof HTMLElement ? element : null;
@@ -106,6 +129,7 @@ export function useApp() {
     recordPoolKind,
     pageSize,
     pageIndex,
+    t,
   });
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
 
@@ -131,7 +155,7 @@ export function useApp() {
   });
   const maintenance = createMaintenanceActions({
     doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport,
-    lastAssetsPackInstall, assetUrlCache, settingsUpdateChannel, statusText, runTask, resolveVisibleAssets,
+    lastAssetsPackInstall, assetUrlCache, settingsUpdateChannel, statusText, runTask, resolveVisibleAssets, t,
   });
   const { pingRuntime, runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack } = maintenance;
 
@@ -161,9 +185,11 @@ export function useApp() {
     try {
       const [settings, maps] = await Promise.all([api.getSettings(), api.mapsList()]);
       locale.value = settings.locale;
+      uiLocale.value = settings.ui_locale || "en";
       settingsUpdateChannel.value = settings.update_channel;
       settingsCheckUpdates.value = settings.check_updates_on_startup;
       locales.value = maps.locales;
+      uiLocales.value = maps.locales;
       activeProfileName.value = settings.active_profile;
       await loadProfiles();
       await refreshAll();
@@ -200,9 +226,10 @@ export function useApp() {
   async function createProfile() {
     const name = newProfileName.value.trim();
     if (!name) return;
-    await runTask("Profile created", async () => {
+    await runTask(t("status.profileCreated"), async () => {
       const profile = await api.createProfile(name);
       newProfileName.value = "";
+      profileDeleteTarget.value = "";
       await api.setActiveProfile(profile.name);
       activeProfileName.value = profile.name;
       await loadProfiles();
@@ -213,6 +240,7 @@ export function useApp() {
   function startRenameProfile(profile: Profile) {
     profileRenameSource.value = profile.name;
     profileRenameName.value = profile.name;
+    profileDeleteTarget.value = "";
   }
 
   function cancelRenameProfile() {
@@ -228,59 +256,80 @@ export function useApp() {
       cancelRenameProfile();
       return;
     }
-    await runTask("Profile renamed", async () => {
+    await runTask(t("status.profileRenamed"), async () => {
       const profile = await api.renameProfile(oldName, newName);
       if (activeProfileName.value === oldName || profile.active) {
         activeProfileName.value = profile.name;
       }
+      profileDeleteTarget.value = "";
       cancelRenameProfile();
       await loadProfiles();
       await refreshAll();
     });
   }
 
-  async function deleteProfile(profile: Profile) {
+  function requestDeleteProfile(profile: Profile) {
     if (profiles.value.length <= 1) return;
-    const accepted = await confirm(`Delete profile "${profile.name}"? This cannot be undone.`, {
-      title: "Delete profile",
-      kind: "warning",
-    });
-    if (!accepted) return;
-    await runTask("Profile deleted", async () => {
+    profileRenameSource.value = "";
+    profileRenameName.value = "";
+    profileDeleteTarget.value = profile.name;
+  }
+
+  function cancelDeleteProfile() {
+    profileDeleteTarget.value = "";
+  }
+
+  async function confirmDeleteProfile(profile: Profile) {
+    if (profiles.value.length <= 1) return;
+    await runTask(t("status.profileDeleted"), async () => {
       const settings = await api.deleteProfile(profile.name);
       activeProfileName.value = settings.active_profile;
       locale.value = settings.locale;
+      uiLocale.value = settings.ui_locale || uiLocale.value;
       settingsUpdateChannel.value = settings.update_channel;
       settingsCheckUpdates.value = settings.check_updates_on_startup;
       if (profileRenameSource.value === profile.name) {
         cancelRenameProfile();
       }
+      profileDeleteTarget.value = "";
       await loadProfiles();
       await refreshAll();
     });
   }
 
-  async function selectProfile() {
-    await runTask("Profile selected", async () => {
-      const settings = await api.updateSettings({ active_profile: activeProfileName.value });
-      locale.value = settings.locale;
-      settingsUpdateChannel.value = settings.update_channel;
-      settingsCheckUpdates.value = settings.check_updates_on_startup;
-      await loadProfiles();
-      await refreshAll();
+  async function selectProfile(profileName = activeProfileName.value) {
+    const previousProfileName = activeProfileName.value;
+    if (!profileName || profileName === previousProfileName) return;
+    activeProfileName.value = profileName;
+    profileDeleteTarget.value = "";
+    cancelRenameProfile();
+    await runTask(t("status.profileSelected"), async () => {
+      try {
+        const settings = await api.updateSettings({ active_profile: profileName });
+        locale.value = settings.locale;
+        uiLocale.value = settings.ui_locale || uiLocale.value;
+        settingsUpdateChannel.value = settings.update_channel;
+        settingsCheckUpdates.value = settings.check_updates_on_startup;
+        await loadProfiles();
+        await refreshAll();
+      } catch (error) {
+        activeProfileName.value = previousProfileName;
+        throw error;
+      }
     });
   }
 
   async function saveSettings() {
-    await runTask("Settings updated", async () => {
+    await runTask(t("status.settingsUpdated"), async () => {
       const settings = await api.updateSettings({
-        active_profile: activeProfileName.value,
         locale: locale.value,
+        ui_locale: uiLocale.value,
         update_channel: settingsUpdateChannel.value,
         check_updates_on_startup: settingsCheckUpdates.value,
       });
       activeProfileName.value = settings.active_profile;
       locale.value = settings.locale;
+      uiLocale.value = settings.ui_locale || uiLocale.value;
       settingsUpdateChannel.value = settings.update_channel;
       settingsCheckUpdates.value = settings.check_updates_on_startup;
       await loadProfiles();
@@ -296,7 +345,7 @@ export function useApp() {
     selectedPoolKind.value = firstActive ?? selectedPoolKind.value;
     selectedBannerId.value = firstBanner ?? selectedBannerId.value;
     await Promise.all([loadDetail(), loadFilterOptions(), loadRecords()]);
-    statusText.value = "Dashboard updated";
+    statusText.value = t("status.dashboardUpdated");
     await resolveVisibleAssets();
     await nextTick();
     renderChart();
@@ -343,7 +392,7 @@ export function useApp() {
   async function pickImportFile(mode: ImportMode) {
     importMode.value = mode;
     const selected = await open({
-      title: mode === "raw" ? "Select raw JSONL" : "Select public JSON",
+      title: mode === "raw" ? t("import.rawJsonl") : t("import.publicJson"),
       multiple: false,
       filters:
         mode === "raw"
@@ -359,7 +408,7 @@ export function useApp() {
   async function runImport() {
     const path = importPath.value.trim();
     if (!path) return;
-    await runTask("Import completed", async () => {
+    await runTask(t("status.importCompleted"), async () => {
       lastReport.value =
         importMode.value === "raw"
           ? await api.importRawJsonl(activeProfileName.value, path, locale.value)
@@ -376,14 +425,14 @@ export function useApp() {
       if (!options.skipAdminRequest) {
         const relaunching = await api.requestAdminCaptureStart(activeProfileName.value, locale.value, captureMode.value);
         if (relaunching) {
-          statusText.value = "Waiting for administrator window";
+          statusText.value = t("status.waitingAdmin");
           return;
         }
       }
       await applyCaptureStatus(await api.captureStart(activeProfileName.value, locale.value, captureMode.value));
       statusText.value = options.pending
-        ? `${formatCaptureMode(captureMode.value)} resumed as administrator`
-        : `${formatCaptureMode(captureMode.value)} started`;
+        ? t("capture.modeResumed", { mode: formatCaptureModeText(captureMode.value) })
+        : t("status.captureStarted", { mode: formatCaptureModeText(captureMode.value) });
       if (isCaptureActive.value) {
         ensureCapturePolling();
       }
@@ -406,7 +455,7 @@ export function useApp() {
     errorText.value = "";
     try {
       await applyCaptureStatus(await api.captureStop(sessionId));
-      statusText.value = "Live capture stopping";
+      statusText.value = t("status.captureStopping");
       if (isCaptureActive.value) {
         ensureCapturePolling();
       }
@@ -439,12 +488,12 @@ export function useApp() {
         lastReport.value = status.import_report;
       }
       await refreshAll();
-      statusText.value = status.import_report ? "Live capture merged" : "Live capture completed";
+      statusText.value = status.import_report ? t("status.captureMerged") : t("status.captureCompleted");
     } else if (status.state === "failed") {
       clearCapturePolling();
-      errorText.value = status.error ? `${status.error.code}: ${status.error.message}` : "Live capture failed";
+      errorText.value = status.error ? `${status.error.code}: ${status.error.message}` : t("status.captureFailed");
     } else {
-      statusText.value = formatCaptureState(status.state);
+      statusText.value = formatCaptureStateText(status.state);
     }
   }
 
@@ -464,7 +513,7 @@ export function useApp() {
   async function pickExportFile(mode: ExportMode) {
     exportMode.value = mode;
     const selected = await save({
-      title: mode === "json" ? "Export public JSON" : "Export CSV",
+      title: mode === "json" ? t("import.publicJson") : "CSV",
       defaultPath: mode === "json" ? `${activeProfileName.value}-history.json` : `${activeProfileName.value}-history.csv`,
       filters:
         mode === "json"
@@ -480,7 +529,7 @@ export function useApp() {
   async function runExport() {
     const path = exportPath.value.trim();
     if (!path) return;
-    await runTask("Export completed", async () => {
+    await runTask(t("status.exportCompleted"), async () => {
       if (exportMode.value === "json") {
         await api.exportPublicJson(activeProfileName.value, path, locale.value);
       } else {
@@ -491,7 +540,7 @@ export function useApp() {
 
   async function pickBackupFile() {
     const selected = await save({
-      title: "Create backup",
+      title: t("import.createBackup"),
       defaultPath: `${activeProfileName.value}-nte-data-backup.zip`,
       filters: [{ name: "Backup zip", extensions: ["zip"] }],
     });
@@ -503,14 +552,14 @@ export function useApp() {
 
   async function runBackup() {
     const path = backupPath.value.trim();
-    await runTask("Backup created", async () => {
+    await runTask(t("status.backupCreated"), async () => {
       lastBackup.value = await api.createBackup(path || null);
     });
   }
 
   async function pickRestoreFile() {
     const selected = await open({
-      title: "Restore backup",
+      title: t("import.restoreBackup"),
       multiple: false,
       filters: [{ name: "Backup zip", extensions: ["zip"] }],
     });
@@ -523,11 +572,12 @@ export function useApp() {
   async function runRestore() {
     const path = restorePath.value.trim();
     if (!path) return;
-    await runTask("Backup restored", async () => {
+    await runTask(t("status.backupRestored"), async () => {
       lastRestore.value = await api.restoreBackup(path);
       const settings = await api.getSettings();
       activeProfileName.value = settings.active_profile;
       locale.value = settings.locale;
+      uiLocale.value = settings.ui_locale || uiLocale.value;
       settingsUpdateChannel.value = settings.update_channel;
       settingsCheckUpdates.value = settings.check_updates_on_startup;
       await loadProfiles();
@@ -536,14 +586,14 @@ export function useApp() {
   }
 
   return reactive({
-    navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, locale, locales, summary, selectedPoolKind, selectedBannerId, detail, records, recordTotal, filterOptions, importPath, importMode,
+    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedBannerId, detail, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
     capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordPoolId, recordBannerId, recordType, hitRarity, rateUpResult, pity5Min, pity5Max, pity4Min, pity4Max, dateFrom, dateTo, search,
     sortKey, sortDirection, pageSize, pageIndex, settingsUpdateChannel, settingsCheckUpdates, activeProfile, allPoolSummaries, trackedPoolCount, bannerSummaries, trackedBannerCount, selectedSummary, selectedBanner, latest, phaseSummaries, recordPageStart, recordPageEnd, canPrevPage,
-    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, deleteProfile, selectProfile, saveSettings, refreshAll, loadDetail,
+    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, loadDetail,
     loadFilterOptions, loadRecords, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
-    runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, parseOptionalNumber, formatTime, formatResult, bannerTitle, bannerMeta,
-    formatBannerWindow, formatPullNo, formatPity, formatGuarantee, assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, hasRecordVisual, hasBannerVisual, hasSelectedBannerVisuals, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState, formatCaptureMode, captureRecordName, captureRecordMeta, formatError,
+    runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, parseOptionalNumber, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
+    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPity: formatPityText, formatGuarantee: formatGuaranteeText, assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, hasRecordVisual, hasBannerVisual, hasSelectedBannerVisuals, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }
 

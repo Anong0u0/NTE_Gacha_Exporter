@@ -7,6 +7,7 @@ fn store_bootstraps_default_profile_and_files() {
     let profiles = store.list_profiles().unwrap();
 
     assert_eq!(settings.active_profile, "default");
+    assert_eq!(settings.ui_locale, "en");
     assert_eq!(settings.update_channel, "stable");
     assert!(!settings.check_updates_on_startup);
     assert_eq!(profiles.len(), 1);
@@ -20,6 +21,38 @@ fn store_bootstraps_default_profile_and_files() {
 }
 
 #[test]
+fn store_migrates_missing_ui_locale_from_defaults() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(tmp.path().join("data")).unwrap();
+    std::fs::write(
+        tmp.path().join("data/settings.json"),
+        json!({
+            "schema_version": 1,
+            "active_profile": "default",
+            "locale": "en",
+            "update_channel": "stable",
+            "check_updates_on_startup": false
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let store = JsonStore::open_with_defaults(
+        tmp.path(),
+        StoreDefaults {
+            locale: "en".to_string(),
+            ui_locale: "zh-Hant".to_string(),
+        },
+    )
+    .unwrap();
+
+    let settings = store.settings().unwrap();
+    let settings_text = std::fs::read_to_string(tmp.path().join("data/settings.json")).unwrap();
+    assert_eq!(settings.ui_locale, "zh-Hant");
+    assert!(settings_text.contains("\"ui_locale\""));
+}
+
+#[test]
 fn settings_update_persists_locale_active_profile_and_update_flags() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
@@ -29,6 +62,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
         .update_settings(SettingsPatch {
             active_profile: Some("Player_1".to_string()),
             locale: Some("en".to_string()),
+            ui_locale: Some("zh-Hant".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
         })
@@ -36,6 +70,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
 
     assert_eq!(settings.active_profile, "Player_1");
     assert_eq!(settings.locale, "en");
+    assert_eq!(settings.ui_locale, "zh-Hant");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
     assert!(
