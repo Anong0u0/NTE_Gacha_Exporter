@@ -1,0 +1,3 @@
+[alias]
+agent = "run --manifest-path tools/agent-smoke/Cargo.toml --"
+smoke = "run --manifest-path tools/agent-smoke/Cargo.toml -- smoke"

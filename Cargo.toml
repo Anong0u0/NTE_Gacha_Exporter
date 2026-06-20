@@ -9,13 +9,14 @@ members = [
     "crates/nte-store",
     "crates/nte-update",
 ]
+exclude = ["tools/agent-smoke"]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
 license = "MIT"
 rust-version = "1.85"
-version = "0.1.1"
+version = "0.1.2"
 
 [workspace.dependencies]
 anyhow = "1"

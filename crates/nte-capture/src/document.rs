@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::protocol::{ParsedRow, row_public_time};
+use crate::protocol::{ParsedRow, RecordType, row_public_time};
 use nte_core::GuiError;
 use nte_core::{MapData, load_map};
 
@@ -164,6 +164,21 @@ fn record_ids(rows: &[CanonicalRow<'_>]) -> Vec<String> {
 }
 
 fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
+    if row.row.record_type == RecordType::Fork {
+        if let Some(query_high) = row.row.source.query_high {
+            let group_draw_index = row.row.source.row_index + if query_high { 0 } else { 5 };
+            return vec![
+                row.row.record_type.as_str().to_string(),
+                "protocol_v2".to_string(),
+                row.row.ticks.to_string(),
+                row.row.pool_id.clone().unwrap_or_default(),
+                group_draw_index.to_string(),
+                row.item_id.clone(),
+                row.row.count.to_string(),
+            ];
+        }
+    }
+
     vec![
         row.row.record_type.as_str().to_string(),
         row.row.ticks.to_string(),
@@ -213,6 +228,7 @@ fn now_stamp() -> u64 {
 mod tests {
     use std::path::Path;
 
+    use crate::protocol::SourceRef;
     use crate::raw;
 
     use super::*;
@@ -244,5 +260,93 @@ mod tests {
             .map(|record| record.value)
             .collect::<Vec<_>>();
         assert_eq!(incremental_records.as_slice(), records.as_slice());
+    }
+
+    #[test]
+    fn fork_protocol_record_id_material_uses_group_draw_index() {
+        let first_row = fork_protocol_parsed_row(true, 0);
+        let second_row = fork_protocol_parsed_row(false, 0);
+        let first_half = fork_protocol_canonical_row(&first_row);
+        let second_half = fork_protocol_canonical_row(&second_row);
+
+        assert_eq!(
+            record_id_material(&first_half),
+            vec![
+                "fork",
+                "protocol_v2",
+                "639175144000000000",
+                "ForkLottery_Nanali",
+                "0",
+                "fork_dustbin",
+                "1",
+            ]
+        );
+        assert_eq!(
+            record_id_material(&second_half),
+            vec![
+                "fork",
+                "protocol_v2",
+                "639175144000000000",
+                "ForkLottery_Nanali",
+                "5",
+                "fork_dustbin",
+                "1",
+            ]
+        );
+    }
+
+    #[test]
+    fn fork_protocol_record_ids_do_not_depend_on_duplicate_occurrence_order() {
+        let first_row = fork_protocol_parsed_row(true, 3);
+        let second_row = fork_protocol_parsed_row(false, 3);
+
+        let forward = record_ids(&[
+            fork_protocol_canonical_row(&first_row),
+            fork_protocol_canonical_row(&second_row),
+        ]);
+        let reversed = record_ids(&[
+            fork_protocol_canonical_row(&second_row),
+            fork_protocol_canonical_row(&first_row),
+        ]);
+
+        assert_eq!(forward[0], reversed[1]);
+        assert_eq!(forward[1], reversed[0]);
+        assert_ne!(forward[0], forward[1]);
+    }
+
+    fn fork_protocol_parsed_row(query_high: bool, row_index: u32) -> ParsedRow {
+        ParsedRow {
+            record_type: RecordType::Fork,
+            ticks: 639_175_144_000_000_000,
+            time: Some("2026-06-20T00:00:00.000000".to_string()),
+            pool_id: Some("ForkLottery_Nanali".to_string()),
+            item_id: "fork_dustbin".to_string(),
+            count: 1,
+            roll_points: None,
+            roll_label_id: None,
+            secondary_item_id: None,
+            secondary_count: None,
+            source: SourceRef {
+                session: 0,
+                line: 1,
+                packet_index: 0,
+                view: "shift8:1".to_string(),
+                row_index,
+                offset: 0,
+                stream_key: Some("fork".to_string()),
+                page_index: Some(0),
+                query_high: Some(query_high),
+                segment_index: Some(if query_high { 0 } else { 1 }),
+                generation_index: Some(0),
+            },
+        }
+    }
+
+    fn fork_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
+        CanonicalRow {
+            row,
+            item_id: "fork_dustbin".to_string(),
+            secondary_item_id: None,
+        }
     }
 }

@@ -5,7 +5,6 @@ param(
     [switch]$SkipTauriBuild,
     [switch]$SkipPortableStage,
     [switch]$SkipSmoke,
-    [switch]$AgentSmoke,
     [switch]$AllowGnuRust,
     [string]$TagName = ""
 )
@@ -495,10 +494,6 @@ if (-not $SkipInstall) {
 if (-not $SkipTauriBuild) {
     $tauriBuildArgs = @("run", "tauri", "build")
     $bunxTauriBuildArgs = @("@tauri-apps/cli", "build")
-    if ($AgentSmoke) {
-        $tauriBuildArgs += @("--", "--features", "agent-smoke")
-        $bunxTauriBuildArgs += @("--features", "agent-smoke")
-    }
 
     $localTauriCandidates = @(
         (Join-Path $desktopRoot "node_modules\.bin\tauri.cmd"),
