@@ -163,6 +163,11 @@
   gap: 8px;
 }
 
+.history-header.without-visual,
+.history-line.without-visual {
+  grid-template-columns: 132px 128px minmax(150px, 1fr) 44px 48px 132px 104px 88px;
+}
+
 .history-line {
   min-height: 64px;
 }
@@ -197,6 +202,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 40px;
 }
 
 .history-visual-meta {

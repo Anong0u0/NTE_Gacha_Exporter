@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Image, Search } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Search } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -20,7 +20,7 @@ const app = useAppContext();
               {{ app.kindLabels[kind] }}
             </button>
           </div>
-          <label class="app.search-box">
+          <label class="search-box">
             <Search :size="17" />
             <input v-model="app.search" placeholder="Search app.records" />
           </label>
@@ -140,8 +140,8 @@ const app = useAppContext();
               </button>
             </div>
           </div>
-          <div class="record-table history-table">
-            <div class="record-header history-header">
+          <div class="record-table history-table" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
+            <div class="record-header history-header" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
               <span>Time</span>
               <span>Banner</span>
               <span>Item</span>
@@ -150,9 +150,9 @@ const app = useAppContext();
               <span>Pity</span>
               <span>Result</span>
               <span>Rolls</span>
-              <span>Visual</span>
+              <span v-if="app.recordsHaveAnyVisual()">Visual</span>
             </div>
-            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line">
+            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
               <span>{{ app.formatTime(record.time) }}</span>
               <span>
                 <strong>{{ app.bannerTitle(record.banner) }}</strong>
@@ -170,12 +170,11 @@ const app = useAppContext();
                 <small>{{ app.formatGuarantee(record) }}</small>
               </span>
               <span>{{ record.roll_points ?? "-" }}</span>
-              <span class="history-visual">
-                <span class="item-thumb small">
-                  <img v-if="app.itemVisualUrl(record)" :src="app.itemVisualUrl(record)" alt="" />
-                  <span v-else class="asset-placeholder"><Image :size="15" /></span>
+              <span v-if="app.recordsHaveAnyVisual()" class="history-visual">
+                <span v-if="app.hasRecordVisual(record)" class="item-thumb small">
+                  <img :src="app.itemVisualUrl(record)" alt="" />
                 </span>
-                <span class="history-visual-meta">{{ app.assetRefsCount(record.item_asset_refs) + app.assetRefsCount(record.banner.asset_refs) }} refs</span>
+                <span v-if="app.hasRecordVisual(record)" class="history-visual-meta">{{ app.assetRefsCount(record.item_asset_refs) + app.assetRefsCount(record.banner.asset_refs) }} refs</span>
               </span>
             </div>
             <div v-if="app.records.length === 0" class="empty-row">No app.records match current filters.</div>

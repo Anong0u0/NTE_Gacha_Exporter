@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Database, Download, FileJson, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
+import { Check, Database, Download, FileJson, HardDriveUpload, Pencil, RefreshCw, Settings, Stethoscope, Trash2, X } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -52,6 +52,51 @@ const app = useAppContext();
               <Stethoscope :size="17" />
               <span>Doctor</span>
             </button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">Profiles</span>
+              <h2>Profile management</h2>
+            </div>
+          </div>
+          <div class="profile-list">
+            <div v-for="profile in app.profiles" :key="profile.name" class="profile-row">
+              <div class="profile-main">
+                <template v-if="app.profileRenameSource === profile.name">
+                  <input
+                    v-model="app.profileRenameName"
+                    :disabled="app.isWorkflowBusy"
+                    @keyup.enter="app.saveProfileRename"
+                    @keyup.esc="app.cancelRenameProfile"
+                  />
+                </template>
+                <template v-else>
+                  <strong>{{ profile.name }}</strong>
+                  <span>{{ profile.active ? "Active" : "Inactive" }} · created {{ profile.created_at }} · updated {{ profile.updated_at }}</span>
+                </template>
+              </div>
+              <div class="profile-actions">
+                <template v-if="app.profileRenameSource === profile.name">
+                  <button type="button" :disabled="app.isWorkflowBusy || !app.profileRenameName.trim()" title="Save profile name" @click="app.saveProfileRename">
+                    <Check :size="16" />
+                  </button>
+                  <button type="button" :disabled="app.isWorkflowBusy" title="Cancel rename" @click="app.cancelRenameProfile">
+                    <X :size="16" />
+                  </button>
+                </template>
+                <template v-else>
+                  <button type="button" :disabled="app.isWorkflowBusy" title="Rename profile" @click="app.startRenameProfile(profile)">
+                    <Pencil :size="16" />
+                  </button>
+                  <button type="button" :disabled="app.isWorkflowBusy || app.profiles.length <= 1" title="Delete profile" @click="app.deleteProfile(profile)">
+                    <Trash2 :size="16" />
+                  </button>
+                </template>
+              </div>
+            </div>
           </div>
         </section>
 

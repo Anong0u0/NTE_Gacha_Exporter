@@ -50,3 +50,48 @@
   color: #66776f;
   font-size: 13px;
 }
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-row {
+  min-height: 52px;
+  border: 1px solid #e2e8e4;
+  border-radius: 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.profile-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.profile-main strong,
+.profile-main span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-main span {
+  color: #66776f;
+  font-size: 12px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-actions button {
+  width: 36px;
+  padding: 0;
+}

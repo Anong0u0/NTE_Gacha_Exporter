@@ -47,6 +47,23 @@ pub(crate) fn set_active_profile(
 }
 
 #[tauri::command]
+pub(crate) fn rename_profile(
+    state: State<'_, AppState>,
+    old_name: String,
+    new_name: String,
+) -> Result<Profile, ApiError> {
+    with_store(&state, |store| store.rename_profile(&old_name, &new_name))
+}
+
+#[tauri::command]
+pub(crate) fn delete_profile(
+    state: State<'_, AppState>,
+    profile_name: String,
+) -> Result<Settings, ApiError> {
+    with_store(&state, |store| store.delete_profile(&profile_name))
+}
+
+#[tauri::command]
 pub(crate) fn import_public_json(
     state: State<'_, AppState>,
     profile_name: String,

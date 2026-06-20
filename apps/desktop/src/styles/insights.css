@@ -101,13 +101,6 @@
   overflow: hidden;
 }
 
-.portrait-thumb.placeholder {
-  color: #66776f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

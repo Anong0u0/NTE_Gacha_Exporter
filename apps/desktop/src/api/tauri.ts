@@ -29,6 +29,8 @@ export const tauriApi: AppApi = {
   listProfiles: () => invoke<Profile[]>("list_profiles"),
   createProfile: (name) => invoke<Profile>("create_profile", { name }),
   setActiveProfile: (profileName) => invoke<Settings>("set_active_profile", { profileName }),
+  renameProfile: (oldName, newName) => invoke<Profile>("rename_profile", { oldName, newName }),
+  deleteProfile: (profileName) => invoke<Settings>("delete_profile", { profileName }),
   importPublicJson: (profileName, path) => invoke<ImportReport>("import_public_json", { profileName, path }),
   importRawJsonl: (profileName, path, locale) =>
     invoke<ImportReport>("import_raw_jsonl", { profileName, path, locale }),
@@ -65,4 +67,3 @@ export const tauriApi: AppApi = {
   captureStatus: (sessionId) => invoke<CaptureStatus>("capture_status", { sessionId }),
   captureStop: (sessionId) => invoke<CaptureStatus>("capture_stop", { sessionId }),
 };
-

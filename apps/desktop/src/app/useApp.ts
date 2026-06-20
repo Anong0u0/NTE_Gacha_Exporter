@@ -2,7 +2,7 @@ import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { confirm, open, save } from "@tauri-apps/plugin-dialog";
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   api,
@@ -43,6 +43,7 @@ use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
 export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default"), newProfileName = ref("");
+  const profileRenameSource = ref(""), profileRenameName = ref("");
   const locale = ref("zh-Hant"), locales = ref<string[]>(["zh-Hant"]), summary = ref<DashboardOverview | null>(null);
   const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedBannerId = ref(""), detail = ref<PoolKindDetail | null>(null);
   const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ pools: [], banners: [], record_types: [] });
@@ -108,7 +109,17 @@ export function useApp() {
   });
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
 
-  const { assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, resolveVisibleAssets } = createAssetTools({
+  const {
+    assetRefsCount,
+    itemVisualUrl,
+    bannerVisualUrl,
+    selectedBannerPortraitUrls,
+    hasRecordVisual,
+    hasBannerVisual,
+    hasSelectedBannerVisuals,
+    recordsHaveAnyVisual,
+    resolveVisibleAssets,
+  } = createAssetTools({
     assetUrlCache,
     bannerSummaries,
     latest,
@@ -194,6 +205,56 @@ export function useApp() {
       newProfileName.value = "";
       await api.setActiveProfile(profile.name);
       activeProfileName.value = profile.name;
+      await loadProfiles();
+      await refreshAll();
+    });
+  }
+
+  function startRenameProfile(profile: Profile) {
+    profileRenameSource.value = profile.name;
+    profileRenameName.value = profile.name;
+  }
+
+  function cancelRenameProfile() {
+    profileRenameSource.value = "";
+    profileRenameName.value = "";
+  }
+
+  async function saveProfileRename() {
+    const oldName = profileRenameSource.value;
+    const newName = profileRenameName.value.trim();
+    if (!oldName || !newName) return;
+    if (oldName === newName) {
+      cancelRenameProfile();
+      return;
+    }
+    await runTask("Profile renamed", async () => {
+      const profile = await api.renameProfile(oldName, newName);
+      if (activeProfileName.value === oldName || profile.active) {
+        activeProfileName.value = profile.name;
+      }
+      cancelRenameProfile();
+      await loadProfiles();
+      await refreshAll();
+    });
+  }
+
+  async function deleteProfile(profile: Profile) {
+    if (profiles.value.length <= 1) return;
+    const accepted = await confirm(`Delete profile "${profile.name}"? This cannot be undone.`, {
+      title: "Delete profile",
+      kind: "warning",
+    });
+    if (!accepted) return;
+    await runTask("Profile deleted", async () => {
+      const settings = await api.deleteProfile(profile.name);
+      activeProfileName.value = settings.active_profile;
+      locale.value = settings.locale;
+      settingsUpdateChannel.value = settings.update_channel;
+      settingsCheckUpdates.value = settings.check_updates_on_startup;
+      if (profileRenameSource.value === profile.name) {
+        cancelRenameProfile();
+      }
       await loadProfiles();
       await refreshAll();
     });
@@ -475,14 +536,14 @@ export function useApp() {
   }
 
   return reactive({
-    navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, locale, locales, summary, selectedPoolKind, selectedBannerId, detail, records, recordTotal, filterOptions, importPath, importMode,
+    navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, locale, locales, summary, selectedPoolKind, selectedBannerId, detail, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
     capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordPoolId, recordBannerId, recordType, hitRarity, rateUpResult, pity5Min, pity5Max, pity4Min, pity4Max, dateFrom, dateTo, search,
     sortKey, sortDirection, pageSize, pageIndex, settingsUpdateChannel, settingsCheckUpdates, activeProfile, allPoolSummaries, trackedPoolCount, bannerSummaries, trackedBannerCount, selectedSummary, selectedBanner, latest, phaseSummaries, recordPageStart, recordPageEnd, canPrevPage,
-    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, selectProfile, saveSettings, refreshAll, loadDetail,
+    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, deleteProfile, selectProfile, saveSettings, refreshAll, loadDetail,
     loadFilterOptions, loadRecords, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
     runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, parseOptionalNumber, formatTime, formatResult, bannerTitle, bannerMeta,
-    formatBannerWindow, formatPullNo, formatPity, formatGuarantee, assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, resolveVisibleAssets, formatCaptureState, formatCaptureMode, captureRecordName, captureRecordMeta, formatError,
+    formatBannerWindow, formatPullNo, formatPity, formatGuarantee, assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, hasRecordVisual, hasBannerVisual, hasSelectedBannerVisuals, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState, formatCaptureMode, captureRecordName, captureRecordMeta, formatError,
   });
 }
 

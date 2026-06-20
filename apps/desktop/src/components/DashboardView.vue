@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleStop, FileJson, Image, RadioTower, RefreshCw, Upload } from "lucide-vue-next";
+import { CircleStop, FileJson, RadioTower, RefreshCw, Upload } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -12,7 +12,7 @@ const app = useAppContext();
             <span class="eyebrow">Update Data</span>
             <h2>{{ app.captureTitle }}</h2>
             <p>{{ app.captureSubtitle }}</p>
-            <div v-if="app.captureStatus" class="capture-app.summary">
+            <div v-if="app.captureStatus" class="capture-summary">
               <div class="capture-stats">
                 <span>{{ app.captureModeLabel }}</span>
                 <span>{{ app.formatCaptureState(app.captureStatus.state) }}</span>
@@ -30,7 +30,7 @@ const app = useAppContext();
               <div v-if="app.captureStatus.target" class="capture-target">
                 {{ app.captureStatus.target.pid ?? "-" }} · {{ app.captureStatus.target.interface ?? "-" }}
               </div>
-              <div v-if="app.captureStatus.latest_records.length" class="capture-app.latest">
+              <div v-if="app.captureStatus.latest_records.length" class="capture-latest">
                 <div v-for="record in app.captureStatus.latest_records.slice(-3)" :key="String(record.record_id ?? record.item_id ?? app.captureRecordName(record))">
                   <span>{{ app.captureRecordName(record) }}</span>
                   <small>{{ app.captureRecordMeta(record) }}</small>
@@ -117,7 +117,7 @@ const app = useAppContext();
             </span>
             <span class="pity">{{ pool.current_pity }}/{{ pool.hard_pity }}</span>
             <span class="state">{{ pool.current_guarantee ? "Guaranteed" : "Normal" }}</span>
-            <span class="pool-app.latest">Latest 5★ · {{ pool.latest_5star?.item_name ?? "-" }}</span>
+            <span class="pool-latest">Latest 5★ · {{ pool.latest_5star?.item_name ?? "-" }}</span>
           </button>
         </section>
 
@@ -133,9 +133,8 @@ const app = useAppContext();
               app.selectedPoolKind = banner.pool_kind;
             "
           >
-            <span class="banner-visual">
-              <img v-if="app.bannerVisualUrl(banner)" :src="app.bannerVisualUrl(banner)" alt="" />
-              <span v-else class="asset-placeholder"><Image :size="20" /></span>
+            <span v-if="app.hasBannerVisual(banner)" class="banner-visual">
+              <img :src="app.bannerVisualUrl(banner)" alt="" />
             </span>
             <span class="banner-card-head">
               <span>
@@ -173,7 +172,7 @@ const app = useAppContext();
               <div><span>Longest</span><strong>{{ app.numberOrDash(app.selectedSummary?.max_5star_pity) }}</strong></div>
               <div><span>UP rate</span><strong>{{ app.percent(app.selectedSummary?.observed_up_rate) }}</strong></div>
             </div>
-            <div class="record-table app.detail-table">
+            <div class="record-table detail-table">
               <div class="record-header five-star-header">
                 <span>Time</span>
                 <span>Item</span>
@@ -219,17 +218,13 @@ const app = useAppContext();
                 <h2>Selected banner</h2>
               </div>
             </div>
-            <div class="selected-banner-visual">
-              <div class="selected-banner-hero">
-                <img v-if="app.bannerVisualUrl(app.selectedBanner)" :src="app.bannerVisualUrl(app.selectedBanner)" alt="" />
-                <span v-else class="asset-placeholder"><Image :size="24" /></span>
+            <div v-if="app.hasSelectedBannerVisuals()" class="selected-banner-visual">
+              <div v-if="app.bannerVisualUrl(app.selectedBanner)" class="selected-banner-hero">
+                <img :src="app.bannerVisualUrl(app.selectedBanner)" alt="" />
               </div>
-              <div class="portrait-strip">
+              <div v-if="app.selectedBannerPortraitUrls().length" class="portrait-strip">
                 <span v-for="url in app.selectedBannerPortraitUrls()" :key="url" class="portrait-thumb">
                   <img :src="url" alt="" />
-                </span>
-                <span v-if="app.selectedBannerPortraitUrls().length === 0" class="portrait-thumb placeholder">
-                  <Image :size="18" />
                 </span>
               </div>
             </div>
@@ -296,9 +291,8 @@ const app = useAppContext();
           </div>
           <div class="record-list compact">
             <div v-for="record in app.latest" :key="record.record_id" class="record-row">
-              <span class="item-thumb">
-                <img v-if="app.itemVisualUrl(record)" :src="app.itemVisualUrl(record)" alt="" />
-                <span v-else class="asset-placeholder"><Image :size="17" /></span>
+              <span v-if="app.hasRecordVisual(record)" class="item-thumb">
+                <img :src="app.itemVisualUrl(record)" alt="" />
               </span>
               <div>
                 <strong>{{ record.item_name }}</strong>

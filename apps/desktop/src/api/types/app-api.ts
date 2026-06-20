@@ -11,6 +11,8 @@ export type AppApi = {
   listProfiles(): Promise<Profile[]>;
   createProfile(name: string): Promise<Profile>;
   setActiveProfile(profileName: string): Promise<Settings>;
+  renameProfile(oldName: string, newName: string): Promise<Profile>;
+  deleteProfile(profileName: string): Promise<Settings>;
   importPublicJson(profileName: string, path: string): Promise<ImportReport>;
   importRawJsonl(profileName: string, path: string, locale?: string): Promise<ImportReport>;
   dashboardOverview(profileName: string, locale?: string): Promise<DashboardOverview>;

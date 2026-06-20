@@ -26,6 +26,11 @@
     grid-template-columns: 140px minmax(160px, 1fr) minmax(150px, 1fr) 56px 68px minmax(150px, 0.8fr) minmax(120px, 0.7fr) 88px minmax(150px, 1fr);
   }
 
+  .history-header.without-visual,
+  .history-line.without-visual {
+    grid-template-columns: 140px minmax(160px, 1fr) minmax(150px, 1fr) 56px 68px minmax(150px, 0.8fr) minmax(120px, 0.7fr) 88px;
+  }
+
   .timeline-list div {
     grid-template-columns: minmax(0, 1fr);
   }

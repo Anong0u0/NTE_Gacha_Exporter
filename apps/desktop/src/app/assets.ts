@@ -73,6 +73,22 @@ export function createAssetTools(options: AssetToolsOptions) {
     return assetUrls(selectedBanner.value?.asset_refs, ["featured_portraits", "portrait", "icon"]).slice(0, 4);
   }
 
+  function hasRecordVisual(record?: DisplayRecord | null) {
+    return Boolean(itemVisualUrl(record));
+  }
+
+  function hasBannerVisual(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+    return Boolean(bannerVisualUrl(banner));
+  }
+
+  function hasSelectedBannerVisuals() {
+    return Boolean(bannerVisualUrl(selectedBanner.value) || selectedBannerPortraitUrls().length);
+  }
+
+  function recordsHaveAnyVisual() {
+    return records.value.some(hasRecordVisual);
+  }
+
   function collectAssetRequestsFromRefs(assetRefs?: Record<string, unknown> | null) {
     return assetRefEntries(assetRefs).flatMap((entry): AssetResolveRequest[] =>
       typeof entry.value === "string" ? [{ asset_ref: entry.value, kind: entry.kind }] : [],
@@ -119,5 +135,15 @@ export function createAssetTools(options: AssetToolsOptions) {
     }
   }
 
-  return { assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, resolveVisibleAssets };
+  return {
+    assetRefsCount,
+    itemVisualUrl,
+    bannerVisualUrl,
+    selectedBannerPortraitUrls,
+    hasRecordVisual,
+    hasBannerVisual,
+    hasSelectedBannerVisuals,
+    recordsHaveAnyVisual,
+    resolveVisibleAssets,
+  };
 }

@@ -94,6 +94,54 @@ impl JsonStore {
         })
     }
 
+    pub fn rename_profile(&self, old_name: &str, new_name: &str) -> Result<Profile, GuiError> {
+        let old_name = validate_profile_name(old_name)?;
+        let new_name = validate_profile_name(new_name)?;
+        if old_name == new_name {
+            return self.profile_for_api(&old_name);
+        }
+        self.read_profile(&old_name)?;
+        self.ensure_profile_absent(&new_name)?;
+
+        let mut settings = self.read_settings()?;
+        fs::rename(self.profile_dir(&old_name), self.profile_dir(&new_name))?;
+        let mut profile = self.read_profile(&new_name)?;
+        profile.name = new_name.clone();
+        profile.updated_at = now_stamp();
+        self.write_profile(&profile)?;
+        if settings.active_profile == old_name {
+            settings.active_profile = new_name.clone();
+            self.write_settings(&settings)?;
+        }
+        self.profile_for_api(&new_name)
+    }
+
+    pub fn delete_profile(&self, name: &str) -> Result<Settings, GuiError> {
+        let name = validate_profile_name(name)?;
+        self.read_profile(&name)?;
+        let profiles = self.list_profiles()?;
+        if profiles.len() <= 1 {
+            return Err(GuiError::InvalidProfile(
+                "cannot delete the last profile".to_string(),
+            ));
+        }
+
+        let mut settings = self.read_settings()?;
+        let replacement = profiles
+            .iter()
+            .find(|profile| profile.name != name)
+            .map(|profile| profile.name.clone())
+            .ok_or_else(|| {
+                GuiError::InvalidProfile("cannot delete the last profile".to_string())
+            })?;
+        remove_profile_dir_known_files_strict(self.profile_dir(&name))?;
+        if settings.active_profile == name {
+            settings.active_profile = replacement;
+            self.write_settings(&settings)?;
+        }
+        self.settings()
+    }
+
     pub fn import_public_document(
         &self,
         profile_name: &str,

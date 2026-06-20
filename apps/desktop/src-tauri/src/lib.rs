@@ -41,6 +41,8 @@ pub fn run() {
             store_commands::list_profiles,
             store_commands::create_profile,
             store_commands::set_active_profile,
+            store_commands::rename_profile,
+            store_commands::delete_profile,
             store_commands::import_public_json,
             store_commands::import_raw_jsonl,
             store_commands::dashboard_overview,

@@ -202,6 +202,33 @@ fn remove_profile_dir_known_files(path: PathBuf) -> Result<(), GuiError> {
     Ok(())
 }
 
+fn remove_profile_dir_known_files_strict(path: PathBuf) -> Result<(), GuiError> {
+    for entry in fs::read_dir(&path)? {
+        let entry = entry?;
+        let file_name = entry.file_name();
+        let file_name = file_name.to_string_lossy();
+        if !entry.file_type()?.is_file()
+            || !matches!(
+                file_name.as_ref(),
+                "profile.json" | "records.json" | "last-run.json"
+            )
+        {
+            return Err(GuiError::InvalidProfile(format!(
+                "profile directory contains unsupported path: {}",
+                entry.path().display()
+            )));
+        }
+    }
+    for file_name in ["profile.json", "records.json", "last-run.json"] {
+        let file = path.join(file_name);
+        if file.exists() {
+            fs::remove_file(file)?;
+        }
+    }
+    fs::remove_dir(path)?;
+    Ok(())
+}
+
 fn backup_entry_names(zip: &mut ZipArchive<fs::File>) -> Result<HashSet<String>, GuiError> {
     let mut names = HashSet::new();
     for index in 0..zip.len() {

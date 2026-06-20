@@ -29,33 +29,60 @@ import {
 } from "./mock-data";
 
 const MOCK_APP_VERSION = __NTE_APP_VERSION__;
+const mockProfiles = [{ ...mockProfile }];
+let mockActiveProfileName = mockProfile.name;
 
 export const mockApi: AppApi = {
   async getSettings() {
     return {
-      active_profile: "default",
+      active_profile: mockActiveProfileName,
       locale: "zh-Hant",
       update_channel: "stable",
       check_updates_on_startup: false,
     };
   },
   async updateSettings(patch: SettingsPatch) {
+    mockActiveProfileName = patch.active_profile ?? mockActiveProfileName;
     return {
-      active_profile: patch.active_profile ?? "default",
+      active_profile: mockActiveProfileName,
       locale: patch.locale ?? "zh-Hant",
       update_channel: patch.update_channel ?? "stable",
       check_updates_on_startup: patch.check_updates_on_startup ?? false,
     };
   },
   async listProfiles() {
-    return [mockProfile];
+    return mockProfiles.map((profile) => ({ ...profile, active: profile.name === mockActiveProfileName }));
   },
   async createProfile(name: string) {
-    return { name, created_at: "0", updated_at: "0", active: false };
+    const profile = { name, created_at: "0", updated_at: "0", active: false };
+    mockProfiles.push(profile);
+    return profile;
   },
   async setActiveProfile(profileName: string) {
+    mockActiveProfileName = profileName;
     return {
       active_profile: profileName,
+      locale: "zh-Hant",
+      update_channel: "stable",
+      check_updates_on_startup: false,
+    };
+  },
+  async renameProfile(oldName: string, newName: string) {
+    const profile = mockProfiles.find((item) => item.name === oldName);
+    if (!profile) throw new Error(`profile not found: ${oldName}`);
+    profile.name = newName;
+    profile.updated_at = "0";
+    if (mockActiveProfileName === oldName) mockActiveProfileName = newName;
+    return { ...profile, active: profile.name === mockActiveProfileName };
+  },
+  async deleteProfile(profileName: string) {
+    const index = mockProfiles.findIndex((profile) => profile.name === profileName);
+    if (index < 0) throw new Error(`profile not found: ${profileName}`);
+    if (mockProfiles.length <= 1) throw new Error("cannot delete the last profile");
+    mockProfiles.splice(index, 1);
+    if (mockActiveProfileName === profileName) mockActiveProfileName = mockProfiles[0].name;
+    return {
+      active_profile: mockActiveProfileName,
       locale: "zh-Hant",
       update_channel: "stable",
       check_updates_on_startup: false,
