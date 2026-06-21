@@ -4,12 +4,13 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
 use crate::{
-    api::{action, assert_agent_ids, click_nav, eval_js, wait_agent, wait_health, wait_text},
+    api::{action, assert_agent_ids, click_nav, eval_js, wait_agent, wait_health},
     cli::{APP_TITLE, DEFAULT_KEEP_RUNS, DEFAULT_SAMPLE, SmokeOptions},
     report::{CleanupReport, ProcessReport, Report, ScreenshotReport, StepReport},
     runtime::{
-        default_agent_app_root, ensure_addr_available, launch_app, new_run_dir,
-        remove_portable_copy, rotate_run_dirs, stage_portable,
+        bridge_agent_smoke, default_agent_app_root, ensure_agent_app_fresh, launch_app,
+        new_run_dir, prepare_agent_addr, read_agent_build_manifest, remove_portable_copy,
+        rotate_run_dirs, stage_portable,
     },
     util::{ensure_file, unix_secs, write_json, write_png},
     window::{
@@ -19,7 +20,18 @@ use crate::{
 };
 
 pub fn run_smoke(options: SmokeOptions) -> Result<()> {
+    if !cfg!(windows) {
+        return bridge_agent_smoke(
+            options.sample.as_deref(),
+            &options.out_dir,
+            &options.addr,
+            options.timeout,
+        );
+    }
+
     require_windows()?;
+    ensure_agent_app_fresh()?;
+    let build = read_agent_build_manifest()?;
 
     let release_root_input = default_agent_app_root();
     let sample_input = options
@@ -54,6 +66,7 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
     let mut report = Report {
         schema: "nte-agent-smoke-report",
         schema_version: 1,
+        build: Some(build),
         release_root: release_root.display().to_string(),
         staged_portable_root: portable_root.display().to_string(),
         run_dir: run_dir.display().to_string(),
@@ -71,7 +84,7 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
         finished_at: 0,
     };
 
-    ensure_addr_available(&options.addr)?;
+    prepare_agent_addr(&options.addr, options.timeout)?;
 
     let before_windows = visible_nte_windows()?
         .into_iter()
@@ -93,6 +106,11 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
 
     if let Err(error) = result {
         report.errors.push(error.to_string());
+        if let Err(snapshot_error) = capture_failure_snapshot(&options.addr, &logs) {
+            report
+                .errors
+                .push(format!("failure snapshot failed: {snapshot_error}"));
+        }
         if let Some(window) = launched_window.as_ref() {
             if let Err(screenshot_error) =
                 capture_step(&mut report, &screenshots, "failure", window)
@@ -137,6 +155,10 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
     write_json(options.out_dir.join("latest-report.json"), &report)?;
 
     if report.ok {
+        println!(
+            "OK agent smoke report: {}",
+            options.out_dir.join("latest-report.json").display()
+        );
         Ok(())
     } else {
         bail!("agent smoke failed: {}", report.errors.join("; "))
@@ -213,13 +235,18 @@ fn run_import_sample(
         5000,
     )?;
     action(addr, "click_agent", "import-run", Value::Null, 5000)?;
-    wait_text(addr, "Last import", Duration::from_secs(30))?;
+    wait_agent(addr, "last-import-panel", Duration::from_secs(30))?;
     push_step(
         report,
         "import_sample",
         Some(json!({ "sample": sample.display().to_string() })),
     );
     capture_step(report, screenshots, "import_export_after", window)
+}
+
+fn capture_failure_snapshot(addr: &str, logs: &Path) -> Result<()> {
+    let snapshot = action(addr, "snapshot", "", Value::Null, 5000)?;
+    write_json(logs.join("snapshot-failure.json"), &snapshot)
 }
 
 fn capture_navigation_views(

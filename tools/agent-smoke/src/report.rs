@@ -14,6 +14,7 @@ pub struct ApiResponse {
 pub struct Report {
     pub schema: &'static str,
     pub schema_version: u32,
+    pub build: Option<AgentBuildManifest>,
     pub release_root: String,
     pub staged_portable_root: String,
     pub run_dir: String,
@@ -26,6 +27,14 @@ pub struct Report {
     pub cleanup: CleanupReport,
     pub ok: bool,
     pub finished_at: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentBuildManifest {
+    pub schema: String,
+    pub schema_version: u32,
+    pub version: String,
+    pub fingerprint: String,
 }
 
 #[derive(Debug, Default, Serialize)]

@@ -9,15 +9,16 @@ use std::{
 };
 
 use anyhow::{Context, Result, anyhow, bail};
+use serde::de::DeserializeOwned;
 
 use crate::{
     api::wait_health,
     cli::{AGENT_BUILD_SCRIPT, DEFAULT_AGENT_APP_ROOT, DEFAULT_OUT_DIR},
-    report::LaunchOutput,
+    report::{AgentBuildManifest, LaunchOutput},
     util::{canonical_or_self, ensure_file, unix_secs},
 };
 
-pub fn run_agent_build(skip_install: bool) -> Result<()> {
+pub fn run_agent_build(force: bool) -> Result<()> {
     let mut command = Command::new("powershell.exe");
     command
         .arg("-NoProfile")
@@ -26,8 +27,8 @@ pub fn run_agent_build(skip_install: bool) -> Result<()> {
         .arg("-File")
         .arg(AGENT_BUILD_SCRIPT)
         .env_remove("WSL_DISTRO_NAME");
-    if skip_install {
-        command.arg("-SkipInstall");
+    if force {
+        command.arg("-Force");
     }
     let status = command
         .status()
@@ -39,11 +40,16 @@ pub fn run_agent_build(skip_install: bool) -> Result<()> {
     }
 }
 
+pub fn ensure_agent_app_fresh() -> Result<()> {
+    run_agent_build(false)
+}
+
 pub fn run_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
     if !cfg!(windows) {
         return bridge_agent_launch(addr, timeout);
     }
 
+    ensure_agent_app_fresh()?;
     let portable_root_input = default_agent_app_root();
     let portable_root = portable_root_input.canonicalize().with_context(|| {
         format!(
@@ -58,8 +64,7 @@ pub fn run_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
     ensure_file(&launcher)?;
     ensure_file(&desktop)?;
 
-    stop_addr_owner_if_nte(addr)?;
-    wait_addr_available(addr, timeout)?;
+    prepare_agent_addr(addr, timeout)?;
 
     let child = launch_app(&launcher, &portable_root, addr)?;
     let health = wait_health(addr, timeout)?;
@@ -76,6 +81,22 @@ pub fn run_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
 
 pub fn default_agent_app_root() -> PathBuf {
     PathBuf::from(DEFAULT_AGENT_APP_ROOT)
+}
+
+pub fn agent_build_manifest_path() -> PathBuf {
+    PathBuf::from(DEFAULT_OUT_DIR).join("app-current.build.json")
+}
+
+pub fn read_agent_build_manifest() -> Result<AgentBuildManifest> {
+    let path = agent_build_manifest_path();
+    let text = fs::read_to_string(&path)
+        .with_context(|| format!("agent build manifest missing: {}", path.display()))?;
+    let manifest = serde_json::from_str::<AgentBuildManifest>(&text)
+        .with_context(|| format!("invalid agent build manifest: {}", path.display()))?;
+    if manifest.schema != "nte-agent-smoke-build" || manifest.schema_version != 1 {
+        bail!("unsupported agent build manifest: {}", path.display());
+    }
+    Ok(manifest)
 }
 
 pub fn stage_portable(source: &Path, destination: &Path) -> Result<()> {
@@ -128,6 +149,11 @@ pub fn ensure_addr_available(addr: &str) -> Result<()> {
         .with_context(|| format!("agent smoke addr is already in use or invalid: {addr}"))?;
     drop(listener);
     Ok(())
+}
+
+pub fn prepare_agent_addr(addr: &str, timeout: Duration) -> Result<()> {
+    stop_addr_owner_if_nte(addr)?;
+    wait_addr_available(addr, timeout)
 }
 
 pub fn remove_portable_copy(run_dir: &Path, portable_root: &Path) -> Result<bool> {
@@ -215,6 +241,47 @@ pub fn new_run_dir(base: &Path) -> Result<PathBuf> {
     Ok(run_dir)
 }
 
+pub fn bridge_agent_smoke(
+    sample: Option<&Path>,
+    out_dir: &Path,
+    addr: &str,
+    timeout: Duration,
+) -> Result<()> {
+    let cwd = windows_current_dir()?;
+    let mut command_parts = vec![
+        "Set-Location".to_string(),
+        format!("'{}';", powershell_single_quote(&cwd)),
+        "cargo run --quiet --manifest-path tools\\agent-smoke\\Cargo.toml -- smoke".to_string(),
+        "--addr".to_string(),
+        format!("'{}'", powershell_single_quote(addr)),
+        "--timeout-secs".to_string(),
+        timeout.as_secs().to_string(),
+        "--out-dir".to_string(),
+        format!("'{}'", powershell_single_quote(&windows_cli_path(out_dir)?)),
+    ];
+    if let Some(sample) = sample {
+        command_parts.push("--sample".to_string());
+        command_parts.push(format!(
+            "'{}'",
+            powershell_single_quote(&windows_cli_path(sample)?)
+        ));
+    }
+    let status = Command::new("powershell.exe")
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-Command")
+        .arg(command_parts.join(" "))
+        .env_remove("WSL_DISTRO_NAME")
+        .status()
+        .context("failed to start native agent smoke")?;
+    if status.success() {
+        Ok(())
+    } else {
+        bail!("agent smoke failed with exit code {status}")
+    }
+}
+
 fn bridge_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
     let cwd = windows_current_dir()?;
     fs::create_dir_all(DEFAULT_OUT_DIR)?;
@@ -225,33 +292,57 @@ fn bridge_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
     ));
     let out_path_windows = windows_path(&out_path)?;
     let command = format!(
-        "Set-Location '{}'; cargo run --quiet --manifest-path tools\\agent-smoke\\Cargo.toml -- launch --addr '{}' --timeout-secs {} | Out-File -Encoding utf8 -FilePath '{}'; if ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}",
+        "Set-Location '{}'; cargo run --quiet --manifest-path tools\\agent-smoke\\Cargo.toml -- launch --addr '{}' --timeout-secs {} --out '{}'; if ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}",
         powershell_single_quote(&cwd),
         powershell_single_quote(addr),
         timeout.as_secs(),
         powershell_single_quote(&out_path_windows),
     );
-    let status = Command::new("powershell.exe")
+    let mut child = Command::new("powershell.exe")
         .arg("-NoProfile")
         .arg("-ExecutionPolicy")
         .arg("Bypass")
         .arg("-Command")
         .arg(command)
         .env_remove("WSL_DISTRO_NAME")
-        .status()
-        .context("failed to start Windows agent launch")?;
-    if !status.success() {
-        bail!(
-            "agent launch failed with exit code {}; output={}",
-            status,
-            fs::read_to_string(&out_path).unwrap_or_default().trim()
-        );
+        .spawn()
+        .context("failed to start native agent launch")?;
+    read_bridge_json(&mut child, &out_path, "agent launch")
+}
+
+fn read_bridge_json<T: DeserializeOwned>(
+    child: &mut Child,
+    out_path: &Path,
+    label: &str,
+) -> Result<T> {
+    loop {
+        if let Ok(text) = fs::read_to_string(out_path) {
+            if !text.trim().is_empty() {
+                match serde_json::from_str(&text) {
+                    Ok(value) => {
+                        let _ = child.kill();
+                        let _ = fs::remove_file(out_path);
+                        return Ok(value);
+                    }
+                    Err(error) => {
+                        if let Some(status) = child.try_wait()? {
+                            bail!(
+                                "{label} wrote invalid json after {status}: {error}; stdout={text}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(status) = child.try_wait()? {
+            bail!(
+                "{label} failed with exit code {}; output={}",
+                status,
+                fs::read_to_string(out_path).unwrap_or_default().trim()
+            );
+        }
+        thread::sleep(Duration::from_millis(250));
     }
-    let text = fs::read_to_string(&out_path)
-        .with_context(|| format!("agent launch output missing: {}", out_path.display()))?;
-    let _ = fs::remove_file(&out_path);
-    serde_json::from_str(&text)
-        .map_err(|error| anyhow!("invalid agent launch json: {error}; stdout={}", text))
 }
 
 fn walk_files(root: &Path) -> Result<Vec<PathBuf>> {
@@ -344,14 +435,22 @@ fn windows_path(path: &Path) -> Result<String> {
         .arg("-w")
         .arg(path)
         .output()
-        .context("failed to convert path for Windows host")?;
+        .context("failed to convert path for native runner")?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     } else {
         bail!(
-            "failed to convert path for Windows host: {}",
+            "failed to convert path for native runner: {}",
             String::from_utf8_lossy(&output.stderr).trim()
         )
+    }
+}
+
+fn windows_cli_path(path: &Path) -> Result<String> {
+    if path.is_absolute() {
+        windows_path(path)
+    } else {
+        Ok(path.display().to_string().replace('/', "\\"))
     }
 }
 

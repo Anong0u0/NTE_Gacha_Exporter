@@ -22,13 +22,15 @@ pub struct Cli {
 pub enum CommandKind {
     Build {
         #[arg(long)]
-        skip_install: bool,
+        force: bool,
     },
     Launch {
         #[arg(long, default_value = DEFAULT_ADDR)]
         addr: String,
         #[arg(long, default_value_t = 30)]
         timeout_secs: u64,
+        #[arg(long, hide = true)]
+        out: Option<PathBuf>,
     },
     Smoke {
         #[arg(long)]

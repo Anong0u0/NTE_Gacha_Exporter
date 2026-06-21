@@ -183,22 +183,6 @@ pub fn wait_agent(addr: &str, agent_id: &str, timeout: Duration) -> Result<Value
     bail!("agent id not visible: {agent_id}")
 }
 
-pub fn wait_text(addr: &str, text: &str, timeout: Duration) -> Result<Value> {
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        let snapshot = action(addr, "snapshot", "", Value::Null, 5000)?;
-        if snapshot
-            .get("bodyText")
-            .and_then(Value::as_str)
-            .is_some_and(|body| body.contains(text))
-        {
-            return Ok(snapshot);
-        }
-        thread::sleep(Duration::from_millis(500));
-    }
-    bail!("text not visible: {text}")
-}
-
 pub fn assert_agent_ids(snapshot: &Value, expected: &[&str]) -> Result<()> {
     let ids = snapshot
         .get("agentIds")

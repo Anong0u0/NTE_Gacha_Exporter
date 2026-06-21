@@ -61,7 +61,7 @@ pub fn image_metrics(image: &RgbImage) -> ImageMetrics {
 
 #[cfg(not(windows))]
 pub fn require_windows() -> Result<()> {
-    bail!("agent smoke launch and screenshot require a Windows host")
+    bail!("agent smoke launch and screenshot require the native runner")
 }
 
 #[cfg(windows)]
@@ -120,7 +120,7 @@ pub fn find_window(
         if let Some(window) = windows.into_iter().next() {
             return Ok(window);
         }
-        thread::sleep(Duration::from_millis(250));
+        std::thread::sleep(Duration::from_millis(250));
     }
     bail!("window not found: pid={pid:?} title={title:?}")
 }

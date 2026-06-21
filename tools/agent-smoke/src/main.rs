@@ -20,15 +20,24 @@ use cli::{Cli, CommandKind, SmokeOptions};
 use report::AgentIdsOutput;
 use runtime::{run_agent_build, run_agent_launch};
 use smoke::run_smoke;
-use util::{print_json, write_png};
+use util::{print_json, write_json, write_png};
 use window::{capture_window, find_window, image_metrics};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        CommandKind::Build { skip_install } => run_agent_build(skip_install),
-        CommandKind::Launch { addr, timeout_secs } => {
-            print_json(&run_agent_launch(&addr, Duration::from_secs(timeout_secs))?)?;
+        CommandKind::Build { force } => run_agent_build(force),
+        CommandKind::Launch {
+            addr,
+            timeout_secs,
+            out,
+        } => {
+            let output = run_agent_launch(&addr, Duration::from_secs(timeout_secs))?;
+            if let Some(out) = out {
+                write_json(out, &output)?;
+            } else {
+                print_json(&output)?;
+            }
             Ok(())
         }
         CommandKind::Smoke {
