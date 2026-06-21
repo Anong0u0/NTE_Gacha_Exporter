@@ -12,12 +12,8 @@ fn add_pool(pools: &mut BTreeMap<String, String>, pool_id: String, name: String,
     }
 }
 
-fn source_evidence(confidence: &str, tables: &[String], notes: &[&str]) -> Value {
+fn source_evidence(tables: &[String], notes: &[&str]) -> Value {
     let mut object = JsonObject::new();
-    object.insert(
-        "confidence".to_string(),
-        Value::String(confidence.to_string()),
-    );
     object.insert(
         "tables".to_string(),
         Value::Array(tables.iter().cloned().map(Value::String).collect()),
@@ -233,7 +229,7 @@ fn monopoly_pool_meta(localization: &Localization, pool_id: &str) -> JsonObject 
     }
 
     let mut title_windows = Vec::new();
-    for banner in CURATED_LIMITED_BANNERS {
+    for banner in LIMITED_BANNER_SEEDS {
         if let Some(title) = localized_monopoly_pool_title(localization, banner.tail) {
             title_windows.push(json!({"end_at_tz8": banner.end_at_tz8, "title": title}));
         }
@@ -309,4 +305,3 @@ fn build_pools(
     )?;
     Ok((pools, pool_meta))
 }
-

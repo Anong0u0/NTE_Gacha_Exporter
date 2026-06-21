@@ -19,8 +19,8 @@ mod tests {
             "ForkLottery_Test"
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Nanali"]["phase"],
-            "limited_2026_05_13"
+            map["banners"]["monopoly_limited_Nanali"]["end_at"],
+            json!("2026-05-13 05:59:00")
         );
         assert_eq!(
             map["gacha_rules"]["fork_lottery_s"]["hard_pity_5"],

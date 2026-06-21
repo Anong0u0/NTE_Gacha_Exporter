@@ -144,16 +144,8 @@ fn public_record(display: &DisplayRecord) -> Value {
         json!(display.derived.rate_up_result),
     );
     object.insert(
-        "result_confidence".to_string(),
-        json!(display.derived.result_confidence),
-    );
-    object.insert(
         "rule_resolution_status".to_string(),
         json!(display.derived.rule.status),
-    );
-    object.insert(
-        "rule_source_confidence".to_string(),
-        json!(display.derived.rule.source_confidence),
     );
     if let Some(banner_id) = display.banner.banner_id.as_ref() {
         object.insert("banner_id".to_string(), json!(banner_id));
@@ -164,17 +156,8 @@ fn public_record(display: &DisplayRecord) -> Value {
     if let Some(banner_type) = display.banner.banner_type.as_ref() {
         object.insert("banner_type".to_string(), json!(banner_type));
     }
-    if let Some(source_confidence) = display.banner.source_confidence.as_ref() {
-        object.insert(
-            "banner_source_confidence".to_string(),
-            json!(source_confidence),
-        );
-    }
     if let Some(version) = display.derived.banner_version.as_ref() {
         object.insert("banner_version".to_string(), json!(version));
-    }
-    if let Some(phase) = display.derived.banner_phase.as_ref() {
-        object.insert("banner_phase".to_string(), json!(phase));
     }
     if let Some(pull_no) = display.derived.pull_no_in_banner {
         object.insert("pull_no_in_banner".to_string(), json!(pull_no));

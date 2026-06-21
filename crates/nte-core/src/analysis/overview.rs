@@ -1,15 +1,15 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, HashMap};
 
 use crate::MapData;
 use crate::RuleResolutionStatus;
 use crate::derive_records;
 use crate::{
-    BannerSummary, DashboardOverview, DisplayRecord, FiveStarRecord, FiveStarResult,
-    FourStarRecord, GuiError, ImportReport, InternalRecord, ItemRank, PhaseSummary, PoolKind,
-    PoolKindDetail, PoolKindSummary, Profile, RarityBucket, RateUpResult, RecordBannerOption,
-    RecordDerived, RecordFilter, RecordFilterOptions, RecordList, RecordPoolOption, RecordSortKey,
-    RecordTypeOption, ResourcePoolKindSummary, ResourceSummary, SortDirection, TimeBucketSummary,
-    TimeStats,
+    BannerSummary, DashboardOverview, DashboardSelection, DashboardSelectionDetail,
+    DisplayRecord, FiveStarRecord, FiveStarResult, FourStarRecord, GuiError, ImportReport,
+    InternalRecord, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile, RarityBucket,
+    RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
+    RecordList, RecordPoolOption, RecordSortKey, RecordTypeOption, SortDirection,
+    TimeBucketSummary, TimeStats,
 };
 use crate::{classify_pool_id, fallback_rule_for, fallback_rule_resolution};
 
@@ -29,23 +29,15 @@ pub fn dashboard_overview(
         let detail = pool_kind_detail_from_display_records(&display_records, map, kind);
         pool_kinds.push(detail.summary);
     }
-    let latest_records = display_records
-        .iter()
-        .rev()
-        .take(12)
-        .cloned()
-        .collect::<Vec<_>>();
     Ok(DashboardOverview {
         profile,
         last_run,
         total_records: records.len() as u64,
         pool_kinds,
         banners: banner_summaries(&display_records),
-        resource: resource_summary(&display_records, map),
         time_stats: time_stats(&display_records),
         rarity_distribution: rarity_distribution(records, map),
         item_ranking: item_ranking(records, map),
-        latest_records,
     })
 }
 
@@ -55,11 +47,58 @@ pub fn pool_kind_detail(
     pool_kind: PoolKind,
 ) -> Result<PoolKindDetail, GuiError> {
     let display_records = display_records(records, map)?;
-    Ok(pool_kind_detail_from_display_records(
+    Ok(selection_detail_from_display_records(
         &display_records,
         map,
         pool_kind,
-    ))
+        map.pool_kind_label(pool_kind),
+        None,
+    )
+    .into())
+}
+
+pub fn dashboard_selection_detail(
+    records: &[InternalRecord],
+    map: &MapData,
+    selection: &DashboardSelection,
+) -> Result<DashboardSelectionDetail, GuiError> {
+    let display_records = display_records(records, map)?;
+    Ok(match selection {
+        DashboardSelection::PoolKind { pool_kind } => selection_detail_from_display_records(
+            &display_records,
+            map,
+            *pool_kind,
+            map.pool_kind_label(*pool_kind),
+            None,
+        ),
+        DashboardSelection::Banner {
+            pool_kind,
+            banner_id,
+        } => {
+            let label = display_records
+                .iter()
+                .find(|record| record.derived.banner_id.as_deref() == Some(banner_id.as_str()))
+                .and_then(|record| record.banner.title.clone())
+                .unwrap_or_else(|| banner_id.clone());
+            selection_detail_from_display_records(
+                &display_records,
+                map,
+                *pool_kind,
+                label,
+                Some(banner_id.as_str()),
+            )
+        }
+    })
+}
+
+impl From<DashboardSelectionDetail> for PoolKindDetail {
+    fn from(value: DashboardSelectionDetail) -> Self {
+        Self {
+            summary: value.summary,
+            five_star_history: value.five_star_history,
+            four_star_history: value.four_star_history,
+        }
+    }
 }
 
 fn pool_kind_detail_from_display_records(
@@ -67,9 +106,29 @@ fn pool_kind_detail_from_display_records(
     map: &MapData,
     pool_kind: PoolKind,
 ) -> PoolKindDetail {
+    selection_detail_from_display_records(
+        records,
+        map,
+        pool_kind,
+        map.pool_kind_label(pool_kind),
+        None,
+    )
+    .into()
+}
+
+fn selection_detail_from_display_records(
+    records: &[DisplayRecord],
+    map: &MapData,
+    pool_kind: PoolKind,
+    label: String,
+    banner_id: Option<&str>,
+) -> DashboardSelectionDetail {
     let pool_records = records
         .iter()
         .filter(|record| record.pool_kind == pool_kind)
+        .filter(|record| {
+            banner_id.is_none_or(|banner_id| record.derived.banner_id.as_deref() == Some(banner_id))
+        })
         .collect::<Vec<_>>();
     let five_star_history = pool_records
         .iter()
@@ -138,10 +197,10 @@ fn pool_kind_detail_from_display_records(
     let resource = resource_counters(pool_records.iter().copied());
     let roll_point_costs = roll_point_costs_to_hits(pool_records.iter().copied());
 
-    PoolKindDetail {
+    DashboardSelectionDetail {
         summary: PoolKindSummary {
             pool_kind,
-            label: map.pool_kind_label(pool_kind),
+            label,
             total_pulls: pool_records.len() as u64,
             roll_points_total: resource.total,
             known_roll_point_records: resource.known,
@@ -177,7 +236,6 @@ fn pool_kind_detail_from_display_records(
             not_applicable_rate_up_4_count,
             unknown_rate_up_4_count,
             rule_resolution_status: summary_rule.status,
-            rule_source_confidence: summary_rule.source_confidence.clone(),
             average_roll_points_to_5star: average_i64(&roll_point_costs.five_star),
             average_roll_points_to_4star: average_i64(&roll_point_costs.four_star),
             roll_point_cost_samples_5star: roll_point_costs.five_star.len() as u64,
@@ -185,6 +243,8 @@ fn pool_kind_detail_from_display_records(
         },
         five_star_history,
         four_star_history,
+        rarity_distribution: rarity_distribution_from_display(&pool_records),
+        item_ranking: item_ranking_from_display(&pool_records, map),
     }
 }
 
@@ -193,7 +253,6 @@ fn five_star_record(record: &DisplayRecord) -> FiveStarRecord {
         record: record.clone(),
         pity_distance: record.derived.pity_5_before + 1,
         result: five_star_result(record.derived.rate_up_result),
-        result_confidence: record.derived.result_confidence.clone(),
         guarantee_before: record.derived.guarantee_5_before,
         guarantee_after: record.derived.guarantee_5_after,
     }
@@ -204,7 +263,6 @@ fn four_star_record(record: &DisplayRecord) -> FourStarRecord {
         record: record.clone(),
         pity_distance: record.derived.pity_4_before + 1,
         result: record.derived.rate_up_result,
-        result_confidence: record.derived.result_confidence.clone(),
         guarantee_before: record.derived.guarantee_4_before,
         guarantee_after: record.derived.guarantee_4_after,
     }
@@ -229,4 +287,3 @@ fn count_rate_up(history: &[FiveStarRecord], result: RateUpResult) -> u64 {
 fn count_rate_up_4(history: &[FourStarRecord], result: RateUpResult) -> u64 {
     history.iter().filter(|hit| hit.result == result).count() as u64
 }
-

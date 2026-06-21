@@ -14,16 +14,13 @@ mod tests {
         assert_eq!(banner.banner_id, "ForkLottery_AnHunQu");
         assert_eq!(banner.pool_id, "ForkLottery_AnHunQu");
         assert_eq!(banner.rate_up_5, vec!["fork_Rose"]);
-        assert_eq!(banner.source.confidence, "exact");
         assert_eq!(banner.currency_id.as_deref(), Some("WeaponGacha"));
-        assert_eq!(
-            map.banners
-                .get("monopoly_limited_Nanali")
-                .expect("limited banner should exist")
-                .phase
-                .as_deref(),
-            Some("limited_2026_05_13")
-        );
+        assert!(map
+            .banners
+            .get("monopoly_limited_Nanali")
+            .expect("limited banner should exist")
+            .start_at
+            .is_none());
 
         let rule = map
             .gacha_rules
@@ -53,12 +50,10 @@ mod tests {
         assert_eq!(standard.banner_id.as_deref(), Some("monopoly_standard"));
         assert_eq!(standard.banner_type.as_deref(), Some("standard"));
         assert_eq!(standard.version, None);
-        assert_eq!(standard.phase, None);
 
         let fork = map.resolve_banner("ForkLottery_AnHunQu", None);
         assert_eq!(fork.status, BannerResolutionStatus::Matched);
         assert_eq!(fork.banner_id.as_deref(), Some("ForkLottery_AnHunQu"));
-        assert_eq!(fork.source_confidence.as_deref(), Some("exact"));
         assert_eq!(fork.rate_up_5, vec!["fork_Rose"]);
 
         for (record_time, banner_id) in [
@@ -74,7 +69,6 @@ mod tests {
             assert_eq!(resolved.banner_id.as_deref(), Some(banner_id));
         }
         let limited = map.resolve_banner("CardPool_Character", Some("2026-05-13 05:59:00"));
-        assert_eq!(limited.phase.as_deref(), Some("limited_2026_05_13"));
         assert_eq!(limited.version, None);
     }
 
@@ -98,7 +92,6 @@ mod tests {
         );
         let unmatched = map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"));
         assert_eq!(unmatched.version, None);
-        assert_eq!(unmatched.phase, None);
         assert_eq!(
             map.pool_label("CardPool_Character", Some("2026-07-08 05:59:01")),
             "限定棋盤"

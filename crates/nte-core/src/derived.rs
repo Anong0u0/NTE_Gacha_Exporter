@@ -5,8 +5,7 @@ use crate::{
     BannerResolutionStatus, GuiError, InternalRecord, PoolKind, RateUpResult, RecordDerived,
 };
 use crate::{
-    classify_pool_id, rate_up_result, result_confidence, rule_for_resolved_banner,
-    update_guarantee_state_for,
+    classify_pool_id, rate_up_result, rule_for_resolved_banner, update_guarantee_state_for,
 };
 
 pub fn derive_records(
@@ -49,7 +48,6 @@ pub fn derive_records(
         let rate_up = hit_rarity
             .map(|rarity| rate_up_result(map, record, rarity, &banner))
             .unwrap_or(RateUpResult::Unknown);
-        let confidence = result_confidence(rate_up, &banner);
 
         let result_5 = (hit_rarity == Some(5)).then_some(rate_up);
         let result_4 = (hit_rarity == Some(4)).then_some(rate_up);
@@ -75,7 +73,6 @@ pub fn derive_records(
             record_id: record.record_id.clone(),
             banner_id: matched_banner_id,
             banner_version: banner.version.clone(),
-            banner_phase: banner.phase.clone(),
             pull_no_in_pool_kind,
             pull_no_in_banner,
             pity_5_before,
@@ -84,7 +81,6 @@ pub fn derive_records(
             pity_4_after,
             hit_rarity,
             rate_up_result: rate_up,
-            result_confidence: confidence,
             guarantee_5_before,
             guarantee_5_after,
             guarantee_4_before,

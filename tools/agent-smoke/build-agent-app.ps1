@@ -150,9 +150,6 @@ function Assert-WindowsHost {
     if (-not $isWindows) {
         throw "agent app build must run on the native runner."
     }
-    if (-not [string]::IsNullOrWhiteSpace($env:WSL_DISTRO_NAME)) {
-        throw "agent app build environment is not isolated. Use cargo agent build."
-    }
 }
 
 function Assert-Command {

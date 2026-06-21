@@ -241,7 +241,6 @@ fn build_gacha_rules(
             "carry_scope": "pool_kind",
             "rule_text_refs": monopoly_rule_text_refs(true),
             "source": source_evidence(
-                "curated",
                 &[format!("Localization/{locale}/game.json")],
                 &["Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."],
             ),
@@ -258,7 +257,6 @@ fn build_gacha_rules(
             "carry_scope": "pool_kind",
             "rule_text_refs": monopoly_rule_text_refs(false),
             "source": source_evidence(
-                "curated",
                 &[format!("Localization/{locale}/game.json")],
                 &["Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."],
             ),
@@ -272,8 +270,7 @@ fn build_gacha_rules(
     {
         let hard_pity_5 = fork_hard_pity_5(&fork_rows);
         let pickup_win_rate_5 = fork_pickup_win_rate_5(assets_root, &fork_rows, canonicalizer)?;
-        let source_is_exact = hard_pity_5.is_some() && pickup_win_rate_5.is_some();
-        let notes = if source_is_exact {
+        let notes = if hard_pity_5.is_some() && pickup_win_rate_5.is_some() {
             vec![
                 "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump.",
             ]
@@ -294,7 +291,6 @@ fn build_gacha_rules(
                 "carry_scope": "pool_kind",
                 "rule_text_refs": fork_rule_text_refs(&fork_rows),
                 "source": source_evidence(
-                    if source_is_exact { "exact" } else { "curated" },
                     &[
                         FORK_POOL_TABLE.to_string(),
                         DROP_GROUP_TABLE.to_string(),
@@ -307,4 +303,3 @@ fn build_gacha_rules(
     }
     Ok(rules)
 }
-

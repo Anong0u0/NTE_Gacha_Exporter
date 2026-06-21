@@ -1,38 +1,41 @@
 .pager select {
-  width: 76px;
+  width: 72px;
 }
 
 .pager button {
-  width: 36px;
+  width: 32px;
   padding: 0;
 }
 
 .form-grid {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
-.form-grid button {
-  justify-self: start;
-}
-
-.manual-path {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px 96px;
-  gap: 10px;
+.runtime-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
+  margin-bottom: 8px;
 }
 
-.manual-path.compact-path {
-  grid-template-columns: minmax(0, 1fr) 120px;
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.settings-actions button {
+  min-width: 0;
 }
 
 .check-field {
-  min-height: 36px;
+  min-width: 0;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .check-field input {
@@ -41,36 +44,40 @@
 }
 
 .check-field span {
-  color: #42524c;
+  min-width: 0;
+  color: var(--text-body);
   font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .asset-pack-note {
-  margin-top: 12px;
-  color: #66776f;
+  margin-top: 8px;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 .profile-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .profile-row {
-  min-height: 52px;
-  border: 1px solid #e2e8e4;
-  border-radius: 7px;
+  min-height: 42px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 .profile-main {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .profile-main strong,
@@ -82,16 +89,55 @@
 }
 
 .profile-main span {
-  color: #66776f;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
 .profile-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .profile-actions button {
-  width: 36px;
+  width: 32px;
   padding: 0;
+}
+
+.settings-workbench {
+  align-items: start;
+}
+
+.settings-workbench {
+  width: min(100%, 920px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-workbench > .panel:first-child {
+  grid-column: 1 / -1;
+}
+
+.data-action-panel,
+.settings-doctor-panel {
+  grid-column: 1 / -1;
+}
+
+.data-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.data-action-row button {
+  min-width: 118px;
+}
+
+.operation-summary {
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

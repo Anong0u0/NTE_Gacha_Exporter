@@ -50,11 +50,18 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
 
     assert_eq!(overview.total_records, 5);
     assert_eq!(overview.pool_kinds.len(), 3);
-    assert_eq!(overview.resource.total_roll_points, 5);
-    assert_eq!(overview.resource.known_roll_point_records, 5);
-    assert_eq!(overview.resource.missing_roll_point_records, 0);
+    assert_eq!(
+        overview
+            .pool_kinds
+            .iter()
+            .map(|summary| summary.roll_points_total)
+            .sum::<i64>(),
+        5
+    );
     assert_eq!(limited.total_pulls, 3);
     assert_eq!(limited.roll_points_total, 3);
+    assert_eq!(limited.known_roll_point_records, 3);
+    assert_eq!(limited.missing_roll_point_records, 0);
     assert_eq!(limited.hit_count, 1);
     assert_eq!(limited.current_pity, 1);
     assert_eq!(limited.average_5star_pity, Some(2.0));
@@ -63,6 +70,8 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
     assert_eq!(limited.early_hit_count, 1);
     assert_eq!(fork.summary.hit_count, 2);
     assert_eq!(fork.summary.roll_points_total, 2);
+    assert_eq!(fork.summary.known_roll_point_records, 2);
+    assert_eq!(fork.summary.missing_roll_point_records, 0);
     assert_eq!(fork.summary.off_rate_count, 1);
     assert_eq!(fork.summary.up_count, 1);
     assert_eq!(fork.summary.early_hit_count, 2);
@@ -70,10 +79,10 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
     assert_eq!(fork.five_star_history[1].guarantee_before, Some(true));
     assert_eq!(fork.five_star_history[1].guarantee_after, Some(false));
     assert_eq!(
-        overview.latest_records[0].derived.banner_id.as_deref(),
+        fork.five_star_history[1].record.derived.banner_id.as_deref(),
         Some("ForkLottery_AnHunQu")
     );
-    assert_eq!(overview.latest_records[0].derived.hit_rarity, Some(5));
+    assert_eq!(fork.five_star_history[1].record.derived.hit_rarity, Some(5));
     assert!(
         overview
             .rarity_distribution
@@ -99,18 +108,21 @@ fn dashboard_overview_empty_profile_returns_empty_stats() {
     assert_eq!(limited.total_pulls, 0);
     assert_eq!(limited.roll_points_total, 0);
     assert!(overview.banners.is_empty());
-    assert_eq!(overview.resource.total_roll_points, 0);
-    assert_eq!(overview.resource.known_roll_point_records, 0);
-    assert_eq!(overview.resource.missing_roll_point_records, 0);
-    assert_eq!(overview.resource.by_pool_kind.len(), 3);
+    assert_eq!(
+        overview
+            .pool_kinds
+            .iter()
+            .map(|summary| summary.roll_points_total)
+            .sum::<i64>(),
+        0
+    );
     assert!(overview.time_stats.monthly.is_empty());
     assert!(overview.time_stats.daily.is_empty());
-    assert!(overview.time_stats.phases.is_empty());
     assert_eq!(overview.time_stats.missing_time_records, 0);
 }
 
 #[test]
-fn dashboard_overview_includes_banner_resource_and_time_stats() {
+fn dashboard_overview_includes_banner_roll_points_and_time_stats() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let document = public_document(vec![
@@ -154,14 +166,12 @@ fn dashboard_overview_includes_banner_resource_and_time_stats() {
         .find(|banner| banner.banner_id == "ForkLottery_AnHunQu")
         .unwrap();
     let limited = overview
-        .resource
-        .by_pool_kind
+        .pool_kinds
         .iter()
         .find(|summary| summary.pool_kind == PoolKind::MonopolyLimited)
         .unwrap();
     let fork = overview
-        .resource
-        .by_pool_kind
+        .pool_kinds
         .iter()
         .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
         .unwrap();
@@ -205,8 +215,22 @@ fn dashboard_overview_includes_banner_resource_and_time_stats() {
     assert_eq!(fork_banner.roll_point_cost_samples_5star, 1);
     assert_eq!(fork_banner.roll_point_cost_samples_4star, 1);
     assert_eq!(fork_banner.latest_hit.as_ref().unwrap().record_id, "fork-5");
-    assert_eq!(overview.resource.total_roll_points, 40);
-    assert_eq!(overview.resource.known_roll_point_records, 4);
+    assert_eq!(
+        overview
+            .pool_kinds
+            .iter()
+            .map(|summary| summary.roll_points_total)
+            .sum::<i64>(),
+        40
+    );
+    assert_eq!(
+        overview
+            .pool_kinds
+            .iter()
+            .map(|summary| summary.known_roll_point_records)
+            .sum::<u64>(),
+        4
+    );
     assert_eq!(limited.roll_points_total, 30);
     assert_eq!(fork.roll_points_total, 10);
     assert_eq!(month.total_pulls, 4);
@@ -216,6 +240,72 @@ fn dashboard_overview_includes_banner_resource_and_time_stats() {
     assert_eq!(day.total_pulls, 2);
     assert_eq!(day.roll_points_total, 10);
     assert_eq!(overview.time_stats.missing_time_records, 0);
+}
+
+#[test]
+fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record_with_options(
+            "nanali",
+            "CardPool_Character",
+            "Fashion_vehicle_1010_V008",
+            Some("2026-05-13 05:59:00"),
+            Some(10),
+        ),
+        record_with_options(
+            "xun",
+            "CardPool_Character",
+            "Fashion_vehicle_1052_V024",
+            Some("2026-05-13 05:59:01"),
+            Some(20),
+        ),
+        record_with_options(
+            "fork-5",
+            "ForkLottery_AnHunQu",
+            "fork_Rose",
+            Some("2026-05-14 10:01:00"),
+            Some(8),
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let pool = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyLimited,
+            },
+        )
+        .unwrap();
+    let banner = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::Banner {
+                pool_kind: PoolKind::MonopolyLimited,
+                banner_id: "monopoly_limited_Nanali".to_string(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(pool.summary.label, "限定棋盤");
+    assert_eq!(pool.summary.total_pulls, 2);
+    assert_eq!(pool.five_star_history.len(), 2);
+    assert_eq!(pool.rarity_distribution[0].count, 2);
+    assert_eq!(pool.item_ranking.len(), 2);
+
+    assert_eq!(banner.summary.label, "王牌一代目");
+    assert_eq!(banner.summary.total_pulls, 1);
+    assert_eq!(banner.summary.roll_points_total, 10);
+    assert_eq!(banner.five_star_history.len(), 1);
+    assert_eq!(banner.five_star_history[0].record.record_id, "nanali");
+    assert_eq!(banner.rarity_distribution[0].count, 1);
+    assert_eq!(banner.item_ranking[0].item_id, "Fashion_vehicle_1010_V008");
 }
 
 #[test]
@@ -241,9 +331,8 @@ fn stats_skip_unknown_banner_for_banner_summary() {
         .unwrap();
 
     assert!(overview.banners.is_empty());
-    assert!(overview.time_stats.phases.is_empty());
     assert_eq!(limited.total_pulls, 1);
-    assert_eq!(overview.resource.total_roll_points, 6);
+    assert_eq!(limited.roll_points_total, 6);
     assert!(
         overview
             .time_stats
@@ -278,9 +367,6 @@ fn stats_track_missing_roll_points_and_missing_time() {
         .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
         .unwrap();
 
-    assert_eq!(overview.resource.total_roll_points, 5);
-    assert_eq!(overview.resource.known_roll_point_records, 1);
-    assert_eq!(overview.resource.missing_roll_point_records, 1);
     assert_eq!(fork.roll_points_total, 5);
     assert_eq!(fork.known_roll_point_records, 1);
     assert_eq!(fork.missing_roll_point_records, 1);
@@ -329,59 +415,7 @@ fn stats_normalize_roll_point_sentinels_from_public_import() {
         .unwrap();
 
     assert_eq!(overview.total_records, 3);
-    assert_eq!(overview.resource.total_roll_points, 6);
-    assert_eq!(overview.resource.known_roll_point_records, 1);
-    assert_eq!(overview.resource.missing_roll_point_records, 2);
     assert_eq!(limited.roll_points_total, 6);
     assert_eq!(limited.known_roll_point_records, 1);
     assert_eq!(limited.missing_roll_point_records, 2);
 }
-
-#[test]
-fn stats_group_phase_from_derived_banner() {
-    let tmp = tempfile::tempdir().unwrap();
-    let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record(
-            "nanali",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            "2026-05-13 05:59:00",
-        ),
-        record(
-            "xun",
-            "CardPool_Character",
-            "Fashion_vehicle_1052_V024",
-            "2026-05-13 05:59:01",
-        ),
-    ]);
-    store
-        .import_public_document("default", &document, "json", None)
-        .unwrap();
-
-    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
-    let nanali_phase = overview
-        .time_stats
-        .phases
-        .iter()
-        .find(|summary| summary.phase.as_deref() == Some("limited_2026_05_13"))
-        .unwrap();
-    let xun_phase = overview
-        .time_stats
-        .phases
-        .iter()
-        .find(|summary| summary.phase.as_deref() == Some("limited_2026_06_03"))
-        .unwrap();
-
-    assert_eq!(nanali_phase.total_pulls, 1);
-    assert_eq!(nanali_phase.five_star_count, 1);
-    assert_eq!(nanali_phase.roll_points_total, 1);
-    assert_eq!(nanali_phase.banner_count, 1);
-    assert_eq!(nanali_phase.average_5star_pity, Some(1.0));
-    assert_eq!(xun_phase.total_pulls, 1);
-    assert_eq!(xun_phase.five_star_count, 1);
-    assert_eq!(xun_phase.roll_points_total, 1);
-    assert_eq!(xun_phase.banner_count, 1);
-    assert_eq!(xun_phase.average_5star_pity, Some(1.0));
-}
-

@@ -1,12 +1,12 @@
 import { init, type ECharts } from "echarts/core";
 import type { Ref } from "vue";
-import type { DashboardOverview } from "../api";
+import type { DashboardSelectionDetail } from "../api";
 
-export function createChartTools(chartEl: Ref<HTMLElement | null>, summary: Ref<DashboardOverview | null>) {
+export function createChartTools(chartEl: Ref<HTMLElement | null>, detail: Ref<DashboardSelectionDetail | null>) {
   let chart: ECharts | null = null;
 
   function renderChart() {
-    if (!chartEl.value || !summary.value) return;
+    if (!chartEl.value || !detail.value) return;
     chart ??= init(chartEl.value);
     chart.setOption({
       animationDuration: 220,
@@ -14,14 +14,14 @@ export function createChartTools(chartEl: Ref<HTMLElement | null>, summary: Ref<
       tooltip: { trigger: "axis" },
       xAxis: {
         type: "category",
-        data: summary.value.rarity_distribution.map((bucket) => `${bucket.rarity}★`),
+        data: detail.value.rarity_distribution.map((bucket) => `${bucket.rarity}★`),
         axisTick: { show: false },
       },
       yAxis: { type: "value", splitLine: { lineStyle: { color: "#e1e6e2" } } },
       series: [
         {
           type: "bar",
-          data: summary.value.rarity_distribution.map((bucket) => bucket.count),
+          data: detail.value.rarity_distribution.map((bucket) => bucket.count),
           itemStyle: { color: "#2d6d64", borderRadius: [3, 3, 0, 0] },
         },
       ],

@@ -11,7 +11,6 @@ import type {
   RecordFilterOptions,
   RateUpResult,
   ResolvedBanner,
-  ResourceSummary,
   TimeStats,
 } from "./types";
 
@@ -41,7 +40,7 @@ export const mockRecords: DisplayRecord[] = [
     pool_kind: "monopoly_limited",
     pool_id: "CardPool_Character",
     pool_label: "Limited Board",
-    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated"),
+    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board"),
     item_id: "rare_1",
     item_name: "Sigrid",
     item_asset_refs: mockItemAssetRefs.rare_1,
@@ -60,7 +59,6 @@ export const mockRecords: DisplayRecord[] = [
       pity4After: 5,
       hitRarity: 5,
       rateUpResult: "up",
-      confidence: "curated",
       guarantee5Before: false,
       guarantee5After: false,
       ruleId: "monopoly_limited",
@@ -73,7 +71,7 @@ export const mockRecords: DisplayRecord[] = [
     pool_kind: "monopoly_limited",
     pool_id: "CardPool_Character",
     pool_label: "Limited Board",
-    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated"),
+    banner: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board"),
     item_id: "common_2",
     item_name: "Training Log",
     item_asset_refs: {},
@@ -92,7 +90,6 @@ export const mockRecords: DisplayRecord[] = [
       pity4After: 4,
       hitRarity: null,
       rateUpResult: "unknown",
-      confidence: "unknown",
       guarantee5Before: false,
       guarantee5After: false,
       ruleId: "monopoly_limited",
@@ -105,7 +102,7 @@ export const mockRecords: DisplayRecord[] = [
     pool_kind: "fork_lottery",
     pool_id: "ForkLottery_AnHunQu",
     pool_label: "Arc Research",
-    banner: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research", "exact"),
+    banner: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research"),
     item_id: "fork_1",
     item_name: "Rose",
     item_asset_refs: mockItemAssetRefs.fork_1,
@@ -124,7 +121,6 @@ export const mockRecords: DisplayRecord[] = [
       pity4After: 7,
       hitRarity: 5,
       rateUpResult: "up",
-      confidence: "exact",
       guarantee5Before: true,
       guarantee5After: false,
       ruleId: "fork_lottery_s",
@@ -137,8 +133,6 @@ export function mockBanner(
   poolKind: PoolKind,
   bannerType: "limited" | "standard" | "fork",
   title: string,
-  confidence: string,
-  phase?: string,
 ): ResolvedBanner {
   const limitedAssetRefs: AssetRefs = {
     image: "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
@@ -155,16 +149,14 @@ export function mockBanner(
     pool_kind: poolKind,
     banner_type: bannerType,
     title,
-    phase: phase ?? null,
     rate_up_5: [],
     rate_up_4: [],
     rule_id: poolKind === "fork_lottery" ? "fork_lottery_s" : poolKind,
     asset_refs: bannerType === "fork" ? forkAssetRefs : limitedAssetRefs,
-    source_confidence: confidence,
   };
 }
 
-export function mockRule(poolKind: PoolKind, ruleId: string, confidence: string): GachaRuleView {
+export function mockRule(poolKind: PoolKind, ruleId: string): GachaRuleView {
   return {
     status: "matched",
     reason: "matched",
@@ -178,7 +170,6 @@ export function mockRule(poolKind: PoolKind, ruleId: string, confidence: string)
     has_guarantee_4: null,
     guarantee_scope: poolKind === "fork_lottery" ? "pool_kind" : "unknown",
     carry_scope: "pool_kind",
-    source_confidence: confidence,
   };
 }
 
@@ -195,7 +186,6 @@ export function mockDerived(
     pity4After: number;
     hitRarity: number | null;
     rateUpResult: RateUpResult;
-    confidence: string;
     guarantee5Before: boolean;
     guarantee5After: boolean;
     ruleId: string;
@@ -205,7 +195,6 @@ export function mockDerived(
     record_id: recordId,
     banner_id: options.bannerId,
     banner_version: null,
-    banner_phase: null,
     pull_no_in_pool_kind: options.pullNoInPoolKind,
     pull_no_in_banner: options.pullNoInBanner,
     pity_5_before: options.pity5Before,
@@ -214,12 +203,11 @@ export function mockDerived(
     pity_4_after: options.pity4After,
     hit_rarity: options.hitRarity,
     rate_up_result: options.rateUpResult,
-    result_confidence: options.confidence,
     guarantee_5_before: options.guarantee5Before,
     guarantee_5_after: options.guarantee5After,
     guarantee_4_before: null,
     guarantee_4_after: null,
-    rule: mockRule(options.poolKind, options.ruleId, options.confidence),
+    rule: mockRule(options.poolKind, options.ruleId),
   };
 }
 
@@ -229,8 +217,8 @@ export const mockFilterOptions: RecordFilterOptions = {
     { pool_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", label: "Arc Research", count: 36 },
   ],
   banners: [
-    { banner_id: "limited_mock", pool_kind: "monopoly_limited", title: "Limited Board", count: 146, phase: null },
-    { banner_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", title: "Arc Research", count: 36, phase: null },
+    { banner_id: "limited_mock", pool_kind: "monopoly_limited", title: "Limited Board", count: 146 },
+    { banner_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", title: "Arc Research", count: 36 },
   ],
   record_types: [
     { record_type: "monopoly", count: 146 },
@@ -276,7 +264,6 @@ export const mockSummary: PoolKindSummary[] = [
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 8,
     rule_resolution_status: "matched",
-    rule_source_confidence: "curated",
     average_roll_points_to_5star: 72.5,
     average_roll_points_to_4star: 9.5,
     roll_point_cost_samples_5star: 2,
@@ -314,7 +301,6 @@ export const mockSummary: PoolKindSummary[] = [
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 1,
     rule_resolution_status: "matched",
-    rule_source_confidence: "exact",
     average_roll_points_to_5star: 24,
     average_roll_points_to_4star: 7,
     roll_point_cost_samples_5star: 1,
@@ -330,11 +316,9 @@ export const mockBanners: BannerSummary[] = [
     banner_type: "limited",
     title: "Limited Board",
     version: null,
-    phase: null,
     start_at: null,
     end_at: null,
-    source_confidence: "curated",
-    asset_refs: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board", "curated").asset_refs,
+    asset_refs: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board").asset_refs,
     total_pulls: 146,
     roll_points_total: 10731,
     known_roll_point_records: 146,
@@ -366,11 +350,9 @@ export const mockBanners: BannerSummary[] = [
     banner_type: "fork",
     title: "Arc Research",
     version: null,
-    phase: null,
     start_at: null,
     end_at: null,
-    source_confidence: "exact",
-    asset_refs: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research", "exact").asset_refs,
+    asset_refs: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research").asset_refs,
     total_pulls: 36,
     roll_points_total: 666,
     known_roll_point_records: 36,
@@ -397,35 +379,6 @@ export const mockBanners: BannerSummary[] = [
   },
 ];
 
-export const mockResource: ResourceSummary = {
-  total_roll_points: 11397,
-  known_roll_point_records: 182,
-  missing_roll_point_records: 0,
-  by_pool_kind: [
-    {
-      pool_kind: "monopoly_limited",
-      label: "Limited Board",
-      roll_points_total: 10731,
-      known_roll_point_records: 146,
-      missing_roll_point_records: 0,
-    },
-    {
-      pool_kind: "monopoly_standard",
-      label: "Standard Board",
-      roll_points_total: 0,
-      known_roll_point_records: 0,
-      missing_roll_point_records: 0,
-    },
-    {
-      pool_kind: "fork_lottery",
-      label: "Arc Research",
-      roll_points_total: 666,
-      known_roll_point_records: 36,
-      missing_roll_point_records: 0,
-    },
-  ],
-};
-
 export const mockTimeStats: TimeStats = {
   monthly: [
     {
@@ -451,21 +404,6 @@ export const mockTimeStats: TimeStats = {
       missing_roll_point_records: 0,
       average_5star_pity: 74,
       average_4star_pity: null,
-    },
-  ],
-  phases: [
-    {
-      version: null,
-      phase: null,
-      total_pulls: 182,
-      five_star_count: 3,
-      four_star_count: 9,
-      roll_points_total: 11397,
-      known_roll_point_records: 182,
-      missing_roll_point_records: 0,
-      banner_count: 2,
-      average_5star_pity: 56.3,
-      average_4star_pity: 9.2,
     },
   ],
   missing_time_records: 0,

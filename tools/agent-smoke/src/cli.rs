@@ -4,11 +4,12 @@ use clap::{Parser, Subcommand};
 
 pub const DEFAULT_ADDR: &str = "127.0.0.1:17365";
 pub const DEFAULT_OUT_DIR: &str = "target/agent-smoke";
-pub const DEFAULT_SAMPLE: &str = "fixtures/sample.raw.jsonl";
 pub const DEFAULT_AGENT_APP_ROOT: &str = "target/agent-smoke/app-current";
 pub const AGENT_BUILD_SCRIPT: &str = "tools/agent-smoke/build-agent-app.ps1";
 pub const DEFAULT_KEEP_RUNS: usize = 1;
 pub const APP_TITLE: &str = "NTE Gacha Exporter";
+#[cfg(not(windows))]
+pub const WINDOWS_NATIVE_REQUIRED: &str = "agent smoke requires Windows native runner";
 
 #[derive(Debug, Parser)]
 #[command(name = "nte-agent-smoke")]
@@ -33,8 +34,6 @@ pub enum CommandKind {
         out: Option<PathBuf>,
     },
     Smoke {
-        #[arg(long)]
-        sample: Option<PathBuf>,
         #[arg(long, default_value = DEFAULT_OUT_DIR)]
         out_dir: PathBuf,
         #[arg(long, default_value = DEFAULT_ADDR)]
@@ -112,7 +111,6 @@ pub enum CommandKind {
 }
 
 pub struct SmokeOptions {
-    pub sample: Option<PathBuf>,
     pub out_dir: PathBuf,
     pub addr: String,
     pub timeout: std::time::Duration,

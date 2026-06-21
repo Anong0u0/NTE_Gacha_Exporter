@@ -18,7 +18,6 @@
       "roll_unit": 10,
       "rule_id": "fork_lottery_s",
       "source": {
-        "confidence": "exact",
         "tables": [
           "DataTable/Fork/DT_ForkLotteryPoolData.json"
         ]
@@ -43,7 +42,6 @@
       "roll_unit": 10,
       "rule_id": "fork_lottery_s",
       "source": {
-        "confidence": "exact",
         "tables": [
           "DataTable/Fork/DT_ForkLotteryPoolData.json"
         ]
@@ -68,7 +66,6 @@
       "roll_unit": 10,
       "rule_id": "fork_lottery_s",
       "source": {
-        "confidence": "exact",
         "tables": [
           "DataTable/Fork/DT_ForkLotteryPoolData.json"
         ]
@@ -93,7 +90,6 @@
       "roll_unit": 10,
       "rule_id": "fork_lottery_s",
       "source": {
-        "confidence": "exact",
         "tables": [
           "DataTable/Fork/DT_ForkLotteryPoolData.json"
         ]
@@ -110,7 +106,6 @@
       "banner_id": "monopoly_limited_AnHunQu",
       "banner_type": "limited",
       "end_at": "2026-06-24 05:59:00",
-      "phase": "limited_2026_06_24",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "rate_up_4": [],
@@ -119,10 +114,8 @@
       ],
       "rule_id": "monopoly_limited",
       "source": {
-        "confidence": "curated",
         "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
+          "Schedule and rate-up use available lottery data and localized text."
         ],
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
@@ -153,7 +146,6 @@
       "banner_id": "monopoly_limited_Kaesi",
       "banner_type": "limited",
       "end_at": "2026-07-08 05:59:00",
-      "phase": "limited_2026_07_08",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "rate_up_4": [],
@@ -162,10 +154,8 @@
       ],
       "rule_id": "monopoly_limited",
       "source": {
-        "confidence": "curated",
         "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
+          "Schedule and rate-up use available lottery data and localized text."
         ],
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
@@ -196,7 +186,6 @@
       "banner_id": "monopoly_limited_Nanali",
       "banner_type": "limited",
       "end_at": "2026-05-13 05:59:00",
-      "phase": "limited_2026_05_13",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "rate_up_4": [],
@@ -205,10 +194,8 @@
       ],
       "rule_id": "monopoly_limited",
       "source": {
-        "confidence": "curated",
         "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
+          "Schedule and rate-up use available lottery data and localized text."
         ],
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
@@ -238,7 +225,6 @@
       "banner_id": "monopoly_limited_Xun",
       "banner_type": "limited",
       "end_at": "2026-06-03 05:59:00",
-      "phase": "limited_2026_06_03",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "rate_up_4": [],
@@ -247,10 +233,8 @@
       ],
       "rule_id": "monopoly_limited",
       "source": {
-        "confidence": "curated",
         "notes": [
-          "Schedule and rate-up are curated because no structured limited banner table was found.",
-          "Version/phase metadata is curated when present."
+          "Schedule and rate-up use available lottery data and localized text."
         ],
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
@@ -280,7 +264,6 @@
       "rate_up_5": [],
       "rule_id": "monopoly_standard",
       "source": {
-        "confidence": "curated",
         "notes": [
           "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
         ],
@@ -327,7 +310,6 @@
         "rule_desc_2": "ui_forklottery_rule_05_AnHunQu"
       },
       "source": {
-        "confidence": "exact",
         "notes": [
           "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
         ],
@@ -349,7 +331,6 @@
         "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
       },
       "source": {
-        "confidence": "curated",
         "notes": [
           "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
         ],
@@ -369,7 +350,6 @@
         "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
       },
       "source": {
-        "confidence": "curated",
         "notes": [
           "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
         ],

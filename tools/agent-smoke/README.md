@@ -27,11 +27,11 @@ IPC-enabled desktop debug and smoke tool.
 | Snapshot | `cargo agent snapshot` |
 | List ids | `cargo agent ids` |
 | List ids as rows | `cargo agent ids --plain` |
-| Inspect one id | `cargo agent inspect --agent-id import-run` |
-| Wait for id | `cargo agent wait --agent-id last-import-panel --timeout-secs 30` |
+| Inspect one id | `cargo agent inspect --agent-id settings-import-raw` |
+| Wait for id | `cargo agent wait --agent-id view-settings --timeout-secs 30` |
 | Wait for text | `cargo agent expect-text "Import completed" --timeout-secs 30` |
-| Click id | `cargo agent click --agent-id nav-import_export` |
-| Set input/select | `cargo agent set --agent-id import-path --value "D:\path\sample.raw.jsonl"` |
+| Click id | `cargo agent click --agent-id nav-settings` |
+| Set input/select | `cargo agent set --agent-id profile-create-input --value "smoke_profile"` |
 | Evaluate JS | `cargo agent eval --script "return document.body.innerText"` |
 | Capture window | `cargo agent screenshot --title "NTE Gacha Exporter" --out target\agent-smoke\manual.png` |
 

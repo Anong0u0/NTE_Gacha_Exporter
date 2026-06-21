@@ -61,7 +61,7 @@ pub fn image_metrics(image: &RgbImage) -> ImageMetrics {
 
 #[cfg(not(windows))]
 pub fn require_windows() -> Result<()> {
-    bail!("agent smoke launch and screenshot require the native runner")
+    bail!("{}", crate::cli::WINDOWS_NATIVE_REQUIRED)
 }
 
 #[cfg(windows)]

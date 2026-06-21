@@ -117,12 +117,6 @@ pub fn list_records(
                 .as_deref()
                 .unwrap_or_default()
                 .to_ascii_lowercase();
-            let banner_phase = display
-                .derived
-                .banner_phase
-                .as_deref()
-                .unwrap_or_default()
-                .to_ascii_lowercase();
             let banner_title = display
                 .banner
                 .title
@@ -137,7 +131,7 @@ pub fn list_records(
                 .unwrap_or_default()
                 .to_ascii_lowercase();
             let haystack = format!(
-                "{} {} {} {} {} {} {} {} {} {} {}",
+                "{} {} {} {} {} {} {} {} {} {}",
                 display.record_id.to_ascii_lowercase(),
                 display.record_type.to_ascii_lowercase(),
                 display.item_id.to_ascii_lowercase(),
@@ -146,7 +140,6 @@ pub fn list_records(
                 pool_label,
                 banner_id,
                 banner_title,
-                banner_phase,
                 rate_up_result_key(display.derived.rate_up_result),
                 rule_id
             );
@@ -207,7 +200,6 @@ pub fn record_filter_options(
                         .clone()
                         .unwrap_or_else(|| banner_id.clone()),
                     count: 1,
-                    phase: record.derived.banner_phase.clone(),
                 });
         }
         *record_types.entry(record.record_type.clone()).or_default() += 1;
@@ -423,4 +415,3 @@ fn date_end(value: &str) -> String {
         value.to_string()
     }
 }
-

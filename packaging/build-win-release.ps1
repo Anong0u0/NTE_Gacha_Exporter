@@ -57,9 +57,6 @@ function Assert-WindowsHost {
     if (-not $isWindows) {
         throw "Windows release packaging must run on Windows."
     }
-    if (-not [string]::IsNullOrWhiteSpace($env:WSL_DISTRO_NAME)) {
-        throw "WSL environment detected. Run from native Windows PowerShell."
-    }
 }
 
 function Invoke-External {

@@ -11,7 +11,6 @@ const english: Translator = (key, params) => {
     "format.ongoing": "ongoing",
     "format.guaranteeBefore": "G before",
     "format.guaranteeAfter": "G after",
-    "dashboard.normal": "normal",
     "capture.stateStarting": "Starting",
     "capture.stateRunning": "Running",
     "capture.stateStopping": "Stopping",
@@ -55,7 +54,7 @@ export function bannerTitle(banner?: BannerSummary | DisplayRecord["banner"] | n
 }
 
 export function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | null, t: Translator = english) {
-  const parts = [banner?.version, banner?.phase, banner?.source_confidence].filter(Boolean);
+  const parts = [banner?.version].filter(Boolean);
   if (parts.length) return parts.join(" · ");
   return banner && "status" in banner ? banner.status : t("common.unknown").toLowerCase();
 }
@@ -74,9 +73,11 @@ export function formatPity(record: DisplayRecord) {
 }
 
 export function formatGuarantee(record: DisplayRecord, t: Translator = english) {
-  const before = record.derived.guarantee_5_before ? t("format.guaranteeBefore") : t("dashboard.normal").toLowerCase();
-  const after = record.derived.guarantee_5_after ? t("format.guaranteeAfter") : t("dashboard.normal").toLowerCase();
-  return `${before} / ${after}`;
+  const parts = [
+    record.derived.guarantee_5_before ? t("format.guaranteeBefore") : "",
+    record.derived.guarantee_5_after ? t("format.guaranteeAfter") : "",
+  ].filter(Boolean);
+  return parts.join(" / ");
 }
 
 export function formatCaptureState(value?: string | null, t: Translator = english) {

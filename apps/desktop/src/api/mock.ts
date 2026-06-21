@@ -8,8 +8,11 @@ import type {
   AssetsPackStatus,
   CaptureMode,
   CaptureStatus,
+  DashboardSelection,
+  DashboardSelectionDetail,
   ImportReport,
   PoolKind,
+  PoolKindSummary,
   RecordFilter,
   SettingsPatch,
   UpdatePackage,
@@ -23,7 +26,6 @@ import {
   mockFilterOptions,
   mockProfile,
   mockRecords,
-  mockResource,
   mockSummary,
   mockTimeStats,
 } from "./mock-data";
@@ -35,6 +37,76 @@ let mockLocale = "zh-Hant";
 let mockUiLocale = "zh-Hant";
 let mockUpdateChannel = "stable";
 let mockCheckUpdatesOnStartup = false;
+
+function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionDetail {
+  const records = mockRecords.filter((record) =>
+    selection.kind === "pool_kind"
+      ? record.pool_kind === selection.pool_kind
+      : record.pool_kind === selection.pool_kind && record.derived.banner_id === selection.banner_id,
+  );
+  const baseSummary =
+    selection.kind === "pool_kind"
+      ? mockSummary.find((item) => item.pool_kind === selection.pool_kind)
+      : mockBanners.find((banner) => banner.banner_id === selection.banner_id);
+  const label =
+    selection.kind === "pool_kind"
+      ? (baseSummary as PoolKindSummary | undefined)?.label
+      : mockBanners.find((banner) => banner.banner_id === selection.banner_id)?.title;
+  const poolKind = selection.pool_kind;
+  const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
+  const fiveStarRecords = records.filter((record) => record.derived.hit_rarity === 5);
+  const fourStarRecords = records.filter((record) => record.derived.hit_rarity === 4);
+  const summary: PoolKindSummary = {
+    ...fallback,
+    label: label ?? fallback.label,
+    total_pulls: records.length,
+    hit_count: fiveStarRecords.length,
+    four_star_count: fourStarRecords.length,
+    latest_5star: fiveStarRecords[0] ?? null,
+  };
+  const rarityCounts = new Map<number, number>();
+  for (const record of records) {
+    if (record.rarity != null) rarityCounts.set(record.rarity, (rarityCounts.get(record.rarity) ?? 0) + 1);
+  }
+  const knownTotal = [...rarityCounts.values()].reduce((total, count) => total + count, 0);
+  const rarity_distribution = [...rarityCounts.entries()]
+    .sort(([left], [right]) => right - left)
+    .map(([rarity, count]) => ({ rarity, count, percent: knownTotal ? count / knownTotal : 0 }));
+  const itemCounts = new Map<string, { item_name: string; rarity?: number | null; count: number }>();
+  for (const record of records) {
+    const entry = itemCounts.get(record.item_id) ?? {
+      item_name: record.item_name,
+      rarity: record.rarity,
+      count: 0,
+    };
+    entry.count += 1;
+    itemCounts.set(record.item_id, entry);
+  }
+  const item_ranking = [...itemCounts.entries()]
+    .map(([item_id, item]) => ({ item_id, ...item }))
+    .sort((left, right) => right.count - left.count || (right.rarity ?? 0) - (left.rarity ?? 0) || left.item_name.localeCompare(right.item_name))
+    .slice(0, 20);
+
+  return {
+    summary,
+    five_star_history: fiveStarRecords.map((record) => ({
+      record,
+      pity_distance: record.derived.pity_5_before + 1,
+      result: record.derived.rate_up_result,
+      guarantee_before: record.derived.guarantee_5_before,
+      guarantee_after: record.derived.guarantee_5_after,
+    })),
+    four_star_history: fourStarRecords.map((record) => ({
+      record,
+      pity_distance: record.derived.pity_4_before + 1,
+      result: record.derived.rate_up_result,
+      guarantee_before: record.derived.guarantee_4_before,
+      guarantee_after: record.derived.guarantee_4_after,
+    })),
+    rarity_distribution,
+    item_ranking,
+  };
+}
 
 export const mockApi: AppApi = {
   async getSettings() {
@@ -145,7 +217,6 @@ export const mockApi: AppApi = {
           not_applicable_rate_up_4_count: 0,
           unknown_rate_up_4_count: 0,
           rule_resolution_status: "fallback_pool_kind",
-          rule_source_confidence: "unknown",
           average_roll_points_to_5star: null,
           average_roll_points_to_4star: null,
           roll_point_cost_samples_5star: 0,
@@ -153,7 +224,6 @@ export const mockApi: AppApi = {
         },
       ],
       banners: mockBanners,
-      resource: mockResource,
       time_stats: mockTimeStats,
       rarity_distribution: [
         { rarity: 5, count: 3, percent: 0.016 },
@@ -164,7 +234,6 @@ export const mockApi: AppApi = {
         { item_id: "common_2", item_name: "Training Log", rarity: 3, count: 44 },
         { item_id: "rare_1", item_name: "Sigrid", rarity: 5, count: 2 },
       ],
-      latest_records: mockRecords,
     };
   },
   async poolKindDetail(_profileName: string, poolKind: PoolKind) {
@@ -177,7 +246,6 @@ export const mockApi: AppApi = {
               record: summary.latest_5star,
               pity_distance: Math.round(summary.average_5star_pity ?? 0),
               result: "up",
-              result_confidence: summary.rule_source_confidence ?? "unknown",
               guarantee_before: false,
               guarantee_after: false,
             },
@@ -185,6 +253,9 @@ export const mockApi: AppApi = {
         : [],
       four_star_history: [],
     };
+  },
+  async dashboardSelectionDetail(_profileName: string, selection: DashboardSelection) {
+    return mockSelectionDetail(selection);
   },
   async listRecords(_profileName: string, filter: RecordFilter) {
     const search = filter.search?.toLowerCase().trim();

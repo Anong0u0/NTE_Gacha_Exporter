@@ -47,6 +47,7 @@ pub fn run() {
             store_commands::import_raw_jsonl,
             store_commands::dashboard_overview,
             store_commands::pool_kind_detail,
+            store_commands::dashboard_selection_detail,
             store_commands::list_records,
             store_commands::record_filter_options,
             store_commands::export_public_json,

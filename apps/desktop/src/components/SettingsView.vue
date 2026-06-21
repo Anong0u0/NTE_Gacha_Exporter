@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Database, Download, FileJson, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
+import { ArchiveRestore, Database, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack narrow" data-agent-id="view-settings">
+      <section class="view-stack settings-workbench" data-agent-id="view-settings">
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -14,7 +14,7 @@ const app = useAppContext();
               <h2>{{ app.t("common.settings") }}</h2>
             </div>
           </div>
-          <div class="form-grid">
+          <div class="form-grid runtime-grid">
             <label class="field">
               <span>{{ app.t("settings.uiLocale") }}</span>
               <select v-model="app.uiLocale" :disabled="app.isWorkflowBusy">
@@ -34,14 +34,12 @@ const app = useAppContext();
                 <option value="beta">{{ app.t("update.beta") }}</option>
               </select>
             </label>
+          </div>
+          <div class="settings-actions">
             <label class="check-field">
               <input v-model="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" />
               <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
-            <button class="primary" type="button" :disabled="app.isWorkflowBusy" @click="app.saveSettings">
-              <Settings :size="17" />
-              <span>{{ app.t("common.save") }}</span>
-            </button>
             <button type="button" data-agent-id="runtime-ping" :disabled="app.isWorkflowBusy" @click="app.pingRuntime">
               <Database :size="17" />
               <span>{{ app.t("settings.pingRuntime") }}</span>
@@ -50,6 +48,48 @@ const app = useAppContext();
               <Stethoscope :size="17" />
               <span>{{ app.t("common.doctor") }}</span>
             </button>
+            <button class="primary" type="button" :disabled="app.isWorkflowBusy" @click="app.saveSettings">
+              <Settings :size="17" />
+              <span>{{ app.t("common.save") }}</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel data-action-panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">{{ app.t("settings.dataActions") }}</span>
+              <h2>{{ app.t("import.import") }} / {{ app.t("import.export") }}</h2>
+            </div>
+          </div>
+          <div class="data-action-row">
+            <button class="primary" type="button" data-agent-id="settings-import-raw" :disabled="app.isWorkflowBusy" @click="app.pickImportFile('raw')">
+              <FileUp :size="17" />
+              <span>{{ app.t("import.rawReplay") }}</span>
+            </button>
+            <button type="button" data-agent-id="settings-import-public" :disabled="app.isWorkflowBusy" @click="app.pickImportFile('public')">
+              <FileJson :size="17" />
+              <span>{{ app.t("import.publicJson") }}</span>
+            </button>
+            <button type="button" data-agent-id="settings-export-json" :disabled="app.isWorkflowBusy" @click="app.pickExportFile('json')">
+              <FileDown :size="17" />
+              <span>{{ app.t("import.export") }} {{ app.t("import.publicJson") }}</span>
+            </button>
+            <button type="button" data-agent-id="settings-export-csv" :disabled="app.isWorkflowBusy" @click="app.pickExportFile('csv')">
+              <FileDown :size="17" />
+              <span>{{ app.t("import.export") }} CSV</span>
+            </button>
+            <button type="button" data-agent-id="settings-backup-create" :disabled="app.isWorkflowBusy" @click="app.pickBackupFile">
+              <DatabaseBackup :size="17" />
+              <span>{{ app.t("import.createBackup") }}</span>
+            </button>
+            <button type="button" data-agent-id="settings-backup-restore" :disabled="app.isWorkflowBusy" @click="app.pickRestoreFile">
+              <ArchiveRestore :size="17" />
+              <span>{{ app.t("import.restoreBackup") }}</span>
+            </button>
+          </div>
+          <div v-if="app.dataOperationSummary" class="operation-summary" data-agent-id="settings-data-summary">
+            {{ app.dataOperationSummary }}
           </div>
         </section>
 
@@ -121,6 +161,7 @@ const app = useAppContext();
               <span>{{ app.t("settings.downloadAssets") }}</span>
             </button>
             <button
+              class="danger"
               type="button"
               :disabled="app.isWorkflowBusy || !app.assetsPackStatus?.installed"
               @click="app.removeAssetsPack"
@@ -134,7 +175,7 @@ const app = useAppContext();
           </div>
         </section>
 
-        <section v-if="app.doctorReport" class="panel">
+        <section v-if="app.doctorReport" class="panel settings-doctor-panel">
           <div class="panel-head">
             <div>
               <span class="eyebrow">exit {{ app.doctorReport.exit_code }}</span>

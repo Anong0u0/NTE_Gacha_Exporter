@@ -23,6 +23,18 @@ pub fn dashboard_overview(
         pool_kind_detail(&records, &map, pool_kind)
     }
 
+    pub fn dashboard_selection_detail(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        selection: &DashboardSelection,
+    ) -> Result<DashboardSelectionDetail, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        dashboard_selection_detail(&records, &map, selection)
+    }
+
     pub fn list_records(
         &self,
         profile_name: &str,

@@ -121,7 +121,6 @@ fn matched(banner: &MapBanner) -> ResolvedBanner {
         banner_type: Some(banner.banner_type.clone()),
         title: Some(banner.title.clone()),
         version: banner.version.clone(),
-        phase: banner.phase.clone(),
         start_at: banner.start_at.clone(),
         end_at: banner.end_at.clone(),
         timezone: banner.timezone.clone(),
@@ -129,7 +128,6 @@ fn matched(banner: &MapBanner) -> ResolvedBanner {
         rate_up_4: banner.rate_up_4.clone(),
         rule_id: Some(banner.rule_id.clone()),
         asset_refs: banner.asset_refs.clone(),
-        source_confidence: Some(banner.source.confidence.clone()),
     }
 }
 
@@ -143,7 +141,6 @@ fn unresolved(status: BannerResolutionStatus, reason: impl Into<String>) -> Reso
         banner_type: None,
         title: None,
         version: None,
-        phase: None,
         start_at: None,
         end_at: None,
         timezone: None,
@@ -151,7 +148,5 @@ fn unresolved(status: BannerResolutionStatus, reason: impl Into<String>) -> Reso
         rate_up_4: Vec::new(),
         rule_id: None,
         asset_refs: BTreeMap::new(),
-        source_confidence: None,
     }
 }
-

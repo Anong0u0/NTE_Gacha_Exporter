@@ -38,10 +38,8 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
                     .clone()
                     .unwrap_or_else(|| banner_id.clone()),
                 version: first.derived.banner_version.clone(),
-                phase: first.derived.banner_phase.clone(),
                 start_at: first.banner.start_at.clone(),
                 end_at: first.banner.end_at.clone(),
-                source_confidence: first.banner.source_confidence.clone(),
                 asset_refs: first.banner.asset_refs.clone(),
                 total_pulls: banner_records.len() as u64,
                 roll_points_total: resource.total,
@@ -99,42 +97,9 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
     summaries
 }
 
-fn resource_summary(records: &[DisplayRecord], map: &MapData) -> ResourceSummary {
-    let total = resource_counters(records.iter());
-    let by_pool_kind = [
-        PoolKind::MonopolyLimited,
-        PoolKind::MonopolyStandard,
-        PoolKind::ForkLottery,
-    ]
-    .into_iter()
-    .map(|pool_kind| {
-        let counters = resource_counters(
-            records
-                .iter()
-                .filter(|record| record.pool_kind == pool_kind),
-        );
-        ResourcePoolKindSummary {
-            pool_kind,
-            label: map.pool_kind_label(pool_kind),
-            roll_points_total: counters.total,
-            known_roll_point_records: counters.known,
-            missing_roll_point_records: counters.missing,
-        }
-    })
-    .collect::<Vec<_>>();
-
-    ResourceSummary {
-        total_roll_points: total.total,
-        known_roll_point_records: total.known,
-        missing_roll_point_records: total.missing,
-        by_pool_kind,
-    }
-}
-
 fn time_stats(records: &[DisplayRecord]) -> TimeStats {
     let mut monthly: BTreeMap<String, BucketAccumulator> = BTreeMap::new();
     let mut daily: BTreeMap<String, BucketAccumulator> = BTreeMap::new();
-    let mut phases: BTreeMap<(Option<String>, Option<String>), PhaseAccumulator> = BTreeMap::new();
     let mut missing_time_records = 0;
 
     for record in records {
@@ -152,15 +117,6 @@ fn time_stats(records: &[DisplayRecord]) -> TimeStats {
         if let Some(bucket) = daily_bucket {
             daily.entry(bucket).or_default().add(record);
         }
-        if let Some(banner_id) = record.derived.banner_id.as_ref() {
-            phases
-                .entry((
-                    record.derived.banner_version.clone(),
-                    record.derived.banner_phase.clone(),
-                ))
-                .or_default()
-                .add(record, banner_id);
-        }
     }
 
     TimeStats {
@@ -171,10 +127,6 @@ fn time_stats(records: &[DisplayRecord]) -> TimeStats {
         daily: daily
             .into_iter()
             .map(|(bucket, accumulator)| accumulator.into_summary(bucket))
-            .collect(),
-        phases: phases
-            .into_iter()
-            .map(|((version, phase), accumulator)| accumulator.into_summary(version, phase))
             .collect(),
         missing_time_records,
     }
@@ -304,35 +256,6 @@ impl BucketAccumulator {
     }
 }
 
-#[derive(Default)]
-struct PhaseAccumulator {
-    bucket: BucketAccumulator,
-    banner_ids: BTreeSet<String>,
-}
-
-impl PhaseAccumulator {
-    fn add(&mut self, record: &DisplayRecord, banner_id: &str) {
-        self.bucket.add(record);
-        self.banner_ids.insert(banner_id.to_string());
-    }
-
-    fn into_summary(self, version: Option<String>, phase: Option<String>) -> PhaseSummary {
-        PhaseSummary {
-            version,
-            phase,
-            total_pulls: self.bucket.total_pulls,
-            five_star_count: self.bucket.five_star_count,
-            four_star_count: self.bucket.four_star_count,
-            roll_points_total: self.bucket.roll_points_total,
-            known_roll_point_records: self.bucket.known_roll_point_records,
-            missing_roll_point_records: self.bucket.missing_roll_point_records,
-            banner_count: self.banner_ids.len() as u64,
-            average_5star_pity: average_u64(&self.bucket.five_star_pity),
-            average_4star_pity: average_u64(&self.bucket.four_star_pity),
-        }
-    }
-}
-
 fn count_hits(records: &[&DisplayRecord], rarity: u8) -> u64 {
     records
         .iter()
@@ -392,4 +315,3 @@ fn is_valid_day_prefix(value: &str) -> bool {
         && bytes[7] == b'-'
         && bytes[8..10].iter().all(u8::is_ascii_digit)
 }
-

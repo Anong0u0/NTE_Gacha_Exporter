@@ -214,7 +214,6 @@ pub struct ResolvedBanner {
     pub banner_type: Option<String>,
     pub title: Option<String>,
     pub version: Option<String>,
-    pub phase: Option<String>,
     pub start_at: Option<String>,
     pub end_at: Option<String>,
     pub timezone: Option<String>,
@@ -222,7 +221,6 @@ pub struct ResolvedBanner {
     pub rate_up_4: Vec<String>,
     pub rule_id: Option<String>,
     pub asset_refs: BTreeMap<String, serde_json::Value>,
-    pub source_confidence: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -239,7 +237,6 @@ pub struct GachaRuleView {
     pub has_guarantee_4: Option<bool>,
     pub guarantee_scope: Option<String>,
     pub carry_scope: Option<String>,
-    pub source_confidence: Option<String>,
 }
 
 impl PoolKind {

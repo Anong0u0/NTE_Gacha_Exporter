@@ -1,21 +1,19 @@
 import type { ComputedRef, Ref } from "vue";
-import { api, type AssetResolveRequest, type BannerSummary, type DisplayRecord, type PoolKindDetail } from "../api";
+import { api, type AssetResolveRequest, type BannerSummary, type DashboardSelectionDetail, type DisplayRecord } from "../api";
 
 type AssetRefEntry = { key: string; kind: string; value: unknown };
 
 type AssetToolsOptions = {
   assetUrlCache: Ref<Record<string, string>>;
   bannerSummaries: ComputedRef<BannerSummary[]>;
-  latest: ComputedRef<DisplayRecord[]>;
   records: Ref<DisplayRecord[]>;
-  detail: Ref<PoolKindDetail | null>;
-  selectedBanner: ComputedRef<BannerSummary | null>;
+  detail: Ref<DashboardSelectionDetail | null>;
   errorText: Ref<string>;
   formatError(error: unknown): string;
 };
 
 export function createAssetTools(options: AssetToolsOptions) {
-  const { assetUrlCache, bannerSummaries, latest, records, detail, selectedBanner, errorText, formatError } = options;
+  const { assetUrlCache, bannerSummaries, records, detail, errorText, formatError } = options;
 
   function assetRefEntries(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []): AssetRefEntry[] {
     if (!assetRefs) return [];
@@ -51,16 +49,6 @@ export function createAssetTools(options: AssetToolsOptions) {
     return "";
   }
 
-  function assetUrls(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
-    const urls: string[] = [];
-    for (const entry of assetRefEntries(assetRefs, preferredKeys)) {
-      if (typeof entry.value !== "string") continue;
-      const url = cachedAssetUrl(entry.value, entry.kind);
-      if (url && !urls.includes(url)) urls.push(url);
-    }
-    return urls;
-  }
-
   function itemVisualUrl(record?: DisplayRecord | null) {
     return record ? firstAssetUrl(record.item_asset_refs, ["portrait", "icon", "head_icon"]) : "";
   }
@@ -69,20 +57,12 @@ export function createAssetTools(options: AssetToolsOptions) {
     return firstAssetUrl(banner?.asset_refs, ["image", "background", "banner", "icon"]);
   }
 
-  function selectedBannerPortraitUrls() {
-    return assetUrls(selectedBanner.value?.asset_refs, ["featured_portraits", "portrait", "icon"]).slice(0, 4);
-  }
-
   function hasRecordVisual(record?: DisplayRecord | null) {
     return Boolean(itemVisualUrl(record));
   }
 
   function hasBannerVisual(banner?: BannerSummary | DisplayRecord["banner"] | null) {
     return Boolean(bannerVisualUrl(banner));
-  }
-
-  function hasSelectedBannerVisuals() {
-    return Boolean(bannerVisualUrl(selectedBanner.value) || selectedBannerPortraitUrls().length);
   }
 
   function recordsHaveAnyVisual() {
@@ -106,11 +86,9 @@ export function createAssetTools(options: AssetToolsOptions) {
   function collectVisibleAssetRequests() {
     const requests: AssetResolveRequest[] = [];
     for (const banner of bannerSummaries.value) requests.push(...collectAssetRequestsFromRefs(banner.asset_refs));
-    for (const record of latest.value) requests.push(...collectRecordAssetRequests(record));
     for (const record of records.value) requests.push(...collectRecordAssetRequests(record));
     for (const hit of detail.value?.five_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
     for (const hit of detail.value?.four_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
-    if (selectedBanner.value) requests.push(...collectAssetRequestsFromRefs(selectedBanner.value.asset_refs));
     const seen = new Set<string>();
     return requests.filter((request) => {
       const key = assetCacheKey(request.asset_ref, request.kind);
@@ -139,10 +117,8 @@ export function createAssetTools(options: AssetToolsOptions) {
     assetRefsCount,
     itemVisualUrl,
     bannerVisualUrl,
-    selectedBannerPortraitUrls,
     hasRecordVisual,
     hasBannerVisual,
-    hasSelectedBannerVisuals,
     recordsHaveAnyVisual,
     resolveVisibleAssets,
   };

@@ -3,7 +3,6 @@ pub struct RecordDerived {
     pub record_id: String,
     pub banner_id: Option<String>,
     pub banner_version: Option<String>,
-    pub banner_phase: Option<String>,
     pub pull_no_in_pool_kind: u64,
     pub pull_no_in_banner: Option<u64>,
     pub pity_5_before: u64,
@@ -12,7 +11,6 @@ pub struct RecordDerived {
     pub pity_4_after: u64,
     pub hit_rarity: Option<u8>,
     pub rate_up_result: RateUpResult,
-    pub result_confidence: String,
     pub guarantee_5_before: Option<bool>,
     pub guarantee_5_after: Option<bool>,
     pub guarantee_4_before: Option<bool>,
@@ -91,7 +89,6 @@ pub struct RecordBannerOption {
     pub pool_kind: PoolKind,
     pub title: String,
     pub count: u64,
-    pub phase: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

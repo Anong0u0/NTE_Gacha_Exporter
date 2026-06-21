@@ -3,7 +3,10 @@ use serde_json::json;
 use std::io::Write;
 
 use super::{JsonStore, StoreDefaults};
-use nte_core::{PoolKind, RateUpResult, RecordFilter, RecordSortKey, SettingsPatch, SortDirection};
+use nte_core::{
+    DashboardSelection, PoolKind, RateUpResult, RecordFilter, RecordSortKey, SettingsPatch,
+    SortDirection,
+};
 
 fn public_document(records: Vec<serde_json::Value>) -> String {
     json!({

@@ -28,11 +28,6 @@ impl MapData {
         self.gacha_rules.get(rule_id)
     }
 
-    pub fn rule_source_confidence(&self, rule_id: &str) -> Option<&str> {
-        self.gacha_rule(rule_id)
-            .map(|rule| rule.source.confidence.as_str())
-    }
-
     pub fn pool_label(&self, pool_id: &str, time: Option<&str>) -> String {
         self.banner_label(pool_id, time)
     }
@@ -159,15 +154,15 @@ impl MapData {
             "CardPool_NewRole" => single_banner(candidates, "standard", "standard"),
             "CardPool_Character" => resolve_limited_banner(candidates, time),
             value if value.starts_with("ForkLottery_") => {
-                let exact = candidates
+                let matching_pool = candidates
                     .iter()
                     .copied()
                     .filter(|banner| banner.banner_id == pool_id)
                     .collect::<Vec<_>>();
-                if exact.is_empty() {
+                if matching_pool.is_empty() {
                     single_banner(candidates, "fork", "fork")
                 } else {
-                    single_banner(exact, "fork", "fork")
+                    single_banner(matching_pool, "fork", "fork")
                 }
             }
             _ => unresolved(
@@ -177,4 +172,3 @@ impl MapData {
         }
     }
 }
-

@@ -16,7 +16,6 @@ pub struct GachaRule {
     pub has_guarantee_4: Option<bool>,
     pub guarantee_scope: Option<String>,
     pub carry_scope: Option<String>,
-    pub source_confidence: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,7 +33,6 @@ pub struct DerivedHit {
     pub rarity: u8,
     pub pity_distance: u64,
     pub result: RateUpResult,
-    pub result_confidence: String,
     pub guarantee_before: Option<bool>,
     pub guarantee_after: Option<bool>,
 }
@@ -72,7 +70,6 @@ pub fn fallback_rule_for(kind: PoolKind) -> GachaRule {
             has_guarantee_4: None,
             guarantee_scope: Some("unknown".to_string()),
             carry_scope: Some("pool_kind".to_string()),
-            source_confidence: Some("unknown".to_string()),
         },
         PoolKind::MonopolyStandard => GachaRule {
             rule_id: Some("fallback_monopoly_standard".to_string()),
@@ -85,7 +82,6 @@ pub fn fallback_rule_for(kind: PoolKind) -> GachaRule {
             has_guarantee_4: None,
             guarantee_scope: Some("unknown".to_string()),
             carry_scope: Some("pool_kind".to_string()),
-            source_confidence: Some("unknown".to_string()),
         },
         PoolKind::ForkLottery => GachaRule {
             rule_id: Some("fallback_fork_lottery".to_string()),
@@ -98,7 +94,6 @@ pub fn fallback_rule_for(kind: PoolKind) -> GachaRule {
             has_guarantee_4: None,
             guarantee_scope: Some("pool_kind".to_string()),
             carry_scope: Some("pool_kind".to_string()),
-            source_confidence: Some("unknown".to_string()),
         },
     }
 }
@@ -217,17 +212,6 @@ pub fn rate_up_result(
     }
 }
 
-pub fn result_confidence(result: RateUpResult, banner: &ResolvedBanner) -> String {
-    if result == RateUpResult::Unknown {
-        return "unknown".to_string();
-    }
-    banner
-        .source_confidence
-        .clone()
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "unknown".to_string())
-}
-
 fn rate_up_domains(map: &MapData, candidates: &[String]) -> Vec<String> {
     let mut domains = Vec::new();
     for candidate in candidates {
@@ -248,4 +232,3 @@ fn rate_up_domains(map: &MapData, candidates: &[String]) -> Vec<String> {
     }
     domains
 }
-

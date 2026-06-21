@@ -21,7 +21,7 @@ tauri-build.workspace = true
 
 [features]
 default = []
-agent-smoke = []
+agent-smoke = ["tauri/devtools"]
 
 [dependencies]
 nte-automation = { path = "../../../crates/nte-automation" }

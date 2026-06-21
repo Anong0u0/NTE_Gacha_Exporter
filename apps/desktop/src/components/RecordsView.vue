@@ -1,123 +1,146 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Search } from "lucide-vue-next";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
 </script>
 
 <template>
-      <section class="view-stack" data-agent-id="view-records">
-        <section class="toolbar dense">
-          <div class="segmented">
-            <button :class="{ active: app.recordPoolKind === 'all' }" type="button" @click="app.recordPoolKind = 'all'">{{ app.t("common.all") }}</button>
-            <button
-              v-for="kind in app.kindOrder"
-              :key="kind"
-              :class="{ active: app.recordPoolKind === kind }"
-              type="button"
-              @click="app.recordPoolKind = kind"
-            >
-              {{ app.kindLabels[kind] }}
-            </button>
+      <section class="view-stack records-workbench" data-agent-id="view-records">
+        <section class="record-filter-shell">
+          <div class="record-filter-head">
+            <div class="record-filter-title">
+              <strong>{{ app.t("records.filters") }}</strong>
+              <span class="active-filter-count">{{ app.t("records.activeFilters", { count: app.activeRecordFilterCount }) }}</span>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="ghost" :disabled="app.activeRecordFilterCount === 0 || app.isWorkflowBusy" @click="app.resetRecordFilters">
+                <X :size="16" />
+                <span>{{ app.t("records.clearFilters") }}</span>
+              </button>
+              <button type="button" @click="app.recordAdvancedFiltersOpen = !app.recordAdvancedFiltersOpen">
+                <SlidersHorizontal :size="16" />
+                <span>{{ app.t("records.advancedFilters") }}</span>
+                <ChevronDown :size="16" />
+              </button>
+            </div>
           </div>
-          <label class="search-box">
-            <Search :size="17" />
-            <input v-model="app.search" :placeholder="app.t('common.search')" />
-          </label>
-        </section>
 
-        <section class="filter-grid">
-          <label class="field">
-            <span>{{ app.t("records.pool") }}</span>
-            <select v-model="app.recordPoolId">
-              <option value="">{{ app.t("records.allPools") }}</option>
-              <option v-for="pool in app.poolsForRecordKind" :key="pool.pool_id" :value="pool.pool_id">
-                {{ pool.label }} ({{ pool.count }})
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("common.banner") }}</span>
-            <select v-model="app.recordBannerId">
-              <option value="">{{ app.t("records.allBanners") }}</option>
-              <option v-for="banner in app.bannersForRecordKind" :key="banner.banner_id" :value="banner.banner_id">
-                {{ banner.title }} ({{ banner.count }})
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("common.type") }}</span>
-            <select v-model="app.recordType">
-              <option value="">{{ app.t("records.allTypes") }}</option>
-              <option v-for="type in app.filterOptions.record_types" :key="type.record_type" :value="type.record_type">
-                {{ type.record_type }} ({{ type.count }})
-              </option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.hitRarity") }}</span>
-            <select v-model="app.hitRarity">
-              <option value="">{{ app.t("records.allHits") }}</option>
-              <option value="5">5★</option>
-              <option value="4">4★</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("sort.rateUp") }}</span>
-            <select v-model="app.rateUpResult">
-              <option value="">{{ app.t("records.allResults") }}</option>
-              <option value="up">UP</option>
-              <option value="off_rate">{{ app.t("format.offRate") }}</option>
-              <option value="not_applicable">{{ app.t("format.notApplicable") }}</option>
-              <option value="unknown">{{ app.t("common.unknown") }}</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.from") }}</span>
-            <input v-model="app.dateFrom" type="date" />
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.to") }}</span>
-            <input v-model="app.dateTo" type="date" />
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.sort") }}</span>
-            <select v-model="app.sortKey">
-              <option value="time">{{ app.t("sort.time") }}</option>
-              <option value="banner">{{ app.t("sort.banner") }}</option>
-              <option value="pool">{{ app.t("sort.pool") }}</option>
-              <option value="item">{{ app.t("sort.item") }}</option>
-              <option value="rarity">{{ app.t("sort.rarity") }}</option>
-              <option value="record_type">{{ app.t("sort.type") }}</option>
-              <option value="pull_no">{{ app.t("sort.pullNo") }}</option>
-              <option value="pity_5">{{ app.t("sort.pity5") }}</option>
-              <option value="pity_4">{{ app.t("sort.pity4") }}</option>
-              <option value="rate_up">{{ app.t("sort.rateUp") }}</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.direction") }}</span>
-            <select v-model="app.sortDirection">
-              <option value="desc">{{ app.t("common.desc") }}</option>
-              <option value="asc">{{ app.t("common.asc") }}</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.pity5Min") }}</span>
-            <input v-model="app.pity5Min" inputmode="numeric" placeholder="0" />
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.pity5Max") }}</span>
-            <input v-model="app.pity5Max" inputmode="numeric" placeholder="90" />
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.pity4Min") }}</span>
-            <input v-model="app.pity4Min" inputmode="numeric" placeholder="0" />
-          </label>
-          <label class="field">
-            <span>{{ app.t("records.pity4Max") }}</span>
-            <input v-model="app.pity4Max" inputmode="numeric" placeholder="10" />
-          </label>
+          <div class="toolbar dense">
+            <div class="segmented">
+              <button :class="{ active: app.recordPoolKind === 'all' }" type="button" @click="app.recordPoolKind = 'all'">{{ app.t("common.all") }}</button>
+              <button
+                v-for="kind in app.kindOrder"
+                :key="kind"
+                :class="{ active: app.recordPoolKind === kind }"
+                type="button"
+                @click="app.recordPoolKind = kind"
+              >
+                {{ app.kindLabels[kind] }}
+              </button>
+            </div>
+            <label class="search-box">
+              <Search :size="17" />
+              <input v-model="app.search" :placeholder="app.t('common.search')" />
+            </label>
+          </div>
+
+          <div class="filter-grid basic">
+            <label class="field">
+              <span>{{ app.t("records.pool") }}</span>
+              <select v-model="app.recordPoolId">
+                <option value="">{{ app.t("records.allPools") }}</option>
+                <option v-for="pool in app.poolsForRecordKind" :key="pool.pool_id" :value="pool.pool_id">
+                  {{ pool.label }} ({{ pool.count }})
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("common.banner") }}</span>
+              <select v-model="app.recordBannerId">
+                <option value="">{{ app.t("records.allBanners") }}</option>
+                <option v-for="banner in app.bannersForRecordKind" :key="banner.banner_id" :value="banner.banner_id">
+                  {{ banner.title }} ({{ banner.count }})
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("common.type") }}</span>
+              <select v-model="app.recordType">
+                <option value="">{{ app.t("records.allTypes") }}</option>
+                <option v-for="type in app.filterOptions.record_types" :key="type.record_type" :value="type.record_type">
+                  {{ type.record_type }} ({{ type.count }})
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.hitRarity") }}</span>
+              <select v-model="app.hitRarity">
+                <option value="">{{ app.t("records.allHits") }}</option>
+                <option value="5">5★</option>
+                <option value="4">4★</option>
+              </select>
+            </label>
+          </div>
+
+          <div v-if="app.recordAdvancedFiltersOpen" class="filter-grid advanced">
+            <label class="field">
+              <span>{{ app.t("sort.rateUp") }}</span>
+              <select v-model="app.rateUpResult">
+                <option value="">{{ app.t("records.allResults") }}</option>
+                <option value="up">UP</option>
+                <option value="off_rate">{{ app.t("format.offRate") }}</option>
+                <option value="not_applicable">{{ app.t("format.notApplicable") }}</option>
+                <option value="unknown">{{ app.t("common.unknown") }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.from") }}</span>
+              <input v-model="app.dateFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.to") }}</span>
+              <input v-model="app.dateTo" type="date" />
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.sort") }}</span>
+              <select v-model="app.sortKey">
+                <option value="time">{{ app.t("sort.time") }}</option>
+                <option value="banner">{{ app.t("sort.banner") }}</option>
+                <option value="pool">{{ app.t("sort.pool") }}</option>
+                <option value="item">{{ app.t("sort.item") }}</option>
+                <option value="rarity">{{ app.t("sort.rarity") }}</option>
+                <option value="record_type">{{ app.t("sort.type") }}</option>
+                <option value="pull_no">{{ app.t("sort.pullNo") }}</option>
+                <option value="pity_5">{{ app.t("sort.pity5") }}</option>
+                <option value="pity_4">{{ app.t("sort.pity4") }}</option>
+                <option value="rate_up">{{ app.t("sort.rateUp") }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.direction") }}</span>
+              <select v-model="app.sortDirection">
+                <option value="desc">{{ app.t("common.desc") }}</option>
+                <option value="asc">{{ app.t("common.asc") }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.pity5Min") }}</span>
+              <input v-model="app.pity5Min" inputmode="numeric" placeholder="0" />
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.pity5Max") }}</span>
+              <input v-model="app.pity5Max" inputmode="numeric" placeholder="90" />
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.pity4Min") }}</span>
+              <input v-model="app.pity4Min" inputmode="numeric" placeholder="0" />
+            </label>
+            <label class="field">
+              <span>{{ app.t("records.pity4Max") }}</span>
+              <input v-model="app.pity4Max" inputmode="numeric" placeholder="10" />
+            </label>
+          </div>
         </section>
 
         <section class="panel" data-agent-id="records-history">
@@ -167,7 +190,7 @@ const app = useAppContext();
               <span>{{ app.formatPity(record) }}</span>
               <span>
                 <span class="derived-chip">{{ app.formatResult(record.derived.rate_up_result) }}</span>
-                <small>{{ app.formatGuarantee(record) }}</small>
+                <small v-if="app.formatGuarantee(record)">{{ app.formatGuarantee(record) }}</small>
               </span>
               <span>{{ record.roll_points ?? "-" }}</span>
               <span v-if="app.recordsHaveAnyVisual()" class="history-visual">

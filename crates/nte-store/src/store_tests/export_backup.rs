@@ -30,8 +30,6 @@ fn export_public_json_and_csv_from_store() {
     assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
     assert_eq!(first["banner_name"], "王牌一代目");
     assert_eq!(first["banner_type"], "limited");
-    assert_eq!(first["banner_phase"], "limited_2026_05_13");
-    assert_eq!(first["banner_source_confidence"], "curated");
     assert_eq!(first["pull_no_in_pool_kind"], 1);
     assert_eq!(first["pull_no_in_banner"], 1);
     assert_eq!(first["pity_5_before"], 0);
@@ -40,10 +38,8 @@ fn export_public_json_and_csv_from_store() {
     assert_eq!(first["pity_4_after"], 1);
     assert_eq!(first["hit_rarity"], 5);
     assert_eq!(first["rate_up_result"], "not_applicable");
-    assert_eq!(first["result_confidence"], "curated");
     assert_eq!(first["rule_id"], "monopoly_limited");
     assert_eq!(first["rule_resolution_status"], "matched");
-    assert_eq!(first["rule_source_confidence"], "curated");
     assert!(first.get("derived").is_none());
 
     let csv = std::fs::read_to_string(csv_path).unwrap();

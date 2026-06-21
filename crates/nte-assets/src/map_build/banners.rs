@@ -40,7 +40,6 @@ fn standard_banner(
     banner.insert(
         "source".to_string(),
         source_evidence(
-            "curated",
             &[
                 MONOPOLY_LOTTERY_TABLE.to_string(),
                 format!("Localization/{locale}/game.json"),
@@ -62,7 +61,7 @@ fn limited_banners(
 ) -> JsonObject {
     let mut banners = JsonObject::new();
     let mut previous_end: Option<String> = None;
-    for banner in CURATED_LIMITED_BANNERS {
+    for banner in LIMITED_BANNER_SEEDS {
         let Some(title) = localized_monopoly_pool_title(localization, banner.tail) else {
             previous_end = Some(banner.end_at_tz8.to_string());
             continue;
@@ -128,22 +127,15 @@ fn limited_banners(
         entry.insert(
             "source".to_string(),
             source_evidence(
-                "curated",
                 &[
                     MONOPOLY_LOTTERY_TABLE.to_string(),
                     format!("Localization/{locale}/game.json"),
                 ],
-                &[
-                    "Schedule and rate-up are curated because no structured limited banner table was found.",
-                    "Version/phase metadata is curated when present.",
-                ],
+                &["Schedule and rate-up use available lottery data and localized text."],
             ),
         );
         if let Some(version) = banner.version {
             entry.insert("version".to_string(), Value::String(version.to_string()));
-        }
-        if let Some(phase) = banner.phase {
-            entry.insert("phase".to_string(), Value::String(phase.to_string()));
         }
         if let Some(start_at) = previous_end.clone() {
             entry.insert("start_at".to_string(), Value::String(start_at));
@@ -198,7 +190,7 @@ fn fork_banners(
         );
         banner.insert(
             "source".to_string(),
-            source_evidence("exact", &[FORK_POOL_TABLE.to_string()], &[]),
+            source_evidence(&[FORK_POOL_TABLE.to_string()], &[]),
         );
         let refs = pool_asset_refs(row);
         if !refs.is_empty() {
@@ -283,4 +275,3 @@ fn attach_banner_ids(pool_meta: &mut BTreeMap<String, JsonObject>, banners: &Jso
             .insert("banner_ids".to_string(), json!(banner_ids));
     }
 }
-

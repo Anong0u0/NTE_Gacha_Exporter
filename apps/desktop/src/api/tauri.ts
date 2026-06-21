@@ -8,6 +8,7 @@ import type {
   BackupReport,
   CaptureStatus,
   DashboardOverview,
+  DashboardSelectionDetail,
   DoctorReport,
   ImportReport,
   MapLocaleList,
@@ -37,6 +38,8 @@ export const tauriApi: AppApi = {
   dashboardOverview: (profileName, locale) => invoke<DashboardOverview>("dashboard_overview", { profileName, locale }),
   poolKindDetail: (profileName, poolKind, locale) =>
     invoke<PoolKindDetail>("pool_kind_detail", { profileName, poolKind, locale }),
+  dashboardSelectionDetail: (profileName, selection, locale) =>
+    invoke<DashboardSelectionDetail>("dashboard_selection_detail", { profileName, selection, locale }),
   listRecords: (profileName, filter, locale) => invoke<RecordList>("list_records", { profileName, filter, locale }),
   recordFilterOptions: (profileName, locale) =>
     invoke<RecordFilterOptions>("record_filter_options", { profileName, locale }),

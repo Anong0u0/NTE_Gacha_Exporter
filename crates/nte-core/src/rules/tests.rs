@@ -40,7 +40,6 @@ mod tests {
         assert_eq!(fork.rule.hard_pity_5, Some(80));
         assert_eq!(fork.rule.pickup_win_rate_5, Some(25));
         assert_eq!(fork.rule.has_guarantee_5, Some(true));
-        assert_eq!(fork.rule.source_confidence.as_deref(), Some("exact"));
 
         let standard = rule_for_record(
             &map,
@@ -68,7 +67,6 @@ mod tests {
         .expect("limited rule should resolve");
         assert_eq!(limited.status, RuleResolutionStatus::Matched);
         assert_eq!(limited.rule.rule_id.as_deref(), Some("monopoly_limited"));
-        assert_eq!(limited.rule.source_confidence.as_deref(), Some("curated"));
     }
 
     #[test]
@@ -89,10 +87,6 @@ mod tests {
         assert_eq!(resolution.status, RuleResolutionStatus::MissingBanner);
         assert_eq!(resolution.rule.pool_kind, PoolKind::MonopolyLimited);
         assert_eq!(resolution.rule.hard_pity_5, Some(90));
-        assert_eq!(
-            resolution.rule.source_confidence.as_deref(),
-            Some("unknown")
-        );
     }
 
     #[test]

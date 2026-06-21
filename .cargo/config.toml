@@ -1,3 +1,6 @@
+[build]
+build-dir = "target/cargo-build-cache"
+
 [alias]
 agent = "run --manifest-path tools/agent-smoke/Cargo.toml --"
 check-long-code = "xtask check-long-code"

@@ -3,8 +3,9 @@ use std::path::Path;
 
 use nte_capture::{build_capture_document, read_raw_capture};
 use nte_core::{
-    BackupReport, DashboardOverview, ImportReport, PoolKind, PoolKindDetail, Profile, RecordFilter,
-    RecordFilterOptions, RecordList, RestoreReport, Settings, SettingsPatch,
+    BackupReport, DashboardOverview, DashboardSelection, DashboardSelectionDetail, ImportReport,
+    PoolKind, PoolKindDetail, Profile, RecordFilter, RecordFilterOptions, RecordList,
+    RestoreReport, Settings, SettingsPatch,
 };
 use nte_store::load_locale_or_settings;
 use tauri::State;
@@ -113,6 +114,19 @@ pub(crate) fn pool_kind_detail(
     with_store(&state, |store| {
         let locale = load_locale_or_settings(store, locale)?;
         store.pool_kind_detail(&profile_name, &locale, pool_kind)
+    })
+}
+
+#[tauri::command]
+pub(crate) fn dashboard_selection_detail(
+    state: State<'_, AppState>,
+    profile_name: String,
+    selection: DashboardSelection,
+    locale: Option<String>,
+) -> Result<DashboardSelectionDetail, ApiError> {
+    with_store(&state, |store| {
+        let locale = load_locale_or_settings(store, locale)?;
+        store.dashboard_selection_detail(&profile_name, &locale, &selection)
     })
 }
 

@@ -24,6 +24,8 @@ use util::{print_json, write_json, write_png};
 use window::{capture_window, find_window, image_metrics};
 
 fn main() -> Result<()> {
+    ensure_windows_native()?;
+
     let cli = Cli::parse();
     match cli.command {
         CommandKind::Build { force } => run_agent_build(force),
@@ -41,12 +43,10 @@ fn main() -> Result<()> {
             Ok(())
         }
         CommandKind::Smoke {
-            sample,
             out_dir,
             addr,
             timeout_secs,
         } => run_smoke(SmokeOptions {
-            sample,
             out_dir,
             addr,
             timeout: Duration::from_secs(timeout_secs),
@@ -129,4 +129,14 @@ fn main() -> Result<()> {
 
 fn print_value(value: Value) -> Result<()> {
     print_json(&value)
+}
+
+#[cfg(not(windows))]
+fn ensure_windows_native() -> Result<()> {
+    anyhow::bail!("{}", crate::cli::WINDOWS_NATIVE_REQUIRED)
+}
+
+#[cfg(windows)]
+fn ensure_windows_native() -> Result<()> {
+    Ok(())
 }

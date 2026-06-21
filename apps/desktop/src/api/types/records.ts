@@ -46,7 +46,6 @@ export type ResolvedBanner = {
   banner_type?: "limited" | "standard" | "fork" | string | null;
   title?: string | null;
   version?: string | null;
-  phase?: string | null;
   start_at?: string | null;
   end_at?: string | null;
   timezone?: string | null;
@@ -54,7 +53,6 @@ export type ResolvedBanner = {
   rate_up_4: string[];
   rule_id?: string | null;
   asset_refs: AssetRefs;
-  source_confidence?: "exact" | "inferred" | "curated" | "unknown" | string | null;
 };
 
 export type GachaRuleView = {
@@ -70,14 +68,12 @@ export type GachaRuleView = {
   has_guarantee_4?: boolean | null;
   guarantee_scope?: string | null;
   carry_scope?: string | null;
-  source_confidence?: string | null;
 };
 
 export type RecordDerived = {
   record_id: string;
   banner_id?: string | null;
   banner_version?: string | null;
-  banner_phase?: string | null;
   pull_no_in_pool_kind: number;
   pull_no_in_banner?: number | null;
   pity_5_before: number;
@@ -86,7 +82,6 @@ export type RecordDerived = {
   pity_4_after: number;
   hit_rarity?: number | null;
   rate_up_result: RateUpResult;
-  result_confidence: string;
   guarantee_5_before?: boolean | null;
   guarantee_5_after?: boolean | null;
   guarantee_4_before?: boolean | null;
@@ -137,7 +132,6 @@ export type RecordBannerOption = {
   pool_kind: PoolKind;
   title: string;
   count: number;
-  phase?: string | null;
 };
 
 export type RecordFilterOptions = {

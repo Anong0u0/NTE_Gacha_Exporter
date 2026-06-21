@@ -76,7 +76,6 @@ impl RuleResolution {
             has_guarantee_4: self.rule.has_guarantee_4,
             guarantee_scope: self.rule.guarantee_scope.clone(),
             carry_scope: self.rule.carry_scope.clone(),
-            source_confidence: self.rule.source_confidence.clone(),
         }
     }
 }
@@ -103,7 +102,6 @@ fn derived_hit_from_record(
             _ => 0,
         },
         result: derived.rate_up_result,
-        result_confidence: derived.result_confidence.clone(),
         guarantee_before,
         guarantee_after,
     }
@@ -169,7 +167,6 @@ fn rule_resolution_from_view(view: &GachaRuleView) -> RuleResolution {
             has_guarantee_4: view.has_guarantee_4,
             guarantee_scope: view.guarantee_scope.clone(),
             carry_scope: view.carry_scope.clone(),
-            source_confidence: view.source_confidence.clone(),
         },
     }
 }
@@ -186,7 +183,6 @@ fn rule_from_map(rule: &MapGachaRule, fallback_kind: PoolKind) -> GachaRule {
         has_guarantee_4: rule.has_guarantee_4,
         guarantee_scope: rule.guarantee_scope.clone(),
         carry_scope: rule.carry_scope.clone(),
-        source_confidence: Some(rule.source.confidence.clone()),
     }
 }
 
@@ -228,4 +224,3 @@ fn guarantee_key(rule: &GachaRule, banner: &ResolvedBanner, rarity: u8) -> Optio
         _ => None,
     }
 }
-

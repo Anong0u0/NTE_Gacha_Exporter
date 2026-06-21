@@ -33,7 +33,6 @@ export type PoolKindSummary = {
   not_applicable_rate_up_4_count: number;
   unknown_rate_up_4_count: number;
   rule_resolution_status: RuleResolutionStatus;
-  rule_source_confidence?: string | null;
   average_roll_points_to_5star?: number | null;
   average_roll_points_to_4star?: number | null;
   roll_point_cost_samples_5star: number;
@@ -47,10 +46,8 @@ export type BannerSummary = {
   banner_type?: string | null;
   title: string;
   version?: string | null;
-  phase?: string | null;
   start_at?: string | null;
   end_at?: string | null;
-  source_confidence?: string | null;
   asset_refs: AssetRefs;
   total_pulls: number;
   roll_points_total: number;
@@ -77,25 +74,9 @@ export type BannerSummary = {
   latest_hit?: DisplayRecord | null;
 };
 
-export type ResourceSummary = {
-  total_roll_points: number;
-  known_roll_point_records: number;
-  missing_roll_point_records: number;
-  by_pool_kind: ResourcePoolKindSummary[];
-};
-
-export type ResourcePoolKindSummary = {
-  pool_kind: PoolKind;
-  label: string;
-  roll_points_total: number;
-  known_roll_point_records: number;
-  missing_roll_point_records: number;
-};
-
 export type TimeStats = {
   monthly: TimeBucketSummary[];
   daily: TimeBucketSummary[];
-  phases: PhaseSummary[];
   missing_time_records: number;
 };
 
@@ -107,20 +88,6 @@ export type TimeBucketSummary = {
   roll_points_total: number;
   known_roll_point_records: number;
   missing_roll_point_records: number;
-  average_5star_pity?: number | null;
-  average_4star_pity?: number | null;
-};
-
-export type PhaseSummary = {
-  version?: string | null;
-  phase?: string | null;
-  total_pulls: number;
-  five_star_count: number;
-  four_star_count: number;
-  roll_points_total: number;
-  known_roll_point_records: number;
-  missing_roll_point_records: number;
-  banner_count: number;
   average_5star_pity?: number | null;
   average_4star_pity?: number | null;
 };
@@ -144,18 +111,15 @@ export type DashboardOverview = {
   total_records: number;
   pool_kinds: PoolKindSummary[];
   banners: BannerSummary[];
-  resource: ResourceSummary;
   time_stats: TimeStats;
   rarity_distribution: RarityBucket[];
   item_ranking: ItemRank[];
-  latest_records: DisplayRecord[];
 };
 
 export type FiveStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
   result: RateUpResult;
-  result_confidence: string;
   guarantee_before?: boolean | null;
   guarantee_after?: boolean | null;
 };
@@ -164,7 +128,6 @@ export type FourStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
   result: RateUpResult;
-  result_confidence: string;
   guarantee_before?: boolean | null;
   guarantee_after?: boolean | null;
 };
@@ -173,4 +136,13 @@ export type PoolKindDetail = {
   summary: PoolKindSummary;
   five_star_history: FiveStarRecord[];
   four_star_history: FourStarRecord[];
+};
+
+export type DashboardSelection =
+  | { kind: "pool_kind"; pool_kind: PoolKind }
+  | { kind: "banner"; pool_kind: PoolKind; banner_id: string };
+
+export type DashboardSelectionDetail = PoolKindDetail & {
+  rarity_distribution: RarityBucket[];
+  item_ranking: ItemRank[];
 };

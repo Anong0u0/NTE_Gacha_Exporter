@@ -5,12 +5,12 @@ use serde_json::{Value, json};
 
 use crate::{
     api::{action, assert_agent_ids, click_nav, eval_js, wait_agent, wait_health},
-    cli::{APP_TITLE, DEFAULT_KEEP_RUNS, DEFAULT_SAMPLE, SmokeOptions},
+    cli::{APP_TITLE, DEFAULT_KEEP_RUNS, SmokeOptions},
     report::{CleanupReport, ProcessReport, Report, ScreenshotReport, StepReport},
     runtime::{
-        bridge_agent_smoke, default_agent_app_root, ensure_agent_app_fresh, launch_app,
-        new_run_dir, prepare_agent_addr, read_agent_build_manifest, remove_portable_copy,
-        rotate_run_dirs, stage_portable,
+        default_agent_app_root, ensure_agent_app_fresh, launch_app, new_run_dir,
+        prepare_agent_addr, read_agent_build_manifest, remove_portable_copy, rotate_run_dirs,
+        stage_portable,
     },
     util::{ensure_file, unix_secs, write_json, write_png},
     window::{
@@ -20,33 +20,16 @@ use crate::{
 };
 
 pub fn run_smoke(options: SmokeOptions) -> Result<()> {
-    if !cfg!(windows) {
-        return bridge_agent_smoke(
-            options.sample.as_deref(),
-            &options.out_dir,
-            &options.addr,
-            options.timeout,
-        );
-    }
-
     require_windows()?;
     ensure_agent_app_fresh()?;
     let build = read_agent_build_manifest()?;
 
     let release_root_input = default_agent_app_root();
-    let sample_input = options
-        .sample
-        .as_ref()
-        .cloned()
-        .unwrap_or_else(|| std::path::PathBuf::from(DEFAULT_SAMPLE));
     let release_root = release_root_input.canonicalize().map_err(|error| {
         anyhow::anyhow!(
             "release root not found: {}: {error}",
             release_root_input.display()
         )
-    })?;
-    let sample = sample_input.canonicalize().map_err(|error| {
-        anyhow::anyhow!("sample not found: {}: {error}", sample_input.display())
     })?;
     let run_dir = new_run_dir(&options.out_dir)?;
     let logs = run_dir.join("logs");
@@ -96,7 +79,6 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
 
     let result = run_smoke_steps(
         &options,
-        &sample,
         &logs,
         &screenshots,
         &before_windows,
@@ -167,7 +149,6 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
 
 fn run_smoke_steps(
     options: &SmokeOptions,
-    sample: &Path,
     logs: &Path,
     screenshots: &Path,
     before_windows: &BTreeSet<usize>,
@@ -192,56 +173,12 @@ fn run_smoke_steps(
 
     let snapshot = action(&options.addr, "snapshot", "", Value::Null, 5000)?;
     write_json(logs.join("snapshot-initial.json"), &snapshot)?;
-    assert_agent_ids(
-        &snapshot,
-        &[
-            "nav-dashboard",
-            "nav-records",
-            "nav-import_export",
-            "nav-settings",
-        ],
-    )?;
+    assert_agent_ids(&snapshot, &["nav-dashboard", "nav-records", "nav-settings"])?;
     push_step(report, "initial_snapshot", None);
     capture_step(report, screenshots, "dashboard_initial", &window)?;
 
-    run_import_sample(&options.addr, sample, screenshots, report, &window)?;
     capture_navigation_views(&options.addr, screenshots, report, &window)?;
     capture_final_snapshot(&options.addr, logs, report)
-}
-
-fn run_import_sample(
-    addr: &str,
-    sample: &Path,
-    screenshots: &Path,
-    report: &mut Report,
-    window: &WindowInfo,
-) -> Result<()> {
-    click_nav(addr, "import_export")?;
-    wait_agent(addr, "view-import-export", Duration::from_secs(10))?;
-    capture_step(report, screenshots, "import_export_before", window)?;
-
-    action(
-        addr,
-        "set_input_agent",
-        "import-mode",
-        Value::String("raw".to_string()),
-        5000,
-    )?;
-    action(
-        addr,
-        "set_input_agent",
-        "import-path",
-        Value::String(sample.display().to_string()),
-        5000,
-    )?;
-    action(addr, "click_agent", "import-run", Value::Null, 5000)?;
-    wait_agent(addr, "last-import-panel", Duration::from_secs(30))?;
-    push_step(
-        report,
-        "import_sample",
-        Some(json!({ "sample": sample.display().to_string() })),
-    );
-    capture_step(report, screenshots, "import_export_after", window)
 }
 
 fn capture_failure_snapshot(addr: &str, logs: &Path) -> Result<()> {
@@ -266,6 +203,17 @@ fn capture_navigation_views(
 
 fn capture_final_snapshot(addr: &str, logs: &Path, report: &mut Report) -> Result<()> {
     let final_snapshot = action(addr, "snapshot", "", Value::Null, 5000)?;
+    assert_agent_ids(
+        &final_snapshot,
+        &[
+            "settings-import-raw",
+            "settings-import-public",
+            "settings-export-json",
+            "settings-export-csv",
+            "settings-backup-create",
+            "settings-backup-restore",
+        ],
+    )?;
     write_json(logs.join("snapshot-final.json"), &final_snapshot)?;
     report.final_snapshot_summary = Some(json!({
         "body_text_prefix": final_snapshot

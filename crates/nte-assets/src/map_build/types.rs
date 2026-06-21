@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use regex::Regex;
-use serde_json::{Map, Value, json};
+use serde_json::{json, Map, Value};
 
 use nte_core::GuiError;
 
@@ -54,47 +54,42 @@ pub struct AssetMapBuild {
 }
 
 #[derive(Debug, Clone)]
-struct CuratedLimitedBanner {
+struct LimitedBannerSeed {
     tail: &'static str,
     banner_id: &'static str,
     end_at_tz8: &'static str,
     rate_up_5: &'static [&'static str],
     version: Option<&'static str>,
-    phase: Option<&'static str>,
 }
 
-const CURATED_LIMITED_BANNERS: &[CuratedLimitedBanner] = &[
-    CuratedLimitedBanner {
+const LIMITED_BANNER_SEEDS: &[LimitedBannerSeed] = &[
+    LimitedBannerSeed {
         tail: "Nanali",
         banner_id: "monopoly_limited_Nanali",
         end_at_tz8: "2026-05-13 05:59:00",
         rate_up_5: &["1010"],
         version: None,
-        phase: Some("limited_2026_05_13"),
     },
-    CuratedLimitedBanner {
+    LimitedBannerSeed {
         tail: "Xun",
         banner_id: "monopoly_limited_Xun",
         end_at_tz8: "2026-06-03 05:59:00",
         rate_up_5: &["1052"],
         version: None,
-        phase: Some("limited_2026_06_03"),
     },
-    CuratedLimitedBanner {
+    LimitedBannerSeed {
         tail: "AnHunQu",
         banner_id: "monopoly_limited_AnHunQu",
         end_at_tz8: "2026-06-24 05:59:00",
         rate_up_5: &["1004"],
         version: None,
-        phase: Some("limited_2026_06_24"),
     },
-    CuratedLimitedBanner {
+    LimitedBannerSeed {
         tail: "Kaesi",
         banner_id: "monopoly_limited_Kaesi",
         end_at_tz8: "2026-07-08 05:59:00",
         rate_up_5: &["1020"],
         version: None,
-        phase: Some("limited_2026_07_08"),
     },
 ];
 
@@ -123,4 +118,3 @@ struct ItemBuildContext {
 type Localization = BTreeMap<String, BTreeMap<String, String>>;
 type JsonObject = Map<String, Value>;
 type PoolBuildData = (BTreeMap<String, String>, BTreeMap<String, JsonObject>);
-

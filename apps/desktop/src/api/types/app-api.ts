@@ -1,6 +1,6 @@
 import type { BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
 import type { CaptureStatus, PendingAdminCapture } from "./capture";
-import type { DashboardOverview, PoolKindDetail } from "./dashboard";
+import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail } from "./dashboard";
 import type { AssetResolveRequest, AssetResolveResult, AssetsPackCheckReport, AssetsPackInstallReport, AssetsPackPackage, AssetsPackStatus } from "./assets-pack";
 import type { RecordFilter, RecordFilterOptions, RecordList } from "./records";
 import type { UpdateCheckReport, UpdatePackage, UpdateStageReport, UpdateStatus } from "./update";
@@ -17,6 +17,7 @@ export type AppApi = {
   importRawJsonl(profileName: string, path: string, locale?: string): Promise<ImportReport>;
   dashboardOverview(profileName: string, locale?: string): Promise<DashboardOverview>;
   poolKindDetail(profileName: string, poolKind: PoolKind, locale?: string): Promise<PoolKindDetail>;
+  dashboardSelectionDetail(profileName: string, selection: DashboardSelection, locale?: string): Promise<DashboardSelectionDetail>;
   listRecords(profileName: string, filter: RecordFilter, locale?: string): Promise<RecordList>;
   recordFilterOptions(profileName: string, locale?: string): Promise<RecordFilterOptions>;
   exportPublicJson(profileName: string, path: string, locale?: string): Promise<void>;

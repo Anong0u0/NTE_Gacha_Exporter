@@ -104,7 +104,6 @@ pub struct MapBanner {
     pub title: String,
     pub short_title: Option<String>,
     pub version: Option<String>,
-    pub phase: Option<String>,
     pub start_at: Option<String>,
     pub end_at: Option<String>,
     pub timezone: Option<String>,
@@ -123,6 +122,7 @@ pub struct MapBanner {
     pub currency_id: Option<String>,
     pub currency_count: Option<u64>,
     pub roll_unit: Option<u64>,
+    #[serde(default)]
     pub source: MapSourceEvidence,
 }
 
@@ -140,15 +140,14 @@ pub struct MapGachaRule {
     pub carry_scope: Option<String>,
     #[serde(default)]
     pub rule_text_refs: BTreeMap<String, String>,
+    #[serde(default)]
     pub source: MapSourceEvidence,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct MapSourceEvidence {
-    pub confidence: String,
     #[serde(default)]
     pub tables: Vec<String>,
     #[serde(default)]
     pub notes: Vec<String>,
 }
-

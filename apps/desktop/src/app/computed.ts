@@ -18,7 +18,6 @@ type ComputedDeps = {
   activeProfileName: Ref<string>;
   summary: Ref<DashboardOverview | null>;
   selectedPoolKind: Ref<PoolKind>;
-  selectedBannerId: Ref<string>;
   recordTotal: Ref<number>;
   filterOptions: Ref<RecordFilterOptions>;
   captureStatus: Ref<CaptureStatus | null>;
@@ -41,25 +40,18 @@ export function createAppComputed(deps: ComputedDeps) {
     () => allPoolSummaries.value.filter((pool) => pool.total_pulls > 0).length,
   );
   const bannerSummaries = computed(() => deps.summary.value?.banners ?? []);
+  const selectedPoolBannerSummaries = computed(() =>
+    bannerSummaries.value.filter((banner) => banner.pool_kind === deps.selectedPoolKind.value),
+  );
   const trackedBannerCount = computed(
     () => bannerSummaries.value.filter((banner) => banner.total_pulls > 0).length,
+  );
+  const totalRollPoints = computed(() =>
+    allPoolSummaries.value.reduce((total, pool) => total + pool.roll_points_total, 0),
   );
   const selectedSummary = computed(
     () => allPoolSummaries.value.find((item) => item.pool_kind === deps.selectedPoolKind.value) ?? null,
   );
-  const selectedBanner = computed(() => {
-    const byId = bannerSummaries.value.find((banner) => banner.banner_id === deps.selectedBannerId.value);
-    if (byId) return byId;
-    return (
-      bannerSummaries.value.find(
-        (banner) => banner.pool_kind === deps.selectedPoolKind.value && banner.total_pulls > 0,
-      ) ??
-      bannerSummaries.value[0] ??
-      null
-    );
-  });
-  const latest = computed(() => deps.summary.value?.latest_records ?? []);
-  const phaseSummaries = computed(() => deps.summary.value?.time_stats.phases ?? []);
   const recordPageStart = computed(() =>
     deps.recordTotal.value === 0 ? 0 : deps.pageIndex.value * deps.pageSize.value + 1,
   );
@@ -134,11 +126,10 @@ export function createAppComputed(deps: ComputedDeps) {
     allPoolSummaries,
     trackedPoolCount,
     bannerSummaries,
+    selectedPoolBannerSummaries,
     trackedBannerCount,
+    totalRollPoints,
     selectedSummary,
-    selectedBanner,
-    latest,
-    phaseSummaries,
     recordPageStart,
     recordPageEnd,
     canPrevPage,

@@ -33,11 +33,10 @@ fn missing_rarity_records_are_retained_but_excluded_from_distribution_denominato
     assert_eq!(overview.total_records, 2);
     assert_eq!(list.total, 2);
     assert_eq!(known_count, 1);
-    assert!(
-        list.records
-            .iter()
-            .any(|record| record.item_id == "UnknownItem" && record.rarity.is_none())
-    );
+    assert!(list
+        .records
+        .iter()
+        .any(|record| record.item_id == "UnknownItem" && record.rarity.is_none()));
     let missing = list
         .records
         .iter()
@@ -88,10 +87,6 @@ fn records_list_filters_by_search_and_pool_kind() {
     assert_eq!(
         list.records[0].banner.banner_id.as_deref(),
         Some("ForkLottery_AnHunQu")
-    );
-    assert_eq!(
-        list.records[0].banner.source_confidence.as_deref(),
-        Some("exact")
     );
     assert!(list.records[0].banner.asset_refs.contains_key("icon"));
     assert_eq!(list.records[0].derived.pull_no_in_banner, Some(1));
@@ -310,23 +305,16 @@ fn record_filter_options_count_pools_and_record_types() {
 
     let options = store.record_filter_options("default", "zh-Hant").unwrap();
 
-    assert!(
-        options
-            .pools
-            .iter()
-            .any(|pool| pool.pool_id == "CardPool_Character" && pool.count == 2)
-    );
-    assert!(
-        options
-            .record_types
-            .iter()
-            .any(|record_type| record_type.record_type == "monopoly" && record_type.count == 2)
-    );
-    assert!(
-        options
-            .banners
-            .iter()
-            .any(|banner| banner.banner_id == "ForkLottery_AnHunQu" && banner.count == 1)
-    );
+    assert!(options
+        .pools
+        .iter()
+        .any(|pool| pool.pool_id == "CardPool_Character" && pool.count == 2));
+    assert!(options
+        .record_types
+        .iter()
+        .any(|record_type| record_type.record_type == "monopoly" && record_type.count == 2));
+    assert!(options
+        .banners
+        .iter()
+        .any(|banner| banner.banner_id == "ForkLottery_AnHunQu" && banner.count == 1));
 }
-

@@ -3,22 +3,24 @@ import { GridComponent, TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   api,
   type AssetsPackCheckReport,
   type AssetsPackInstallReport,
   type AssetsPackStatus,
   type BackupReport,
+  type BannerSummary,
   type CaptureMode,
   type CaptureStatus,
   type DashboardOverview,
+  type DashboardSelection,
+  type DashboardSelectionDetail,
   type DisplayRecord,
   type DoctorReport,
   type ImportReport,
   type PendingAdminCapture,
   type PoolKind,
-  type PoolKindDetail,
   type RecordFilter,
   type RecordFilterOptions,
   type RecordSortKey,
@@ -46,16 +48,18 @@ export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default"), newProfileName = ref("");
   const profileRenameSource = ref(""), profileRenameName = ref(""), profileDeleteTarget = ref("");
   const locale = ref("en"), uiLocale = ref("en"), locales = ref<string[]>(["en"]), uiLocales = ref<string[]>(["en"]), summary = ref<DashboardOverview | null>(null);
-  const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedBannerId = ref(""), detail = ref<PoolKindDetail | null>(null);
+  const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedDashboardScope = ref<DashboardSelection>({ kind: "pool_kind", pool_kind: "monopoly_limited" }), detail = ref<DashboardSelectionDetail | null>(null);
   const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ pools: [], banners: [], record_types: [] });
   const importPath = ref(""), importMode = ref<ImportMode>("raw"), exportPath = ref(""), exportMode = ref<ExportMode>("json");
   const backupPath = ref(""), restorePath = ref(""), captureMode = ref<CaptureMode>("live_only");
   const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null), doctorReport = ref<DoctorReport | null>(null);
+  const lastDataOperation = ref<"import" | "export" | "backup" | "restore" | null>(null);
   const updateStatus = ref<UpdateStatus | null>(null), updateCheckReport = ref<UpdateCheckReport | null>(null), stagedUpdate = ref<UpdateStageReport | null>(null);
   const assetsPackStatus = ref<AssetsPackStatus | null>(null), assetsPackCheckReport = ref<AssetsPackCheckReport | null>(null), lastAssetsPackInstall = ref<AssetsPackInstallReport | null>(null);
   const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
   const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
   let capturePollTimer: ReturnType<typeof setInterval> | null = null;
+  let detailLoadId = 0;
   const t = createTranslator(uiLocale);
   statusText.value = t("status.ready");
   const kindLabels = {
@@ -82,24 +86,57 @@ export function useApp() {
   function setChartEl(element: unknown) {
     chartEl.value = element instanceof HTMLElement ? element : null;
   }
-  const { renderChart, disposeChart } = createChartTools(chartEl, summary);
+  const { renderChart, disposeChart } = createChartTools(chartEl, detail);
 
   const recordPoolKind = ref<PoolKindFilter>("all"), recordPoolId = ref(""), recordBannerId = ref(""), recordType = ref("");
   const hitRarity = ref<HitRarityFilter>(""), rateUpResult = ref<RateUpFilter>(""), pity5Min = ref(""), pity5Max = ref("");
   const pity4Min = ref(""), pity4Max = ref(""), dateFrom = ref(""), dateTo = ref(""), search = ref("");
   const sortKey = ref<RecordSortKey>("time"), sortDirection = ref<SortDirection>("desc"), pageSize = ref(50), pageIndex = ref(0);
+  const recordAdvancedFiltersOpen = ref(false);
   const settingsUpdateChannel = ref("stable"), settingsCheckUpdates = ref(false);
+  const dataOperationSummary = computed(() => {
+    if (lastDataOperation.value === "import" && lastReport.value) {
+      return `${t("import.lastImport")} · ${lastReport.value.source_kind} · ${t("common.seen")} ${lastReport.value.records_seen} · ${t("common.inserted")} ${lastReport.value.records_inserted} · ${t("common.skipped")} ${lastReport.value.records_skipped}`;
+    }
+    if (lastDataOperation.value === "export") {
+      const mode = exportMode.value === "json" ? t("import.publicJson") : "CSV";
+      return `${t("import.export")} ${mode} · ${t("status.exportCompleted")}`;
+    }
+    if (lastDataOperation.value === "backup" && lastBackup.value) {
+      return `${t("import.lastBackup")} · ${t("common.profiles")} ${lastBackup.value.profile_count} · ${t("common.records")} ${lastBackup.value.record_count}`;
+    }
+    if (lastDataOperation.value === "restore" && lastRestore.value) {
+      return `${t("import.lastRestore")} · ${t("common.profiles")} ${lastRestore.value.profiles_seen} · ${t("common.created")} ${lastRestore.value.profiles_created} · ${t("common.merged")} ${lastRestore.value.profiles_merged} · ${t("common.inserted")} ${lastRestore.value.records_inserted} · ${t("common.skipped")} ${lastRestore.value.records_skipped}`;
+    }
+    return "";
+  });
+  const activeRecordFilterCount = computed(() =>
+    [
+      recordPoolKind.value !== "all",
+      Boolean(recordPoolId.value),
+      Boolean(recordBannerId.value),
+      Boolean(recordType.value),
+      Boolean(hitRarity.value),
+      Boolean(rateUpResult.value),
+      Boolean(pity5Min.value),
+      Boolean(pity5Max.value),
+      Boolean(pity4Min.value),
+      Boolean(pity4Max.value),
+      Boolean(dateFrom.value),
+      Boolean(dateTo.value),
+      Boolean(search.value.trim()),
+    ].filter(Boolean).length,
+  );
 
   const {
     activeProfile,
     allPoolSummaries,
     trackedPoolCount,
     bannerSummaries,
+    selectedPoolBannerSummaries,
     trackedBannerCount,
-    selectedSummary,
-    selectedBanner,
-    latest,
-    phaseSummaries,
+    totalRollPoints,
+    selectedSummary: selectedPoolSummary,
     recordPageStart,
     recordPageEnd,
     canPrevPage,
@@ -118,7 +155,6 @@ export function useApp() {
     activeProfileName,
     summary,
     selectedPoolKind,
-    selectedBannerId,
     recordTotal,
     filterOptions,
     captureStatus,
@@ -131,25 +167,22 @@ export function useApp() {
     pageIndex,
     t,
   });
+  const selectedSummary = computed(() => detail.value?.summary ?? selectedPoolSummary.value);
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
 
   const {
     assetRefsCount,
     itemVisualUrl,
     bannerVisualUrl,
-    selectedBannerPortraitUrls,
     hasRecordVisual,
     hasBannerVisual,
-    hasSelectedBannerVisuals,
     recordsHaveAnyVisual,
     resolveVisibleAssets,
   } = createAssetTools({
     assetUrlCache,
     bannerSummaries,
-    latest,
     records,
     detail,
-    selectedBanner,
     errorText,
     formatError,
   });
@@ -168,8 +201,7 @@ export function useApp() {
     disposeChart();
   });
 
-  watch(() => summary.value?.rarity_distribution, async () => { await nextTick(); renderChart(); }, { deep: true });
-  watch(selectedPoolKind, () => void loadDetail());
+  watch(() => detail.value?.rarity_distribution, async () => { await nextTick(); renderChart(); }, { deep: true });
   watch([recordPoolKind, recordPoolId, recordBannerId, recordType, hitRarity, rateUpResult, pity5Min, pity5Max, pity4Min, pity4Max, dateFrom, dateTo, search, sortKey, sortDirection, pageSize], () => {
     pageIndex.value = 0;
     void loadRecords();
@@ -341,9 +373,7 @@ export function useApp() {
     if (!activeProfileName.value) return;
     summary.value = await api.dashboardOverview(activeProfileName.value, locale.value);
     const firstActive = summary.value.pool_kinds.find((pool) => pool.total_pulls > 0)?.pool_kind;
-    const firstBanner = summary.value.banners.find((banner) => banner.total_pulls > 0)?.banner_id;
-    selectedPoolKind.value = firstActive ?? selectedPoolKind.value;
-    selectedBannerId.value = firstBanner ?? selectedBannerId.value;
+    normalizeDashboardScope(firstActive);
     await Promise.all([loadDetail(), loadFilterOptions(), loadRecords()]);
     statusText.value = t("status.dashboardUpdated");
     await resolveVisibleAssets();
@@ -351,9 +381,67 @@ export function useApp() {
     renderChart();
   }
 
+  function normalizeDashboardScope(fallbackPoolKind?: PoolKind) {
+    const scope = selectedDashboardScope.value;
+    if (scope.kind === "banner") {
+      const banner = summary.value?.banners.find((item) => item.banner_id === scope.banner_id);
+      if (banner) {
+        selectedPoolKind.value = banner.pool_kind;
+        selectedDashboardScope.value = { kind: "banner", pool_kind: banner.pool_kind, banner_id: banner.banner_id };
+        return;
+      }
+    }
+    const poolKind = summary.value?.pool_kinds.some((pool) => pool.pool_kind === scope.pool_kind)
+      ? scope.pool_kind
+      : (fallbackPoolKind ?? selectedPoolKind.value);
+    selectedPoolKind.value = poolKind;
+    selectedDashboardScope.value = { kind: "pool_kind", pool_kind: poolKind };
+  }
+
+  function selectDashboardPool(poolKind: PoolKind) {
+    selectedPoolKind.value = poolKind;
+    selectedDashboardScope.value = { kind: "pool_kind", pool_kind: poolKind };
+    void loadDetail();
+  }
+
+  function selectDashboardBanner(banner: BannerSummary) {
+    selectedPoolKind.value = banner.pool_kind;
+    selectedDashboardScope.value = { kind: "banner", pool_kind: banner.pool_kind, banner_id: banner.banner_id };
+    void loadDetail();
+  }
+
+  function isSelectedDashboardPool(poolKind: PoolKind) {
+    const scope = selectedDashboardScope.value;
+    return scope.kind === "pool_kind" && scope.pool_kind === poolKind;
+  }
+
+  function isSelectedDashboardBanner(bannerId: string) {
+    const scope = selectedDashboardScope.value;
+    return scope.kind === "banner" && scope.banner_id === bannerId;
+  }
+
+  function isSameDashboardScope(left: DashboardSelection, right: DashboardSelection) {
+    if (left.kind !== right.kind || left.pool_kind !== right.pool_kind) return false;
+    if (left.kind === "pool_kind" || right.kind === "pool_kind") return true;
+    return left.banner_id === right.banner_id;
+  }
+
   async function loadDetail() {
     if (!activeProfileName.value) return;
-    detail.value = await api.poolKindDetail(activeProfileName.value, selectedPoolKind.value, locale.value);
+    const requestId = ++detailLoadId;
+    const profileName = activeProfileName.value;
+    const requestLocale = locale.value;
+    const requestScope = selectedDashboardScope.value;
+    const nextDetail = await api.dashboardSelectionDetail(profileName, requestScope, requestLocale);
+    if (
+      requestId !== detailLoadId
+      || profileName !== activeProfileName.value
+      || requestLocale !== locale.value
+      || !isSameDashboardScope(requestScope, selectedDashboardScope.value)
+    ) {
+      return;
+    }
+    detail.value = nextDetail;
     await resolveVisibleAssets();
   }
 
@@ -389,6 +477,23 @@ export function useApp() {
     await resolveVisibleAssets();
   }
 
+  function resetRecordFilters() {
+    recordPoolKind.value = "all";
+    recordPoolId.value = "";
+    recordBannerId.value = "";
+    recordType.value = "";
+    hitRarity.value = "";
+    rateUpResult.value = "";
+    pity5Min.value = "";
+    pity5Max.value = "";
+    pity4Min.value = "";
+    pity4Max.value = "";
+    dateFrom.value = "";
+    dateTo.value = "";
+    search.value = "";
+    pageIndex.value = 0;
+  }
+
   async function pickImportFile(mode: ImportMode) {
     importMode.value = mode;
     const selected = await open({
@@ -413,6 +518,7 @@ export function useApp() {
         importMode.value === "raw"
           ? await api.importRawJsonl(activeProfileName.value, path, locale.value)
           : await api.importPublicJson(activeProfileName.value, path);
+      lastDataOperation.value = "import";
       await refreshAll();
     });
   }
@@ -535,6 +641,7 @@ export function useApp() {
       } else {
         await api.exportCsv(activeProfileName.value, path, locale.value);
       }
+      lastDataOperation.value = "export";
     });
   }
 
@@ -554,6 +661,7 @@ export function useApp() {
     const path = backupPath.value.trim();
     await runTask(t("status.backupCreated"), async () => {
       lastBackup.value = await api.createBackup(path || null);
+      lastDataOperation.value = "backup";
     });
   }
 
@@ -574,6 +682,7 @@ export function useApp() {
     if (!path) return;
     await runTask(t("status.backupRestored"), async () => {
       lastRestore.value = await api.restoreBackup(path);
+      lastDataOperation.value = "restore";
       const settings = await api.getSettings();
       activeProfileName.value = settings.active_profile;
       locale.value = settings.locale;
@@ -586,14 +695,14 @@ export function useApp() {
   }
 
   return reactive({
-    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedBannerId, detail, records, recordTotal, filterOptions, importPath, importMode,
+    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
     capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordPoolId, recordBannerId, recordType, hitRarity, rateUpResult, pity5Min, pity5Max, pity4Min, pity4Max, dateFrom, dateTo, search,
-    sortKey, sortDirection, pageSize, pageIndex, settingsUpdateChannel, settingsCheckUpdates, activeProfile, allPoolSummaries, trackedPoolCount, bannerSummaries, trackedBannerCount, selectedSummary, selectedBanner, latest, phaseSummaries, recordPageStart, recordPageEnd, canPrevPage,
-    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, loadDetail,
-    loadFilterOptions, loadRecords, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
+    sortKey, sortDirection, pageSize, pageIndex, recordAdvancedFiltersOpen, activeRecordFilterCount, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, trackedPoolCount, bannerSummaries, selectedPoolBannerSummaries, trackedBannerCount, totalRollPoints, selectedSummary, recordPageStart, recordPageEnd, canPrevPage,
+    canNextPage, poolsForRecordKind, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
+    loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
     runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, parseOptionalNumber, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
-    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPity: formatPityText, formatGuarantee: formatGuaranteeText, assetRefsCount, itemVisualUrl, bannerVisualUrl, selectedBannerPortraitUrls, hasRecordVisual, hasBannerVisual, hasSelectedBannerVisuals, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
+    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPity: formatPityText, formatGuarantee: formatGuaranteeText, assetRefsCount, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }
 
