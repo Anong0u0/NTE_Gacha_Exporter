@@ -1,6 +1,6 @@
 import type { CaptureMode, ImportReport } from "./base";
 
-export type CaptureCounters = {
+type CaptureCounters = {
   packets_seen: number;
   decoded_packets: number;
   dropped_packets: number;
@@ -8,14 +8,14 @@ export type CaptureCounters = {
   filter_restarts?: number;
 };
 
-export type CaptureTarget = {
+type CaptureTarget = {
   pid?: string | number;
   interface?: string;
   ports?: number[];
   bpf?: string;
 };
 
-export type AutoPageStatus = {
+type AutoPageStatus = {
   state: string;
   message: string;
   kind: string;

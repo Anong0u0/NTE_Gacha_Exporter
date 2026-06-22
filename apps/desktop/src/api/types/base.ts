@@ -1,16 +1,5 @@
 export type PoolKind = "monopoly_limited" | "monopoly_standard" | "fork_lottery";
 export type AssetRefs = Record<string, unknown>;
-export type RecordSortKey =
-  | "time"
-  | "pool"
-  | "item"
-  | "rarity"
-  | "record_type"
-  | "banner"
-  | "pull_no"
-  | "pity_5"
-  | "pity_4"
-  | "rate_up";
 export type SortDirection = "asc" | "desc";
 export type CaptureMode = "live_only" | "auto_page_incremental" | "auto_page_full";
 

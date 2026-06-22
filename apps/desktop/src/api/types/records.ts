@@ -1,7 +1,8 @@
-import type { AssetRefs, PoolKind, RecordSortKey, SortDirection } from "./base";
+import type { AssetRefs, PoolKind, SortDirection } from "./base";
 
 export type DisplayRecord = {
   record_id: string;
+  source_order: number;
   record_type: string;
   time?: string | null;
   pool_kind: PoolKind;
@@ -14,6 +15,8 @@ export type DisplayRecord = {
   rarity?: number | null;
   count?: number | null;
   roll_points?: number | null;
+  roll_label_id?: string | null;
+  roll_label?: string | null;
   secondary_item_id?: string | null;
   secondary_item_name?: string | null;
   secondary_item_asset_refs: AssetRefs;
@@ -21,25 +24,25 @@ export type DisplayRecord = {
   derived: RecordDerived;
 };
 
-export type BannerResolutionStatus =
-  | "matched"
+type BannerResolutionIssue =
   | "unknown_pool"
   | "unknown_time"
   | "outside_known_windows"
   | "ambiguous";
 
-export type RuleResolutionStatus =
-  | "matched"
+type RuleResolutionIssue =
   | "fallback_pool_kind"
   | "missing_banner"
   | "missing_rule"
   | "unsupported_scope";
 
 export type RateUpResult = "up" | "off_rate" | "not_applicable" | "unknown";
+export type RollBucket = "gift" | "sleep" | "1" | "2" | "3" | "4" | "5" | "6" | "not_applicable";
+export type ItemKind = "character" | "fork" | "appearance" | "inventory" | "vehicle_module" | "unknown";
 
 export type ResolvedBanner = {
-  status: BannerResolutionStatus;
-  reason: string;
+  resolution_issue?: BannerResolutionIssue | null;
+  reason?: string | null;
   banner_id?: string | null;
   pool_id?: string | null;
   pool_kind?: PoolKind | string | null;
@@ -56,16 +59,14 @@ export type ResolvedBanner = {
 };
 
 export type GachaRuleView = {
-  status: RuleResolutionStatus;
-  reason: string;
+  resolution_issue?: RuleResolutionIssue | null;
+  reason?: string | null;
   rule_id?: string | null;
   pool_kind: PoolKind;
   hard_pity_5?: number | null;
-  hard_pity_4?: number | null;
+  hard_up_pity_5?: number | null;
   pickup_win_rate_5?: number | null;
-  pickup_win_rate_4?: number | null;
   has_guarantee_5?: boolean | null;
-  has_guarantee_4?: boolean | null;
   guarantee_scope?: string | null;
   carry_scope?: string | null;
 };
@@ -74,37 +75,34 @@ export type RecordDerived = {
   record_id: string;
   banner_id?: string | null;
   banner_version?: string | null;
-  pull_no_in_pool_kind: number;
+  counts_as_pull: boolean;
+  global_pull_no?: number | null;
+  pull_no_in_pool_kind?: number | null;
   pull_no_in_banner?: number | null;
   pity_5_before: number;
   pity_5_after: number;
-  pity_4_before: number;
-  pity_4_after: number;
+  roll_gift_progress_after?: number | null;
   hit_rarity?: number | null;
   rate_up_result: RateUpResult;
   guarantee_5_before?: boolean | null;
   guarantee_5_after?: boolean | null;
-  guarantee_4_before?: boolean | null;
-  guarantee_4_after?: boolean | null;
+  fork_up_pity_before?: number | null;
+  fork_up_pity_after?: number | null;
+  fork_forced_up?: boolean | null;
   rule: GachaRuleView;
 };
 
 export type RecordFilter = {
   pool_kind?: PoolKind | null;
-  pool_id?: string | null;
-  banner_id?: string | null;
-  record_type?: string | null;
-  rarity?: number | null;
-  hit_rarity?: number | null;
-  rate_up_result?: RateUpResult | null;
-  pity_5_min?: number | null;
-  pity_5_max?: number | null;
-  pity_4_min?: number | null;
-  pity_4_max?: number | null;
+  banner_ids?: string[] | null;
+  rarities?: number[] | null;
+  hit_rarities?: number[] | null;
+  rate_up_results?: RateUpResult[] | null;
+  roll_buckets?: RollBucket[] | null;
+  item_kinds?: ItemKind[] | null;
   date_from?: string | null;
   date_to?: string | null;
   search?: string | null;
-  sort_key?: RecordSortKey | null;
   sort_direction?: SortDirection | null;
   limit?: number;
   offset?: number;
@@ -115,27 +113,25 @@ export type RecordList = {
   records: DisplayRecord[];
 };
 
-export type RecordPoolOption = {
-  pool_id: string;
-  pool_kind: PoolKind;
-  label: string;
-  count: number;
-};
-
-export type RecordTypeOption = {
-  record_type: string;
-  count: number;
-};
-
-export type RecordBannerOption = {
+type RecordBannerOption = {
   banner_id: string;
   pool_kind: PoolKind;
   title: string;
   count: number;
 };
 
+type RecordRollBucketOption = {
+  bucket: RollBucket;
+  count: number;
+};
+
+type RecordItemKindOption = {
+  item_kind: ItemKind;
+  count: number;
+};
+
 export type RecordFilterOptions = {
-  pools: RecordPoolOption[];
   banners: RecordBannerOption[];
-  record_types: RecordTypeOption[];
+  roll_buckets: RecordRollBucketOption[];
+  item_kinds: RecordItemKindOption[];
 };

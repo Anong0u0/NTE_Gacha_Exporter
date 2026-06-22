@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::BannerResolutionStatus;
+    use crate::model::BannerResolutionIssue;
 
     #[test]
     fn load_bundled_v4_map_keeps_banner_and_rule_sections() {
@@ -26,7 +26,8 @@ mod tests {
             .gacha_rules
             .get("fork_lottery_s")
             .expect("fork rule should exist");
-        assert_eq!(rule.hard_pity_5, Some(80));
+        assert_eq!(rule.hard_pity_5, Some(60));
+        assert_eq!(rule.hard_up_pity_5, Some(80));
         assert_eq!(rule.pickup_win_rate_5, Some(25));
         assert_eq!(rule.has_guarantee_5, Some(true));
 
@@ -46,13 +47,13 @@ mod tests {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
         let standard = map.resolve_banner("CardPool_NewRole", None);
-        assert_eq!(standard.status, BannerResolutionStatus::Matched);
+        assert_eq!(standard.resolution_issue, None);
         assert_eq!(standard.banner_id.as_deref(), Some("monopoly_standard"));
         assert_eq!(standard.banner_type.as_deref(), Some("standard"));
         assert_eq!(standard.version, None);
 
         let fork = map.resolve_banner("ForkLottery_AnHunQu", None);
-        assert_eq!(fork.status, BannerResolutionStatus::Matched);
+        assert_eq!(fork.resolution_issue, None);
         assert_eq!(fork.banner_id.as_deref(), Some("ForkLottery_AnHunQu"));
         assert_eq!(fork.rate_up_5, vec!["fork_Rose"]);
 
@@ -65,7 +66,7 @@ mod tests {
             ("2026-06-24 05:59:01", "monopoly_limited_Kaesi"),
         ] {
             let resolved = map.resolve_banner("CardPool_Character", Some(record_time));
-            assert_eq!(resolved.status, BannerResolutionStatus::Matched);
+            assert_eq!(resolved.resolution_issue, None);
             assert_eq!(resolved.banner_id.as_deref(), Some(banner_id));
         }
         let limited = map.resolve_banner("CardPool_Character", Some("2026-05-13 05:59:00"));
@@ -73,25 +74,26 @@ mod tests {
     }
 
     #[test]
-    fn resolve_banner_reports_limited_unmatched_edges_and_label_fallback() {
+    fn resolve_banner_reports_limited_unresolved_edges_and_label_fallback() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
         assert_eq!(
-            map.resolve_banner("CardPool_Character", None).status,
-            BannerResolutionStatus::UnknownTime
+            map.resolve_banner("CardPool_Character", None)
+                .resolution_issue,
+            Some(BannerResolutionIssue::UnknownTime)
         );
         assert_eq!(
             map.resolve_banner("CardPool_Character", Some("not a time"))
-                .status,
-            BannerResolutionStatus::UnknownTime
+                .resolution_issue,
+            Some(BannerResolutionIssue::UnknownTime)
         );
         assert_eq!(
             map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"))
-                .status,
-            BannerResolutionStatus::OutsideKnownWindows
+                .resolution_issue,
+            Some(BannerResolutionIssue::OutsideKnownWindows)
         );
-        let unmatched = map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"));
-        assert_eq!(unmatched.version, None);
+        let unresolved = map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"));
+        assert_eq!(unresolved.version, None);
         assert_eq!(
             map.pool_label("CardPool_Character", Some("2026-07-08 05:59:01")),
             "限定棋盤"

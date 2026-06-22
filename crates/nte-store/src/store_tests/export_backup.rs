@@ -22,24 +22,33 @@ fn export_public_json_and_csv_from_store() {
     let exported_json: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
     let first = &exported_json["nte"]["list"][0];
-    assert_eq!(exported_json["info"]["schema_version"], "2.0");
+    assert_eq!(exported_json["info"]["schema_version"], "3.0");
     assert_eq!(first["record_id"], "c1");
+    assert_eq!(first["source_order"], 0);
     assert_eq!(first["rarity"], 5);
-    assert_eq!(first["banner_resolution_status"], "matched");
+    assert!(
+        first
+            .as_object()
+            .expect("exported record should be an object")
+            .keys()
+            .all(|key| !key.contains("resolution"))
+    );
     assert_eq!(first["pool_kind"], "monopoly_limited");
     assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
     assert_eq!(first["banner_name"], "王牌一代目");
     assert_eq!(first["banner_type"], "limited");
+    assert_eq!(first["counts_as_pull"], true);
     assert_eq!(first["pull_no_in_pool_kind"], 1);
     assert_eq!(first["pull_no_in_banner"], 1);
     assert_eq!(first["pity_5_before"], 0);
-    assert_eq!(first["pity_5_after"], 0);
-    assert_eq!(first["pity_4_before"], 0);
-    assert_eq!(first["pity_4_after"], 1);
-    assert_eq!(first["hit_rarity"], 5);
+    assert_eq!(first["pity_5_after"], 1);
+    assert_eq!(first["roll_gift_progress_after"], 1);
+    for key in removed_four_star_export_keys() {
+        assert!(first.get(key).is_none(), "{key} should not be exported");
+    }
+    assert!(first.get("hit_rarity").is_none());
     assert_eq!(first["rate_up_result"], "not_applicable");
     assert_eq!(first["rule_id"], "monopoly_limited");
-    assert_eq!(first["rule_resolution_status"], "matched");
     assert!(first.get("derived").is_none());
 
     let csv = std::fs::read_to_string(csv_path).unwrap();
@@ -51,6 +60,82 @@ fn export_public_json_and_csv_from_store() {
     assert!(csv.contains("rate_up_result"));
     assert!(csv.contains("monopoly_limited_Nanali"));
     assert!(csv.contains(",not_applicable,"));
+}
+
+#[test]
+fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut normal = record(
+        "normal",
+        "ForkLottery_AnHunQu",
+        "DiceNormal",
+        "2026-01-01 10:00:00",
+    );
+    normal["source_order"] = serde_json::json!(2);
+    let mut gift = record_with_options(
+        "gift",
+        "ForkLottery_AnHunQu",
+        "fork_dustbin",
+        Some("2026-01-01 10:00:00"),
+        Some(0),
+    );
+    gift["source_order"] = serde_json::json!(1);
+    let mut sleep = record_with_options(
+        "sleep",
+        "ForkLottery_AnHunQu",
+        "fork_jiaojuan",
+        Some("2026-01-01 09:59:59"),
+        Some(4_294_967_295),
+    );
+    sleep["source_order"] = serde_json::json!(0);
+    let document = public_document(vec![normal, gift, sleep]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let json_path = tmp.path().join("exports/order.json");
+    let csv_path = tmp.path().join("exports/order.csv");
+    store
+        .export_public_json("default", "zh-Hant", &json_path)
+        .unwrap();
+    store.export_csv("default", "zh-Hant", &csv_path).unwrap();
+
+    let exported_json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
+    let records = exported_json["nte"]["list"].as_array().unwrap();
+    assert_eq!(
+        records
+            .iter()
+            .map(|record| record["record_id"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["gift", "normal", "sleep"]
+    );
+    assert_eq!(
+        records[0]["roll_label_id"],
+        "BPUI_LotteryResult_jidianzengli"
+    );
+    assert_eq!(records[0]["roll_label"], "集點贈禮");
+    assert_eq!(records[0]["counts_as_pull"], false);
+    assert!(records[0]["pull_no_in_pool_kind"].is_null());
+    assert!(records[0]["roll_gift_progress_after"].is_null());
+    assert!(records[0].get("pull_no_in_banner").is_none());
+    assert!(records[0].get("roll_points").is_none());
+    assert_eq!(
+        records[2]["roll_label_id"],
+        "BPUI_LotteryResult_chenmiandi"
+    );
+    assert_eq!(records[2]["roll_label"], "沉眠地");
+    assert_eq!(records[2]["counts_as_pull"], false);
+    assert!(records[2]["pull_no_in_pool_kind"].is_null());
+    assert!(records[2]["roll_gift_progress_after"].is_null());
+    assert!(records[2].get("pull_no_in_banner").is_none());
+    assert!(records[2].get("roll_points").is_none());
+
+    let csv = std::fs::read_to_string(csv_path).unwrap();
+    let lines = csv.lines().collect::<Vec<_>>();
+    assert!(lines[1].contains("集點贈禮"));
+    assert!(lines[3].contains("沉眠地"));
 }
 
 #[test]
@@ -80,6 +165,15 @@ fn data_backup_zip_contains_manifest_and_profile_files() {
     assert!(names.contains(&"profiles/default/profile.json".to_string()));
     assert!(names.contains(&"profiles/default/records.json".to_string()));
     assert!(names.contains(&"profiles/default/last-run.json".to_string()));
+}
+
+fn removed_four_star_export_keys() -> [&'static str; 4] {
+    [
+        concat!("pity_", "4_before"),
+        concat!("pity_", "4_after"),
+        concat!("guarantee_", "4_before"),
+        concat!("guarantee_", "4_after"),
+    ]
 }
 
 #[test]

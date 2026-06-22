@@ -37,6 +37,7 @@
   grid-column: 1 / -1;
 }
 
+.dashboard-workbench .banner-thumb-rail,
 .dashboard-workbench .banner-grid,
 .dashboard-workbench .split,
 .dashboard-workbench > .panel,
@@ -246,6 +247,58 @@
   white-space: nowrap;
 }
 
+.banner-thumb-rail {
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.banner-thumb-rail button {
+  width: 128px;
+  min-width: 128px;
+  height: 74px;
+  display: grid;
+  grid-template-rows: 42px 1fr;
+  gap: 5px;
+  padding: 6px;
+  text-align: left;
+}
+
+.banner-thumb-rail button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.rail-thumb {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.rail-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.banner-thumb-rail button > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
 .banner-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -294,4 +347,64 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.latest-five-wall {
+  overflow: hidden;
+}
+
+.five-wall-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 8px;
+}
+
+.five-wall-item {
+  min-width: 0;
+  min-height: 136px;
+  display: grid;
+  grid-template-rows: 76px minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 7px;
+  text-align: left;
+  align-content: start;
+}
+
+.five-wall-thumb {
+  height: 76px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.five-wall-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.five-wall-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.five-wall-meta strong,
+.five-wall-meta small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.five-wall-meta small {
+  color: var(--text-muted);
+  font-size: 11px;
 }

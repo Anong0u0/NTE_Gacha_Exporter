@@ -19,6 +19,7 @@ pub struct CapturePublicRecord {
 pub struct CaptureRecordBuilder {
     map: MapData,
     seen_record_ids: BTreeMap<String, u64>,
+    next_source_order: u64,
 }
 
 struct CanonicalRow<'a> {
@@ -32,6 +33,7 @@ impl CaptureRecordBuilder {
         Ok(Self {
             map: load_map(locale)?,
             seen_record_ids: BTreeMap::new(),
+            next_source_order: 0,
         })
     }
 
@@ -42,7 +44,9 @@ impl CaptureRecordBuilder {
     pub fn build_record(&mut self, row: &ParsedRow) -> CapturePublicRecord {
         let canonical = canonical_row(row, &self.map);
         let record_id = self.next_record_id(&canonical);
-        let value = public_record(&canonical, record_id.clone());
+        let source_order = self.next_source_order;
+        self.next_source_order += 1;
+        let value = public_record(&canonical, record_id.clone(), source_order);
         CapturePublicRecord {
             record_id,
             record_type: row.record_type.as_str().to_string(),
@@ -77,12 +81,13 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
     let records = canonical_rows
         .iter()
         .zip(record_ids)
-        .map(|(row, record_id)| public_record(row, record_id))
+        .enumerate()
+        .map(|(source_order, (row, record_id))| public_record(row, record_id, source_order as u64))
         .collect::<Vec<_>>();
     Ok(json!({
         "info": {
             "schema": "nte-gacha-exporter-export",
-            "schema_version": "2.0",
+            "schema_version": "3.0",
             "export_app": "nte-gacha-exporter-desktop",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -108,9 +113,10 @@ fn canonical_row<'a>(row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
     }
 }
 
-fn public_record(row: &CanonicalRow<'_>, record_id: String) -> Value {
+fn public_record(row: &CanonicalRow<'_>, record_id: String, source_order: u64) -> Value {
     let mut object = Map::new();
     insert_string(&mut object, "record_id", record_id);
+    object.insert("source_order".to_string(), json!(source_order));
     insert_string(&mut object, "record_type", row.row.record_type.as_str());
     insert_opt_string(&mut object, "time", row_public_time(row.row));
     insert_opt_string(&mut object, "pool_id", row.row.pool_id.clone());
@@ -119,6 +125,7 @@ fn public_record(row: &CanonicalRow<'_>, record_id: String) -> Value {
     if let Some(roll_points) = row.row.roll_points {
         object.insert("roll_points".to_string(), json!(roll_points));
     }
+    insert_opt_string(&mut object, "roll_label_id", row.row.roll_label_id.clone());
     if let Some(secondary_item_id) = secondary_item_id(row) {
         insert_string(&mut object, "secondary_item_id", secondary_item_id);
         if let Some(secondary_count) = row.row.secondary_count {
@@ -179,7 +186,7 @@ fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
         }
     }
 
-    vec![
+    let mut material = vec![
         row.row.record_type.as_str().to_string(),
         row.row.ticks.to_string(),
         row.row.pool_id.clone().unwrap_or_default(),
@@ -195,7 +202,12 @@ fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
             .secondary_count
             .map(|value| value.to_string())
             .unwrap_or_default(),
-    ]
+    ];
+    if let Some(roll_label_id) = row.row.roll_label_id.as_ref() {
+        material.push("roll_label_id".to_string());
+        material.push(roll_label_id.clone());
+    }
+    material
 }
 
 fn record_id_from_material(material: &[String]) -> String {
@@ -252,6 +264,8 @@ mod tests {
             records[1]["record_id"],
             "c56d8202675fe561fbfaca53f78f01eaa5184c66e48b20573841f883e8c84fbc"
         );
+        assert_eq!(records[0]["source_order"], 0);
+        assert_eq!(records[1]["source_order"], 1);
 
         let mut builder = CaptureRecordBuilder::new("zh-Hant").unwrap();
         let incremental_records = builder
@@ -314,6 +328,20 @@ mod tests {
         assert_ne!(forward[0], forward[1]);
     }
 
+    #[test]
+    fn monopoly_record_id_material_includes_non_numeric_roll_label() {
+        let without_label_row = monopoly_protocol_parsed_row(None, None);
+        let with_label_row =
+            monopoly_protocol_parsed_row(None, Some("BPUI_LotteryResult_jidianzengli".to_string()));
+        let without_label = monopoly_protocol_canonical_row(&without_label_row);
+        let with_label = monopoly_protocol_canonical_row(&with_label_row);
+
+        assert_ne!(
+            record_id_material(&without_label),
+            record_id_material(&with_label)
+        );
+    }
+
     fn fork_protocol_parsed_row(query_high: bool, row_index: u32) -> ParsedRow {
         ParsedRow {
             record_type: RecordType::Fork,
@@ -343,6 +371,45 @@ mod tests {
     }
 
     fn fork_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
+        CanonicalRow {
+            row,
+            item_id: "fork_dustbin".to_string(),
+            secondary_item_id: None,
+        }
+    }
+
+    fn monopoly_protocol_parsed_row(
+        roll_points: Option<u32>,
+        roll_label_id: Option<String>,
+    ) -> ParsedRow {
+        ParsedRow {
+            record_type: RecordType::Monopoly,
+            ticks: 639_175_144_000_000_000,
+            time: Some("2026-06-20T00:00:00.000000".to_string()),
+            pool_id: Some("CardPool_Character".to_string()),
+            item_id: "fork_dustbin".to_string(),
+            count: 1,
+            roll_points,
+            roll_label_id,
+            secondary_item_id: None,
+            secondary_count: None,
+            source: SourceRef {
+                session: 0,
+                line: 1,
+                packet_index: 0,
+                view: "shift8:1".to_string(),
+                row_index: 0,
+                offset: 0,
+                stream_key: Some("monopoly".to_string()),
+                page_index: Some(0),
+                query_high: Some(true),
+                segment_index: Some(0),
+                generation_index: Some(0),
+            },
+        }
+    }
+
+    fn monopoly_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
         CanonicalRow {
             row,
             item_id: "fork_dustbin".to_string(),

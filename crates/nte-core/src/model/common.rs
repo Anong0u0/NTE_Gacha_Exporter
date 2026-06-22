@@ -177,8 +177,7 @@ pub enum PoolKind {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum BannerResolutionStatus {
-    Matched,
+pub enum BannerResolutionIssue {
     UnknownPool,
     UnknownTime,
     OutsideKnownWindows,
@@ -187,8 +186,7 @@ pub enum BannerResolutionStatus {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum RuleResolutionStatus {
-    Matched,
+pub enum RuleResolutionIssue {
     FallbackPoolKind,
     MissingBanner,
     MissingRule,
@@ -204,10 +202,43 @@ pub enum RateUpResult {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum RollBucket {
+    Gift,
+    Sleep,
+    #[serde(rename = "1")]
+    One,
+    #[serde(rename = "2")]
+    Two,
+    #[serde(rename = "3")]
+    Three,
+    #[serde(rename = "4")]
+    Four,
+    #[serde(rename = "5")]
+    Five,
+    #[serde(rename = "6")]
+    Six,
+    NotApplicable,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemKind {
+    Character,
+    Fork,
+    Appearance,
+    Inventory,
+    VehicleModule,
+    Unknown,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ResolvedBanner {
-    pub status: BannerResolutionStatus,
-    pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution_issue: Option<BannerResolutionIssue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
     pub banner_id: Option<String>,
     pub pool_id: Option<String>,
     pub pool_kind: Option<String>,
@@ -225,16 +256,16 @@ pub struct ResolvedBanner {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GachaRuleView {
-    pub status: RuleResolutionStatus,
-    pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution_issue: Option<RuleResolutionIssue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
     pub rule_id: Option<String>,
     pub pool_kind: PoolKind,
     pub hard_pity_5: Option<u64>,
-    pub hard_pity_4: Option<u64>,
+    pub hard_up_pity_5: Option<u64>,
     pub pickup_win_rate_5: Option<u8>,
-    pub pickup_win_rate_4: Option<u8>,
     pub has_guarantee_5: Option<bool>,
-    pub has_guarantee_4: Option<bool>,
     pub guarantee_scope: Option<String>,
     pub carry_scope: Option<String>,
 }

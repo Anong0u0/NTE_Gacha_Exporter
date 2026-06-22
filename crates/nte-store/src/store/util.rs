@@ -90,7 +90,10 @@ fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Re
 }
 
 fn normalize_records(records: &mut [InternalRecord]) {
-    for record in records {
+    for (index, record) in records.iter_mut().enumerate() {
+        if record.source_order == u64::MAX {
+            record.source_order = index as u64;
+        }
         if record
             .roll_points
             .is_some_and(|value| matches!(value, 0 | 4_294_967_295))
@@ -255,11 +258,7 @@ fn backup_entry_names(zip: &mut ZipArchive<fs::File>) -> Result<HashSet<String>,
 }
 
 fn sort_records(records: &mut [InternalRecord]) {
-    records.sort_by(|left, right| {
-        left.time
-            .cmp(&right.time)
-            .then_with(|| left.record_id.cmp(&right.record_id))
-    });
+    records.sort_by(compare_records_chronological);
 }
 
 fn now_stamp() -> String {

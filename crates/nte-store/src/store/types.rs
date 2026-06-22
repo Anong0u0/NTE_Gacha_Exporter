@@ -9,7 +9,7 @@ use atomic_write_file::AtomicWriteFile;
 use serde::{Deserialize, Serialize};
 use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
-use nte_core::parse_public_document;
+use nte_core::{compare_records_chronological, parse_public_document};
 use nte_core::{
     BackupReport, DashboardOverview, DashboardSelection, DashboardSelectionDetail, GuiError,
     ImportReport, InternalRecord, PoolKind, PoolKindDetail, Profile, RecordFilter,

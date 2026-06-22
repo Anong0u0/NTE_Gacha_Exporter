@@ -60,11 +60,6 @@ export function createAppComputed(deps: ComputedDeps) {
   );
   const canPrevPage = computed(() => deps.pageIndex.value > 0);
   const canNextPage = computed(() => recordPageEnd.value < deps.recordTotal.value);
-  const poolsForRecordKind = computed(() =>
-    deps.filterOptions.value.pools.filter(
-      (pool) => deps.recordPoolKind.value === "all" || pool.pool_kind === deps.recordPoolKind.value,
-    ),
-  );
   const bannersForRecordKind = computed(() =>
     deps.filterOptions.value.banners.filter(
       (banner) => deps.recordPoolKind.value === "all" || banner.pool_kind === deps.recordPoolKind.value,
@@ -134,7 +129,6 @@ export function createAppComputed(deps: ComputedDeps) {
     recordPageEnd,
     canPrevPage,
     canNextPage,
-    poolsForRecordKind,
     bannersForRecordKind,
     isCaptureActive,
     isWorkflowBusy,

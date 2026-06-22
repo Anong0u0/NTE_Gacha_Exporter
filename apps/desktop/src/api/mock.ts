@@ -1,24 +1,19 @@
 import type {
   AppApi,
   AssetResolveRequest,
-  AssetResolveResult,
   AssetsPackPackage,
-  AssetsPackCheckReport,
-  AssetsPackInstallReport,
-  AssetsPackStatus,
   CaptureMode,
   CaptureStatus,
   DashboardSelection,
   DashboardSelectionDetail,
   ImportReport,
+  ItemKind,
   PoolKind,
   PoolKindSummary,
   RecordFilter,
+  RollBucket,
   SettingsPatch,
   UpdatePackage,
-  UpdateCheckReport,
-  UpdateStageReport,
-  UpdateStatus,
 } from "./types";
 import {
   mockBanners,
@@ -54,18 +49,19 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
       : mockBanners.find((banner) => banner.banner_id === selection.banner_id)?.title;
   const poolKind = selection.pool_kind;
   const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
-  const fiveStarRecords = records.filter((record) => record.derived.hit_rarity === 5);
-  const fourStarRecords = records.filter((record) => record.derived.hit_rarity === 4);
+  const countableRecords = records.filter((record) => record.derived.counts_as_pull);
+  const fiveStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 5);
+  const fourStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 4);
   const summary: PoolKindSummary = {
     ...fallback,
     label: label ?? fallback.label,
-    total_pulls: records.length,
+    total_pulls: countableRecords.length,
     hit_count: fiveStarRecords.length,
     four_star_count: fourStarRecords.length,
     latest_5star: fiveStarRecords[0] ?? null,
   };
   const rarityCounts = new Map<number, number>();
-  for (const record of records) {
+  for (const record of countableRecords) {
     if (record.rarity != null) rarityCounts.set(record.rarity, (rarityCounts.get(record.rarity) ?? 0) + 1);
   }
   const knownTotal = [...rarityCounts.values()].reduce((total, count) => total + count, 0);
@@ -73,7 +69,7 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     .sort(([left], [right]) => right - left)
     .map(([rarity, count]) => ({ rarity, count, percent: knownTotal ? count / knownTotal : 0 }));
   const itemCounts = new Map<string, { item_name: string; rarity?: number | null; count: number }>();
-  for (const record of records) {
+  for (const record of countableRecords) {
     const entry = itemCounts.get(record.item_id) ?? {
       item_name: record.item_name,
       rarity: record.rarity,
@@ -95,13 +91,6 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
       result: record.derived.rate_up_result,
       guarantee_before: record.derived.guarantee_5_before,
       guarantee_after: record.derived.guarantee_5_after,
-    })),
-    four_star_history: fourStarRecords.map((record) => ({
-      record,
-      pity_distance: record.derived.pity_4_before + 1,
-      result: record.derived.rate_up_result,
-      guarantee_before: record.derived.guarantee_4_before,
-      guarantee_after: record.derived.guarantee_4_after,
     })),
     rarity_distribution,
     item_ranking,
@@ -205,22 +194,18 @@ export const mockApi: AppApi = {
           not_applicable_rate_up_count: 0,
           unknown_rate_up_count: 0,
           observed_up_rate: null,
+          fork_win_count: 0,
+          fork_loss_count: 0,
+          fork_forced_up_count: 0,
+          fork_observed_25_75_win_rate: null,
           latest_5star: null,
-          current_4star_pity: 0,
-          hard_pity_4: null,
-          average_4star_pity: null,
-          min_4star_pity: null,
-          max_4star_pity: null,
           four_star_count: 0,
           rate_up_4_count: 0,
           off_rate_4_count: 0,
           not_applicable_rate_up_4_count: 0,
           unknown_rate_up_4_count: 0,
-          rule_resolution_status: "fallback_pool_kind",
           average_roll_points_to_5star: null,
-          average_roll_points_to_4star: null,
           roll_point_cost_samples_5star: 0,
-          roll_point_cost_samples_4star: 0,
         },
       ],
       banners: mockBanners,
@@ -251,7 +236,6 @@ export const mockApi: AppApi = {
             },
           ]
         : [],
-      four_star_history: [],
     };
   },
   async dashboardSelectionDetail(_profileName: string, selection: DashboardSelection) {
@@ -261,20 +245,27 @@ export const mockApi: AppApi = {
     const search = filter.search?.toLowerCase().trim();
     let records = mockRecords.filter((record) => {
       if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
-      if (filter.pool_id && record.pool_id !== filter.pool_id) return false;
-      if (filter.banner_id && record.derived.banner_id !== filter.banner_id) return false;
-      if (filter.record_type && record.record_type !== filter.record_type) return false;
-      if (filter.rarity && record.rarity !== filter.rarity) return false;
-      if (filter.hit_rarity && record.derived.hit_rarity !== filter.hit_rarity) return false;
-      if (filter.rate_up_result && record.derived.rate_up_result !== filter.rate_up_result) return false;
-      if (filter.pity_5_min != null && record.derived.pity_5_before < filter.pity_5_min) return false;
-      if (filter.pity_5_max != null && record.derived.pity_5_before > filter.pity_5_max) return false;
-      if (filter.pity_4_min != null && record.derived.pity_4_before < filter.pity_4_min) return false;
-      if (filter.pity_4_max != null && record.derived.pity_4_before > filter.pity_4_max) return false;
+      if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
+      if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
+      if (filter.hit_rarities?.length && (record.derived.hit_rarity == null || !filter.hit_rarities.includes(record.derived.hit_rarity))) return false;
+      if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;
+      if (filter.roll_buckets?.length && !filter.roll_buckets.includes(mockRollBucket(record))) return false;
+      if (filter.item_kinds?.length && !filter.item_kinds.includes(mockItemKind(record))) return false;
       if (search && !`${record.item_name} ${record.item_id}`.toLowerCase().includes(search)) return false;
       return true;
     });
-    records = [...records].sort((left, right) => String(right.time ?? "").localeCompare(String(left.time ?? "")));
+    const direction = filter.sort_direction ?? "desc";
+    records = [...records].sort((left, right) => {
+      const leftTime = left.time ?? null;
+      const rightTime = right.time ?? null;
+      if (leftTime !== null && rightTime === null) return -1;
+      if (leftTime === null && rightTime !== null) return 1;
+      const timeOrder =
+        direction === "asc"
+          ? String(leftTime ?? "").localeCompare(String(rightTime ?? ""))
+          : String(rightTime ?? "").localeCompare(String(leftTime ?? ""));
+      return timeOrder || left.source_order - right.source_order || left.record_id.localeCompare(right.record_id);
+    });
     const offset = filter.offset ?? 0;
     const limit = filter.limit ?? 50;
     return { total: records.length, records: records.slice(offset, offset + limit) };
@@ -426,6 +417,22 @@ export const mockApi: AppApi = {
     return mockCaptureStatus(sessionId);
   },
 };
+
+function mockRollBucket(record: { roll_label_id?: string | null; roll_points?: number | null }): RollBucket {
+  if (record.roll_label_id === "BPUI_LotteryResult_jidianzengli") return "gift";
+  if (record.roll_label_id === "BPUI_LotteryResult_chenmiandi") return "sleep";
+  if (record.roll_points != null && record.roll_points >= 1 && record.roll_points <= 6) return String(record.roll_points) as RollBucket;
+  return "not_applicable";
+}
+
+function mockItemKind(record: { item_id: string; record_type: string }): ItemKind {
+  if (record.item_id.startsWith("rare_")) return "character";
+  if (record.item_id.startsWith("fork_") || record.record_type === "fork") return "fork";
+  if (record.item_id.startsWith("appearance_")) return "appearance";
+  if (record.item_id.startsWith("vehicle_")) return "vehicle_module";
+  if (record.item_id.startsWith("common_")) return "inventory";
+  return "unknown";
+}
 
 function mockReport(profileName: string, sourceKind: string, sourcePath: string): ImportReport {
   return {

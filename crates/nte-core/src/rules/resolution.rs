@@ -1,6 +1,6 @@
 use crate::{
-    BannerResolutionStatus, GachaRuleView, GuiError, InternalRecord, PoolKind, RateUpResult,
-    RecordDerived, ResolvedBanner, RuleResolutionStatus,
+    GachaRuleView, GuiError, InternalRecord, PoolKind, RateUpResult, RecordDerived,
+    ResolvedBanner, RuleResolutionIssue,
 };
 use crate::{MapData, MapGachaRule};
 
@@ -9,19 +9,17 @@ pub struct GachaRule {
     pub rule_id: Option<String>,
     pub pool_kind: PoolKind,
     pub hard_pity_5: Option<u64>,
-    pub hard_pity_4: Option<u64>,
+    pub hard_up_pity_5: Option<u64>,
     pub pickup_win_rate_5: Option<u8>,
-    pub pickup_win_rate_4: Option<u8>,
     pub has_guarantee_5: Option<bool>,
-    pub has_guarantee_4: Option<bool>,
     pub guarantee_scope: Option<String>,
     pub carry_scope: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuleResolution {
-    pub status: RuleResolutionStatus,
-    pub reason: String,
+    pub resolution_issue: Option<RuleResolutionIssue>,
+    pub reason: Option<String>,
     pub rule: GachaRule,
 }
 
@@ -41,10 +39,8 @@ pub struct DerivedHit {
 pub struct PoolKindDerivedStats {
     pub total_pulls: u64,
     pub current_5star_pity: u64,
-    pub current_4star_pity: u64,
     pub current_5star_guarantee: Option<bool>,
     pub five_star_history: Vec<DerivedHit>,
-    pub four_star_history: Vec<DerivedHit>,
     pub summary_rule: RuleResolution,
 }
 
@@ -63,11 +59,9 @@ pub fn fallback_rule_for(kind: PoolKind) -> GachaRule {
             rule_id: Some("fallback_monopoly_limited".to_string()),
             pool_kind: kind,
             hard_pity_5: Some(90),
-            hard_pity_4: None,
+            hard_up_pity_5: None,
             pickup_win_rate_5: None,
-            pickup_win_rate_4: None,
             has_guarantee_5: Some(false),
-            has_guarantee_4: None,
             guarantee_scope: Some("unknown".to_string()),
             carry_scope: Some("pool_kind".to_string()),
         },
@@ -75,23 +69,19 @@ pub fn fallback_rule_for(kind: PoolKind) -> GachaRule {
             rule_id: Some("fallback_monopoly_standard".to_string()),
             pool_kind: kind,
             hard_pity_5: Some(90),
-            hard_pity_4: None,
+            hard_up_pity_5: None,
             pickup_win_rate_5: None,
-            pickup_win_rate_4: None,
             has_guarantee_5: Some(false),
-            has_guarantee_4: None,
             guarantee_scope: Some("unknown".to_string()),
             carry_scope: Some("pool_kind".to_string()),
         },
         PoolKind::ForkLottery => GachaRule {
             rule_id: Some("fallback_fork_lottery".to_string()),
             pool_kind: kind,
-            hard_pity_5: Some(80),
-            hard_pity_4: None,
+            hard_pity_5: Some(60),
+            hard_up_pity_5: Some(80),
             pickup_win_rate_5: Some(25),
-            pickup_win_rate_4: None,
             has_guarantee_5: Some(true),
-            has_guarantee_4: None,
             guarantee_scope: Some("pool_kind".to_string()),
             carry_scope: Some("pool_kind".to_string()),
         },
@@ -104,12 +94,12 @@ pub fn rule_for(kind: PoolKind) -> GachaRule {
 
 pub fn fallback_rule_resolution(
     kind: PoolKind,
-    status: RuleResolutionStatus,
+    issue: RuleResolutionIssue,
     reason: impl Into<String>,
 ) -> RuleResolution {
     RuleResolution {
-        status,
-        reason: reason.into(),
+        resolution_issue: Some(issue),
+        reason: Some(reason.into()),
         rule: fallback_rule_for(kind),
     }
 }
@@ -125,40 +115,40 @@ pub fn rule_for_resolved_banner(
     banner: &ResolvedBanner,
 ) -> Result<RuleResolution, GuiError> {
     let kind = classify_pool_id(&record.pool_id)?;
-    if banner.status != BannerResolutionStatus::Matched {
+    if let Some(issue) = banner.resolution_issue {
         return Ok(fallback_rule_resolution(
             kind,
-            RuleResolutionStatus::MissingBanner,
-            format!("banner resolution is {:?}", banner.status),
+            RuleResolutionIssue::MissingBanner,
+            format!("banner resolution issue is {issue:?}"),
         ));
     }
     let Some(rule_id) = banner.rule_id.as_deref() else {
         return Ok(fallback_rule_resolution(
             kind,
-            RuleResolutionStatus::MissingRule,
-            "matched banner has no rule_id",
+            RuleResolutionIssue::MissingRule,
+            "resolved banner has no rule_id",
         ));
     };
     let Some(rule) = map.gacha_rule(rule_id) else {
         return Ok(fallback_rule_resolution(
             kind,
-            RuleResolutionStatus::MissingRule,
+            RuleResolutionIssue::MissingRule,
             format!("gacha rule is not in map: {rule_id}"),
         ));
     };
     let normalized = rule_from_map(rule, kind);
-    let status = if unsupported_scope(rule) {
-        RuleResolutionStatus::UnsupportedScope
+    let resolution_issue = if unsupported_scope(rule) {
+        Some(RuleResolutionIssue::UnsupportedScope)
     } else {
-        RuleResolutionStatus::Matched
+        None
     };
-    let reason = if status == RuleResolutionStatus::UnsupportedScope {
-        "gacha rule has unsupported scope".to_string()
+    let reason = if resolution_issue == Some(RuleResolutionIssue::UnsupportedScope) {
+        Some("gacha rule has unsupported scope".to_string())
     } else {
-        "matched".to_string()
+        None
     };
     Ok(RuleResolution {
-        status,
+        resolution_issue,
         reason,
         rule: normalized,
     })
@@ -170,7 +160,7 @@ pub fn rate_up_result(
     rarity: u8,
     banner: &ResolvedBanner,
 ) -> RateUpResult {
-    if banner.status != BannerResolutionStatus::Matched {
+    if banner.resolution_issue.is_some() {
         return RateUpResult::Unknown;
     }
     let canonical = map.canonical_item_id(&record.item_id);

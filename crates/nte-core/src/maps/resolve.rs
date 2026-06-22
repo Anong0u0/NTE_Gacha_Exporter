@@ -33,7 +33,7 @@ fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> Re
         Some(value) => value,
         None => {
             return unresolved(
-                BannerResolutionStatus::UnknownTime,
+                BannerResolutionIssue::UnknownTime,
                 "limited banner resolution requires valid record time",
             );
         }
@@ -55,7 +55,7 @@ fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> Re
 
     if windows.is_empty() {
         return unresolved(
-            BannerResolutionStatus::UnknownPool,
+            BannerResolutionIssue::UnknownPool,
             "pool has no linked limited banners",
         );
     }
@@ -77,13 +77,13 @@ fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> Re
     }
 
     match matches.len() {
-        1 => matched(matches[0]),
+        1 => resolved(matches[0]),
         0 => unresolved(
-            BannerResolutionStatus::OutsideKnownWindows,
+            BannerResolutionIssue::OutsideKnownWindows,
             "record time is outside known limited banner windows",
         ),
         _ => unresolved(
-            BannerResolutionStatus::Ambiguous,
+            BannerResolutionIssue::Ambiguous,
             "multiple limited banners match record time",
         ),
     }
@@ -99,22 +99,22 @@ fn single_banner(
         .filter(|banner| banner.banner_type == banner_type)
         .collect::<Vec<_>>();
     match matches.len() {
-        1 => matched(matches[0]),
+        1 => resolved(matches[0]),
         0 => unresolved(
-            BannerResolutionStatus::UnknownPool,
+            BannerResolutionIssue::UnknownPool,
             format!("pool has no linked {reason_label} banner"),
         ),
         _ => unresolved(
-            BannerResolutionStatus::Ambiguous,
+            BannerResolutionIssue::Ambiguous,
             format!("multiple {reason_label} banners are linked"),
         ),
     }
 }
 
-fn matched(banner: &MapBanner) -> ResolvedBanner {
+fn resolved(banner: &MapBanner) -> ResolvedBanner {
     ResolvedBanner {
-        status: BannerResolutionStatus::Matched,
-        reason: "matched".to_string(),
+        resolution_issue: None,
+        reason: None,
         banner_id: Some(banner.banner_id.clone()),
         pool_id: Some(banner.pool_id.clone()),
         pool_kind: Some(banner.pool_kind.clone()),
@@ -131,10 +131,10 @@ fn matched(banner: &MapBanner) -> ResolvedBanner {
     }
 }
 
-fn unresolved(status: BannerResolutionStatus, reason: impl Into<String>) -> ResolvedBanner {
+fn unresolved(issue: BannerResolutionIssue, reason: impl Into<String>) -> ResolvedBanner {
     ResolvedBanner {
-        status,
-        reason: reason.into(),
+        resolution_issue: Some(issue),
+        reason: Some(reason.into()),
         banner_id: None,
         pool_id: None,
         pool_kind: None,

@@ -2,6 +2,10 @@
   width: 72px;
 }
 
+.pager select.time-order-select {
+  width: 132px;
+}
+
 .pager button {
   width: 32px;
   padding: 0;

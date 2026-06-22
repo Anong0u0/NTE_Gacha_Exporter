@@ -24,6 +24,25 @@ impl MapData {
         self.item(item_id).map(|(_, item)| item.rarity)
     }
 
+    pub fn item_kind(&self, item_id: &str) -> ItemKind {
+        self.item(item_id)
+            .map(|(_, item)| {
+                item_kind_from_taxonomy(
+                    item.category.as_deref(),
+                    item.domain_type.as_deref(),
+                    item.subtype.as_deref(),
+                )
+            })
+            .unwrap_or(ItemKind::Unknown)
+    }
+
+    pub fn label(&self, label_id: &str) -> String {
+        self.labels
+            .get(label_id)
+            .cloned()
+            .unwrap_or_else(|| label_id.to_string())
+    }
+
     pub fn gacha_rule(&self, rule_id: &str) -> Option<&MapGachaRule> {
         self.gacha_rules.get(rule_id)
     }
@@ -34,7 +53,7 @@ impl MapData {
 
     pub fn banner_label(&self, pool_id: &str, time: Option<&str>) -> String {
         let resolved = self.resolve_banner(pool_id, time);
-        if resolved.status == BannerResolutionStatus::Matched {
+        if resolved.resolution_issue.is_none() {
             if let Some(title) = resolved.title {
                 return title;
             }
@@ -108,7 +127,7 @@ impl MapData {
     ) -> bool {
         let canonical = self.canonical_item_id(item_id);
         let resolved = self.resolve_banner(pool_id, time);
-        if resolved.status != BannerResolutionStatus::Matched {
+        if resolved.resolution_issue.is_some() {
             return self.is_pickup_item(pool_id, item_id);
         }
         match rarity {
@@ -127,13 +146,13 @@ impl MapData {
     pub fn resolve_banner(&self, pool_id: &str, time: Option<&str>) -> ResolvedBanner {
         let Some(pool) = self.pools.get(pool_id) else {
             return unresolved(
-                BannerResolutionStatus::UnknownPool,
+                BannerResolutionIssue::UnknownPool,
                 format!("pool is not in localization map: {pool_id}"),
             );
         };
         let Some(banner_ids) = pool.banner_ids.as_ref() else {
             return unresolved(
-                BannerResolutionStatus::UnknownPool,
+                BannerResolutionIssue::UnknownPool,
                 format!("pool has no linked banners: {pool_id}"),
             );
         };
@@ -145,7 +164,7 @@ impl MapData {
             .collect::<Vec<_>>();
         if candidates.is_empty() {
             return unresolved(
-                BannerResolutionStatus::UnknownPool,
+                BannerResolutionIssue::UnknownPool,
                 format!("pool has no usable linked banners: {pool_id}"),
             );
         }
@@ -166,9 +185,29 @@ impl MapData {
                 }
             }
             _ => unresolved(
-                BannerResolutionStatus::UnknownPool,
+                BannerResolutionIssue::UnknownPool,
                 format!("pool has unsupported banner resolution: {pool_id}"),
             ),
         }
+    }
+}
+
+fn item_kind_from_taxonomy(
+    category: Option<&str>,
+    domain_type: Option<&str>,
+    subtype: Option<&str>,
+) -> ItemKind {
+    let normalized = category
+        .or(domain_type)
+        .or(subtype)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    match normalized {
+        Some("character") => ItemKind::Character,
+        Some("fork") => ItemKind::Fork,
+        Some("appearance") => ItemKind::Appearance,
+        Some("inventory") => ItemKind::Inventory,
+        Some("vehicle_module") => ItemKind::VehicleModule,
+        _ => ItemKind::Unknown,
     }
 }

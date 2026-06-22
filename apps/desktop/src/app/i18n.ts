@@ -3,7 +3,7 @@ import type { Ref } from "vue";
 import enMessages from "../assets/i18n/en.json";
 import zhHantMessages from "../assets/i18n/zh-Hant.json";
 
-export const fallbackUiLocale = "en";
+const fallbackUiLocale = "en";
 
 const en = enMessages;
 type EnMessages = typeof en;
@@ -16,19 +16,13 @@ const dictionaries: Record<string, Messages> = {
   "zh-Hant": zhHantMessages,
 };
 
-export const dictionaryUiLocales = Object.keys(dictionaries);
-
 export function createTranslator(uiLocale: Ref<string>) {
   return (key: I18nKey, params?: I18nParams) => translate(uiLocale.value, key, params);
 }
 
-export function translate(locale: string, key: I18nKey, params?: I18nParams) {
+function translate(locale: string, key: I18nKey, params?: I18nParams) {
   const messages = dictionaries[locale] ?? dictionaries[fallbackUiLocale];
   return interpolate(messages[key] ?? en[key] ?? key, params);
-}
-
-export function uiLocaleHasDictionary(locale: string) {
-  return locale in dictionaries;
 }
 
 export function uiLocaleDisplayName(locale: string, t: (key: I18nKey, params?: I18nParams) => string) {

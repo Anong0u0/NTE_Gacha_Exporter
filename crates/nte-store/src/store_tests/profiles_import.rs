@@ -291,7 +291,7 @@ fn fork_pool_missing_from_maps_rejects_entire_import() {
 }
 
 #[test]
-fn public_json_accepts_v1_v2_and_rejects_unsupported_major_versions() {
+fn public_json_accepts_v1_v2_v3_and_rejects_unsupported_major_versions() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let v1_minor = serde_json::json!({
@@ -336,6 +336,18 @@ fn public_json_accepts_v1_v2_and_rejects_unsupported_major_versions() {
         }
     })
     .to_string();
+    let v4_major = serde_json::json!({
+        "info": {
+            "schema": "nte-gacha-exporter-export",
+            "schema_version": "4.0"
+        },
+        "nte": {
+            "list": [
+                record("r4", "CardPool_Character", "fork_dustbin", "2026-01-01 10:03:00")
+            ]
+        }
+    })
+    .to_string();
 
     assert!(
         store
@@ -350,6 +362,51 @@ fn public_json_accepts_v1_v2_and_rejects_unsupported_major_versions() {
     assert!(
         store
             .import_public_document("default", &v3_major, "json", None)
+            .is_ok()
+    );
+    assert!(
+        store
+            .import_public_document("default", &v4_major, "json", None)
             .is_err()
     );
+}
+
+#[test]
+fn public_json_falls_back_to_list_index_for_source_order() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record(
+            "later-source",
+            "ForkLottery_AnHunQu",
+            "DiceNormal",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "earlier-source",
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+    ]);
+
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+    let list = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(list.records[0].record_id, "later-source");
+    assert_eq!(list.records[0].source_order, 0);
+    assert_eq!(list.records[1].record_id, "earlier-source");
+    assert_eq!(list.records[1].source_order, 1);
+    assert_eq!(list.records[1].derived.pull_no_in_pool_kind, Some(1));
 }

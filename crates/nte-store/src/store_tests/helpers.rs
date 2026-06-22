@@ -4,8 +4,8 @@ use std::io::Write;
 
 use super::{JsonStore, StoreDefaults};
 use nte_core::{
-    DashboardSelection, PoolKind, RateUpResult, RecordFilter, RecordSortKey, SettingsPatch,
-    SortDirection,
+    DashboardSelection, ItemKind, PoolKind, RateUpResult, RecordFilter, RollBucket,
+    SettingsPatch, SortDirection,
 };
 
 fn public_document(records: Vec<serde_json::Value>) -> String {

@@ -3,6 +3,7 @@ mod derived;
 mod export;
 mod maps;
 mod model;
+mod order;
 mod public_json;
 mod rules;
 
@@ -18,15 +19,19 @@ pub use maps::{
 };
 pub use model::{
     AssetsPackAsset, AssetsPackCheckReport, AssetsPackInstallReport, AssetsPackManifest,
-    AssetsPackPackage, AssetsPackStatus, BackupReport, BannerResolutionStatus, BannerSummary,
+    AssetsPackPackage, AssetsPackStatus, BackupReport, BannerResolutionIssue, BannerSummary,
     DashboardOverview, DashboardSelection, DashboardSelectionDetail, DisplayRecord, FiveStarRecord,
-    FiveStarResult, FourStarRecord, GachaRuleView, GuiError, ImportReport, InternalRecord,
-    ItemRank, MapLocaleList, PoolKind, PoolKindDetail, PoolKindSummary, Profile, RarityBucket,
-    RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions, RecordList,
-    RecordPoolOption, RecordSortKey, RecordTypeOption, ResolvedBanner, RestoreReport,
-    RuleResolutionStatus, Settings, SettingsPatch, SortDirection, TimeBucketSummary, TimeStats,
+    FiveStarResult, GachaRuleView, GuiError, ImportReport, InternalRecord, ItemKind, ItemRank,
+    MapLocaleList, PoolKind, PoolKindDetail, PoolKindSummary, Profile, RarityBucket, RateUpResult,
+    RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions, RecordItemKindOption,
+    RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport, RollBucket,
+    RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary, TimeStats,
     UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage,
     UpdateStageReport, UpdateStatus,
+};
+pub use order::{
+    compare_display_chronological, compare_display_newest_first, compare_records_chronological,
+    compare_records_for_analysis, compare_time_asc,
 };
 pub use public_json::parse_public_document;
 pub use rules::{

@@ -24,6 +24,10 @@ mod tests {
         );
         assert_eq!(
             map["gacha_rules"]["fork_lottery_s"]["hard_pity_5"],
+            json!(60)
+        );
+        assert_eq!(
+            map["gacha_rules"]["fork_lottery_s"]["hard_up_pity_5"],
             json!(80)
         );
         assert_eq!(map["labels"]["UW_LotteryBase_BP_Hupanyanmu"], "Fork Group");

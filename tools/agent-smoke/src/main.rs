@@ -16,11 +16,11 @@ use api::{
     action, agent_elements, eval_js, expect_text, find_agent_element, health,
     print_agent_element_plain, print_agent_elements_plain, snapshot, wait_agent_element,
 };
-use cli::{Cli, CommandKind, SmokeOptions};
+use cli::{Cli, CommandKind, DEFAULT_LAUNCH_SMOKE_TIMEOUT_SECS, DEFAULT_OUT_DIR, SmokeOptions};
 use report::AgentIdsOutput;
 use runtime::{run_agent_build, run_agent_launch};
 use smoke::run_smoke;
-use util::{print_json, write_json, write_png};
+use util::{print_json, write_png};
 use window::{capture_window, find_window, image_metrics};
 
 fn main() -> Result<()> {
@@ -29,27 +29,18 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
         CommandKind::Build { force } => run_agent_build(force),
-        CommandKind::Launch {
-            addr,
-            timeout_secs,
-            out,
-        } => {
-            let output = run_agent_launch(&addr, Duration::from_secs(timeout_secs))?;
-            if let Some(out) = out {
-                write_json(out, &output)?;
-            } else {
-                print_json(&output)?;
-            }
+        CommandKind::Launch { addr } => {
+            let output = run_agent_launch(
+                &addr,
+                Duration::from_secs(DEFAULT_LAUNCH_SMOKE_TIMEOUT_SECS),
+            )?;
+            print_json(&output)?;
             Ok(())
         }
-        CommandKind::Smoke {
-            out_dir,
+        CommandKind::Smoke { addr } => run_smoke(SmokeOptions {
+            out_dir: DEFAULT_OUT_DIR.into(),
             addr,
-            timeout_secs,
-        } => run_smoke(SmokeOptions {
-            out_dir,
-            addr,
-            timeout: Duration::from_secs(timeout_secs),
+            timeout: Duration::from_secs(DEFAULT_LAUNCH_SMOKE_TIMEOUT_SECS),
         }),
         CommandKind::Health { addr } => print_value(health(&addr)?),
         CommandKind::Snapshot { addr } => print_value(snapshot(&addr)?),

@@ -1,14 +1,22 @@
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct InternalRecord {
     pub record_id: String,
+    #[serde(default = "missing_source_order")]
+    pub source_order: u64,
     pub record_type: String,
     pub time: Option<String>,
     pub pool_id: String,
     pub item_id: String,
     pub count: Option<i64>,
     pub roll_points: Option<i64>,
+    #[serde(default)]
+    pub roll_label_id: Option<String>,
     pub secondary_item_id: Option<String>,
     pub secondary_count: Option<i64>,
+}
+
+pub fn missing_source_order() -> u64 {
+    u64::MAX
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -41,21 +49,21 @@ pub struct BannerSummary {
     pub five_star_count: u64,
     pub four_star_count: u64,
     pub current_5star_pity: u64,
-    pub current_4star_pity: u64,
     pub average_5star_pity: Option<f64>,
-    pub average_4star_pity: Option<f64>,
     pub rate_up_5_count: u64,
     pub off_rate_5_count: u64,
     pub not_applicable_rate_up_5_count: u64,
     pub unknown_rate_up_5_count: u64,
+    pub fork_win_count: u64,
+    pub fork_loss_count: u64,
+    pub fork_forced_up_count: u64,
+    pub fork_observed_25_75_win_rate: Option<f64>,
     pub rate_up_4_count: u64,
     pub off_rate_4_count: u64,
     pub not_applicable_rate_up_4_count: u64,
     pub unknown_rate_up_4_count: u64,
     pub average_roll_points_to_5star: Option<f64>,
-    pub average_roll_points_to_4star: Option<f64>,
     pub roll_point_cost_samples_5star: u64,
-    pub roll_point_cost_samples_4star: u64,
     pub latest_hit: Option<DisplayRecord>,
 }
 
@@ -76,25 +84,6 @@ pub struct TimeBucketSummary {
     pub known_roll_point_records: u64,
     pub missing_roll_point_records: u64,
     pub average_5star_pity: Option<f64>,
-    pub average_4star_pity: Option<f64>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum RecordSortKey {
-    #[default]
-    Time,
-    Pool,
-    Item,
-    Rarity,
-    RecordType,
-    Banner,
-    PullNo,
-    #[serde(rename = "pity_5")]
-    Pity5,
-    #[serde(rename = "pity_4")]
-    Pity4,
-    RateUp,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -126,29 +115,24 @@ pub struct PoolKindSummary {
     pub not_applicable_rate_up_count: u64,
     pub unknown_rate_up_count: u64,
     pub observed_up_rate: Option<f64>,
+    pub fork_win_count: u64,
+    pub fork_loss_count: u64,
+    pub fork_forced_up_count: u64,
+    pub fork_observed_25_75_win_rate: Option<f64>,
     pub latest_5star: Option<DisplayRecord>,
-    pub current_4star_pity: u64,
-    pub hard_pity_4: Option<u64>,
-    pub average_4star_pity: Option<f64>,
-    pub min_4star_pity: Option<u64>,
-    pub max_4star_pity: Option<u64>,
     pub four_star_count: u64,
     pub rate_up_4_count: u64,
     pub off_rate_4_count: u64,
     pub not_applicable_rate_up_4_count: u64,
     pub unknown_rate_up_4_count: u64,
-    pub rule_resolution_status: RuleResolutionStatus,
     pub average_roll_points_to_5star: Option<f64>,
-    pub average_roll_points_to_4star: Option<f64>,
     pub roll_point_cost_samples_5star: u64,
-    pub roll_point_cost_samples_4star: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PoolKindDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
-    pub four_star_history: Vec<FourStarRecord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -165,7 +149,6 @@ pub enum DashboardSelection {
 pub struct DashboardSelectionDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
-    pub four_star_history: Vec<FourStarRecord>,
     pub rarity_distribution: Vec<RarityBucket>,
     pub item_ranking: Vec<ItemRank>,
 }
@@ -175,15 +158,6 @@ pub struct FiveStarRecord {
     pub record: DisplayRecord,
     pub pity_distance: u64,
     pub result: FiveStarResult,
-    pub guarantee_before: Option<bool>,
-    pub guarantee_after: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct FourStarRecord {
-    pub record: DisplayRecord,
-    pub pity_distance: u64,
-    pub result: RateUpResult,
     pub guarantee_before: Option<bool>,
     pub guarantee_after: Option<bool>,
 }

@@ -32,66 +32,51 @@ pub fn list_records(
         {
             continue;
         }
-        if filter
-            .pool_id
-            .as_deref()
-            .is_some_and(|pool_id| pool_id != display.pool_id)
+        if !filter.banner_ids.is_empty()
+            && !display
+                .derived
+                .banner_id
+                .as_ref()
+                .is_some_and(|banner_id| filter.banner_ids.iter().any(|id| id == banner_id))
         {
             continue;
         }
-        if filter
-            .banner_id
-            .as_deref()
-            .is_some_and(|banner_id| display.derived.banner_id.as_deref() != Some(banner_id))
+        if !filter.rarities.is_empty()
+            && !filter
+                .rarities
+                .iter()
+                .any(|rarity| display.rarity == Some(*rarity))
         {
             continue;
         }
-        if filter
-            .record_type
-            .as_deref()
-            .is_some_and(|record_type| record_type != display.record_type)
+        if !filter.hit_rarities.is_empty()
+            && !filter
+                .hit_rarities
+                .iter()
+                .any(|rarity| display.derived.hit_rarity == Some(*rarity))
         {
             continue;
         }
-        if filter
-            .rarity
-            .is_some_and(|rarity| display.rarity != Some(rarity))
+        if !filter.rate_up_results.is_empty()
+            && !filter
+                .rate_up_results
+                .contains(&display.derived.rate_up_result)
         {
             continue;
         }
-        if filter
-            .hit_rarity
-            .is_some_and(|rarity| display.derived.hit_rarity != Some(rarity))
+        if !filter.roll_buckets.is_empty()
+            && !filter
+                .roll_buckets
+                .iter()
+                .any(|bucket| *bucket == roll_bucket(&display))
         {
             continue;
         }
-        if filter
-            .rate_up_result
-            .is_some_and(|result| display.derived.rate_up_result != result)
-        {
-            continue;
-        }
-        if filter
-            .pity_5_min
-            .is_some_and(|min| display.derived.pity_5_before < min)
-        {
-            continue;
-        }
-        if filter
-            .pity_5_max
-            .is_some_and(|max| display.derived.pity_5_before > max)
-        {
-            continue;
-        }
-        if filter
-            .pity_4_min
-            .is_some_and(|min| display.derived.pity_4_before < min)
-        {
-            continue;
-        }
-        if filter
-            .pity_4_max
-            .is_some_and(|max| display.derived.pity_4_before > max)
+        if !filter.item_kinds.is_empty()
+            && !filter
+                .item_kinds
+                .iter()
+                .any(|item_kind| *item_kind == map.item_kind(&display.item_id))
         {
             continue;
         }
@@ -152,11 +137,7 @@ pub fn list_records(
         matching.push(display);
     }
 
-    sort_display_records(
-        &mut matching,
-        filter.sort_key.unwrap_or_default(),
-        filter.sort_direction.unwrap_or_default(),
-    );
+    sort_display_records(&mut matching, filter.sort_direction.unwrap_or_default());
     let total = matching.len() as u64;
     let page = matching
         .into_iter()
@@ -173,20 +154,13 @@ pub fn record_filter_options(
     records: &[InternalRecord],
     map: &MapData,
 ) -> Result<RecordFilterOptions, GuiError> {
-    let mut pools: HashMap<String, RecordPoolOption> = HashMap::new();
     let mut banners: HashMap<String, RecordBannerOption> = HashMap::new();
-    let mut record_types: HashMap<String, u64> = HashMap::new();
+    let mut roll_buckets: HashMap<RollBucket, u64> = HashMap::new();
+    let mut item_kinds: HashMap<ItemKind, u64> = HashMap::new();
 
     for record in display_records(records, map)? {
-        pools
-            .entry(record.pool_id.clone())
-            .and_modify(|option| option.count += 1)
-            .or_insert_with(|| RecordPoolOption {
-                pool_id: record.pool_id.clone(),
-                pool_kind: record.pool_kind,
-                label: record.pool_label.clone(),
-                count: 1,
-            });
+        *roll_buckets.entry(roll_bucket(&record)).or_default() += 1;
+        *item_kinds.entry(map.item_kind(&record.item_id)).or_default() += 1;
         if let Some(banner_id) = record.derived.banner_id.as_ref() {
             banners
                 .entry(banner_id.clone())
@@ -202,22 +176,8 @@ pub fn record_filter_options(
                     count: 1,
                 });
         }
-        *record_types.entry(record.record_type.clone()).or_default() += 1;
     }
 
-    let mut pools = pools.into_values().collect::<Vec<_>>();
-    pools.sort_by(|left, right| {
-        left.pool_kind
-            .cmp(&right.pool_kind)
-            .then_with(|| left.label.cmp(&right.label))
-            .then_with(|| left.pool_id.cmp(&right.pool_id))
-    });
-
-    let mut record_types = record_types
-        .into_iter()
-        .map(|(record_type, count)| RecordTypeOption { record_type, count })
-        .collect::<Vec<_>>();
-    record_types.sort_by(|left, right| left.record_type.cmp(&right.record_type));
     let mut banners = banners.into_values().collect::<Vec<_>>();
     banners.sort_by(|left, right| {
         left.pool_kind
@@ -227,9 +187,21 @@ pub fn record_filter_options(
     });
 
     Ok(RecordFilterOptions {
-        pools,
         banners,
-        record_types,
+        roll_buckets: roll_bucket_order()
+            .iter()
+            .map(|bucket| RecordRollBucketOption {
+                bucket: *bucket,
+                count: *roll_buckets.get(bucket).unwrap_or(&0),
+            })
+            .collect(),
+        item_kinds: item_kind_order()
+            .iter()
+            .map(|item_kind| RecordItemKindOption {
+                item_kind: *item_kind,
+                count: *item_kinds.get(item_kind).unwrap_or(&0),
+            })
+            .collect(),
     })
 }
 
@@ -255,6 +227,48 @@ pub fn display_records(
         .collect()
 }
 
+fn roll_bucket(record: &DisplayRecord) -> RollBucket {
+    match record.roll_label_id.as_deref() {
+        Some("BPUI_LotteryResult_jidianzengli") => return RollBucket::Gift,
+        Some("BPUI_LotteryResult_chenmiandi") => return RollBucket::Sleep,
+        _ => {}
+    }
+    match record.roll_points {
+        Some(1) => RollBucket::One,
+        Some(2) => RollBucket::Two,
+        Some(3) => RollBucket::Three,
+        Some(4) => RollBucket::Four,
+        Some(5) => RollBucket::Five,
+        Some(6) => RollBucket::Six,
+        _ => RollBucket::NotApplicable,
+    }
+}
+
+fn roll_bucket_order() -> &'static [RollBucket] {
+    &[
+        RollBucket::Gift,
+        RollBucket::Sleep,
+        RollBucket::One,
+        RollBucket::Two,
+        RollBucket::Three,
+        RollBucket::Four,
+        RollBucket::Five,
+        RollBucket::Six,
+        RollBucket::NotApplicable,
+    ]
+}
+
+fn item_kind_order() -> &'static [ItemKind] {
+    &[
+        ItemKind::Character,
+        ItemKind::Fork,
+        ItemKind::Appearance,
+        ItemKind::Inventory,
+        ItemKind::VehicleModule,
+        ItemKind::Unknown,
+    ]
+}
+
 fn display_record(
     record: &InternalRecord,
     map: &MapData,
@@ -278,6 +292,7 @@ fn display_record(
         .unwrap_or_default();
     Ok(DisplayRecord {
         record_id: record.record_id.clone(),
+        source_order: record.source_order,
         record_type: record.record_type.clone(),
         time: record.time.clone(),
         pool_kind,
@@ -290,6 +305,8 @@ fn display_record(
         rarity: map.item_rarity(&item_id),
         count: record.count,
         roll_points: record.roll_points,
+        roll_label_id: record.roll_label_id.clone(),
+        roll_label: record_label(record, map),
         secondary_item_name: secondary_item_id
             .as_deref()
             .map(|item_id| map.item_name(item_id)),
@@ -300,93 +317,19 @@ fn display_record(
     })
 }
 
-fn sort_display_records(
-    records: &mut [DisplayRecord],
-    sort_key: RecordSortKey,
-    sort_direction: SortDirection,
-) {
-    records.sort_by(|left, right| {
-        let ordering = match sort_key {
-            RecordSortKey::Time => left
-                .time
-                .cmp(&right.time)
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Pool => left
-                .pool_label
-                .cmp(&right.pool_label)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Item => left
-                .item_name
-                .cmp(&right.item_name)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Rarity => left
-                .rarity
-                .cmp(&right.rarity)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::RecordType => left
-                .record_type
-                .cmp(&right.record_type)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Banner => banner_sort_key(left)
-                .cmp(&banner_sort_key(right))
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::PullNo => pull_no_sort_value(left)
-                .cmp(&pull_no_sort_value(right))
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Pity5 => left
-                .derived
-                .pity_5_before
-                .cmp(&right.derived.pity_5_before)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::Pity4 => left
-                .derived
-                .pity_4_before
-                .cmp(&right.derived.pity_4_before)
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-            RecordSortKey::RateUp => rate_up_rank(left.derived.rate_up_result)
-                .cmp(&rate_up_rank(right.derived.rate_up_result))
-                .then_with(|| left.time.cmp(&right.time))
-                .then_with(|| left.record_id.cmp(&right.record_id)),
-        };
-        match sort_direction {
-            SortDirection::Asc => ordering,
-            SortDirection::Desc => ordering.reverse(),
-        }
+fn sort_display_records(records: &mut [DisplayRecord], sort_direction: SortDirection) {
+    records.sort_by(|left, right| match sort_direction {
+        SortDirection::Asc => compare_display_chronological(left, right),
+        SortDirection::Desc => compare_display_newest_first(left, right),
     });
 }
 
-fn banner_sort_key(record: &DisplayRecord) -> String {
+fn record_label(record: &InternalRecord, map: &MapData) -> Option<String> {
     record
-        .banner
-        .title
+        .roll_label_id
         .as_deref()
-        .or(record.derived.banner_id.as_deref())
-        .unwrap_or_default()
-        .to_string()
-}
-
-fn pull_no_sort_value(record: &DisplayRecord) -> u64 {
-    record
-        .derived
-        .pull_no_in_banner
-        .unwrap_or(record.derived.pull_no_in_pool_kind)
-}
-
-fn rate_up_rank(result: RateUpResult) -> u8 {
-    match result {
-        RateUpResult::Up => 0,
-        RateUpResult::OffRate => 1,
-        RateUpResult::NotApplicable => 2,
-        RateUpResult::Unknown => 3,
-    }
+        .map(|label_id| map.label(label_id))
+        .or_else(|| record.roll_points.map(|value| value.to_string()))
 }
 
 fn rate_up_result_key(result: RateUpResult) -> &'static str {

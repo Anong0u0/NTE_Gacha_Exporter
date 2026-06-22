@@ -3,24 +3,27 @@ pub struct RecordDerived {
     pub record_id: String,
     pub banner_id: Option<String>,
     pub banner_version: Option<String>,
-    pub pull_no_in_pool_kind: u64,
+    pub counts_as_pull: bool,
+    pub global_pull_no: Option<u64>,
+    pub pull_no_in_pool_kind: Option<u64>,
     pub pull_no_in_banner: Option<u64>,
     pub pity_5_before: u64,
     pub pity_5_after: u64,
-    pub pity_4_before: u64,
-    pub pity_4_after: u64,
+    pub roll_gift_progress_after: Option<u8>,
     pub hit_rarity: Option<u8>,
     pub rate_up_result: RateUpResult,
     pub guarantee_5_before: Option<bool>,
     pub guarantee_5_after: Option<bool>,
-    pub guarantee_4_before: Option<bool>,
-    pub guarantee_4_after: Option<bool>,
+    pub fork_up_pity_before: Option<u64>,
+    pub fork_up_pity_after: Option<u64>,
+    pub fork_forced_up: Option<bool>,
     pub rule: GachaRuleView,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DisplayRecord {
     pub record_id: String,
+    pub source_order: u64,
     pub record_type: String,
     pub time: Option<String>,
     pub pool_kind: PoolKind,
@@ -33,6 +36,8 @@ pub struct DisplayRecord {
     pub rarity: Option<u8>,
     pub count: Option<i64>,
     pub roll_points: Option<i64>,
+    pub roll_label_id: Option<String>,
+    pub roll_label: Option<String>,
     pub secondary_item_id: Option<String>,
     pub secondary_item_name: Option<String>,
     pub secondary_item_asset_refs: BTreeMap<String, serde_json::Value>,
@@ -43,20 +48,21 @@ pub struct DisplayRecord {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct RecordFilter {
     pub pool_kind: Option<PoolKind>,
-    pub pool_id: Option<String>,
-    pub banner_id: Option<String>,
-    pub record_type: Option<String>,
-    pub rarity: Option<u8>,
-    pub hit_rarity: Option<u8>,
-    pub rate_up_result: Option<RateUpResult>,
-    pub pity_5_min: Option<u64>,
-    pub pity_5_max: Option<u64>,
-    pub pity_4_min: Option<u64>,
-    pub pity_4_max: Option<u64>,
+    #[serde(default)]
+    pub banner_ids: Vec<String>,
+    #[serde(default)]
+    pub rarities: Vec<u8>,
+    #[serde(default)]
+    pub hit_rarities: Vec<u8>,
+    #[serde(default)]
+    pub rate_up_results: Vec<RateUpResult>,
+    #[serde(default)]
+    pub roll_buckets: Vec<RollBucket>,
+    #[serde(default)]
+    pub item_kinds: Vec<ItemKind>,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
     pub search: Option<String>,
-    pub sort_key: Option<RecordSortKey>,
     pub sort_direction: Option<SortDirection>,
     pub limit: Option<u32>,
     pub offset: Option<u32>,
@@ -70,17 +76,9 @@ pub struct RecordList {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordFilterOptions {
-    pub pools: Vec<RecordPoolOption>,
     pub banners: Vec<RecordBannerOption>,
-    pub record_types: Vec<RecordTypeOption>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct RecordPoolOption {
-    pub pool_id: String,
-    pub pool_kind: PoolKind,
-    pub label: String,
-    pub count: u64,
+    pub roll_buckets: Vec<RecordRollBucketOption>,
+    pub item_kinds: Vec<RecordItemKindOption>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -92,8 +90,14 @@ pub struct RecordBannerOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct RecordTypeOption {
-    pub record_type: String,
+pub struct RecordRollBucketOption {
+    pub bucket: RollBucket,
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RecordItemKindOption {
+    pub item_kind: ItemKind,
     pub count: u64,
 }
 

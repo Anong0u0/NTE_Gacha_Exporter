@@ -299,7 +299,8 @@
     "fork_lottery_s": {
       "carry_scope": "pool_kind",
       "guarantee_scope": "pool_kind",
-      "hard_pity_5": 80,
+      "hard_pity_5": 60,
+      "hard_up_pity_5": 80,
       "has_guarantee_5": true,
       "pickup_win_rate_5": 25,
       "pool_kind": "fork_lottery",

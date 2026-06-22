@@ -6,6 +6,7 @@ mod tests {
     fn record(record_id: &str, pool_id: &str, item_id: &str, time: &str) -> InternalRecord {
         InternalRecord {
             record_id: record_id.to_string(),
+            source_order: 0,
             record_type: if pool_id.starts_with("ForkLottery_") {
                 "fork".to_string()
             } else {
@@ -16,13 +17,14 @@ mod tests {
             item_id: item_id.to_string(),
             count: Some(1),
             roll_points: Some(1),
+            roll_label_id: None,
             secondary_item_id: None,
             secondary_count: None,
         }
     }
 
     #[test]
-    fn rule_for_record_uses_matched_banner_rule() {
+    fn rule_for_record_uses_resolved_banner_rule() {
         let map = load_map("zh-Hant").expect("map should load");
 
         let fork = rule_for_record(
@@ -35,9 +37,10 @@ mod tests {
             ),
         )
         .expect("fork rule should resolve");
-        assert_eq!(fork.status, RuleResolutionStatus::Matched);
+        assert_eq!(fork.resolution_issue, None);
         assert_eq!(fork.rule.rule_id.as_deref(), Some("fork_lottery_s"));
-        assert_eq!(fork.rule.hard_pity_5, Some(80));
+        assert_eq!(fork.rule.hard_pity_5, Some(60));
+        assert_eq!(fork.rule.hard_up_pity_5, Some(80));
         assert_eq!(fork.rule.pickup_win_rate_5, Some(25));
         assert_eq!(fork.rule.has_guarantee_5, Some(true));
 
@@ -51,7 +54,7 @@ mod tests {
             ),
         )
         .expect("standard rule should resolve");
-        assert_eq!(standard.status, RuleResolutionStatus::Matched);
+        assert_eq!(standard.resolution_issue, None);
         assert_eq!(standard.rule.rule_id.as_deref(), Some("monopoly_standard"));
         assert_eq!(standard.rule.hard_pity_5, Some(90));
 
@@ -65,12 +68,12 @@ mod tests {
             ),
         )
         .expect("limited rule should resolve");
-        assert_eq!(limited.status, RuleResolutionStatus::Matched);
+        assert_eq!(limited.resolution_issue, None);
         assert_eq!(limited.rule.rule_id.as_deref(), Some("monopoly_limited"));
     }
 
     #[test]
-    fn rule_for_record_falls_back_when_banner_is_unmatched() {
+    fn rule_for_record_falls_back_when_banner_is_unresolved() {
         let map = load_map("zh-Hant").expect("map should load");
 
         let resolution = rule_for_record(
@@ -84,7 +87,10 @@ mod tests {
         )
         .expect("fallback rule should resolve");
 
-        assert_eq!(resolution.status, RuleResolutionStatus::MissingBanner);
+        assert_eq!(
+            resolution.resolution_issue,
+            Some(RuleResolutionIssue::MissingBanner)
+        );
         assert_eq!(resolution.rule.pool_kind, PoolKind::MonopolyLimited);
         assert_eq!(resolution.rule.hard_pity_5, Some(90));
     }
@@ -108,13 +114,17 @@ mod tests {
         )
         .expect("fallback rule should resolve");
 
-        assert_eq!(resolution.status, RuleResolutionStatus::MissingRule);
+        assert_eq!(
+            resolution.resolution_issue,
+            Some(RuleResolutionIssue::MissingRule)
+        );
         assert_eq!(resolution.rule.pool_kind, PoolKind::ForkLottery);
-        assert_eq!(resolution.rule.hard_pity_5, Some(80));
+        assert_eq!(resolution.rule.hard_pity_5, Some(60));
+        assert_eq!(resolution.rule.hard_up_pity_5, Some(80));
     }
 
     #[test]
-    fn derive_pool_kind_hits_tracks_five_and_four_star_state() {
+    fn derive_pool_kind_hits_tracks_five_star_state() {
         let map = load_map("zh-Hant").expect("map should load");
         let records = vec![
             record(
@@ -148,7 +158,6 @@ mod tests {
 
         assert_eq!(stats.total_pulls, 3);
         assert_eq!(stats.five_star_history.len(), 2);
-        assert_eq!(stats.four_star_history.len(), 1);
         assert_eq!(
             stats
                 .five_star_history
@@ -161,7 +170,6 @@ mod tests {
         assert_eq!(stats.five_star_history[0].guarantee_after, Some(true));
         assert_eq!(stats.five_star_history[1].result, RateUpResult::Up);
         assert_eq!(stats.five_star_history[1].guarantee_before, Some(true));
-        assert_eq!(stats.current_4star_pity, 1);
-        assert_eq!(stats.summary_rule.status, RuleResolutionStatus::Matched);
+        assert_eq!(stats.summary_rule.resolution_issue, None);
     }
 }

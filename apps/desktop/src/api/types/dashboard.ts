@@ -1,5 +1,5 @@
 import type { AssetRefs, ImportReport, PoolKind, Profile } from "./base";
-import type { DisplayRecord, RateUpResult, RuleResolutionStatus } from "./records";
+import type { DisplayRecord, RateUpResult } from "./records";
 
 export type PoolKindSummary = {
   pool_kind: PoolKind;
@@ -21,22 +21,18 @@ export type PoolKindSummary = {
   not_applicable_rate_up_count: number;
   unknown_rate_up_count: number;
   observed_up_rate?: number | null;
+  fork_win_count: number;
+  fork_loss_count: number;
+  fork_forced_up_count: number;
+  fork_observed_25_75_win_rate?: number | null;
   latest_5star?: DisplayRecord | null;
-  current_4star_pity: number;
-  hard_pity_4?: number | null;
-  average_4star_pity?: number | null;
-  min_4star_pity?: number | null;
-  max_4star_pity?: number | null;
   four_star_count: number;
   rate_up_4_count: number;
   off_rate_4_count: number;
   not_applicable_rate_up_4_count: number;
   unknown_rate_up_4_count: number;
-  rule_resolution_status: RuleResolutionStatus;
   average_roll_points_to_5star?: number | null;
-  average_roll_points_to_4star?: number | null;
   roll_point_cost_samples_5star: number;
-  roll_point_cost_samples_4star: number;
 };
 
 export type BannerSummary = {
@@ -56,21 +52,21 @@ export type BannerSummary = {
   five_star_count: number;
   four_star_count: number;
   current_5star_pity: number;
-  current_4star_pity: number;
   average_5star_pity?: number | null;
-  average_4star_pity?: number | null;
   rate_up_5_count: number;
   off_rate_5_count: number;
   not_applicable_rate_up_5_count: number;
   unknown_rate_up_5_count: number;
+  fork_win_count: number;
+  fork_loss_count: number;
+  fork_forced_up_count: number;
+  fork_observed_25_75_win_rate?: number | null;
   rate_up_4_count: number;
   off_rate_4_count: number;
   not_applicable_rate_up_4_count: number;
   unknown_rate_up_4_count: number;
   average_roll_points_to_5star?: number | null;
-  average_roll_points_to_4star?: number | null;
   roll_point_cost_samples_5star: number;
-  roll_point_cost_samples_4star: number;
   latest_hit?: DisplayRecord | null;
 };
 
@@ -80,7 +76,7 @@ export type TimeStats = {
   missing_time_records: number;
 };
 
-export type TimeBucketSummary = {
+type TimeBucketSummary = {
   bucket: string;
   total_pulls: number;
   five_star_count: number;
@@ -89,16 +85,15 @@ export type TimeBucketSummary = {
   known_roll_point_records: number;
   missing_roll_point_records: number;
   average_5star_pity?: number | null;
-  average_4star_pity?: number | null;
 };
 
-export type RarityBucket = {
+type RarityBucket = {
   rarity: number;
   count: number;
   percent: number;
 };
 
-export type ItemRank = {
+type ItemRank = {
   item_id: string;
   item_name: string;
   rarity?: number | null;
@@ -116,15 +111,7 @@ export type DashboardOverview = {
   item_ranking: ItemRank[];
 };
 
-export type FiveStarRecord = {
-  record: DisplayRecord;
-  pity_distance: number;
-  result: RateUpResult;
-  guarantee_before?: boolean | null;
-  guarantee_after?: boolean | null;
-};
-
-export type FourStarRecord = {
+type FiveStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
   result: RateUpResult;
@@ -135,7 +122,6 @@ export type FourStarRecord = {
 export type PoolKindDetail = {
   summary: PoolKindSummary;
   five_star_history: FiveStarRecord[];
-  four_star_history: FourStarRecord[];
 };
 
 export type DashboardSelection =

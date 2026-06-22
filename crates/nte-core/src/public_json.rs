@@ -21,7 +21,7 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
             GuiError::InvalidDocument("info.schema_version must be a string".to_string())
         })?;
     let schema_major = schema_version.split('.').next();
-    if !matches!(schema_major, Some("1" | "2")) {
+    if !matches!(schema_major, Some("1" | "2" | "3")) {
         return Err(GuiError::InvalidDocument(format!(
             "unsupported schema_version: {schema_version}"
         )));
@@ -34,13 +34,13 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
         .ok_or_else(|| GuiError::InvalidDocument("expected nte.list array".to_string()))?;
 
     let mut result = Vec::with_capacity(records.len());
-    for record in records {
-        result.push(parse_record(record)?);
+    for (index, record) in records.iter().enumerate() {
+        result.push(parse_record(record, index as u64)?);
     }
     Ok(result)
 }
 
-fn parse_record(value: &Value) -> Result<InternalRecord, GuiError> {
+fn parse_record(value: &Value, fallback_source_order: u64) -> Result<InternalRecord, GuiError> {
     value
         .as_object()
         .ok_or_else(|| GuiError::InvalidDocument("record must be an object".to_string()))?;
@@ -48,12 +48,14 @@ fn parse_record(value: &Value) -> Result<InternalRecord, GuiError> {
     classify_pool_id(&pool_id)?;
     Ok(InternalRecord {
         record_id: required_text(value, "record_id")?,
+        source_order: optional_u64(value, "source_order").unwrap_or(fallback_source_order),
         record_type: required_text(value, "record_type")?,
         time: optional_text(value, "time"),
         pool_id,
         item_id: required_text(value, "item_id")?,
         count: optional_i64(value, "count"),
         roll_points: optional_roll_points(value, "roll_points"),
+        roll_label_id: optional_roll_label_id(value),
         secondary_item_id: optional_text(value, "secondary_item_id"),
         secondary_count: optional_i64(value, "secondary_count"),
     })
@@ -73,10 +75,30 @@ fn optional_i64(value: &Value, key: &str) -> Option<i64> {
     value.get(key).and_then(Value::as_i64)
 }
 
+fn optional_u64(value: &Value, key: &str) -> Option<u64> {
+    value.get(key).and_then(Value::as_u64)
+}
+
 fn optional_roll_points(value: &Value, key: &str) -> Option<i64> {
     optional_i64(value, key).filter(|value| !is_roll_point_sentinel(*value))
 }
 
+fn optional_roll_label_id(value: &Value) -> Option<String> {
+    optional_text(value, "roll_label_id").or_else(|| {
+        optional_i64(value, "roll_points")
+            .and_then(roll_label_id_from_sentinel)
+            .map(str::to_string)
+    })
+}
+
 fn is_roll_point_sentinel(value: i64) -> bool {
     matches!(value, 0 | 4_294_967_295)
+}
+
+fn roll_label_id_from_sentinel(value: i64) -> Option<&'static str> {
+    match value {
+        0 => Some("BPUI_LotteryResult_jidianzengli"),
+        4_294_967_295 => Some("BPUI_LotteryResult_chenmiandi"),
+        _ => None,
+    }
 }

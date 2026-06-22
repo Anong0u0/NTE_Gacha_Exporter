@@ -12,7 +12,6 @@ workspace = true
 image = { workspace = true, default-features = false, features = ["png"] }
 nte-core = { path = "../nte-core" }
 regex.workspace = true
-serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sha2.workspace = true
 webp.workspace = true

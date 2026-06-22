@@ -4,6 +4,7 @@ import type {
   CaptureMode,
   DisplayRecord,
   GachaRuleView,
+  ItemKind,
   PoolKind,
   PoolKindSummary,
   Profile,
@@ -11,6 +12,7 @@ import type {
   RecordFilterOptions,
   RateUpResult,
   ResolvedBanner,
+  RollBucket,
   TimeStats,
 } from "./types";
 
@@ -21,7 +23,7 @@ export const mockProfile: Profile = {
   active: true,
 };
 
-export const mockItemAssetRefs: Record<string, AssetRefs> = {
+const mockItemAssetRefs: Record<string, AssetRefs> = {
   rare_1: {
     portrait: "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu",
     icon: "/Game/UI/UI_Icon/Character/Sigrid.Sigrid",
@@ -35,6 +37,7 @@ export const mockItemAssetRefs: Record<string, AssetRefs> = {
 export const mockRecords: DisplayRecord[] = [
   {
     record_id: "mock-4",
+    source_order: 3,
     record_type: "monopoly",
     time: "2026-01-09 21:40:00",
     pool_kind: "monopoly_limited",
@@ -47,6 +50,7 @@ export const mockRecords: DisplayRecord[] = [
     rarity: 5,
     count: 1,
     roll_points: 74,
+    roll_label: "74",
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-4", {
       bannerId: "limited_mock",
@@ -55,8 +59,7 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInBanner: 74,
       pity5Before: 73,
       pity5After: 0,
-      pity4Before: 4,
-      pity4After: 5,
+      rollGiftProgressAfter: 6,
       hitRarity: 5,
       rateUpResult: "up",
       guarantee5Before: false,
@@ -66,6 +69,7 @@ export const mockRecords: DisplayRecord[] = [
   },
   {
     record_id: "mock-3",
+    source_order: 2,
     record_type: "monopoly",
     time: "2026-01-08 19:22:00",
     pool_kind: "monopoly_limited",
@@ -78,6 +82,7 @@ export const mockRecords: DisplayRecord[] = [
     rarity: 3,
     count: 1,
     roll_points: 73,
+    roll_label: "73",
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-3", {
       bannerId: "limited_mock",
@@ -86,9 +91,8 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInBanner: 73,
       pity5Before: 72,
       pity5After: 73,
-      pity4Before: 3,
-      pity4After: 4,
-      hitRarity: null,
+      rollGiftProgressAfter: 5,
+      hitRarity: 3,
       rateUpResult: "unknown",
       guarantee5Before: false,
       guarantee5After: false,
@@ -97,6 +101,7 @@ export const mockRecords: DisplayRecord[] = [
   },
   {
     record_id: "mock-2",
+    source_order: 1,
     record_type: "fork",
     time: "2026-01-07 20:11:00",
     pool_kind: "fork_lottery",
@@ -109,6 +114,7 @@ export const mockRecords: DisplayRecord[] = [
     rarity: 5,
     count: 1,
     roll_points: 24,
+    roll_label: "24",
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-2", {
       bannerId: "ForkLottery_AnHunQu",
@@ -117,8 +123,7 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInBanner: 24,
       pity5Before: 23,
       pity5After: 0,
-      pity4Before: 6,
-      pity4After: 7,
+      rollGiftProgressAfter: 4,
       hitRarity: 5,
       rateUpResult: "up",
       guarantee5Before: true,
@@ -128,7 +133,7 @@ export const mockRecords: DisplayRecord[] = [
   },
 ];
 
-export function mockBanner(
+function mockBanner(
   bannerId: string,
   poolKind: PoolKind,
   bannerType: "limited" | "standard" | "fork",
@@ -143,8 +148,6 @@ export function mockBanner(
     icon: "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
   };
   return {
-    status: "matched",
-    reason: "matched",
     banner_id: bannerId,
     pool_kind: poolKind,
     banner_type: bannerType,
@@ -156,34 +159,31 @@ export function mockBanner(
   };
 }
 
-export function mockRule(poolKind: PoolKind, ruleId: string): GachaRuleView {
+function mockRule(poolKind: PoolKind, ruleId: string): GachaRuleView {
   return {
-    status: "matched",
-    reason: "matched",
     rule_id: ruleId,
     pool_kind: poolKind,
-    hard_pity_5: poolKind === "fork_lottery" ? 80 : 90,
-    hard_pity_4: null,
+    hard_pity_5: poolKind === "fork_lottery" ? 60 : 90,
+    hard_up_pity_5: poolKind === "fork_lottery" ? 80 : null,
     pickup_win_rate_5: poolKind === "fork_lottery" ? 25 : null,
-    pickup_win_rate_4: null,
     has_guarantee_5: poolKind === "fork_lottery" ? true : false,
-    has_guarantee_4: null,
     guarantee_scope: poolKind === "fork_lottery" ? "pool_kind" : "unknown",
     carry_scope: "pool_kind",
   };
 }
 
-export function mockDerived(
+function mockDerived(
   recordId: string,
   options: {
     bannerId: string;
     poolKind: PoolKind;
-    pullNoInPoolKind: number;
-    pullNoInBanner: number;
+    countsAsPull?: boolean;
+    globalPullNo?: number | null;
+    pullNoInPoolKind: number | null;
+    pullNoInBanner: number | null;
     pity5Before: number;
     pity5After: number;
-    pity4Before: number;
-    pity4After: number;
+    rollGiftProgressAfter: number | null;
     hitRarity: number | null;
     rateUpResult: RateUpResult;
     guarantee5Before: boolean;
@@ -195,35 +195,48 @@ export function mockDerived(
     record_id: recordId,
     banner_id: options.bannerId,
     banner_version: null,
+    counts_as_pull: options.countsAsPull ?? true,
+    global_pull_no: options.countsAsPull === false ? null : (options.globalPullNo ?? options.pullNoInPoolKind),
     pull_no_in_pool_kind: options.pullNoInPoolKind,
     pull_no_in_banner: options.pullNoInBanner,
     pity_5_before: options.pity5Before,
     pity_5_after: options.pity5After,
-    pity_4_before: options.pity4Before,
-    pity_4_after: options.pity4After,
+    roll_gift_progress_after: options.rollGiftProgressAfter,
     hit_rarity: options.hitRarity,
     rate_up_result: options.rateUpResult,
     guarantee_5_before: options.guarantee5Before,
     guarantee_5_after: options.guarantee5After,
-    guarantee_4_before: null,
-    guarantee_4_after: null,
+    fork_up_pity_before: options.poolKind === "fork_lottery" ? options.pity5Before : null,
+    fork_up_pity_after: options.poolKind === "fork_lottery" ? options.pity5After : null,
+    fork_forced_up: options.poolKind === "fork_lottery" && options.hitRarity === 5 && options.rateUpResult === "up" ? false : null,
     rule: mockRule(options.poolKind, options.ruleId),
   };
 }
 
 export const mockFilterOptions: RecordFilterOptions = {
-  pools: [
-    { pool_id: "CardPool_Character", pool_kind: "monopoly_limited", label: "Limited Board", count: 146 },
-    { pool_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", label: "Arc Research", count: 36 },
-  ],
   banners: [
     { banner_id: "limited_mock", pool_kind: "monopoly_limited", title: "Limited Board", count: 146 },
     { banner_id: "ForkLottery_AnHunQu", pool_kind: "fork_lottery", title: "Arc Research", count: 36 },
   ],
-  record_types: [
-    { record_type: "monopoly", count: 146 },
-    { record_type: "fork", count: 36 },
-  ],
+  roll_buckets: [
+    { bucket: "gift", count: 0 },
+    { bucket: "sleep", count: 0 },
+    { bucket: "1", count: 0 },
+    { bucket: "2", count: 0 },
+    { bucket: "3", count: 0 },
+    { bucket: "4", count: 0 },
+    { bucket: "5", count: 0 },
+    { bucket: "6", count: 0 },
+    { bucket: "not_applicable", count: 3 },
+  ] satisfies { bucket: RollBucket; count: number }[],
+  item_kinds: [
+    { item_kind: "character", count: 1 },
+    { item_kind: "fork", count: 1 },
+    { item_kind: "appearance", count: 0 },
+    { item_kind: "inventory", count: 1 },
+    { item_kind: "vehicle_module", count: 0 },
+    { item_kind: "unknown", count: 0 },
+  ] satisfies { item_kind: ItemKind; count: number }[],
 };
 
 export const mockCaptureSessions = new Map<
@@ -252,22 +265,18 @@ export const mockSummary: PoolKindSummary[] = [
     not_applicable_rate_up_count: 0,
     unknown_rate_up_count: 0,
     observed_up_rate: 1,
+    fork_win_count: 0,
+    fork_loss_count: 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: null,
     latest_5star: mockRecords[0],
-    current_4star_pity: 4,
-    hard_pity_4: null,
-    average_4star_pity: 9.5,
-    min_4star_pity: 5,
-    max_4star_pity: 14,
     four_star_count: 8,
     rate_up_4_count: 0,
     off_rate_4_count: 0,
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 8,
-    rule_resolution_status: "matched",
     average_roll_points_to_5star: 72.5,
-    average_roll_points_to_4star: 9.5,
     roll_point_cost_samples_5star: 2,
-    roll_point_cost_samples_4star: 8,
   },
   {
     pool_kind: "fork_lottery",
@@ -279,7 +288,7 @@ export const mockSummary: PoolKindSummary[] = [
     hit_count: 1,
     current_pity: 12,
     current_guarantee: false,
-    hard_pity: 80,
+    hard_pity: 60,
     average_5star_pity: 24,
     min_5star_pity: 24,
     max_5star_pity: 24,
@@ -289,22 +298,18 @@ export const mockSummary: PoolKindSummary[] = [
     not_applicable_rate_up_count: 0,
     unknown_rate_up_count: 0,
     observed_up_rate: 1,
+    fork_win_count: 1,
+    fork_loss_count: 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: 1,
     latest_5star: mockRecords[2],
-    current_4star_pity: 3,
-    hard_pity_4: null,
-    average_4star_pity: 7,
-    min_4star_pity: 7,
-    max_4star_pity: 7,
     four_star_count: 1,
     rate_up_4_count: 0,
     off_rate_4_count: 0,
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 1,
-    rule_resolution_status: "matched",
     average_roll_points_to_5star: 24,
-    average_roll_points_to_4star: 7,
     roll_point_cost_samples_5star: 1,
-    roll_point_cost_samples_4star: 1,
   },
 ];
 
@@ -326,21 +331,21 @@ export const mockBanners: BannerSummary[] = [
     five_star_count: 2,
     four_star_count: 8,
     current_5star_pity: 73,
-    current_4star_pity: 4,
     average_5star_pity: 72.5,
-    average_4star_pity: 9.5,
     rate_up_5_count: 2,
     off_rate_5_count: 0,
     not_applicable_rate_up_5_count: 0,
     unknown_rate_up_5_count: 0,
+    fork_win_count: 0,
+    fork_loss_count: 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: null,
     rate_up_4_count: 0,
     off_rate_4_count: 0,
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 8,
     average_roll_points_to_5star: 72.5,
-    average_roll_points_to_4star: 9.5,
     roll_point_cost_samples_5star: 2,
-    roll_point_cost_samples_4star: 8,
     latest_hit: mockRecords[0],
   },
   {
@@ -360,21 +365,21 @@ export const mockBanners: BannerSummary[] = [
     five_star_count: 1,
     four_star_count: 1,
     current_5star_pity: 12,
-    current_4star_pity: 3,
     average_5star_pity: 24,
-    average_4star_pity: 7,
     rate_up_5_count: 1,
     off_rate_5_count: 0,
     not_applicable_rate_up_5_count: 0,
     unknown_rate_up_5_count: 0,
+    fork_win_count: 1,
+    fork_loss_count: 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: 1,
     rate_up_4_count: 0,
     off_rate_4_count: 0,
     not_applicable_rate_up_4_count: 0,
     unknown_rate_up_4_count: 1,
     average_roll_points_to_5star: 24,
-    average_roll_points_to_4star: 7,
     roll_point_cost_samples_5star: 1,
-    roll_point_cost_samples_4star: 1,
     latest_hit: mockRecords[2],
   },
 ];
@@ -390,7 +395,6 @@ export const mockTimeStats: TimeStats = {
       known_roll_point_records: 182,
       missing_roll_point_records: 0,
       average_5star_pity: 56.3,
-      average_4star_pity: 9.2,
     },
   ],
   daily: [
@@ -403,7 +407,6 @@ export const mockTimeStats: TimeStats = {
       known_roll_point_records: 1,
       missing_roll_point_records: 0,
       average_5star_pity: 74,
-      average_4star_pity: null,
     },
   ],
   missing_time_records: 0,

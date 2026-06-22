@@ -62,12 +62,12 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
     assert_eq!(limited.roll_points_total, 3);
     assert_eq!(limited.known_roll_point_records, 3);
     assert_eq!(limited.missing_roll_point_records, 0);
-    assert_eq!(limited.hit_count, 1);
-    assert_eq!(limited.current_pity, 1);
-    assert_eq!(limited.average_5star_pity, Some(2.0));
-    assert_eq!(limited.average_roll_points_to_5star, Some(2.0));
-    assert_eq!(limited.roll_point_cost_samples_5star, 1);
-    assert_eq!(limited.early_hit_count, 1);
+    assert_eq!(limited.hit_count, 0);
+    assert_eq!(limited.current_pity, 3);
+    assert_eq!(limited.average_5star_pity, None);
+    assert_eq!(limited.average_roll_points_to_5star, None);
+    assert_eq!(limited.roll_point_cost_samples_5star, 0);
+    assert_eq!(limited.early_hit_count, 0);
     assert_eq!(fork.summary.hit_count, 2);
     assert_eq!(fork.summary.roll_points_total, 2);
     assert_eq!(fork.summary.known_roll_point_records, 2);
@@ -204,16 +204,13 @@ fn dashboard_overview_includes_banner_roll_points_and_time_stats() {
     assert_eq!(fork_banner.five_star_count, 1);
     assert_eq!(fork_banner.four_star_count, 1);
     assert_eq!(fork_banner.current_5star_pity, 0);
-    assert_eq!(fork_banner.current_4star_pity, 1);
     assert_eq!(fork_banner.rate_up_5_count, 1);
     assert_eq!(fork_banner.rate_up_4_count, 0);
     assert_eq!(fork_banner.unknown_rate_up_4_count, 1);
     assert_eq!(fork_banner.roll_points_total, 10);
     assert!(fork_banner.asset_refs.contains_key("icon"));
     assert_eq!(fork_banner.average_roll_points_to_5star, Some(10.0));
-    assert_eq!(fork_banner.average_roll_points_to_4star, Some(2.0));
     assert_eq!(fork_banner.roll_point_cost_samples_5star, 1);
-    assert_eq!(fork_banner.roll_point_cost_samples_4star, 1);
     assert_eq!(fork_banner.latest_hit.as_ref().unwrap().record_id, "fork-5");
     assert_eq!(
         overview
@@ -234,12 +231,88 @@ fn dashboard_overview_includes_banner_roll_points_and_time_stats() {
     assert_eq!(limited.roll_points_total, 30);
     assert_eq!(fork.roll_points_total, 10);
     assert_eq!(month.total_pulls, 4);
-    assert_eq!(month.five_star_count, 3);
+    assert_eq!(month.five_star_count, 1);
     assert_eq!(month.four_star_count, 1);
     assert_eq!(month.roll_points_total, 40);
     assert_eq!(day.total_pulls, 2);
     assert_eq!(day.roll_points_total, 10);
     assert_eq!(overview.time_stats.missing_time_records, 0);
+}
+
+#[test]
+fn fork_stats_separate_twenty_five_seventy_five_wins_losses_and_forced_up() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    records.push(record(
+        "r001-loss",
+        "ForkLottery_AnHunQu",
+        "fork_Arachne",
+        "2026-01-01 00:01:00",
+    ));
+    for index in 2..60 {
+        records.push(record(
+            &format!("r{index:03}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!("2026-01-01 00:{index:02}:00"),
+        ));
+    }
+    records.push(record(
+        "r060-loss",
+        "ForkLottery_AnHunQu",
+        "fork_Arachne",
+        "2026-01-01 01:00:00",
+    ));
+    for index in 61..80 {
+        records.push(record(
+            &format!("r{index:03}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!("2026-01-01 01:{:02}:00", index - 60),
+        ));
+    }
+    records.push(record(
+        "r080-forced",
+        "ForkLottery_AnHunQu",
+        "fork_Rose",
+        "2026-01-01 02:00:00",
+    ));
+    let document = public_document(records);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
+    let fork = overview
+        .pool_kinds
+        .iter()
+        .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
+        .unwrap();
+    let banner = overview
+        .banners
+        .iter()
+        .find(|banner| banner.banner_id == "ForkLottery_AnHunQu")
+        .unwrap();
+    let detail = store
+        .pool_kind_detail("default", "zh-Hant", PoolKind::ForkLottery)
+        .unwrap();
+    let forced = detail
+        .five_star_history
+        .iter()
+        .find(|hit| hit.record.record_id == "r080-forced")
+        .unwrap();
+
+    assert_eq!(fork.hit_count, 3);
+    assert_eq!(fork.hard_pity, 60);
+    assert_eq!(fork.fork_win_count, 0);
+    assert_eq!(fork.fork_loss_count, 2);
+    assert_eq!(fork.fork_forced_up_count, 1);
+    assert_eq!(fork.fork_observed_25_75_win_rate, Some(0.0));
+    assert_eq!(banner.fork_loss_count, 2);
+    assert_eq!(banner.fork_forced_up_count, 1);
+    assert_eq!(forced.record.derived.fork_up_pity_before, Some(79));
+    assert_eq!(forced.record.derived.fork_forced_up, Some(true));
 }
 
 #[test]
@@ -295,15 +368,14 @@ fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
 
     assert_eq!(pool.summary.label, "限定棋盤");
     assert_eq!(pool.summary.total_pulls, 2);
-    assert_eq!(pool.five_star_history.len(), 2);
+    assert_eq!(pool.five_star_history.len(), 0);
     assert_eq!(pool.rarity_distribution[0].count, 2);
     assert_eq!(pool.item_ranking.len(), 2);
 
     assert_eq!(banner.summary.label, "王牌一代目");
     assert_eq!(banner.summary.total_pulls, 1);
     assert_eq!(banner.summary.roll_points_total, 10);
-    assert_eq!(banner.five_star_history.len(), 1);
-    assert_eq!(banner.five_star_history[0].record.record_id, "nanali");
+    assert_eq!(banner.five_star_history.len(), 0);
     assert_eq!(banner.rarity_distribution[0].count, 1);
     assert_eq!(banner.item_ranking[0].item_id, "Fashion_vehicle_1010_V008");
 }
@@ -370,7 +442,7 @@ fn stats_track_missing_roll_points_and_missing_time() {
     assert_eq!(fork.roll_points_total, 5);
     assert_eq!(fork.known_roll_point_records, 1);
     assert_eq!(fork.missing_roll_point_records, 1);
-    assert_eq!(fork.average_roll_points_to_5star, Some(5.0));
+    assert_eq!(fork.average_roll_points_to_5star, None);
     assert_eq!(overview.time_stats.missing_time_records, 1);
     assert_eq!(overview.time_stats.monthly.len(), 1);
     assert_eq!(overview.time_stats.daily.len(), 1);
@@ -417,5 +489,6 @@ fn stats_normalize_roll_point_sentinels_from_public_import() {
     assert_eq!(overview.total_records, 3);
     assert_eq!(limited.roll_points_total, 6);
     assert_eq!(limited.known_roll_point_records, 1);
-    assert_eq!(limited.missing_roll_point_records, 2);
+    assert_eq!(limited.missing_roll_point_records, 0);
+    assert_eq!(limited.total_pulls, 1);
 }

@@ -6,8 +6,7 @@ IPC-enabled desktop debug and smoke tool.
 
 | Purpose | Path |
 | --- | --- |
-| Agent app | `target/agent-smoke/app-current` |
-| Agent data/assets/profile root | `target/agent-smoke/app-current/data` |
+| Agent app root | `target/agent-smoke/app-current` |
 | Latest smoke report | `target/agent-smoke/latest-report.json` |
 | Latest smoke run | `target/agent-smoke/latest-run.txt` |
 
@@ -37,9 +36,6 @@ IPC-enabled desktop debug and smoke tool.
 
 ## Behavior
 
-- `cargo agent build` preserves `target/agent-smoke/app-current/data`.
-- Asset packs belong under `target/agent-smoke/app-current/data`.
 - `cargo agent launch` uses `127.0.0.1:17365` by default.
 - If that port is owned by an NTE process, launch closes/replaces it; non-NTE owners fail.
-- `cargo smoke` uses isolated staged data, closes the app, removes the staged portable copy, and keeps latest evidence.
 - Public release builds do not include IPC.

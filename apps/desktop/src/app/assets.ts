@@ -36,10 +36,6 @@ export function createAssetTools(options: AssetToolsOptions) {
     return assetUrlCache.value[assetCacheKey(assetRef, kind)] ?? assetUrlCache.value[assetCacheKey(assetRef, null)];
   }
 
-  function assetRefsCount(assetRefs?: Record<string, unknown> | null) {
-    return assetRefEntries(assetRefs).length;
-  }
-
   function firstAssetUrl(assetRefs?: Record<string, unknown> | null, preferredKeys: string[] = []) {
     for (const entry of assetRefEntries(assetRefs, preferredKeys)) {
       if (typeof entry.value !== "string") continue;
@@ -88,7 +84,6 @@ export function createAssetTools(options: AssetToolsOptions) {
     for (const banner of bannerSummaries.value) requests.push(...collectAssetRequestsFromRefs(banner.asset_refs));
     for (const record of records.value) requests.push(...collectRecordAssetRequests(record));
     for (const hit of detail.value?.five_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
-    for (const hit of detail.value?.four_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
     const seen = new Set<string>();
     return requests.filter((request) => {
       const key = assetCacheKey(request.asset_ref, request.kind);
@@ -114,7 +109,6 @@ export function createAssetTools(options: AssetToolsOptions) {
   }
 
   return {
-    assetRefsCount,
     itemVisualUrl,
     bannerVisualUrl,
     hasRecordVisual,

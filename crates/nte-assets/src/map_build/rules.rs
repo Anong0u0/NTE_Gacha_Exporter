@@ -284,7 +284,8 @@ fn build_gacha_rules(
             json!({
                 "rule_id": "fork_lottery_s",
                 "pool_kind": "fork_lottery",
-                "hard_pity_5": hard_pity_5.unwrap_or(80),
+                "hard_pity_5": 60,
+                "hard_up_pity_5": hard_pity_5.unwrap_or(80),
                 "pickup_win_rate_5": pickup_win_rate_5.unwrap_or(25),
                 "has_guarantee_5": true,
                 "guarantee_scope": "pool_kind",

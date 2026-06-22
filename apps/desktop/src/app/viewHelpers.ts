@@ -1,4 +1,4 @@
-import type { BannerSummary, DisplayRecord } from "../api";
+import type { BannerSummary, DisplayRecord, ItemKind, RollBucket } from "../api";
 import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
@@ -11,6 +11,15 @@ const english: Translator = (key, params) => {
     "format.ongoing": "ongoing",
     "format.guaranteeBefore": "G before",
     "format.guaranteeAfter": "G after",
+    "records.rollGift": "Gift",
+    "records.rollSleep": "Sleep",
+    "records.rollNotApplicable": "N/A",
+    "records.itemKindCharacter": "Character",
+    "records.itemKindFork": "Fork",
+    "records.itemKindAppearance": "Appearance",
+    "records.itemKindInventory": "Inventory",
+    "records.itemKindVehicleModule": "Vehicle module",
+    "records.itemKindUnknown": "Unknown",
     "capture.stateStarting": "Starting",
     "capture.stateRunning": "Running",
     "capture.stateStopping": "Stopping",
@@ -32,13 +41,6 @@ export function numberOrDash(value?: number | null) {
   return value === null || value === undefined ? "-" : value.toFixed(1);
 }
 
-export function parseOptionalNumber(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 export function formatTime(value?: string | null) {
   return value?.replace("T", " ").replace("Z", "") ?? "-";
 }
@@ -49,14 +51,36 @@ export function formatResult(value: string, t: Translator = english) {
   return value === "off_rate" ? t("format.offRate") : "UP";
 }
 
+export function formatRecordResultBadge(value: string, t: Translator = english) {
+  if (value === "unknown") return "";
+  if (value === "not_applicable") return t("records.nonUpFiveStar");
+  return formatResult(value, t);
+}
+
+export function formatRollBucket(value: RollBucket, t: Translator = english) {
+  if (value === "gift") return t("records.rollGift");
+  if (value === "sleep") return t("records.rollSleep");
+  if (value === "not_applicable") return t("records.rollNotApplicable");
+  return value;
+}
+
+export function formatItemKind(value: ItemKind, t: Translator = english) {
+  if (value === "character") return t("records.itemKindCharacter");
+  if (value === "fork") return t("records.itemKindFork");
+  if (value === "appearance") return t("records.itemKindAppearance");
+  if (value === "inventory") return t("records.itemKindInventory");
+  if (value === "vehicle_module") return t("records.itemKindVehicleModule");
+  return t("records.itemKindUnknown");
+}
+
 export function bannerTitle(banner?: BannerSummary | DisplayRecord["banner"] | null, t: Translator = english) {
   return banner?.title || banner?.banner_id || `${t("common.unknown")} ${t("common.banner").toLowerCase()}`;
 }
 
-export function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | null, t: Translator = english) {
+export function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | null) {
   const parts = [banner?.version].filter(Boolean);
   if (parts.length) return parts.join(" · ");
-  return banner && "status" in banner ? banner.status : t("common.unknown").toLowerCase();
+  return banner && "resolution_issue" in banner ? (banner.resolution_issue ?? "") : "";
 }
 
 export function formatBannerWindow(start?: string | null, end?: string | null, t: Translator = english) {
@@ -68,8 +92,30 @@ export function formatPullNo(record: DisplayRecord) {
   return record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? "-";
 }
 
+export function formatGlobalPullNo(record: DisplayRecord) {
+  return record.derived.global_pull_no ?? "-";
+}
+
+export function forkHitBadge(record: DisplayRecord) {
+  if (record.pool_kind !== "fork_lottery" || record.derived.hit_rarity !== 5) return "";
+  if (record.derived.rate_up_result === "up" && record.derived.fork_forced_up) return "G";
+  if (record.derived.rate_up_result === "up") return "W";
+  if (record.derived.rate_up_result === "off_rate") return "L";
+  return "";
+}
+
+export function forkWinRate(summary?: { fork_observed_25_75_win_rate?: number | null } | null) {
+  return percent(summary?.fork_observed_25_75_win_rate);
+}
+
 export function formatPity(record: DisplayRecord) {
-  return `5★ ${record.derived.pity_5_before}->${record.derived.pity_5_after} · 4★ ${record.derived.pity_4_before}->${record.derived.pity_4_after}`;
+  if (!record.derived.counts_as_pull) return "-";
+  return String(record.derived.pity_5_after);
+}
+
+export function formatRollGiftProgress(record: DisplayRecord) {
+  const progress = record.derived.roll_gift_progress_after;
+  return progress == null ? "-" : String(progress);
 }
 
 export function formatGuarantee(record: DisplayRecord, t: Translator = english) {

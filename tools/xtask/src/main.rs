@@ -27,6 +27,7 @@ fn run() -> Result<(), String> {
             check_long_code(threshold)
         }
         Some("ci") => parse_ci_args(args),
+        Some("quality") => parse_quality_args(args),
         Some("-h" | "--help") | None => {
             print_help();
             Ok(())
@@ -78,6 +79,17 @@ fn parse_ci_args(mut args: impl Iterator<Item = String>) -> Result<(), String> {
     }
 }
 
+fn parse_quality_args(mut args: impl Iterator<Item = String>) -> Result<(), String> {
+    match args.next().as_deref() {
+        None => run_quality(),
+        Some("-h" | "--help") => {
+            println!("Usage: cargo xtask quality");
+            Ok(())
+        }
+        Some(value) => Err(format!("unknown quality option: {value}")),
+    }
+}
+
 fn parse_threshold(value: &str) -> Result<usize, String> {
     let threshold = value
         .parse::<usize>()
@@ -91,8 +103,12 @@ fn parse_threshold(value: &str) -> Result<usize, String> {
 
 fn check_long_code(threshold: usize) -> Result<(), String> {
     let root = repo_root()?;
-    let paths = git_code_paths(&root)?;
-    let entries = long_code_entries(&root, &paths, threshold)?;
+    audit_long_code_at(&root, threshold)
+}
+
+fn audit_long_code_at(root: &Path, threshold: usize) -> Result<(), String> {
+    let paths = git_code_paths(root)?;
+    let entries = long_code_entries(root, &paths, threshold)?;
     if entries.is_empty() {
         println!("OK: no code files over {threshold} lines");
         return Ok(());
@@ -117,7 +133,6 @@ fn run_ci() -> Result<(), String> {
             "--check",
         ],
     )?;
-    check_long_code(DEFAULT_LINE_THRESHOLD)?;
     run_command(&root, "cargo", &["test", "--workspace"])?;
     run_command(
         &root,
@@ -154,6 +169,36 @@ fn run_ci() -> Result<(), String> {
     run_command(&desktop, "bun", &["install", "--frozen-lockfile"])?;
     run_command(&desktop, "bun", &["run", "typecheck"])?;
     run_command(&desktop, "bun", &["run", "build"])
+}
+
+fn run_quality() -> Result<(), String> {
+    let root = repo_root()?;
+    audit_long_code_at(&root, DEFAULT_LINE_THRESHOLD)?;
+    audit_unused_code_at(&root)
+}
+
+fn audit_unused_code_at(root: &Path) -> Result<(), String> {
+    run_command(root, "cargo-machete", &[])?;
+
+    let agent_smoke = root.join("tools").join("agent-smoke");
+    run_command(&agent_smoke, "cargo-machete", &[])?;
+
+    let desktop = root.join("apps").join("desktop");
+    run_command(&desktop, "bun", &["install", "--frozen-lockfile"])?;
+    run_command(&desktop, "bun", &["run", "knip", "--reporter", "compact"])?;
+    run_command(
+        &desktop,
+        "bun",
+        &[
+            "run",
+            "typecheck",
+            "--",
+            "--noUnusedLocals",
+            "--noUnusedParameters",
+            "--pretty",
+            "false",
+        ],
+    )
 }
 
 fn repo_root() -> Result<PathBuf, String> {
@@ -277,7 +322,7 @@ fn print_help() {
 }
 
 fn help_text() -> &'static str {
-    "Usage: cargo xtask <COMMAND>\n\nCommands:\n  check-long-code  Fail when non-ignored code files exceed the line threshold\n  ci               Run the local CI gate\n"
+    "Usage: cargo xtask <COMMAND>\n\nCommands:\n  check-long-code  Fail when non-ignored code files exceed the line threshold\n  ci               Run the local CI gate\n  quality          Run slower repository quality audits\n"
 }
 
 struct LongCodeEntry {
@@ -312,6 +357,20 @@ mod tests {
         assert!(is_code_path(Path::new("script.ps1")));
         assert!(!is_code_path(Path::new("Cargo.toml")));
         assert!(!is_code_path(Path::new("fixtures/sample.raw.jsonl")));
+    }
+
+    #[test]
+    fn parse_quality_args_rejects_unknown_option() {
+        let error = parse_quality_args(["--bad".to_string()].into_iter()).unwrap_err();
+
+        assert_eq!(error, "unknown quality option: --bad");
+    }
+
+    #[test]
+    fn help_text_lists_public_commands() {
+        assert!(help_text().contains("check-long-code"));
+        assert!(help_text().contains("ci"));
+        assert!(help_text().contains("quality"));
     }
 
     #[test]

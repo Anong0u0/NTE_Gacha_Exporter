@@ -111,6 +111,23 @@ const app = useAppContext();
           </button>
         </section>
 
+        <section class="banner-thumb-rail" data-agent-id="dashboard-banner-rail">
+          <button
+            v-for="banner in app.bannerSummaries"
+            :key="banner.banner_id"
+            :class="{ active: app.isSelectedDashboardBanner(banner.banner_id) }"
+            type="button"
+            :title="banner.title"
+            @click="app.selectDashboardBanner(banner)"
+          >
+            <span v-if="app.hasBannerVisual(banner)" class="rail-thumb">
+              <img :src="app.bannerVisualUrl(banner)" alt="" />
+            </span>
+            <span v-else class="rail-thumb empty">{{ banner.title.slice(0, 1) }}</span>
+            <span>{{ banner.title }}</span>
+          </button>
+        </section>
+
         <section class="banner-grid">
           <article
             v-for="banner in app.selectedPoolBannerSummaries"
@@ -136,19 +153,49 @@ const app = useAppContext();
               <span>{{ app.t("dashboard.pulls", { count: banner.total_pulls }) }}</span>
               <span>{{ app.t("dashboard.roll", { count: banner.roll_points_total }) }}</span>
               <span>5★ {{ banner.current_5star_pity }}</span>
-              <span>4★ {{ banner.current_4star_pity }}</span>
             </span>
             <span class="banner-hit-line">
               5★ {{ banner.five_star_count }} · 4★ {{ banner.four_star_count }} · UP {{ banner.rate_up_5_count }}/{{ banner.off_rate_5_count }}
             </span>
+            <span v-if="banner.pool_kind === 'fork_lottery'" class="banner-hit-line">
+              W {{ banner.fork_win_count }} · L {{ banner.fork_loss_count }} · G {{ banner.fork_forced_up_count }} · 25/75 {{ app.forkWinRate(banner) }}
+            </span>
             <span class="banner-stats banner-extra-stats">
               <span>{{ app.t("dashboard.avg5Pity") }} {{ app.numberOrDash(banner.average_5star_pity) }}</span>
-              <span>{{ app.t("dashboard.avg4Pity") }} {{ app.numberOrDash(banner.average_4star_pity) }}</span>
               <span>{{ app.t("dashboard.latestHit") }} · {{ banner.latest_hit?.item_name ?? "-" }}</span>
               <span>4★ UP {{ banner.rate_up_4_count }}</span>
               <span>{{ app.t("dashboard.missingRoll", { count: banner.missing_roll_point_records }) }}</span>
             </span>
           </article>
+        </section>
+
+        <section class="panel latest-five-wall" data-agent-id="dashboard-latest-five-wall">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">{{ app.selectedSummary?.label ?? app.t("dashboard.pool") }}</span>
+              <h2>{{ app.t("dashboard.latest5") }}</h2>
+            </div>
+          </div>
+          <div class="five-wall-grid">
+            <button
+              v-for="hit in (app.detail?.five_star_history ?? []).slice(-12).reverse()"
+              :key="hit.record.record_id"
+              type="button"
+              class="five-wall-item"
+              @click="app.selectDashboardBannerById(hit.record.derived.banner_id)"
+            >
+              <span v-if="app.hasRecordVisual(hit.record)" class="five-wall-thumb">
+                <img :src="app.itemVisualUrl(hit.record)" alt="" />
+              </span>
+              <span v-else class="five-wall-thumb empty">{{ hit.record.item_name.slice(0, 1) }}</span>
+              <span class="five-wall-meta">
+                <strong>{{ hit.record.item_name }}</strong>
+                <small>{{ hit.pity_distance }} · {{ app.formatTime(hit.record.time) }}</small>
+              </span>
+              <span v-if="app.forkHitBadge(hit.record)" class="hit-badge" :class="`hit-${app.forkHitBadge(hit.record).toLowerCase()}`">{{ app.forkHitBadge(hit.record) }}</span>
+            </button>
+          </div>
+          <div v-if="!app.detail?.five_star_history.length" class="empty-row">{{ app.t("dashboard.fiveStarRecordsEmpty") }}</div>
         </section>
 
         <section class="split wide-left">
@@ -166,13 +213,15 @@ const app = useAppContext();
               <div><span>{{ app.t("dashboard.shortest") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.min_5star_pity) }}</strong></div>
               <div><span>{{ app.t("dashboard.longest") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.max_5star_pity) }}</strong></div>
               <div><span>{{ app.t("dashboard.upRate") }}</span><strong>{{ app.percent(app.selectedSummary?.observed_up_rate) }}</strong></div>
+              <div v-if="app.selectedSummary?.pool_kind === 'fork_lottery'"><span>25/75</span><strong>{{ app.forkWinRate(app.selectedSummary) }}</strong></div>
+              <div v-if="app.selectedSummary?.pool_kind === 'fork_lottery'"><span>W/L/G</span><strong>{{ app.selectedSummary.fork_win_count }}/{{ app.selectedSummary.fork_loss_count }}/{{ app.selectedSummary.fork_forced_up_count }}</strong></div>
             </div>
             <div class="record-table detail-table">
               <div class="record-header five-star-header">
                 <span>{{ app.t("common.time") }}</span>
                 <span>{{ app.t("common.item") }}</span>
                 <span>{{ app.t("dashboard.pool") }}</span>
-                <span>{{ app.t("records.pity") }}</span>
+                <span>{{ app.t("records.fiveStarProgress") }}</span>
                 <span>{{ app.t("common.result") }}</span>
                 <span>{{ app.t("dashboard.guarantee") }}</span>
               </div>
@@ -181,7 +230,10 @@ const app = useAppContext();
                 <span>{{ hit.record.item_name }}</span>
                 <span>{{ hit.record.pool_label }}</span>
                 <span>{{ hit.pity_distance }}</span>
-                <span>{{ app.formatResult(hit.result) }}</span>
+                <span>
+                  <span>{{ app.formatResult(hit.result) }}</span>
+                  <span v-if="app.forkHitBadge(hit.record)" class="hit-badge" :class="`hit-${app.forkHitBadge(hit.record).toLowerCase()}`">{{ app.forkHitBadge(hit.record) }}</span>
+                </span>
                 <span>{{ hit.guarantee_before ? app.t("format.before") : "-" }} / {{ hit.guarantee_after ? app.t("format.after") : "-" }}</span>
               </div>
               <div v-if="!app.detail?.five_star_history.length" class="empty-row">{{ app.t("dashboard.fiveStarRecordsEmpty") }}</div>

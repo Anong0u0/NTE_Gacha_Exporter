@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::model::{BannerResolutionStatus, GuiError, PoolKind, ResolvedBanner};
+use crate::model::{BannerResolutionIssue, GuiError, ItemKind, PoolKind, ResolvedBanner};
 
 const BUNDLED_MAPS: &[(&str, &str)] = &[
     (
@@ -55,6 +55,8 @@ static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = On
 pub struct MapData {
     #[serde(default)]
     pub csv_headers: BTreeMap<String, String>,
+    #[serde(default)]
+    pub labels: BTreeMap<String, String>,
     pub items: BTreeMap<String, MapItem>,
     #[serde(default)]
     pub item_aliases: BTreeMap<String, String>,
@@ -131,11 +133,9 @@ pub struct MapGachaRule {
     pub rule_id: String,
     pub pool_kind: String,
     pub hard_pity_5: Option<u64>,
-    pub hard_pity_4: Option<u64>,
+    pub hard_up_pity_5: Option<u64>,
     pub pickup_win_rate_5: Option<u8>,
-    pub pickup_win_rate_4: Option<u8>,
     pub has_guarantee_5: Option<bool>,
-    pub has_guarantee_4: Option<bool>,
     pub guarantee_scope: Option<String>,
     pub carry_scope: Option<String>,
     #[serde(default)]
