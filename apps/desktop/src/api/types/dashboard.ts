@@ -1,5 +1,5 @@
 import type { AssetRefs, ImportReport, PoolKind, Profile } from "./base";
-import type { DisplayRecord, RateUpResult } from "./records";
+import type { DisplayRecord, RateUpResult, RecordFilterOptions, RecordList } from "./records";
 
 export type PoolKindSummary = {
   pool_kind: PoolKind;
@@ -96,6 +96,24 @@ type RarityBucket = {
   percent: number;
 };
 
+export type PullRarityBucketKey =
+  | "five_up"
+  | "five_non_up"
+  | "five_character"
+  | "five_item"
+  | "four_character"
+  | "four_hit"
+  | "four_item"
+  | "three"
+  | "unknown";
+
+export type PullRarityBucket = {
+  key: PullRarityBucketKey;
+  rarity?: number | null;
+  count: number;
+  percent: number;
+};
+
 export type ItemRank = {
   item_id: string;
   item_name: string;
@@ -135,5 +153,13 @@ export type DashboardSelection =
 export type DashboardSelectionDetail = PoolKindDetail & {
   rarity_distribution: RarityBucket[];
   hit_rarity_distribution: RarityBucket[];
+  pull_rarity_distribution: PullRarityBucket[];
   item_ranking: ItemRank[];
+};
+
+export type ProfileAnalysisView = {
+  overview: DashboardOverview;
+  selected_detail: DashboardSelectionDetail;
+  record_filter_options: RecordFilterOptions;
+  record_page: RecordList;
 };

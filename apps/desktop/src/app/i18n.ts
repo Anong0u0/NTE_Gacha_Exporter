@@ -3,8 +3,6 @@ import type { Ref } from "vue";
 import enMessages from "../assets/i18n/en.json";
 import zhHantMessages from "../assets/i18n/zh-Hant.json";
 
-const fallbackUiLocale = "en";
-
 const en = enMessages;
 type EnMessages = typeof en;
 export type I18nKey = keyof EnMessages;
@@ -21,14 +19,14 @@ export function createTranslator(uiLocale: Ref<string>) {
 }
 
 function translate(locale: string, key: I18nKey, params?: I18nParams) {
-  const messages = dictionaries[locale] ?? dictionaries[fallbackUiLocale];
-  return interpolate(messages[key] || en[key] || key, params);
+  const messages = dictionaries[locale];
+  return interpolate(messages?.[key] ?? "", params);
 }
 
 export function uiLocaleDisplayName(locale: string, t: (key: I18nKey, params?: I18nParams) => string) {
   if (locale === "zh-Hant") return t("locale.zhHant");
   if (locale === "en") return t("locale.en");
-  return `${locale} (${t("locale.en")})`;
+  return "";
 }
 
 function interpolate(template: string, params?: I18nParams) {

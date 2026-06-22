@@ -12,11 +12,14 @@ export type DisplayRecord = {
   item_id: string;
   item_name: string;
   item_asset_refs: AssetRefs;
+  item_kind: ItemKind;
   rarity?: number | null;
   count?: number | null;
   roll_points?: number | null;
   roll_label_id?: string | null;
   roll_label?: string | null;
+  roll_bucket: RollBucket;
+  fork_result_mark?: ForkResultMark | null;
   secondary_item_id?: string | null;
   secondary_item_name?: string | null;
   secondary_item_asset_refs: AssetRefs;
@@ -85,6 +88,7 @@ export type RecordDerived = {
   pull_no_in_banner?: number | null;
   pity_5_before: number;
   pity_5_after: number;
+  ten_pull_progress_before?: number | null;
   ten_pull_progress_after?: number | null;
   hit_rarity?: number | null;
   rate_up_result: RateUpResult;

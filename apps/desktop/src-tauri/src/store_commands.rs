@@ -4,8 +4,8 @@ use std::path::Path;
 use nte_capture::{build_capture_document, read_raw_capture};
 use nte_core::{
     BackupReport, DashboardOverview, DashboardSelection, DashboardSelectionDetail, ImportReport,
-    PoolKind, PoolKindDetail, Profile, RecordFilter, RecordFilterOptions, RecordList,
-    RestoreReport, Settings, SettingsPatch,
+    PoolKind, PoolKindDetail, Profile, ProfileAnalysisView, RecordFilter, RecordFilterOptions,
+    RecordList, RestoreReport, Settings, SettingsPatch,
 };
 use nte_store::load_locale_or_settings;
 use tauri::State;
@@ -93,6 +93,20 @@ pub(crate) fn import_raw_jsonl(
 }
 
 #[tauri::command]
+pub(crate) fn profile_analysis_view(
+    state: State<'_, AppState>,
+    profile_name: String,
+    selection: DashboardSelection,
+    record_filter: RecordFilter,
+    locale: Option<String>,
+) -> Result<ProfileAnalysisView, ApiError> {
+    with_store(&state, |store| {
+        let locale = load_locale_or_settings(store, locale)?;
+        store.profile_analysis_view(&profile_name, &locale, &selection, &record_filter)
+    })
+}
+
+#[tauri::command]
 pub(crate) fn dashboard_overview(
     state: State<'_, AppState>,
     profile_name: String,
@@ -131,6 +145,19 @@ pub(crate) fn dashboard_selection_detail(
 }
 
 #[tauri::command]
+pub(crate) fn dashboard_scope_detail(
+    state: State<'_, AppState>,
+    profile_name: String,
+    selection: DashboardSelection,
+    locale: Option<String>,
+) -> Result<DashboardSelectionDetail, ApiError> {
+    with_store(&state, |store| {
+        let locale = load_locale_or_settings(store, locale)?;
+        store.dashboard_scope_detail(&profile_name, &locale, &selection)
+    })
+}
+
+#[tauri::command]
 pub(crate) fn list_records(
     state: State<'_, AppState>,
     profile_name: String,
@@ -140,6 +167,19 @@ pub(crate) fn list_records(
     with_store(&state, |store| {
         let locale = load_locale_or_settings(store, locale)?;
         store.list_records(&profile_name, &locale, &filter)
+    })
+}
+
+#[tauri::command]
+pub(crate) fn record_page(
+    state: State<'_, AppState>,
+    profile_name: String,
+    filter: RecordFilter,
+    locale: Option<String>,
+) -> Result<RecordList, ApiError> {
+    with_store(&state, |store| {
+        let locale = load_locale_or_settings(store, locale)?;
+        store.record_page(&profile_name, &locale, &filter)
     })
 }
 

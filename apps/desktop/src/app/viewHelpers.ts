@@ -2,40 +2,6 @@ import type { BannerSummary, DisplayRecord, ForkResultMark, ItemKind, PityBadge,
 import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
-const english: Translator = (key, params) => {
-  const fallback: Record<string, string> = {
-    "common.unknown": "Unknown",
-    "format.notApplicable": "N/A",
-    "format.offRate": "Off-rate",
-    "format.windowUnknown": "window unknown",
-    "format.ongoing": "ongoing",
-    "records.rollGift": "Gift",
-    "records.pityBadgeForkUpGuarantee": "UP guarantee",
-    "records.pityBadgeForkFiveStarGuarantee": "5★ guarantee",
-    "records.pityBadgeForkFourStarGuarantee": "4★ guarantee",
-    "records.forkResultWin": "Win",
-    "records.forkResultGuaranteed": "Guaranteed",
-    "records.forkResultLose": "Lose",
-    "records.nonUpFiveStar": "Non-UP 5★",
-    "records.rollSleep": "Sleep",
-    "records.rollNotApplicable": "N/A",
-    "records.itemKindCharacter": "Character",
-    "records.itemKindFork": "Fork",
-    "records.itemKindAppearance": "Appearance",
-    "records.itemKindInventory": "Inventory",
-    "records.itemKindVehicleModule": "Vehicle module",
-    "records.itemKindUnknown": "Unknown",
-    "capture.stateStarting": "Starting",
-    "capture.stateRunning": "Running",
-    "capture.stateStopping": "Stopping",
-    "capture.stateCompleted": "Completed",
-    "capture.stateFailed": "Failed",
-    "capture.liveOnly": "Live only",
-    "capture.fullUpdate": "Full update",
-    "capture.autoPage": "Auto-page",
-  };
-  return (fallback[key] ?? key).replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? ""));
-};
 
 export function percent(value?: number | null) {
   if (value === null || value === undefined) return "-";
@@ -50,19 +16,21 @@ export function formatTime(value?: string | null) {
   return value?.replace("T", " ").replace("Z", "") ?? "-";
 }
 
-export function formatResult(value: string, t: Translator = english) {
+export function formatResult(value: string, t: Translator) {
+  if (value === "up") return "UP";
   if (value === "not_applicable") return t("format.notApplicable");
   if (value === "unknown") return t("common.unknown");
-  return value === "off_rate" ? t("format.offRate") : "UP";
+  if (value === "off_rate") return t("format.offRate");
+  return "";
 }
 
-export function formatRecordResultBadge(value: string, t: Translator = english) {
+export function formatRecordResultBadge(value: string, t: Translator) {
   if (value === "unknown") return "";
   if (value === "not_applicable") return t("records.nonUpFiveStar");
   return formatResult(value, t);
 }
 
-export function primaryRecordBadge(record: DisplayRecord, t: Translator = english) {
+export function primaryRecordBadge(record: DisplayRecord, t: Translator) {
   const forkBadge = forkHitBadge(record);
   if (forkBadge) return forkBadge;
   return formatRecordResultBadge(record.derived.rate_up_result, t);
@@ -72,23 +40,25 @@ export function isHitBadgeLabel(value: string) {
   return value === "W" || value === "G" || value === "L";
 }
 
-export function formatRollBucket(value: RollBucket, t: Translator = english) {
+export function formatRollBucket(value: RollBucket, t: Translator) {
   if (value === "gift") return t("records.rollGift");
   if (value === "sleep") return t("records.rollSleep");
   if (value === "not_applicable") return t("records.rollNotApplicable");
-  return value;
+  if (["1", "2", "3", "4", "5", "6"].includes(value)) return value;
+  return "";
 }
 
-export function formatItemKind(value: ItemKind, t: Translator = english) {
+export function formatItemKind(value: ItemKind, t: Translator) {
   if (value === "character") return t("records.itemKindCharacter");
   if (value === "fork") return t("records.itemKindFork");
   if (value === "appearance") return t("records.itemKindAppearance");
   if (value === "inventory") return t("records.itemKindInventory");
   if (value === "vehicle_module") return t("records.itemKindVehicleModule");
-  return t("records.itemKindUnknown");
+  if (value === "unknown") return t("records.itemKindUnknown");
+  return "";
 }
 
-export function bannerTitle(banner?: BannerSummary | DisplayRecord["banner"] | null, t: Translator = english) {
+export function bannerTitle(banner: BannerSummary | DisplayRecord["banner"] | null | undefined, t: Translator) {
   return banner?.title || banner?.banner_id || `${t("common.unknown")} ${t("common.banner").toLowerCase()}`;
 }
 
@@ -98,7 +68,7 @@ export function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | nu
   return banner && "resolution_issue" in banner ? (banner.resolution_issue ?? "") : "";
 }
 
-export function formatBannerWindow(start?: string | null, end?: string | null, t: Translator = english) {
+export function formatBannerWindow(start: string | null | undefined, end: string | null | undefined, t: Translator) {
   if (!start && !end) return t("format.windowUnknown");
   return `${start ?? t("common.unknown").toLowerCase()} -> ${end ?? t("format.ongoing")}`;
 }
@@ -112,16 +82,17 @@ export function formatPoolKindPullNo(record: DisplayRecord) {
 }
 
 export function forkHitBadge(record: DisplayRecord) {
-  if (record.pool_kind !== "fork_lottery" || record.derived.hit_rarity !== 5) return "";
-  if (record.derived.rate_up_result === "up") return isForkUpGuaranteeHit(record) ? "G" : "W";
-  if (record.derived.rate_up_result === "off_rate") return "L";
+  if (record.fork_result_mark === "win") return "W";
+  if (record.fork_result_mark === "guaranteed") return "G";
+  if (record.fork_result_mark === "lose") return "L";
   return "";
 }
 
-export function formatForkResultMark(value: ForkResultMark, t: Translator = english) {
+export function formatForkResultMark(value: ForkResultMark, t: Translator) {
   if (value === "win") return t("records.forkResultWin");
   if (value === "guaranteed") return t("records.forkResultGuaranteed");
-  return t("records.forkResultLose");
+  if (value === "lose") return t("records.forkResultLose");
+  return "";
 }
 
 export function forkWinRate(summary?: { fork_observed_25_75_win_rate?: number | null } | null) {
@@ -134,7 +105,7 @@ export function formatPity(record: DisplayRecord) {
 }
 
 export function formatTenPullProgress(record: DisplayRecord) {
-  const progress = record.derived.ten_pull_progress_after;
+  const progress = record.derived.ten_pull_progress_before;
   return progress == null ? "-" : String(progress);
 }
 
@@ -142,7 +113,7 @@ export function formatTenPullProgressSummary(progress?: number | null) {
   return progress == null ? "-" : `${progress}/10`;
 }
 
-export function formatPityBadge(record: DisplayRecord, t: Translator = english) {
+export function formatPityBadge(record: DisplayRecord, t: Translator) {
   const badge = record.derived.pity_badge;
   if (!badge) return "";
   return formatPityBadgeValue(badge, t);
@@ -153,32 +124,28 @@ export function formatRolls(record: DisplayRecord) {
   return record.roll_label ?? record.roll_points ?? "-";
 }
 
-export function formatPityBadgeValue(value: PityBadge, t: Translator = english) {
+export function formatPityBadgeValue(value: PityBadge, t: Translator) {
   if (value === "fork_up_guarantee") return t("records.pityBadgeForkUpGuarantee");
   if (value === "fork_5star_guarantee") return t("records.pityBadgeForkFiveStarGuarantee");
-  return t("records.pityBadgeForkFourStarGuarantee");
+  if (value === "fork_4star_guarantee") return t("records.pityBadgeForkFourStarGuarantee");
+  return "";
 }
 
-function isForkUpGuaranteeHit(record: DisplayRecord) {
-  const before = record.derived.fork_up_pity_before;
-  const hard = record.derived.rule.hard_up_pity_5;
-  return before != null && hard != null && before + 1 === hard;
-}
-
-export function formatCaptureState(value?: string | null, t: Translator = english) {
+export function formatCaptureState(value: string | null | undefined, t: Translator) {
   if (!value) return "-";
   if (value === "starting") return t("capture.stateStarting");
   if (value === "running") return t("capture.stateRunning");
   if (value === "stopping") return t("capture.stateStopping");
   if (value === "completed") return t("capture.stateCompleted");
   if (value === "failed") return t("capture.stateFailed");
-  return value;
+  return "";
 }
 
-export function formatCaptureMode(value?: string | null, t: Translator = english) {
+export function formatCaptureMode(value: string | null | undefined, t: Translator) {
   if (value === "live_only") return t("capture.liveOnly");
   if (value === "auto_page_full") return t("capture.fullUpdate");
-  return t("capture.autoPage");
+  if (value === "auto_page_incremental") return t("capture.autoPage");
+  return "";
 }
 
 export function captureRecordName(record: Record<string, unknown>) {

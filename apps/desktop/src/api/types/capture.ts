@@ -1,5 +1,7 @@
 import type { CaptureMode, ImportReport } from "./base";
 
+export type CaptureState = "starting" | "running" | "stopping" | "completed" | "failed";
+
 type CaptureCounters = {
   packets_seen: number;
   decoded_packets: number;
@@ -30,8 +32,8 @@ type AutoPageStatus = {
 
 export type CaptureStatus = {
   session_id: string;
-  state: "starting" | "running" | "stopping" | "completed" | "failed" | string;
-  mode: CaptureMode | string;
+  state: CaptureState;
+  mode: CaptureMode;
   records_count: number;
   latest_records: Record<string, unknown>[];
   counters: CaptureCounters;

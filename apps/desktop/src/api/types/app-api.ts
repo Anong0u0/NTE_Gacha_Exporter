@@ -1,6 +1,6 @@
 import type { BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
 import type { CaptureStatus, PendingAdminCapture } from "./capture";
-import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail } from "./dashboard";
+import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail, ProfileAnalysisView } from "./dashboard";
 import type { AssetResolveRequest, AssetResolveResult, AssetsPackCheckReport, AssetsPackInstallReport, AssetsPackPackage, AssetsPackStatus } from "./assets-pack";
 import type { RecordFilter, RecordFilterOptions, RecordList } from "./records";
 import type { UpdateCheckReport, UpdatePackage, UpdateStageReport, UpdateStatus } from "./update";
@@ -15,16 +15,20 @@ export type AppApi = {
   deleteProfile(profileName: string): Promise<Settings>;
   importPublicJson(profileName: string, path: string): Promise<ImportReport>;
   importRawJsonl(profileName: string, path: string, locale?: string): Promise<ImportReport>;
+  profileAnalysisView(profileName: string, selection: DashboardSelection, recordFilter: RecordFilter, locale?: string): Promise<ProfileAnalysisView>;
   dashboardOverview(profileName: string, locale?: string): Promise<DashboardOverview>;
   poolKindDetail(profileName: string, poolKind: PoolKind, locale?: string): Promise<PoolKindDetail>;
   dashboardSelectionDetail(profileName: string, selection: DashboardSelection, locale?: string): Promise<DashboardSelectionDetail>;
+  dashboardScopeDetail(profileName: string, selection: DashboardSelection, locale?: string): Promise<DashboardSelectionDetail>;
   listRecords(profileName: string, filter: RecordFilter, locale?: string): Promise<RecordList>;
+  recordPage(profileName: string, filter: RecordFilter, locale?: string): Promise<RecordList>;
   recordFilterOptions(profileName: string, locale?: string): Promise<RecordFilterOptions>;
   exportPublicJson(profileName: string, path: string, locale?: string): Promise<void>;
   exportCsv(profileName: string, path: string, locale?: string): Promise<void>;
   createBackup(path?: string | null): Promise<BackupReport>;
   restoreBackup(path: string): Promise<RestoreReport>;
   mapsList(): Promise<MapLocaleList>;
+  uiLocaleList(): Promise<MapLocaleList>;
   systemLocale(): Promise<string | null>;
   doctorRun(): Promise<DoctorReport>;
   runtimePing(): Promise<unknown>;

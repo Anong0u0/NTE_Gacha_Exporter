@@ -417,16 +417,29 @@
 }
 
 .rarity-5 .rarity-dot,
-.rarity-5-up .rarity-dot {
+.rarity-5-up .rarity-dot,
+.rarity-5-character .rarity-dot,
+.rarity-5-item .rarity-dot {
   background: #2d6d64;
 }
 
-.rarity-4 .rarity-dot {
+.rarity-5-non-up .rarity-dot {
+  background: #516b9d;
+}
+
+.rarity-4 .rarity-dot,
+.rarity-4-character .rarity-dot,
+.rarity-4-hit .rarity-dot,
+.rarity-4-item .rarity-dot {
   background: #efc45a;
 }
 
 .rarity-3 .rarity-dot {
   background: #8aa39b;
+}
+
+.rarity-unknown .rarity-dot {
+  background: #c3cec7;
 }
 
 .selected-summary-grid {

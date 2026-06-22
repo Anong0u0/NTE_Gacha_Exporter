@@ -117,23 +117,29 @@ pub fn derive_records(
             hard_pity_5: rule.rule.hard_pity_5,
             hard_up_pity_5: rule.rule.hard_up_pity_5,
         });
-        let ten_pull_progress_after = if counts_as_pull {
+        let (ten_pull_progress_before, ten_pull_progress_after) = if counts_as_pull {
             match pool_kind {
                 PoolKind::ForkLottery => {
-                    let progress_after = (fork_4_pity + 1).min(10) as u8;
+                    let progress_before = ten_pull_progress_before_from_pity(fork_4_pity);
+                    let progress_after = if matches!(hit_rarity, Some(4 | 5)) {
+                        0
+                    } else {
+                        ten_pull_progress_after_from_pity(fork_4_pity + 1)
+                    };
                     if matches!(hit_rarity, Some(4 | 5)) {
                         fork_4_pity = 0;
                     } else {
-                        fork_4_pity = (fork_4_pity + 1).min(10);
+                        fork_4_pity = (fork_4_pity + 1).min(9);
                     }
-                    Some(progress_after)
+                    (Some(progress_before), Some(progress_after))
                 }
-                PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => {
-                    pull_no_in_pool_kind.map(ten_pull_progress_after)
-                }
+                PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => (
+                    pull_no_in_pool_kind.map(ten_pull_progress_before),
+                    pull_no_in_pool_kind.map(ten_pull_progress_after),
+                ),
             }
         } else {
-            None
+            (None, None)
         };
         let fork_up_pity_after = if counts_as_pull && pool_kind == PoolKind::ForkLottery {
             let public_after = fork_up_pity + 1;
@@ -157,6 +163,7 @@ pub fn derive_records(
             pull_no_in_banner,
             pity_5_before,
             pity_5_after,
+            ten_pull_progress_before,
             ten_pull_progress_after,
             hit_rarity,
             rate_up_result: rate_up,
@@ -248,8 +255,20 @@ where
     *value
 }
 
-fn ten_pull_progress_after(pull_no: u64) -> u8 {
+fn ten_pull_progress_before(pull_no: u64) -> u8 {
     (((pull_no - 1) % 10) + 1) as u8
+}
+
+fn ten_pull_progress_after(pull_no: u64) -> u8 {
+    (pull_no % 10) as u8
+}
+
+fn ten_pull_progress_before_from_pity(pity: u64) -> u8 {
+    (pity + 1).min(10) as u8
+}
+
+fn ten_pull_progress_after_from_pity(pity: u64) -> u8 {
+    pity.min(9) as u8
 }
 
 #[cfg(test)]
@@ -382,25 +401,56 @@ mod tests {
     }
 
     #[test]
-    fn ten_pull_progress_tracks_countable_pool_kind_pulls() {
+    fn monopoly_ten_pull_progress_has_before_and_after_state() {
         let map = load_map("zh-Hant").expect("map should load");
-        let mut records = Vec::new();
-        for index in 0..11 {
-            records.push(record(
-                &format!("r{index}"),
-                "ForkLottery_AnHunQu",
-                "fork_dustbin",
-                &format!("2026-01-01 00:{index:02}:00"),
-            ));
-        }
-        records[5].roll_label_id = Some("BPUI_LotteryResult_jidianzengli".to_string());
+        let limited_records = (0..11)
+            .map(|index| {
+                record(
+                    &format!("limited-r{index}"),
+                    "CardPool_Character",
+                    "1003",
+                    &format!("2026-05-13 05:{index:02}:00"),
+                )
+            })
+            .collect::<Vec<_>>();
+        let standard_records = (0..11)
+            .map(|index| {
+                record(
+                    &format!("standard-r{index}"),
+                    "CardPool_NewRole",
+                    "1003",
+                    &format!("2026-01-01 00:{index:02}:00"),
+                )
+            })
+            .collect::<Vec<_>>();
 
-        let derived = derive_records(&records, &map).expect("records should derive");
+        let limited = derive_records(&limited_records, &map).expect("records should derive");
+        let standard = derive_records(&standard_records, &map).expect("records should derive");
 
-        assert_eq!(derived[0].ten_pull_progress_after, Some(1));
-        assert_eq!(derived[4].ten_pull_progress_after, Some(5));
-        assert_eq!(derived[5].ten_pull_progress_after, None);
-        assert_eq!(derived[10].ten_pull_progress_after, Some(10));
+        assert_eq!(limited[0].ten_pull_progress_before, Some(1));
+        assert_eq!(limited[0].ten_pull_progress_after, Some(1));
+        assert_eq!(limited[8].ten_pull_progress_before, Some(9));
+        assert_eq!(limited[8].ten_pull_progress_after, Some(9));
+        assert_eq!(limited[9].ten_pull_progress_before, Some(10));
+        assert_eq!(limited[9].ten_pull_progress_after, Some(0));
+        assert_eq!(limited[10].ten_pull_progress_before, Some(1));
+        assert_eq!(limited[10].ten_pull_progress_after, Some(1));
+        assert_eq!(
+            standard
+                .iter()
+                .map(|record| (
+                    record.ten_pull_progress_before,
+                    record.ten_pull_progress_after
+                ))
+                .collect::<Vec<_>>(),
+            limited
+                .iter()
+                .map(|record| (
+                    record.ten_pull_progress_before,
+                    record.ten_pull_progress_after
+                ))
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
@@ -424,9 +474,11 @@ mod tests {
 
         let derived = derive_records(&records, &map).expect("records should derive");
 
+        assert_eq!(derived[8].ten_pull_progress_before, Some(9));
         assert_eq!(derived[8].ten_pull_progress_after, Some(9));
         assert_eq!(derived[9].hit_rarity, Some(4));
-        assert_eq!(derived[9].ten_pull_progress_after, Some(10));
+        assert_eq!(derived[9].ten_pull_progress_before, Some(10));
+        assert_eq!(derived[9].ten_pull_progress_after, Some(0));
         assert_eq!(
             derived[9].pity_badge,
             Some(PityBadge::ForkFourStarGuarantee)
@@ -453,9 +505,35 @@ mod tests {
 
         let derived = derive_records(&records, &map).expect("records should derive");
 
+        assert_eq!(derived[0].ten_pull_progress_before, Some(1));
         assert_eq!(derived[0].ten_pull_progress_after, Some(1));
         assert_eq!(derived[1].hit_rarity, Some(5));
-        assert_eq!(derived[1].ten_pull_progress_after, Some(2));
+        assert_eq!(derived[1].ten_pull_progress_before, Some(2));
+        assert_eq!(derived[1].ten_pull_progress_after, Some(0));
+    }
+
+    #[test]
+    fn non_pull_rows_do_not_advance_ten_pull_progress() {
+        let map = load_map("zh-Hant").expect("map should load");
+        let mut records = Vec::new();
+        for index in 0..11 {
+            records.push(record(
+                &format!("r{index}"),
+                "ForkLottery_AnHunQu",
+                "fork_dustbin",
+                &format!("2026-01-01 00:{index:02}:00"),
+            ));
+        }
+        records[5].roll_label_id = Some("BPUI_LotteryResult_jidianzengli".to_string());
+
+        let derived = derive_records(&records, &map).expect("records should derive");
+
+        assert_eq!(derived[4].ten_pull_progress_before, Some(5));
+        assert_eq!(derived[4].ten_pull_progress_after, Some(5));
+        assert_eq!(derived[5].ten_pull_progress_before, None);
+        assert_eq!(derived[5].ten_pull_progress_after, None);
+        assert_eq!(derived[10].ten_pull_progress_before, Some(10));
+        assert_eq!(derived[10].ten_pull_progress_after, Some(9));
     }
 
     #[test]
@@ -660,8 +738,12 @@ mod tests {
         assert_eq!(derived[1].hit_rarity, None);
         assert_eq!(derived[1].pity_5_before, 0);
         assert_eq!(derived[1].pity_5_after, 0);
+        assert_eq!(derived[1].ten_pull_progress_before, None);
+        assert_eq!(derived[1].ten_pull_progress_after, None);
         assert_eq!(derived[2].pull_no_in_pool_kind, Some(2));
         assert_eq!(derived[2].pity_5_before, 0);
+        assert_eq!(derived[2].ten_pull_progress_before, Some(2));
+        assert_eq!(derived[2].ten_pull_progress_after, Some(2));
     }
 
     #[test]

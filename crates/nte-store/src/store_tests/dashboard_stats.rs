@@ -22,6 +22,12 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
             "2026-01-01 10:02:00",
         ),
         record(
+            "c4",
+            "CardPool_Character",
+            "fork_jiaojuan",
+            "2026-01-01 10:03:00",
+        ),
+        record(
             "f1",
             "ForkLottery_AnHunQu",
             "fork_Arachne",
@@ -47,8 +53,17 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
     let fork = store
         .pool_kind_detail("default", "zh-Hant", PoolKind::ForkLottery)
         .unwrap();
+    let limited_detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyLimited,
+            },
+        )
+        .unwrap();
 
-    assert_eq!(overview.total_records, 5);
+    assert_eq!(overview.total_records, 6);
     assert_eq!(overview.pool_kinds.len(), 3);
     assert_eq!(
         overview
@@ -56,14 +71,14 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
             .iter()
             .map(|summary| summary.roll_points_total)
             .sum::<i64>(),
-        5
+        6
     );
-    assert_eq!(limited.total_pulls, 3);
-    assert_eq!(limited.roll_points_total, 3);
-    assert_eq!(limited.known_roll_point_records, 3);
+    assert_eq!(limited.total_pulls, 4);
+    assert_eq!(limited.roll_points_total, 4);
+    assert_eq!(limited.known_roll_point_records, 4);
     assert_eq!(limited.missing_roll_point_records, 0);
     assert_eq!(limited.hit_count, 0);
-    assert_eq!(limited.current_pity, 3);
+    assert_eq!(limited.current_pity, 4);
     assert_eq!(limited.average_5star_pity, None);
     assert_eq!(limited.average_roll_points_to_5star, None);
     assert_eq!(limited.roll_point_cost_samples_5star, 0);
@@ -88,6 +103,38 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
             .rarity_distribution
             .iter()
             .any(|bucket| bucket.rarity == 5 && bucket.count == 3)
+    );
+    assert_eq!(
+        limited_detail
+            .pull_rarity_distribution
+            .iter()
+            .map(|bucket| bucket.count)
+            .sum::<u64>(),
+        limited_detail.summary.total_pulls
+    );
+    assert!(limited_detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FiveItem
+            && bucket.rarity == Some(5)
+            && bucket.count == 1
+            && bucket.percent == 0.25
+    }));
+    assert!(limited_detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FourItem
+            && bucket.rarity == Some(4)
+            && bucket.count == 1
+            && bucket.percent == 0.25
+    }));
+    assert!(limited_detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::Three
+            && bucket.rarity == Some(3)
+            && bucket.count == 2
+            && bucket.percent == 0.5
+    }));
+    assert!(
+        limited_detail
+            .pull_rarity_distribution
+            .iter()
+            .all(|bucket| bucket.key != PullRarityBucketKey::FiveUp)
     );
 }
 
@@ -381,6 +428,76 @@ fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
 }
 
 #[test]
+fn profile_analysis_view_matches_detail_options_and_record_page_contracts() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record(
+            "lose",
+            "ForkLottery_AnHunQu",
+            "fork_Arachne",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "win",
+            "ForkLottery_AnHunQu",
+            "fork_Rose",
+            "2026-01-01 10:01:00",
+        ),
+        record(
+            "limited",
+            "CardPool_Character",
+            "1010",
+            "2026-01-02 10:00:00",
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let selection = DashboardSelection::PoolKind {
+        pool_kind: PoolKind::ForkLottery,
+    };
+    let record_filter = RecordFilter {
+        pool_kind: Some(PoolKind::ForkLottery),
+        hit_rarities: vec![5],
+        fork_result_marks: vec![ForkResultMark::Win],
+        sort_direction: Some(SortDirection::Asc),
+        ..RecordFilter::default()
+    };
+
+    let view = store
+        .profile_analysis_view("default", "zh-Hant", &selection, &record_filter)
+        .unwrap();
+    let detail = store
+        .dashboard_scope_detail("default", "zh-Hant", &selection)
+        .unwrap();
+    let options = store.record_filter_options("default", "zh-Hant").unwrap();
+    let page = store
+        .record_page("default", "zh-Hant", &record_filter)
+        .unwrap();
+
+    assert_eq!(view.overview.total_records, 3);
+    assert_eq!(view.selected_detail, detail);
+    assert_eq!(view.record_filter_options, options);
+    assert_eq!(view.record_page, page);
+    assert_eq!(view.record_page.total, 1);
+    assert_eq!(view.record_page.records[0].record_id, "win");
+    assert_eq!(
+        view.record_page.records[0].fork_result_mark,
+        Some(ForkResultMark::Win)
+    );
+    assert_eq!(view.record_page.records[0].item_kind, ItemKind::Fork);
+    assert_eq!(view.record_page.records[0].roll_bucket, RollBucket::One);
+    assert!(view
+        .selected_detail
+        .five_star_history
+        .iter()
+        .any(|hit| hit.record.record_id == "lose"
+            && hit.record.fork_result_mark == Some(ForkResultMark::Lose)));
+}
+
+#[test]
 fn dashboard_selection_detail_reports_hit_distribution_and_average_four_star_pity() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
@@ -466,6 +583,38 @@ fn dashboard_selection_detail_reports_hit_distribution_and_average_four_star_pit
     assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
         bucket.rarity == 3 && bucket.count == 2 && bucket.percent == 0.5
     }));
+    assert_eq!(
+        detail
+            .pull_rarity_distribution
+            .iter()
+            .map(|bucket| bucket.count)
+            .sum::<u64>(),
+        detail.summary.total_pulls
+    );
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FiveUp
+            && bucket.rarity == Some(5)
+            && bucket.count == 1
+            && bucket.percent == 0.2
+    }));
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FiveNonUp
+            && bucket.rarity == Some(5)
+            && bucket.count == 1
+            && bucket.percent == 0.2
+    }));
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FourHit
+            && bucket.rarity == Some(4)
+            && bucket.count == 1
+            && bucket.percent == 0.2
+    }));
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::Three
+            && bucket.rarity == Some(3)
+            && bucket.count == 2
+            && bucket.percent == 0.4
+    }));
 }
 
 #[test]
@@ -538,8 +687,118 @@ fn standard_pool_counts_standard_five_pool_as_up_items() {
     assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
         bucket.rarity == 5 && bucket.count == 1
     }));
+    assert_eq!(
+        detail
+            .pull_rarity_distribution
+            .iter()
+            .map(|bucket| bucket.count)
+            .sum::<u64>(),
+        detail.summary.total_pulls
+    );
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FiveCharacter
+            && bucket.rarity == Some(5)
+            && bucket.count == 1
+            && bucket.percent == 0.5
+    }));
+    assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
+        bucket.key == PullRarityBucketKey::FiveItem
+            && bucket.rarity == Some(5)
+            && bucket.count == 1
+            && bucket.percent == 0.5
+    }));
     assert_eq!(standard_banner.rate_up_5_count, 2);
     assert!(fork_rank.item_asset_refs.contains_key("icon"));
+}
+
+#[test]
+fn limited_and_standard_pull_rarity_distribution_split_character_and_items() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record(
+            "limited-five-character",
+            "CardPool_Character",
+            "1010",
+            "2026-06-02 00:00:00",
+        ),
+        record(
+            "limited-five-item",
+            "CardPool_Character",
+            "Fashion_vehicle_1010_V008",
+            "2026-06-02 00:01:00",
+        ),
+        record(
+            "limited-four-character",
+            "CardPool_Character",
+            "1008",
+            "2026-06-02 00:02:00",
+        ),
+        record(
+            "limited-four-item",
+            "CardPool_Character",
+            "fork_jiaojuan",
+            "2026-06-02 00:03:00",
+        ),
+        record(
+            "standard-five-character",
+            "CardPool_NewRole",
+            "1003",
+            "2026-06-02 00:04:00",
+        ),
+        record(
+            "standard-five-item",
+            "CardPool_NewRole",
+            "fork_wuhuakuang",
+            "2026-06-02 00:05:00",
+        ),
+        record(
+            "standard-four-character",
+            "CardPool_NewRole",
+            "1008",
+            "2026-06-02 00:06:00",
+        ),
+        record(
+            "standard-four-item",
+            "CardPool_NewRole",
+            "fork_jiaojuan",
+            "2026-06-02 00:07:00",
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    for pool_kind in [PoolKind::MonopolyLimited, PoolKind::MonopolyStandard] {
+        let detail = store
+            .dashboard_selection_detail(
+                "default",
+                "zh-Hant",
+                &DashboardSelection::PoolKind { pool_kind },
+            )
+            .unwrap();
+        let bucket_count = |key| {
+            detail
+                .pull_rarity_distribution
+                .iter()
+                .find(|bucket| bucket.key == key)
+                .map(|bucket| bucket.count)
+                .unwrap_or_default()
+        };
+
+        assert_eq!(detail.summary.total_pulls, 4);
+        assert_eq!(bucket_count(PullRarityBucketKey::FiveCharacter), 1);
+        assert_eq!(bucket_count(PullRarityBucketKey::FiveItem), 1);
+        assert_eq!(bucket_count(PullRarityBucketKey::FourCharacter), 1);
+        assert_eq!(bucket_count(PullRarityBucketKey::FourItem), 1);
+        assert!(
+            detail
+                .pull_rarity_distribution
+                .iter()
+                .all(|bucket| bucket.key != PullRarityBucketKey::FiveUp
+                    && bucket.key != PullRarityBucketKey::FourHit)
+        );
+    }
 }
 
 #[test]

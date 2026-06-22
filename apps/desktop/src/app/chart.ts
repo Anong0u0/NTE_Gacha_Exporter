@@ -1,16 +1,12 @@
 import { init, type ECharts } from "echarts/core";
 import type { Ref } from "vue";
 import type { DashboardSelectionDetail } from "../api";
+import type { I18nKey } from "./i18n";
+import { dashboardRaritySlices, type RaritySlice } from "./rarityBuckets";
 
-type ChartRarityBucket = {
-  key: string;
-  rarity: number;
-  label: string;
-  count: number;
-  percent: number;
-};
+type Translator = (key: I18nKey) => string;
 
-export function createChartTools(chartEl: Ref<HTMLElement | null>, detail: Ref<DashboardSelectionDetail | null>) {
+export function createChartTools(chartEl: Ref<HTMLElement | null>, detail: Ref<DashboardSelectionDetail | null>, t: Translator) {
   let chart: ECharts | null = null;
   let chartElement: HTMLElement | null = null;
   let resizeObserver: ResizeObserver | null = null;
@@ -34,15 +30,16 @@ export function createChartTools(chartEl: Ref<HTMLElement | null>, detail: Ref<D
     }
     const activeChart = chart;
     if (!activeChart) return;
-    const rarityColor = (bucket: ChartRarityBucket) => {
-      if (bucket.key === "5-up") return "#2d6d64";
+    const rarityColor = (bucket: RaritySlice) => {
+      if (bucket.key === "five_up") return "#2d6d64";
+      if (bucket.key === "five_non_up") return "#516b9d";
       const rarity = bucket.rarity;
       if (rarity === 5) return "#2d6d64";
       if (rarity === 4) return "#efc45a";
       if (rarity === 3) return "#8aa39b";
       return "#c3cec7";
     };
-    const data = displayChartBuckets(detail.value).map((bucket) => ({
+    const data = dashboardRaritySlices(detail.value, t).map((bucket) => ({
       name: bucket.label,
       value: bucket.count,
       percent: bucket.percent,
@@ -87,35 +84,4 @@ export function createChartTools(chartEl: Ref<HTMLElement | null>, detail: Ref<D
   }
 
   return { renderChart, disposeChart };
-}
-
-function displayChartBuckets(detail: DashboardSelectionDetail): ChartRarityBucket[] {
-  const hitBuckets = detail.hit_rarity_distribution ?? [];
-  const sourceBuckets = hitBuckets.length ? hitBuckets : detail.rarity_distribution;
-  const upCount = detail.summary.up_count ?? 0;
-  const fiveBucket = sourceBuckets.find((bucket) => bucket.rarity === 5);
-  const fiveCount = upCount > 0 ? upCount : (fiveBucket?.count ?? 0);
-  const buckets: Array<Omit<ChartRarityBucket, "percent">> = [];
-  if (fiveCount > 0) {
-    buckets.push({
-      key: upCount > 0 ? "5-up" : "5",
-      rarity: 5,
-      label: upCount > 0 ? "5★UP" : "5★",
-      count: fiveCount,
-    });
-  }
-  for (const bucket of sourceBuckets) {
-    if (bucket.rarity === 5) continue;
-    buckets.push({
-      key: String(bucket.rarity),
-      rarity: bucket.rarity,
-      label: `${bucket.rarity}★`,
-      count: bucket.count,
-    });
-  }
-  const total = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
-  return buckets.map((bucket) => ({
-    ...bucket,
-    percent: total > 0 ? bucket.count / total : 0,
-  }));
 }

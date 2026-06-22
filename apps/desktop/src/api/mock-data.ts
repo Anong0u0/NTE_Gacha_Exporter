@@ -47,10 +47,13 @@ export const mockRecords: DisplayRecord[] = [
     item_id: "rare_1",
     item_name: "Sigrid",
     item_asset_refs: mockItemAssetRefs.rare_1,
+    item_kind: "character",
     rarity: 5,
     count: 1,
     roll_points: 74,
     roll_label: "74",
+    roll_bucket: "not_applicable",
+    fork_result_mark: null,
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-4", {
       bannerId: "limited_mock",
@@ -79,10 +82,13 @@ export const mockRecords: DisplayRecord[] = [
     item_id: "common_2",
     item_name: "Training Log",
     item_asset_refs: {},
+    item_kind: "inventory",
     rarity: 3,
     count: 1,
     roll_points: 73,
     roll_label: "73",
+    roll_bucket: "not_applicable",
+    fork_result_mark: null,
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-3", {
       bannerId: "limited_mock",
@@ -111,10 +117,13 @@ export const mockRecords: DisplayRecord[] = [
     item_id: "fork_1",
     item_name: "Rose",
     item_asset_refs: mockItemAssetRefs.fork_1,
+    item_kind: "fork",
     rarity: 5,
     count: 1,
     roll_points: 24,
     roll_label: "24",
+    roll_bucket: "not_applicable",
+    fork_result_mark: "win",
     secondary_item_asset_refs: {},
     derived: mockDerived("mock-2", {
       bannerId: "ForkLottery_AnHunQu",
@@ -123,7 +132,8 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInBanner: 24,
       pity5Before: 23,
       pity5After: 24,
-      tenPullProgressAfter: 4,
+      tenPullProgressBefore: 4,
+      tenPullProgressAfter: 0,
       hitRarity: 5,
       rateUpResult: "up",
       guarantee5Before: true,
@@ -185,6 +195,7 @@ function mockDerived(
     pullNoInBanner: number | null;
     pity5Before: number;
     pity5After: number;
+    tenPullProgressBefore?: number | null;
     tenPullProgressAfter: number | null;
     hitRarity: number | null;
     rateUpResult: RateUpResult;
@@ -204,6 +215,7 @@ function mockDerived(
     pull_no_in_banner: options.pullNoInBanner,
     pity_5_before: options.pity5Before,
     pity_5_after: options.pity5After,
+    ten_pull_progress_before: options.tenPullProgressBefore ?? options.tenPullProgressAfter,
     ten_pull_progress_after: options.tenPullProgressAfter,
     hit_rarity: options.hitRarity,
     rate_up_result: options.rateUpResult,
@@ -295,7 +307,7 @@ export const mockSummary: PoolKindSummary[] = [
     hit_count: 1,
     five_star_item_count: 1,
     current_pity: 12,
-    current_ten_pull_progress: 4,
+    current_ten_pull_progress: 0,
     current_guarantee: false,
     hard_pity: 60,
     average_5star_pity: 24,

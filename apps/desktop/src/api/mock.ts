@@ -7,11 +7,10 @@ import type {
   DashboardSelection,
   DashboardSelectionDetail,
   ImportReport,
-  ItemKind,
   PoolKind,
   PoolKindSummary,
+  PullRarityBucketKey,
   RecordFilter,
-  RollBucket,
   SettingsPatch,
   UpdatePackage,
 } from "./types";
@@ -32,6 +31,64 @@ let mockLocale = "zh-Hant";
 let mockUiLocale = "zh-Hant";
 let mockUpdateChannel = "stable";
 let mockCheckUpdatesOnStartup = false;
+
+async function mockOverview() {
+  return {
+    profile: mockProfile,
+    last_run: mockReport("default", "raw_jsonl", "sample.raw.jsonl"),
+    total_records: 182,
+    pool_kinds: [
+      ...mockSummary,
+      {
+        pool_kind: "monopoly_standard" as const,
+        label: "Standard Board",
+        total_pulls: 0,
+        roll_points_total: 0,
+        known_roll_point_records: 0,
+        missing_roll_point_records: 0,
+        hit_count: 0,
+        five_star_item_count: 0,
+        current_pity: 0,
+        current_ten_pull_progress: null,
+        current_guarantee: false,
+        hard_pity: 90,
+        average_5star_pity: null,
+        average_4star_pity: null,
+        min_5star_pity: null,
+        max_5star_pity: null,
+        early_hit_count: 0,
+        up_count: 0,
+        off_rate_count: 0,
+        not_applicable_rate_up_count: 0,
+        unknown_rate_up_count: 0,
+        observed_up_rate: null,
+        fork_win_count: 0,
+        fork_loss_count: 0,
+        fork_forced_up_count: 0,
+        fork_observed_25_75_win_rate: null,
+        latest_5star: null,
+        four_star_count: 0,
+        rate_up_4_count: 0,
+        off_rate_4_count: 0,
+        not_applicable_rate_up_4_count: 0,
+        unknown_rate_up_4_count: 0,
+        average_roll_points_to_5star: null,
+        roll_point_cost_samples_5star: 0,
+      },
+    ],
+    banners: mockBanners,
+    time_stats: mockTimeStats,
+    rarity_distribution: [
+      { rarity: 5, count: 3, percent: 0.016 },
+      { rarity: 4, count: 18, percent: 0.099 },
+      { rarity: 3, count: 161, percent: 0.885 },
+    ],
+    item_ranking: [
+      { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, count: 44 },
+      { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[0].item_asset_refs, rarity: 5, count: 2 },
+    ],
+  };
+}
 
 function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionDetail {
   const records = mockRecords.filter((record) =>
@@ -87,6 +144,22 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
   const hit_rarity_distribution = [...hitRarityCounts.entries()]
     .sort(([left], [right]) => right - left)
     .map(([rarity, count]) => ({ rarity, count, percent: knownHitTotal ? count / knownHitTotal : 0 }));
+  const pullRarityCounts = new Map<PullRarityBucketKey, number>();
+  for (const record of countableRecords) {
+    const key = mockPullRarityBucketKey(record, poolKind);
+    pullRarityCounts.set(key, (pullRarityCounts.get(key) ?? 0) + 1);
+  }
+  const pull_rarity_distribution = mockPullRarityBucketOrder(poolKind)
+    .map((key) => {
+      const count = pullRarityCounts.get(key) ?? 0;
+      return {
+        key,
+        rarity: mockPullRarityBucketRarity(key),
+        count,
+        percent: countableRecords.length ? count / countableRecords.length : 0,
+      };
+    })
+    .filter((bucket) => bucket.count > 0);
   const itemCounts = new Map<string, { item_name: string; item_asset_refs: Record<string, unknown>; rarity?: number | null; count: number }>();
   for (const record of countableRecords) {
     const entry = itemCounts.get(record.item_id) ?? {
@@ -114,8 +187,46 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     })),
     rarity_distribution,
     hit_rarity_distribution,
+    pull_rarity_distribution,
     item_ranking,
   };
+}
+
+function mockPullRarityBucketKey(record: (typeof mockRecords)[number], poolKind: PoolKind): PullRarityBucketKey {
+  if (record.rarity === 5) {
+    if (poolKind === "monopoly_limited" || poolKind === "monopoly_standard") {
+      return record.item_kind === "character" ? "five_character" : "five_item";
+    }
+    if (poolKind === "fork_lottery" && record.derived.hit_rarity === 5) {
+      if (record.derived.rate_up_result === "up") return "five_up";
+      if (record.derived.rate_up_result === "off_rate") return "five_non_up";
+      return "five_item";
+    }
+    return "five_item";
+  }
+  if (record.rarity === 4) {
+    if (poolKind === "monopoly_limited" || poolKind === "monopoly_standard") {
+      return record.item_kind === "character" ? "four_character" : "four_item";
+    }
+    return record.derived.hit_rarity === 4 ? "four_hit" : "four_item";
+  }
+  if (record.rarity === 3) return "three";
+  return "unknown";
+}
+
+function mockPullRarityBucketOrder(poolKind: PoolKind): PullRarityBucketKey[] {
+  if (poolKind === "monopoly_standard" || poolKind === "monopoly_limited") {
+    return ["five_character", "five_item", "four_character", "four_item", "three", "unknown"];
+  }
+  if (poolKind === "fork_lottery") return ["five_up", "five_non_up", "five_item", "four_hit", "four_item", "three", "unknown"];
+  return ["five_character", "five_item", "four_character", "four_item", "three", "unknown"];
+}
+
+function mockPullRarityBucketRarity(key: PullRarityBucketKey) {
+  if (key.startsWith("five_")) return 5;
+  if (key.startsWith("four_")) return 4;
+  if (key === "three") return 3;
+  return null;
 }
 
 function mockAverage4StarPity(records: typeof mockRecords) {
@@ -129,6 +240,41 @@ function mockAverage4StarPity(records: typeof mockRecords) {
     }
   }
   return intervals.length ? intervals.reduce((total, value) => total + value, 0) / intervals.length : null;
+}
+
+function mockRecordPage(filter: RecordFilter) {
+  const search = filter.search?.toLowerCase().trim();
+  let records = mockRecords.filter((record) => {
+    if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
+    if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
+    if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
+    if (filter.hit_rarities?.length && (record.derived.hit_rarity == null || !filter.hit_rarities.includes(record.derived.hit_rarity))) return false;
+    if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;
+    if (filter.roll_buckets?.length && !filter.roll_buckets.includes(record.roll_bucket)) return false;
+    if (filter.item_kinds?.length && !filter.item_kinds.includes(record.item_kind)) return false;
+    if (filter.fork_result_marks?.length && (!record.fork_result_mark || !filter.fork_result_marks.includes(record.fork_result_mark))) return false;
+    if (filter.fork_pity_badges?.length) {
+      const badge = record.derived.pity_badge;
+      if (!badge || !filter.fork_pity_badges.includes(badge)) return false;
+    }
+    if (search && !`${record.item_name} ${record.item_id}`.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const direction = filter.sort_direction ?? "desc";
+  records = [...records].sort((left, right) => {
+    const leftTime = left.time ?? null;
+    const rightTime = right.time ?? null;
+    if (leftTime !== null && rightTime === null) return -1;
+    if (leftTime === null && rightTime !== null) return 1;
+    const timeOrder =
+      direction === "asc"
+        ? String(leftTime ?? "").localeCompare(String(rightTime ?? ""))
+        : String(rightTime ?? "").localeCompare(String(leftTime ?? ""));
+    return timeOrder || left.source_order - right.source_order || left.record_id.localeCompare(right.record_id);
+  });
+  const offset = filter.offset ?? 0;
+  const limit = filter.limit ?? 50;
+  return { total: records.length, records: records.slice(offset, offset + limit) };
 }
 
 export const mockApi: AppApi = {
@@ -201,62 +347,16 @@ export const mockApi: AppApi = {
   async importRawJsonl(profileName: string, path: string) {
     return mockReport(profileName, "raw_jsonl", path);
   },
-  async dashboardOverview() {
+  async profileAnalysisView(_profileName: string, selection: DashboardSelection, recordFilter: RecordFilter) {
     return {
-      profile: mockProfile,
-      last_run: mockReport("default", "raw_jsonl", "sample.raw.jsonl"),
-      total_records: 182,
-      pool_kinds: [
-        ...mockSummary,
-        {
-          pool_kind: "monopoly_standard" as const,
-          label: "Standard Board",
-          total_pulls: 0,
-          roll_points_total: 0,
-          known_roll_point_records: 0,
-          missing_roll_point_records: 0,
-          hit_count: 0,
-          five_star_item_count: 0,
-          current_pity: 0,
-          current_ten_pull_progress: null,
-          current_guarantee: false,
-          hard_pity: 90,
-          average_5star_pity: null,
-          average_4star_pity: null,
-          min_5star_pity: null,
-          max_5star_pity: null,
-          early_hit_count: 0,
-          up_count: 0,
-          off_rate_count: 0,
-          not_applicable_rate_up_count: 0,
-          unknown_rate_up_count: 0,
-          observed_up_rate: null,
-          fork_win_count: 0,
-          fork_loss_count: 0,
-          fork_forced_up_count: 0,
-          fork_observed_25_75_win_rate: null,
-          latest_5star: null,
-          four_star_count: 0,
-          rate_up_4_count: 0,
-          off_rate_4_count: 0,
-          not_applicable_rate_up_4_count: 0,
-          unknown_rate_up_4_count: 0,
-          average_roll_points_to_5star: null,
-          roll_point_cost_samples_5star: 0,
-        },
-      ],
-      banners: mockBanners,
-      time_stats: mockTimeStats,
-      rarity_distribution: [
-        { rarity: 5, count: 3, percent: 0.016 },
-        { rarity: 4, count: 18, percent: 0.099 },
-        { rarity: 3, count: 161, percent: 0.885 },
-      ],
-      item_ranking: [
-        { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, count: 44 },
-        { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[0].item_asset_refs, rarity: 5, count: 2 },
-      ],
+      overview: await mockOverview(),
+      selected_detail: mockSelectionDetail(selection),
+      record_filter_options: mockFilterOptions,
+      record_page: mockRecordPage(recordFilter),
     };
+  },
+  async dashboardOverview() {
+    return mockOverview();
   },
   async poolKindDetail(_profileName: string, poolKind: PoolKind) {
     const summary = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
@@ -278,42 +378,14 @@ export const mockApi: AppApi = {
   async dashboardSelectionDetail(_profileName: string, selection: DashboardSelection) {
     return mockSelectionDetail(selection);
   },
+  async dashboardScopeDetail(_profileName: string, selection: DashboardSelection) {
+    return mockSelectionDetail(selection);
+  },
   async listRecords(_profileName: string, filter: RecordFilter) {
-    const search = filter.search?.toLowerCase().trim();
-    let records = mockRecords.filter((record) => {
-      if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
-      if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
-      if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
-      if (filter.hit_rarities?.length && (record.derived.hit_rarity == null || !filter.hit_rarities.includes(record.derived.hit_rarity))) return false;
-      if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;
-      if (filter.roll_buckets?.length && !filter.roll_buckets.includes(mockRollBucket(record))) return false;
-      if (filter.item_kinds?.length && !filter.item_kinds.includes(mockItemKind(record))) return false;
-      if (filter.fork_result_marks?.length) {
-        const mark = mockForkResultMark(record);
-        if (!mark || !filter.fork_result_marks.includes(mark)) return false;
-      }
-      if (filter.fork_pity_badges?.length) {
-        const badge = record.derived.pity_badge;
-        if (!badge || !filter.fork_pity_badges.includes(badge)) return false;
-      }
-      if (search && !`${record.item_name} ${record.item_id}`.toLowerCase().includes(search)) return false;
-      return true;
-    });
-    const direction = filter.sort_direction ?? "desc";
-    records = [...records].sort((left, right) => {
-      const leftTime = left.time ?? null;
-      const rightTime = right.time ?? null;
-      if (leftTime !== null && rightTime === null) return -1;
-      if (leftTime === null && rightTime !== null) return 1;
-      const timeOrder =
-        direction === "asc"
-          ? String(leftTime ?? "").localeCompare(String(rightTime ?? ""))
-          : String(rightTime ?? "").localeCompare(String(leftTime ?? ""));
-      return timeOrder || left.source_order - right.source_order || left.record_id.localeCompare(right.record_id);
-    });
-    const offset = filter.offset ?? 0;
-    const limit = filter.limit ?? 50;
-    return { total: records.length, records: records.slice(offset, offset + limit) };
+    return mockRecordPage(filter);
+  },
+  async recordPage(_profileName: string, filter: RecordFilter) {
+    return mockRecordPage(filter);
   },
   async recordFilterOptions() {
     return mockFilterOptions;
@@ -346,6 +418,9 @@ export const mockApi: AppApi = {
     };
   },
   async mapsList() {
+    return { locales: ["zh-Hant", "en", "ja"] };
+  },
+  async uiLocaleList() {
     return { locales: ["zh-Hant", "en", "ja"] };
   },
   async systemLocale() {
@@ -462,31 +537,6 @@ export const mockApi: AppApi = {
     return mockCaptureStatus(sessionId);
   },
 };
-
-function mockRollBucket(record: { roll_label_id?: string | null; roll_points?: number | null }): RollBucket {
-  if (record.roll_label_id === "BPUI_LotteryResult_jidianzengli") return "gift";
-  if (record.roll_label_id === "BPUI_LotteryResult_chenmiandi") return "sleep";
-  if (record.roll_points != null && record.roll_points >= 1 && record.roll_points <= 6) return String(record.roll_points) as RollBucket;
-  return "not_applicable";
-}
-
-function mockForkResultMark(record: typeof mockRecords[number]) {
-  if (record.pool_kind !== "fork_lottery" || record.derived.hit_rarity !== 5) return null;
-  if (record.derived.rate_up_result === "off_rate") return "lose";
-  if (record.derived.rate_up_result !== "up") return null;
-  const before = record.derived.fork_up_pity_before;
-  const hard = record.derived.rule.hard_up_pity_5;
-  return before != null && hard != null && before + 1 === hard ? "guaranteed" : "win";
-}
-
-function mockItemKind(record: { item_id: string; record_type: string }): ItemKind {
-  if (record.item_id.startsWith("rare_")) return "character";
-  if (record.item_id.startsWith("fork_") || record.record_type === "fork") return "fork";
-  if (record.item_id.startsWith("appearance_")) return "appearance";
-  if (record.item_id.startsWith("vehicle_")) return "vehicle_module";
-  if (record.item_id.startsWith("common_")) return "inventory";
-  return "unknown";
-}
 
 function mockReport(profileName: string, sourceKind: string, sourcePath: string): ImportReport {
   return {

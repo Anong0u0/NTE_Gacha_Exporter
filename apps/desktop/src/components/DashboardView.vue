@@ -144,7 +144,7 @@ const app = useAppContext();
               v-for="hit in (app.detail?.five_star_history ?? []).slice(-12).reverse()"
               :key="hit.record.record_id"
               class="five-wall-item"
-              :title="`${hit.record.item_name} · ${hit.pity_distance} · ${app.formatTime(hit.record.time)}`"
+              :title="`${hit.record.item_name} · ${app.formatTime(hit.record.time)}`"
               :aria-label="`${hit.record.item_name} ${hit.pity_distance}`"
             >
               <span v-if="app.hasRecordVisual(hit.record)" class="five-wall-thumb">
@@ -211,7 +211,6 @@ const app = useAppContext();
           <section class="ranking-dialog" role="dialog" aria-modal="true" :aria-label="app.rankingDialogTitle">
             <div class="ranking-dialog-head">
               <div>
-                <span class="eyebrow">{{ app.selectedScopeLabel ?? app.t("dashboard.pool") }}</span>
                 <h2>{{ app.rankingDialogTitle }}</h2>
               </div>
               <button type="button" :title="app.t('common.close')" :aria-label="app.t('common.close')" @click="app.closeRankingDialog">

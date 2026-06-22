@@ -53,10 +53,7 @@ fn validate_ui_locale(locale: &str) -> Result<String, GuiError> {
     if locale.is_empty() {
         return Err(GuiError::LocaleNotFound(locale.to_string()));
     }
-    if nte_core::available_locales()
-        .iter()
-        .any(|available| available == locale)
-    {
+    if nte_core::is_ui_locale(locale) {
         return Ok(locale.to_string());
     }
     Err(GuiError::LocaleNotFound(locale.to_string()))

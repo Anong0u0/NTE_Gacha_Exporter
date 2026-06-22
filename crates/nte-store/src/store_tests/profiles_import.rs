@@ -81,6 +81,56 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
             })
             .is_err()
     );
+    assert!(
+        store
+            .update_settings(SettingsPatch {
+                ui_locale: Some("missing-ui-locale".to_string()),
+                ..SettingsPatch::default()
+            })
+            .is_err()
+    );
+}
+
+#[test]
+fn store_accepts_saved_map_ui_locale_for_future_i18n() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(tmp.path().join("data/profiles/default")).unwrap();
+    std::fs::write(
+        tmp.path().join("data/settings.json"),
+        json!({
+            "schema_version": 1,
+            "active_profile": "default",
+            "locale": "en",
+            "ui_locale": "ja",
+            "update_channel": "stable",
+            "check_updates_on_startup": false
+        })
+        .to_string(),
+    )
+    .unwrap();
+    std::fs::write(
+        tmp.path().join("data/profiles/default/profile.json"),
+        json!({
+            "schema_version": 1,
+            "name": "default",
+            "created_at": "1",
+            "updated_at": "1"
+        })
+        .to_string(),
+    )
+    .unwrap();
+    std::fs::write(
+        tmp.path().join("data/profiles/default/records.json"),
+        json!({
+            "schema_version": 1,
+            "records": []
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let store = JsonStore::open(tmp.path()).unwrap();
+    assert_eq!(store.settings().unwrap().ui_locale, "ja");
 }
 
 #[test]
@@ -291,7 +341,7 @@ fn fork_pool_missing_from_maps_rejects_entire_import() {
 }
 
 #[test]
-fn public_json_accepts_v1_v2_v3_v4_and_rejects_unsupported_major_versions() {
+fn public_json_accepts_v1_to_v5_and_rejects_unsupported_major_versions() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let v1_minor = serde_json::json!({
@@ -384,6 +434,23 @@ fn public_json_accepts_v1_v2_v3_v4_and_rejects_unsupported_major_versions() {
     assert!(
         store
             .import_public_document("default", &v5_major, "json", None)
+            .is_ok()
+    );
+    let v6_major = serde_json::json!({
+        "info": {
+            "schema": "nte-gacha-exporter-export",
+            "schema_version": "6.0"
+        },
+        "nte": {
+            "list": [
+                record("r6", "CardPool_Character", "fork_dustbin", "2026-01-01 10:05:00")
+            ]
+        }
+    })
+    .to_string();
+    assert!(
+        store
+            .import_public_document("default", &v6_major, "json", None)
             .is_err()
     );
 }

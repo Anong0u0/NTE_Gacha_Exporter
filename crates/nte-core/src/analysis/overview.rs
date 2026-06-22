@@ -7,9 +7,9 @@ use crate::{
     BannerSummary, DashboardOverview, DashboardSelection, DashboardSelectionDetail,
     DisplayRecord, FiveStarRecord, FiveStarResult, ForkResultMark, GuiError, ImportReport,
     InternalRecord, ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile,
-    RarityBucket, RateUpResult, RecordBannerOption, RecordDerived, RecordFilter,
-    RecordFilterOptions, RecordItemKindOption, RecordList, RecordRollBucketOption, RollBucket,
-    SortDirection, TimeBucketSummary, TimeStats,
+    ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket, RateUpResult,
+    RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions, RecordItemKindOption,
+    RecordList, RecordRollBucketOption, RollBucket, SortDirection, TimeBucketSummary, TimeStats,
 };
 use crate::{classify_pool_id, fallback_rule_for, fallback_rule_resolution};
 use crate::{compare_display_chronological, compare_display_newest_first};
@@ -20,26 +20,7 @@ pub fn dashboard_overview(
     records: &[InternalRecord],
     map: &MapData,
 ) -> Result<DashboardOverview, GuiError> {
-    let display_records = display_records(records, map)?;
-    let mut pool_kinds = Vec::new();
-    for kind in [
-        PoolKind::MonopolyLimited,
-        PoolKind::MonopolyStandard,
-        PoolKind::ForkLottery,
-    ] {
-        let detail = pool_kind_detail_from_display_records(&display_records, map, kind);
-        pool_kinds.push(detail.summary);
-    }
-    Ok(DashboardOverview {
-        profile,
-        last_run,
-        total_records: records.len() as u64,
-        pool_kinds,
-        banners: banner_summaries(&display_records),
-        time_stats: time_stats(&display_records),
-        rarity_distribution: rarity_distribution_from_display_refs(display_records.iter()),
-        item_ranking: item_ranking_from_display_refs(display_records.iter(), map),
-    })
+    Ok(AnalysisSnapshot::new(records, map)?.dashboard_overview(profile, last_run))
 }
 
 pub fn pool_kind_detail(
@@ -47,15 +28,9 @@ pub fn pool_kind_detail(
     map: &MapData,
     pool_kind: PoolKind,
 ) -> Result<PoolKindDetail, GuiError> {
-    let display_records = display_records(records, map)?;
-    Ok(selection_detail_from_display_records(
-        &display_records,
-        map,
-        pool_kind,
-        map.pool_kind_label(pool_kind),
-        None,
-    )
-    .into())
+    Ok(AnalysisSnapshot::new(records, map)?
+        .pool_kind_detail(pool_kind)
+        .into())
 }
 
 pub fn dashboard_selection_detail(
@@ -63,33 +38,119 @@ pub fn dashboard_selection_detail(
     map: &MapData,
     selection: &DashboardSelection,
 ) -> Result<DashboardSelectionDetail, GuiError> {
-    let display_records = display_records(records, map)?;
-    Ok(match selection {
-        DashboardSelection::PoolKind { pool_kind } => selection_detail_from_display_records(
-            &display_records,
+    Ok(AnalysisSnapshot::new(records, map)?.dashboard_selection_detail(selection))
+}
+
+pub fn profile_analysis_view(
+    profile: Profile,
+    last_run: Option<ImportReport>,
+    records: &[InternalRecord],
+    map: &MapData,
+    selection: &DashboardSelection,
+    record_filter: &RecordFilter,
+) -> Result<ProfileAnalysisView, GuiError> {
+    Ok(AnalysisSnapshot::new(records, map)?
+        .profile_analysis_view(profile, last_run, selection, record_filter))
+}
+
+struct AnalysisSnapshot<'a> {
+    records: Vec<DisplayRecord>,
+    map: &'a MapData,
+}
+
+impl<'a> AnalysisSnapshot<'a> {
+    fn new(records: &[InternalRecord], map: &'a MapData) -> Result<Self, GuiError> {
+        Ok(Self {
+            records: display_records(records, map)?,
             map,
-            *pool_kind,
-            map.pool_kind_label(*pool_kind),
-            None,
-        ),
-        DashboardSelection::Banner {
-            pool_kind,
-            banner_id,
-        } => {
-            let label = display_records
-                .iter()
-                .find(|record| record.derived.banner_id.as_deref() == Some(banner_id.as_str()))
-                .and_then(|record| record.banner.title.clone())
-                .unwrap_or_else(|| banner_id.clone());
-            selection_detail_from_display_records(
-                &display_records,
-                map,
-                *pool_kind,
-                label,
-                Some(banner_id.as_str()),
-            )
+        })
+    }
+
+    fn profile_analysis_view(
+        &self,
+        profile: Profile,
+        last_run: Option<ImportReport>,
+        selection: &DashboardSelection,
+        record_filter: &RecordFilter,
+    ) -> ProfileAnalysisView {
+        ProfileAnalysisView {
+            overview: self.dashboard_overview(profile, last_run),
+            selected_detail: self.dashboard_selection_detail(selection),
+            record_filter_options: self.record_filter_options(),
+            record_page: self.record_page(record_filter),
         }
-    })
+    }
+
+    fn dashboard_overview(
+        &self,
+        profile: Profile,
+        last_run: Option<ImportReport>,
+    ) -> DashboardOverview {
+        let mut pool_kinds = Vec::new();
+        for kind in [
+            PoolKind::MonopolyLimited,
+            PoolKind::MonopolyStandard,
+            PoolKind::ForkLottery,
+        ] {
+            let detail = self.pool_kind_detail(kind);
+            pool_kinds.push(detail.summary);
+        }
+        DashboardOverview {
+            profile,
+            last_run,
+            total_records: self.records.len() as u64,
+            pool_kinds,
+            banners: banner_summaries(&self.records),
+            time_stats: time_stats(&self.records),
+            rarity_distribution: rarity_distribution_from_display_refs(self.records.iter()),
+            item_ranking: item_ranking_from_display_refs(self.records.iter(), self.map),
+        }
+    }
+
+    fn pool_kind_detail(&self, pool_kind: PoolKind) -> DashboardSelectionDetail {
+        selection_detail_from_display_records(
+            &self.records,
+            self.map,
+            pool_kind,
+            self.map.pool_kind_label(pool_kind),
+            None,
+        )
+    }
+
+    fn dashboard_selection_detail(
+        &self,
+        selection: &DashboardSelection,
+    ) -> DashboardSelectionDetail {
+        match selection {
+            DashboardSelection::PoolKind { pool_kind } => self.pool_kind_detail(*pool_kind),
+            DashboardSelection::Banner {
+                pool_kind,
+                banner_id,
+            } => {
+                let label = self
+                    .records
+                    .iter()
+                    .find(|record| record.derived.banner_id.as_deref() == Some(banner_id.as_str()))
+                    .and_then(|record| record.banner.title.clone())
+                    .unwrap_or_else(|| banner_id.clone());
+                selection_detail_from_display_records(
+                    &self.records,
+                    self.map,
+                    *pool_kind,
+                    label,
+                    Some(banner_id.as_str()),
+                )
+            }
+        }
+    }
+
+    fn record_filter_options(&self) -> RecordFilterOptions {
+        record_filter_options_from_display_records(&self.records)
+    }
+
+    fn record_page(&self, filter: &RecordFilter) -> RecordList {
+        record_page_from_display_records(&self.records, filter)
+    }
 }
 
 impl From<DashboardSelectionDetail> for PoolKindDetail {
@@ -99,21 +160,6 @@ impl From<DashboardSelectionDetail> for PoolKindDetail {
             five_star_history: value.five_star_history,
         }
     }
-}
-
-fn pool_kind_detail_from_display_records(
-    records: &[DisplayRecord],
-    map: &MapData,
-    pool_kind: PoolKind,
-) -> PoolKindDetail {
-    selection_detail_from_display_records(
-        records,
-        map,
-        pool_kind,
-        map.pool_kind_label(pool_kind),
-        None,
-    )
-    .into()
 }
 
 fn selection_detail_from_display_records(
@@ -236,6 +282,10 @@ fn selection_detail_from_display_records(
         rarity_distribution: rarity_distribution_from_display_refs(pool_records.iter().copied()),
         hit_rarity_distribution: hit_rarity_distribution_from_display_refs(
             pool_records.iter().copied(),
+        ),
+        pull_rarity_distribution: pull_rarity_distribution_from_display_refs(
+            pool_records.iter().copied(),
+            pool_kind,
         ),
         item_ranking: item_ranking_from_display_refs(pool_records.iter().copied(), map),
     }

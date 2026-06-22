@@ -32,6 +32,14 @@ pub struct DashboardOverview {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProfileAnalysisView {
+    pub overview: DashboardOverview,
+    pub selected_detail: DashboardSelectionDetail,
+    pub record_filter_options: RecordFilterOptions,
+    pub record_page: RecordList,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BannerSummary {
     pub banner_id: String,
     pub pool_id: String,
@@ -154,6 +162,7 @@ pub struct DashboardSelectionDetail {
     pub five_star_history: Vec<FiveStarRecord>,
     pub rarity_distribution: Vec<RarityBucket>,
     pub hit_rarity_distribution: Vec<RarityBucket>,
+    pub pull_rarity_distribution: Vec<PullRarityBucket>,
     pub item_ranking: Vec<ItemRank>,
 }
 
@@ -178,6 +187,28 @@ pub enum FiveStarResult {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RarityBucket {
     pub rarity: u8,
+    pub count: u64,
+    pub percent: f64,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum PullRarityBucketKey {
+    FiveUp,
+    FiveNonUp,
+    FiveCharacter,
+    FiveItem,
+    FourCharacter,
+    FourHit,
+    FourItem,
+    Three,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PullRarityBucket {
+    pub key: PullRarityBucketKey,
+    pub rarity: Option<u8>,
     pub count: u64,
     pub percent: f64,
 }

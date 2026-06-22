@@ -1,6 +1,7 @@
 mod analysis;
 mod derived;
 mod export;
+mod i18n;
 mod maps;
 mod model;
 mod order;
@@ -9,10 +10,11 @@ mod rules;
 
 pub use analysis::{
     dashboard_overview, dashboard_selection_detail, display_records, list_records,
-    pool_kind_detail, record_filter_options,
+    pool_kind_detail, profile_analysis_view, record_filter_options,
 };
 pub use derived::derive_records;
 pub use export::{export_csv, export_public_json};
+pub use i18n::{available_ui_locales, is_ui_locale};
 pub use maps::{
     MapBanner, MapData, MapGachaRule, MapItem, MapPool, MapSourceEvidence, PoolTitleWindow,
     available_locales, bundled_maps_hash, load_map,
@@ -23,11 +25,12 @@ pub use model::{
     DashboardOverview, DashboardSelection, DashboardSelectionDetail, DisplayRecord, FiveStarRecord,
     FiveStarResult, ForkResultMark, GachaRuleView, GuiError, ImportReport, InternalRecord,
     ItemKind, ItemRank, MapLocaleList, PityBadge, PoolKind, PoolKindDetail, PoolKindSummary,
-    Profile, RarityBucket, RateUpResult, RecordBannerOption, RecordDerived, RecordFilter,
-    RecordFilterOptions, RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner,
-    RestoreReport, RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection,
-    TimeBucketSummary, TimeStats, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
+    Profile, ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket,
+    RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
+    RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport,
+    RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary,
+    TimeStats, UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage,
+    UpdateStageReport, UpdateStatus,
 };
 pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,

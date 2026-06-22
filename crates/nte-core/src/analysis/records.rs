@@ -4,6 +4,13 @@ pub fn list_records(
     filter: &RecordFilter,
 ) -> Result<RecordList, GuiError> {
     let display_records = display_records(records, map)?;
+    Ok(record_page_from_display_records(&display_records, filter))
+}
+
+fn record_page_from_display_records(
+    display_records: &[DisplayRecord],
+    filter: &RecordFilter,
+) -> RecordList {
     let search = filter
         .search
         .as_deref()
@@ -65,24 +72,20 @@ pub fn list_records(
             continue;
         }
         if !filter.roll_buckets.is_empty()
-            && !filter
-                .roll_buckets
-                .iter()
-                .any(|bucket| *bucket == roll_bucket(&display))
+            && !filter.roll_buckets.contains(&display.roll_bucket)
         {
             continue;
         }
         if !filter.item_kinds.is_empty()
-            && !filter
-                .item_kinds
-                .iter()
-                .any(|item_kind| *item_kind == map.item_kind(&display.item_id))
+            && !filter.item_kinds.contains(&display.item_kind)
         {
             continue;
         }
         if !filter.fork_result_marks.is_empty()
-            && !fork_result_mark(&display)
-                .is_some_and(|mark| filter.fork_result_marks.contains(&mark))
+            && !display
+                .fork_result_mark
+                .as_ref()
+                .is_some_and(|mark| filter.fork_result_marks.contains(mark))
         {
             continue;
         }
@@ -146,10 +149,10 @@ pub fn list_records(
             if !haystack.contains(search) {
                 continue;
             }
-            matching.push(display);
+            matching.push(display.clone());
             continue;
         }
-        matching.push(display);
+        matching.push(display.clone());
     }
 
     sort_display_records(&mut matching, filter.sort_direction.unwrap_or_default());
@@ -159,23 +162,28 @@ pub fn list_records(
         .skip(offset)
         .take(limit)
         .collect::<Vec<_>>();
-    Ok(RecordList {
+    RecordList {
         total,
         records: page,
-    })
+    }
 }
 
 pub fn record_filter_options(
     records: &[InternalRecord],
     map: &MapData,
 ) -> Result<RecordFilterOptions, GuiError> {
+    let display_records = display_records(records, map)?;
+    Ok(record_filter_options_from_display_records(&display_records))
+}
+
+fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> RecordFilterOptions {
     let mut banners: HashMap<String, RecordBannerOption> = HashMap::new();
     let mut roll_buckets: HashMap<RollBucket, u64> = HashMap::new();
     let mut item_kinds: HashMap<ItemKind, u64> = HashMap::new();
 
-    for record in display_records(records, map)? {
-        *roll_buckets.entry(roll_bucket(&record)).or_default() += 1;
-        *item_kinds.entry(map.item_kind(&record.item_id)).or_default() += 1;
+    for record in records {
+        *roll_buckets.entry(record.roll_bucket).or_default() += 1;
+        *item_kinds.entry(record.item_kind).or_default() += 1;
         if let Some(banner_id) = record.derived.banner_id.as_ref() {
             banners
                 .entry(banner_id.clone())
@@ -201,7 +209,7 @@ pub fn record_filter_options(
             .then_with(|| left.banner_id.cmp(&right.banner_id))
     });
 
-    Ok(RecordFilterOptions {
+    RecordFilterOptions {
         banners,
         roll_buckets: roll_bucket_order()
             .iter()
@@ -217,7 +225,7 @@ pub fn record_filter_options(
                 count: *item_kinds.get(item_kind).unwrap_or(&0),
             })
             .collect(),
-    })
+    }
 }
 
 pub fn display_records(
@@ -242,13 +250,13 @@ pub fn display_records(
         .collect()
 }
 
-fn roll_bucket(record: &DisplayRecord) -> RollBucket {
-    match record.roll_label_id.as_deref() {
+fn roll_bucket_from_fields(roll_label_id: Option<&str>, roll_points: Option<i64>) -> RollBucket {
+    match roll_label_id {
         Some("BPUI_LotteryResult_jidianzengli") => return RollBucket::Gift,
         Some("BPUI_LotteryResult_chenmiandi") => return RollBucket::Sleep,
         _ => {}
     }
-    match record.roll_points {
+    match roll_points {
         Some(1) => RollBucket::One,
         Some(2) => RollBucket::Two,
         Some(3) => RollBucket::Three,
@@ -273,23 +281,25 @@ fn roll_bucket_order() -> &'static [RollBucket] {
     ]
 }
 
-pub fn fork_result_mark(record: &DisplayRecord) -> Option<ForkResultMark> {
-    if record.pool_kind != PoolKind::ForkLottery || record.derived.hit_rarity != Some(5) {
+fn fork_result_mark_from_fields(
+    pool_kind: PoolKind,
+    derived: &RecordDerived,
+) -> Option<ForkResultMark> {
+    if pool_kind != PoolKind::ForkLottery || derived.hit_rarity != Some(5) {
         return None;
     }
-    match record.derived.rate_up_result {
-        RateUpResult::Up if fork_up_guarantee_hit(record) => Some(ForkResultMark::Guaranteed),
+    match derived.rate_up_result {
+        RateUpResult::Up if fork_up_guarantee_hit(derived) => Some(ForkResultMark::Guaranteed),
         RateUpResult::Up => Some(ForkResultMark::Win),
         RateUpResult::OffRate => Some(ForkResultMark::Lose),
         RateUpResult::NotApplicable | RateUpResult::Unknown => None,
     }
 }
 
-fn fork_up_guarantee_hit(record: &DisplayRecord) -> bool {
-    record
-        .derived
+fn fork_up_guarantee_hit(derived: &RecordDerived) -> bool {
+    derived
         .fork_up_pity_before
-        .zip(record.derived.rule.hard_up_pity_5)
+        .zip(derived.rule.hard_up_pity_5)
         .is_some_and(|(before, hard)| before + 1 == hard)
 }
 
@@ -311,6 +321,10 @@ fn display_record(
 ) -> Result<DisplayRecord, GuiError> {
     let pool_kind = classify_pool_id(&record.pool_id)?;
     let item_id = map.canonical_item_id(&record.item_id).to_string();
+    let item_kind = map.item_kind(&item_id);
+    let roll_bucket =
+        roll_bucket_from_fields(record.roll_label_id.as_deref(), record.roll_points);
+    let fork_result_mark = fork_result_mark_from_fields(pool_kind, &derived);
     let secondary_item_id = record
         .secondary_item_id
         .as_deref()
@@ -337,11 +351,14 @@ fn display_record(
         item_id: item_id.clone(),
         item_name: map.item_name(&item_id),
         item_asset_refs,
+        item_kind,
         rarity: map.item_rarity(&item_id),
         count: record.count,
         roll_points: record.roll_points,
         roll_label_id: record.roll_label_id.clone(),
         roll_label: record_label(record, map),
+        roll_bucket,
+        fork_result_mark,
         secondary_item_name: secondary_item_id
             .as_deref()
             .map(|item_id| map.item_name(item_id)),

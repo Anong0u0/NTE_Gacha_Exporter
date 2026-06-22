@@ -22,7 +22,7 @@ fn export_public_json_and_csv_from_store() {
     let exported_json: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
     let first = &exported_json["nte"]["list"][0];
-    assert_eq!(exported_json["info"]["schema_version"], "4.0");
+    assert_eq!(exported_json["info"]["schema_version"], "5.0");
     assert_eq!(first["record_id"], "c1");
     assert_eq!(first["source_order"], 0);
     assert_eq!(first["rarity"], 5);
@@ -42,6 +42,7 @@ fn export_public_json_and_csv_from_store() {
     assert_eq!(first["pull_no_in_banner"], 1);
     assert_eq!(first["pity_5_before"], 0);
     assert_eq!(first["pity_5_after"], 1);
+    assert_eq!(first["ten_pull_progress_before"], 1);
     assert_eq!(first["ten_pull_progress_after"], 1);
     for key in removed_four_star_export_keys() {
         assert!(first.get(key).is_none(), "{key} should not be exported");
@@ -118,6 +119,7 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
     assert_eq!(records[0]["roll_label"], "集點贈禮");
     assert_eq!(records[0]["counts_as_pull"], false);
     assert!(records[0]["pull_no_in_pool_kind"].is_null());
+    assert!(records[0]["ten_pull_progress_before"].is_null());
     assert!(records[0]["ten_pull_progress_after"].is_null());
     assert!(records[0].get("pull_no_in_banner").is_none());
     assert!(records[0].get("roll_points").is_none());
@@ -128,6 +130,7 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
     assert_eq!(records[2]["roll_label"], "沉眠地");
     assert_eq!(records[2]["counts_as_pull"], false);
     assert!(records[2]["pull_no_in_pool_kind"].is_null());
+    assert!(records[2]["ten_pull_progress_before"].is_null());
     assert!(records[2]["ten_pull_progress_after"].is_null());
     assert!(records[2].get("pull_no_in_banner").is_none());
     assert!(records[2].get("roll_points").is_none());
@@ -231,7 +234,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
         .update_settings(SettingsPatch {
             active_profile: Some("Extra".to_string()),
             locale: Some("en".to_string()),
-            ui_locale: Some("zh-Hant".to_string()),
+            ui_locale: Some("ja".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
         })
@@ -296,7 +299,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(extra_ids, vec!["extra".to_string()]);
     assert_eq!(settings.active_profile, "Extra");
     assert_eq!(settings.locale, "en");
-    assert_eq!(settings.ui_locale, "zh-Hant");
+    assert_eq!(settings.ui_locale, "ja");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
 }

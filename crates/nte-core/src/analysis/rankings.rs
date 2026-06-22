@@ -60,6 +60,128 @@ fn hit_rarity_distribution_from_display_refs<'a>(
         .collect()
 }
 
+fn pull_rarity_distribution_from_display_refs<'a>(
+    records: impl IntoIterator<Item = &'a DisplayRecord>,
+    pool_kind: PoolKind,
+) -> Vec<PullRarityBucket> {
+    let mut counts: BTreeMap<PullRarityBucketKey, u64> = BTreeMap::new();
+    let mut total = 0_u64;
+    for record in records {
+        if !record.derived.counts_as_pull {
+            continue;
+        }
+        total += 1;
+        *counts
+            .entry(pull_rarity_bucket_key(record, pool_kind))
+            .or_default() += 1;
+    }
+    pull_rarity_bucket_order(pool_kind)
+        .into_iter()
+        .filter_map(|key| {
+            let count = counts.get(&key).copied().unwrap_or_default();
+            (count > 0).then(|| PullRarityBucket {
+                key,
+                rarity: pull_rarity_bucket_rarity(key),
+                count,
+                percent: if total == 0 {
+                    0.0
+                } else {
+                    count as f64 / total as f64
+                },
+            })
+        })
+        .collect()
+}
+
+fn pull_rarity_bucket_key(
+    record: &DisplayRecord,
+    pool_kind: PoolKind,
+) -> PullRarityBucketKey {
+    match record.rarity {
+        Some(5) => match pool_kind {
+            PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => {
+                if record.item_kind == ItemKind::Character {
+                    PullRarityBucketKey::FiveCharacter
+                } else {
+                    PullRarityBucketKey::FiveItem
+                }
+            }
+            PoolKind::ForkLottery => {
+                if record.derived.hit_rarity == Some(5) {
+                    match record.derived.rate_up_result {
+                        RateUpResult::Up => PullRarityBucketKey::FiveUp,
+                        RateUpResult::OffRate => PullRarityBucketKey::FiveNonUp,
+                        RateUpResult::NotApplicable | RateUpResult::Unknown => {
+                            PullRarityBucketKey::FiveItem
+                        }
+                    }
+                } else {
+                    PullRarityBucketKey::FiveItem
+                }
+            }
+        },
+        Some(4) => match pool_kind {
+            PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => {
+                if record.item_kind == ItemKind::Character {
+                    PullRarityBucketKey::FourCharacter
+                } else {
+                    PullRarityBucketKey::FourItem
+                }
+            }
+            PoolKind::ForkLottery if record.derived.hit_rarity == Some(4) => {
+                PullRarityBucketKey::FourHit
+            }
+            PoolKind::ForkLottery => PullRarityBucketKey::FourItem,
+        },
+        Some(3) => PullRarityBucketKey::Three,
+        Some(_) | None => PullRarityBucketKey::Unknown,
+    }
+}
+
+fn pull_rarity_bucket_order(pool_kind: PoolKind) -> Vec<PullRarityBucketKey> {
+    match pool_kind {
+        PoolKind::MonopolyLimited => vec![
+            PullRarityBucketKey::FiveCharacter,
+            PullRarityBucketKey::FiveItem,
+            PullRarityBucketKey::FourCharacter,
+            PullRarityBucketKey::FourItem,
+            PullRarityBucketKey::Three,
+            PullRarityBucketKey::Unknown,
+        ],
+        PoolKind::MonopolyStandard => vec![
+            PullRarityBucketKey::FiveCharacter,
+            PullRarityBucketKey::FiveItem,
+            PullRarityBucketKey::FourCharacter,
+            PullRarityBucketKey::FourItem,
+            PullRarityBucketKey::Three,
+            PullRarityBucketKey::Unknown,
+        ],
+        PoolKind::ForkLottery => vec![
+            PullRarityBucketKey::FiveUp,
+            PullRarityBucketKey::FiveNonUp,
+            PullRarityBucketKey::FiveItem,
+            PullRarityBucketKey::FourHit,
+            PullRarityBucketKey::FourItem,
+            PullRarityBucketKey::Three,
+            PullRarityBucketKey::Unknown,
+        ],
+    }
+}
+
+fn pull_rarity_bucket_rarity(key: PullRarityBucketKey) -> Option<u8> {
+    match key {
+        PullRarityBucketKey::FiveUp
+        | PullRarityBucketKey::FiveNonUp
+        | PullRarityBucketKey::FiveCharacter
+        | PullRarityBucketKey::FiveItem => Some(5),
+        PullRarityBucketKey::FourCharacter
+        | PullRarityBucketKey::FourHit
+        | PullRarityBucketKey::FourItem => Some(4),
+        PullRarityBucketKey::Three => Some(3),
+        PullRarityBucketKey::Unknown => None,
+    }
+}
+
 fn item_ranking_from_display_refs<'a>(
     records: impl IntoIterator<Item = &'a DisplayRecord>,
     map: &MapData,

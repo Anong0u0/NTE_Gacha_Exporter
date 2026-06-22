@@ -14,6 +14,7 @@ import type {
   MapLocaleList,
   PendingAdminCapture,
   PoolKindDetail,
+  ProfileAnalysisView,
   Profile,
   RecordFilterOptions,
   RecordList,
@@ -35,12 +36,17 @@ export const tauriApi: AppApi = {
   importPublicJson: (profileName, path) => invoke<ImportReport>("import_public_json", { profileName, path }),
   importRawJsonl: (profileName, path, locale) =>
     invoke<ImportReport>("import_raw_jsonl", { profileName, path, locale }),
+  profileAnalysisView: (profileName, selection, recordFilter, locale) =>
+    invoke<ProfileAnalysisView>("profile_analysis_view", { profileName, selection, recordFilter, locale }),
   dashboardOverview: (profileName, locale) => invoke<DashboardOverview>("dashboard_overview", { profileName, locale }),
   poolKindDetail: (profileName, poolKind, locale) =>
     invoke<PoolKindDetail>("pool_kind_detail", { profileName, poolKind, locale }),
   dashboardSelectionDetail: (profileName, selection, locale) =>
     invoke<DashboardSelectionDetail>("dashboard_selection_detail", { profileName, selection, locale }),
+  dashboardScopeDetail: (profileName, selection, locale) =>
+    invoke<DashboardSelectionDetail>("dashboard_scope_detail", { profileName, selection, locale }),
   listRecords: (profileName, filter, locale) => invoke<RecordList>("list_records", { profileName, filter, locale }),
+  recordPage: (profileName, filter, locale) => invoke<RecordList>("record_page", { profileName, filter, locale }),
   recordFilterOptions: (profileName, locale) =>
     invoke<RecordFilterOptions>("record_filter_options", { profileName, locale }),
   exportPublicJson: (profileName, path, locale) =>
@@ -49,6 +55,7 @@ export const tauriApi: AppApi = {
   createBackup: (path) => invoke<BackupReport>("create_backup", { path }),
   restoreBackup: (path) => invoke<RestoreReport>("restore_backup", { path }),
   mapsList: () => invoke<MapLocaleList>("maps_list"),
+  uiLocaleList: () => invoke<MapLocaleList>("ui_locale_list"),
   systemLocale: () => invoke<string | null>("system_locale"),
   doctorRun: () => invoke<DoctorReport>("doctor_run"),
   runtimePing: () => invoke<unknown>("runtime_ping"),

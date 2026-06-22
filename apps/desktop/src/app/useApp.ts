@@ -45,6 +45,7 @@ import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode, type PoolKindFilter } from "./options";
 import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordPageSizes, recordPrefsKey, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
 import { createProfileActions } from "./profileActions";
+import { dashboardRaritySlices } from "./rarityBuckets";
 import { createTaskRunner } from "./task";
 import { bannerMeta, bannerTitle, captureRecordMeta, captureRecordName, forkHitBadge, forkWinRate, formatBannerWindow, formatCaptureMode, formatCaptureState, formatError, formatForkResultMark, formatItemKind, formatPity, formatPityBadge, formatPityBadgeValue, formatPoolKindPullNo, formatPullNo, formatRecordResultBadge, formatResult, formatRollBucket, formatRolls, formatTenPullProgress, formatTenPullProgressSummary, formatTime, isHitBadgeLabel, numberOrDash, percent, primaryRecordBadge } from "./viewHelpers";
 
@@ -86,6 +87,7 @@ export function useApp() {
   const formatPityText = (record: DisplayRecord) => formatPity(record);
   const formatTenPullProgressText = (record: DisplayRecord) => formatTenPullProgress(record);
   const formatPityBadgeText = (record: DisplayRecord) => formatPityBadge(record, t);
+  const primaryRecordBadgeText = (record: DisplayRecord) => primaryRecordBadge(record, t);
   const formatCaptureStateText = (value?: string | null) => formatCaptureState(value, t);
   const formatCaptureModeText = (value?: string | null) => formatCaptureMode(value, t);
   const uiLocaleName = (value: string) => uiLocaleDisplayName(value, t);
@@ -93,7 +95,7 @@ export function useApp() {
   function setChartEl(element: unknown) {
     chartEl.value = element instanceof HTMLElement ? element : null;
   }
-  const { renderChart, disposeChart } = createChartTools(chartEl, detail);
+  const { renderChart, disposeChart } = createChartTools(chartEl, detail, t);
 
   const recordPoolKind = ref<PoolKindFilter>("all"), recordBannerIds = ref<string[]>([]), itemRarities = ref<number[]>([]);
   const hitRarities = ref<number[]>([]), rateUpResults = ref<RateUpResult[]>([]), rollBuckets = ref<RollBucket[]>([]), itemKinds = ref<ItemKind[]>([]);
@@ -204,7 +206,7 @@ export function useApp() {
     });
   });
   const rankingDialogTitle = computed(() => `${selectedDetailTitle.value} · ${t("dashboard.itemRanking")}`);
-  const selectedRarityShares = computed(() => displayRarityShares(detail.value));
+  const selectedRarityShares = computed(() => dashboardRaritySlices(detail.value, t));
   const recordBannerOptions = computed(() =>
     bannersForRecordKind.value.map((banner) => ({
       value: banner.banner_id,
@@ -406,6 +408,36 @@ export function useApp() {
     if (!recordPageSizes.includes(pageSize.value as RecordPageSize)) pageSize.value = defaultRecordViewPrefs.pageSize;
   }
 
+  function currentRecordFilter(): RecordFilter {
+    return {
+      pool_kind: recordPoolKind.value === "all" ? null : recordPoolKind.value,
+      banner_ids: recordBannerIds.value,
+      rarities: itemRarities.value,
+      hit_rarities: hitRarities.value,
+      rate_up_results: rateUpResults.value,
+      roll_buckets: rollBuckets.value,
+      item_kinds: itemKinds.value,
+      fork_result_marks: forkResultMarks.value,
+      fork_pity_badges: forkPityBadges.value,
+      date_from: dateFrom.value || null,
+      date_to: dateTo.value || null,
+      search: search.value || null,
+      sort_direction: sortDirection.value,
+      limit: pageSize.value,
+      offset: pageIndex.value * pageSize.value,
+    };
+  }
+
+  function recordFilterKey(filter: RecordFilter) {
+    return JSON.stringify(filter);
+  }
+
+  function isSameDashboardScope(left: DashboardSelection, right: DashboardSelection) {
+    if (left.kind !== right.kind || left.pool_kind !== right.pool_kind) return false;
+    if (left.kind === "pool_kind" || right.kind === "pool_kind") return true;
+    return left.banner_id === right.banner_id;
+  }
+
   const {
     loadProfiles,
     createProfile,
@@ -517,6 +549,7 @@ export function useApp() {
     renderChart();
   });
   watch(detail, async () => { await nextTick(); renderChart(); }, { deep: true });
+  watch(uiLocale, async () => { await nextTick(); renderChart(); });
   watch(() => selectedDashboardScope.value, () => { rankingDialogOpen.value = false; }, { deep: true });
   watch([recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize], () => {
     if (applyingRecordPrefs || normalizingRecordFilters) return;
@@ -546,13 +579,13 @@ export function useApp() {
   async function bootstrap() {
     busy.value = true;
     try {
-      const [settings, maps] = await Promise.all([api.getSettings(), api.mapsList()]);
+      const [settings, maps, uiLocaleList] = await Promise.all([api.getSettings(), api.mapsList(), api.uiLocaleList()]);
       locale.value = settings.locale;
       uiLocale.value = settings.ui_locale || "en";
       settingsUpdateChannel.value = settings.update_channel;
       settingsCheckUpdates.value = settings.check_updates_on_startup;
       locales.value = maps.locales;
-      uiLocales.value = maps.locales;
+      uiLocales.value = uiLocaleList.locales;
       setActiveProfileName(settings.active_profile);
       await loadProfiles();
       await refreshAll();
@@ -590,13 +623,25 @@ export function useApp() {
 
   async function refreshAll() {
     if (!activeProfileName.value) return;
-    summary.value = await api.dashboardOverview(activeProfileName.value, locale.value);
+    const requestedScope = selectedDashboardScope.value;
+    const view = await api.profileAnalysisView(activeProfileName.value, requestedScope, currentRecordFilter(), locale.value);
+    summary.value = view.overview;
+    detail.value = view.selected_detail;
+    detailLoading.value = false;
+    filterOptions.value = view.record_filter_options;
+    records.value = view.record_page.records;
+    recordTotal.value = view.record_page.total;
     const firstActive = summary.value.pool_kinds.find((pool) => pool.total_pulls > 0)?.pool_kind;
     normalizeDashboardScope(firstActive);
-    await Promise.all([loadDetail(), loadFilterOptions()]);
-    if (!recordPrefsReady) applyRecordViewPrefs();
-    else normalizeRecordFilterSelection();
-    await loadRecords();
+    const scopeChanged = !isSameDashboardScope(requestedScope, selectedDashboardScope.value);
+    const beforeFilter = recordFilterKey(currentRecordFilter());
+    if (!recordPrefsReady) {
+      applyRecordViewPrefs();
+    } else {
+      normalizeRecordFilterSelection();
+    }
+    const filterChanged = recordFilterKey(currentRecordFilter()) !== beforeFilter;
+    await Promise.all([scopeChanged ? loadDetail() : Promise.resolve(), filterChanged ? loadRecords() : Promise.resolve()]);
     statusText.value = t("status.dashboardUpdated");
     await resolveVisibleAssets();
     await nextTick();
@@ -610,24 +655,7 @@ export function useApp() {
 
   async function loadRecords() {
     if (!activeProfileName.value) return;
-    const filter: RecordFilter = {
-      pool_kind: recordPoolKind.value === "all" ? null : recordPoolKind.value,
-      banner_ids: recordBannerIds.value,
-      rarities: itemRarities.value,
-      hit_rarities: hitRarities.value,
-      rate_up_results: rateUpResults.value,
-      roll_buckets: rollBuckets.value,
-      item_kinds: itemKinds.value,
-      fork_result_marks: forkResultMarks.value,
-      fork_pity_badges: forkPityBadges.value,
-      date_from: dateFrom.value || null,
-      date_to: dateTo.value || null,
-      search: search.value || null,
-      sort_direction: sortDirection.value,
-      limit: pageSize.value,
-      offset: pageIndex.value * pageSize.value,
-    };
-    const result = await api.listRecords(activeProfileName.value, filter, locale.value);
+    const result = await api.recordPage(activeProfileName.value, currentRecordFilter(), locale.value);
     records.value = result.records;
     recordTotal.value = result.total;
     await resolveVisibleAssets();
@@ -658,46 +686,6 @@ export function useApp() {
     normalizeRecordFilterSelection();
     saveRecordViewPrefs();
     void loadRecords();
-  }
-
-  function compactPercent(value?: number | null) {
-    if (value === null || value === undefined) return "-";
-    return `${Number((value * 100).toFixed(2))}%`;
-  }
-
-  function displayRarityShares(selectedDetail?: DashboardSelectionDetail | null) {
-    if (!selectedDetail) return [];
-    const hitBuckets = selectedDetail.hit_rarity_distribution ?? [];
-    const sourceBuckets = hitBuckets.length ? hitBuckets : selectedDetail.rarity_distribution;
-    const upCount = selectedDetail.summary.up_count ?? 0;
-    const fiveBucket = sourceBuckets.find((bucket) => bucket.rarity === 5);
-    const fiveCount = upCount > 0 ? upCount : (fiveBucket?.count ?? 0);
-    const rows: Array<{ key: string; rarity: number; className: string; label: string; count: number }> = [];
-    if (fiveCount > 0) {
-      rows.push({
-        key: upCount > 0 ? "5-up" : "5",
-        rarity: 5,
-        className: upCount > 0 ? "rarity-5-up" : "rarity-5",
-        label: upCount > 0 ? "5★UP" : "5★",
-        count: fiveCount,
-      });
-    }
-    for (const bucket of sourceBuckets) {
-      if (bucket.rarity === 5) continue;
-      rows.push({
-        key: String(bucket.rarity),
-        rarity: bucket.rarity,
-        className: `rarity-${bucket.rarity}`,
-        label: `${bucket.rarity}★`,
-        count: bucket.count,
-      });
-    }
-    const total = rows.reduce((sum, bucket) => sum + bucket.count, 0);
-    return rows.map((bucket) => ({
-      ...bucket,
-      percent: total > 0 ? bucket.count / total : 0,
-      percentText: compactPercent(total > 0 ? bucket.count / total : 0),
-    }));
   }
 
   function summaryProgressLabel(summary?: { pool_kind?: PoolKind } | null) {
@@ -758,7 +746,7 @@ export function useApp() {
     canNextPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, showDashboardBannerRail, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
     runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
-    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, fiveUpHitRatio, fiveWallPityTone, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
+    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, fiveUpHitRatio, fiveWallPityTone, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }
 

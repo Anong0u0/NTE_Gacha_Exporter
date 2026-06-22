@@ -1,5 +1,5 @@
 use nte_capture::capture_doctor;
-use nte_core::{MapLocaleList, available_locales};
+use nte_core::{MapLocaleList, available_locales, available_ui_locales};
 use nte_store::StoreDefaults;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -19,6 +19,13 @@ pub(crate) struct DoctorReport {
 pub(crate) fn maps_list() -> MapLocaleList {
     MapLocaleList {
         locales: available_locales(),
+    }
+}
+
+#[tauri::command]
+pub(crate) fn ui_locale_list() -> MapLocaleList {
+    MapLocaleList {
+        locales: available_ui_locales(),
     }
 }
 

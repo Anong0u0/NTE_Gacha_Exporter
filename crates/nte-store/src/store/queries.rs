@@ -1,5 +1,19 @@
 impl JsonStore {
-pub fn dashboard_overview(
+    pub fn profile_analysis_view(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        selection: &DashboardSelection,
+        record_filter: &RecordFilter,
+    ) -> Result<ProfileAnalysisView, GuiError> {
+        let profile = self.profile_for_api(profile_name)?;
+        let map = load_map(locale)?;
+        let records = self.read_records(&profile.name)?;
+        let last_run = self.read_last_run(&profile.name)?;
+        profile_analysis_view(profile, last_run, &records, &map, selection, record_filter)
+    }
+
+    pub fn dashboard_overview(
         &self,
         profile_name: &str,
         locale: &str,
@@ -35,6 +49,15 @@ pub fn dashboard_overview(
         dashboard_selection_detail(&records, &map, selection)
     }
 
+    pub fn dashboard_scope_detail(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        selection: &DashboardSelection,
+    ) -> Result<DashboardSelectionDetail, GuiError> {
+        self.dashboard_selection_detail(profile_name, locale, selection)
+    }
+
     pub fn list_records(
         &self,
         profile_name: &str,
@@ -45,6 +68,15 @@ pub fn dashboard_overview(
         let map = load_map(locale)?;
         let records = self.read_records(&profile.name)?;
         list_records(&records, &map, filter)
+    }
+
+    pub fn record_page(
+        &self,
+        profile_name: &str,
+        locale: &str,
+        filter: &RecordFilter,
+    ) -> Result<RecordList, GuiError> {
+        self.list_records(profile_name, locale, filter)
     }
 
     pub fn record_filter_options(
@@ -88,6 +120,8 @@ pub fn dashboard_overview(
         fs::create_dir_all(self.root.join("data/backups"))?;
         fs::create_dir_all(self.root.join("data/runs"))?;
         if !self.settings_path().exists() {
+            validate_locale(&defaults.locale)?;
+            validate_ui_locale(&defaults.ui_locale)?;
             self.write_settings(&DiskSettings {
                 schema_version: 1,
                 active_profile: DEFAULT_PROFILE.to_string(),
@@ -104,6 +138,8 @@ pub fn dashboard_overview(
             if settings.ui_locale.trim().is_empty() {
                 settings.ui_locale = defaults.ui_locale.clone();
             }
+            validate_locale(&settings.locale)?;
+            validate_ui_locale(&settings.ui_locale)?;
             self.write_settings(&settings)?;
         }
         if !self.profile_dir(DEFAULT_PROFILE).exists() {

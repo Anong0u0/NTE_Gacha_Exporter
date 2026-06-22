@@ -51,7 +51,7 @@ pub fn export_public_json(
     let document = json!({
         "info": {
             "schema": "nte-gacha-exporter-export",
-            "schema_version": "4.0",
+            "schema_version": "5.0",
             "export_app": "nte-gacha-exporter",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -147,6 +147,10 @@ fn public_record(display: &DisplayRecord) -> Value {
     object.insert(
         "ten_pull_progress_after".to_string(),
         json!(display.derived.ten_pull_progress_after),
+    );
+    object.insert(
+        "ten_pull_progress_before".to_string(),
+        json!(display.derived.ten_pull_progress_before),
     );
     object.insert(
         "rate_up_result".to_string(),
@@ -258,7 +262,7 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
         pity_5_before: record.derived.pity_5_before.to_string(),
         ten_pull_progress: record
             .derived
-            .ten_pull_progress_after
+            .ten_pull_progress_before
             .map(|value| value.to_string())
             .unwrap_or_default(),
         hit_rarity: record

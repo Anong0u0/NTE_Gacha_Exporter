@@ -88,7 +88,7 @@ export function createDashboardActions(deps: DashboardActionDeps) {
     deps.detail.value = null;
     deps.detailLoading.value = true;
     try {
-      const nextDetail = await api.dashboardSelectionDetail(profileName, requestScope, requestLocale);
+      const nextDetail = await api.dashboardScopeDetail(profileName, requestScope, requestLocale);
       if (
         requestId !== detailLoadId
         || profileName !== deps.activeProfileName.value

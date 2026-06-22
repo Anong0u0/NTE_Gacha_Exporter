@@ -12,13 +12,13 @@ use zip::{ZipArchive, ZipWriter, write::FileOptions};
 use nte_core::{compare_records_chronological, parse_public_document};
 use nte_core::{
     BackupReport, DashboardOverview, DashboardSelection, DashboardSelectionDetail, GuiError,
-    ImportReport, InternalRecord, PoolKind, PoolKindDetail, Profile, RecordFilter,
+    ImportReport, InternalRecord, PoolKind, PoolKindDetail, Profile, ProfileAnalysisView, RecordFilter,
     RecordFilterOptions, RecordList, RestoreReport, Settings, SettingsPatch,
 };
 use nte_core::{MapData, load_map};
 use nte_core::{
     dashboard_overview, dashboard_selection_detail, list_records, pool_kind_detail,
-    record_filter_options,
+    profile_analysis_view, record_filter_options,
 };
 use nte_core::{export_csv, export_public_json};
 
