@@ -1,4 +1,4 @@
-import type { ItemKind, PoolKind, RateUpResult, RollBucket, SortDirection } from "../api";
+import type { ForkResultMark, ItemKind, PityBadge, PoolKind, RateUpResult, RollBucket, SortDirection } from "../api";
 import { kindOrder, type PoolKindFilter } from "./options";
 
 export const recordPageSizes = [5, 10, 20, 50, 100] as const;
@@ -12,6 +12,8 @@ export type RecordViewPrefs = {
   rateUpResults: RateUpResult[];
   rollBuckets: RollBucket[];
   itemKinds: ItemKind[];
+  forkResultMarks: ForkResultMark[];
+  forkPityBadges: PityBadge[];
   dateFrom: string;
   dateTo: string;
   search: string;
@@ -28,6 +30,8 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
   rateUpResults: [],
   rollBuckets: [],
   itemKinds: [],
+  forkResultMarks: [],
+  forkPityBadges: [],
   dateFrom: "",
   dateTo: "",
   search: "",
@@ -37,9 +41,11 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
 };
 
 export const rateUpResultOptions: RateUpResult[] = ["up", "off_rate", "not_applicable", "unknown"];
+export const forkResultMarkOptions: ForkResultMark[] = ["win", "guaranteed", "lose"];
+export const forkPityBadgeOptions: PityBadge[] = ["fork_up_guarantee", "fork_5star_guarantee", "fork_4star_guarantee"];
 
 export function recordPrefsKey(profileName: string) {
-  return `nte.recordView.v4:${profileName}`;
+  return `nte.recordView.v5:${profileName}`;
 }
 
 export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
@@ -61,6 +67,8 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       rateUpResults: readStringArray(source.rateUpResults).filter((result): result is RateUpResult => rateUpResultOptions.includes(result as RateUpResult)),
       rollBuckets: readStringArray(source.rollBuckets).filter((bucket): bucket is RollBucket => isRollBucket(bucket)),
       itemKinds: readStringArray(source.itemKinds).filter((itemKind): itemKind is ItemKind => isItemKind(itemKind)),
+      forkResultMarks: readStringArray(source.forkResultMarks).filter((mark): mark is ForkResultMark => forkResultMarkOptions.includes(mark as ForkResultMark)),
+      forkPityBadges: readStringArray(source.forkPityBadges).filter((badge): badge is PityBadge => forkPityBadgeOptions.includes(badge as PityBadge)),
       dateFrom: readString(source.dateFrom),
       dateTo: readString(source.dateTo),
       search: readString(source.search),

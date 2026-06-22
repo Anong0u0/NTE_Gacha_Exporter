@@ -103,10 +103,13 @@ pub struct PoolKindSummary {
     pub known_roll_point_records: u64,
     pub missing_roll_point_records: u64,
     pub hit_count: u64,
+    pub five_star_item_count: u64,
     pub current_pity: u64,
+    pub current_ten_pull_progress: Option<u8>,
     pub current_guarantee: bool,
     pub hard_pity: u64,
     pub average_5star_pity: Option<f64>,
+    pub average_4star_pity: Option<f64>,
     pub min_5star_pity: Option<u64>,
     pub max_5star_pity: Option<u64>,
     pub early_hit_count: u64,
@@ -150,6 +153,7 @@ pub struct DashboardSelectionDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
     pub rarity_distribution: Vec<RarityBucket>,
+    pub hit_rarity_distribution: Vec<RarityBucket>,
     pub item_ranking: Vec<ItemRank>,
 }
 
@@ -182,6 +186,7 @@ pub struct RarityBucket {
 pub struct ItemRank {
     pub item_id: String,
     pub item_name: String,
+    pub item_asset_refs: BTreeMap<String, serde_json::Value>,
     pub rarity: Option<u8>,
     pub count: u64,
 }

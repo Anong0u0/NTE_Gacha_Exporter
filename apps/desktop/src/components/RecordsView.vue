@@ -110,6 +110,26 @@ const app = useAppContext();
                 :options="app.itemKindOptions"
               />
             </label>
+            <label v-if="app.showForkRecordFilters" class="field">
+              <span>{{ app.t("records.forkResultMark") }}</span>
+              <MultiSelectDropdown
+                v-model="app.forkResultMarks"
+                :label="app.t('records.forkResultMark')"
+                :all-label="app.t('records.allForkResultMarks')"
+                :selected-label="app.t('records.selectedCount')"
+                :options="app.forkResultMarkSelectOptions"
+              />
+            </label>
+            <label v-if="app.showForkRecordFilters" class="field">
+              <span>{{ app.t("records.forkPityBadge") }}</span>
+              <MultiSelectDropdown
+                v-model="app.forkPityBadges"
+                :label="app.t('records.forkPityBadge')"
+                :all-label="app.t('records.allForkPityBadges')"
+                :selected-label="app.t('records.selectedCount')"
+                :options="app.forkPityBadgeSelectOptions"
+              />
+            </label>
             <label class="field">
               <span>{{ app.t("records.from") }}</span>
               <input v-model="app.dateFrom" type="date" />
@@ -143,8 +163,8 @@ const app = useAppContext();
               </button>
             </div>
           </div>
-          <div class="record-table history-table" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
-            <div class="record-header history-header" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
+          <div class="record-table history-table">
+            <div class="record-header history-header">
               <span>#</span>
               <span>{{ app.t("common.time") }}</span>
               <span>{{ app.t("common.banner") }}</span>
@@ -152,12 +172,11 @@ const app = useAppContext();
               <span>{{ app.t("dashboard.rarity") }}</span>
               <span>{{ app.t("records.pullNo") }}</span>
               <span>{{ app.t("records.fiveStarProgress") }}</span>
-              <span>{{ app.t("records.rollGiftProgress") }}</span>
+              <span>{{ app.t("records.tenPullProgress") }}</span>
               <span>{{ app.t("records.rolls") }}</span>
-              <span v-if="app.recordsHaveAnyVisual()">{{ app.t("common.visual") }}</span>
             </div>
-            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line" :class="{ 'without-visual': !app.recordsHaveAnyVisual() }">
-              <span>{{ app.formatGlobalPullNo(record) }}</span>
+            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line">
+              <span>{{ app.formatPoolKindPullNo(record) }}</span>
               <span>{{ app.formatTime(record.time) }}</span>
               <span class="history-banner-cell">
                 <span v-if="app.hasBannerVisual(record.banner)" class="banner-row-thumb">
@@ -170,24 +189,28 @@ const app = useAppContext();
                 </span>
               </span>
               <span class="history-item-cell">
-                <span v-if="app.formatRecordResultBadge(record.derived.rate_up_result) || app.forkHitBadge(record) || app.formatGuarantee(record)" class="record-badge-strip">
-                  <span v-if="app.formatRecordResultBadge(record.derived.rate_up_result)" class="derived-chip">{{ app.formatRecordResultBadge(record.derived.rate_up_result) }}</span>
-                  <span v-if="app.forkHitBadge(record)" class="hit-badge" :class="`hit-${app.forkHitBadge(record).toLowerCase()}`">{{ app.forkHitBadge(record) }}</span>
-                  <small v-if="app.formatGuarantee(record)" class="record-guarantee-badge">{{ app.formatGuarantee(record) }}</small>
+                <span v-if="app.hasRecordVisual(record)" class="history-item-thumb">
+                  <img :src="app.itemVisualUrl(record)" alt="" />
                 </span>
-                <strong>{{ record.item_name }}</strong>
-                <small v-if="record.secondary_item_name">{{ record.secondary_item_name }} x{{ record.secondary_count ?? 1 }}</small>
+                <span class="history-item-text">
+                  <span v-if="app.primaryRecordBadge(record) || app.formatPityBadge(record)" class="record-badge-strip">
+                    <span
+                      v-if="app.primaryRecordBadge(record)"
+                      :class="app.isHitBadgeLabel(app.primaryRecordBadge(record)) ? ['hit-badge', `hit-${app.primaryRecordBadge(record).toLowerCase()}`] : 'derived-chip'"
+                    >
+                      {{ app.primaryRecordBadge(record) }}
+                    </span>
+                    <small v-if="app.formatPityBadge(record)" class="record-guarantee-badge">{{ app.formatPityBadge(record) }}</small>
+                  </span>
+                  <strong>{{ record.item_name }}</strong>
+                  <small v-if="record.secondary_item_name">{{ record.secondary_item_name }} x{{ record.secondary_count ?? 1 }}</small>
+                </span>
               </span>
               <span>{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
               <span>{{ app.formatPullNo(record) }}</span>
               <span>{{ app.formatPity(record) }}</span>
-              <span>{{ app.formatRollGiftProgress(record) }}</span>
-              <span>{{ record.roll_label ?? record.roll_points ?? "-" }}</span>
-              <span v-if="app.recordsHaveAnyVisual()" class="history-visual">
-                <span v-if="app.hasRecordVisual(record)" class="item-thumb small">
-                  <img :src="app.itemVisualUrl(record)" alt="" />
-                </span>
-              </span>
+              <span>{{ app.formatTenPullProgress(record) }}</span>
+              <span>{{ app.formatRolls(record) }}</span>
             </div>
             <div v-if="app.records.length === 0" class="empty-row">{{ app.t("records.empty") }}</div>
           </div>

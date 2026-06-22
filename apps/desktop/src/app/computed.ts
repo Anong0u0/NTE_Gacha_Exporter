@@ -36,18 +36,9 @@ export function createAppComputed(deps: ComputedDeps) {
     deps.profiles.value.find((profile) => profile.name === deps.activeProfileName.value),
   );
   const allPoolSummaries = computed(() => deps.summary.value?.pool_kinds ?? []);
-  const trackedPoolCount = computed(
-    () => allPoolSummaries.value.filter((pool) => pool.total_pulls > 0).length,
-  );
   const bannerSummaries = computed(() => deps.summary.value?.banners ?? []);
   const selectedPoolBannerSummaries = computed(() =>
     bannerSummaries.value.filter((banner) => banner.pool_kind === deps.selectedPoolKind.value),
-  );
-  const trackedBannerCount = computed(
-    () => bannerSummaries.value.filter((banner) => banner.total_pulls > 0).length,
-  );
-  const totalRollPoints = computed(() =>
-    allPoolSummaries.value.reduce((total, pool) => total + pool.roll_points_total, 0),
   );
   const selectedSummary = computed(
     () => allPoolSummaries.value.find((item) => item.pool_kind === deps.selectedPoolKind.value) ?? null,
@@ -119,11 +110,8 @@ export function createAppComputed(deps: ComputedDeps) {
   return {
     activeProfile,
     allPoolSummaries,
-    trackedPoolCount,
     bannerSummaries,
     selectedPoolBannerSummaries,
-    trackedBannerCount,
-    totalRollPoints,
     selectedSummary,
     recordPageStart,
     recordPageEnd,

@@ -381,6 +381,168 @@ fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
 }
 
 #[test]
+fn dashboard_selection_detail_reports_hit_distribution_and_average_four_star_pity() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut gift = record(
+        "gift",
+        "ForkLottery_AnHunQu",
+        "fork_dustbin",
+        "2026-06-01 00:01:00",
+    );
+    gift["roll_label_id"] = serde_json::json!("BPUI_LotteryResult_jidianzengli");
+    gift["roll_points"] = serde_json::Value::Null;
+    let mut sleep = record(
+        "sleep",
+        "ForkLottery_AnHunQu",
+        "fork_dustbin",
+        "2026-06-01 00:03:00",
+    );
+    sleep["roll_label_id"] = serde_json::json!("BPUI_LotteryResult_chenmiandi");
+    sleep["roll_points"] = serde_json::Value::Null;
+    let document = public_document(vec![
+        record(
+            "three-1",
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            "2026-06-01 00:00:00",
+        ),
+        gift,
+        record(
+            "four",
+            "ForkLottery_AnHunQu",
+            "fork_jiaojuan",
+            "2026-06-01 00:02:00",
+        ),
+        sleep,
+        record(
+            "three-2",
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            "2026-06-01 00:04:00",
+        ),
+        record(
+            "off-rate-five",
+            "ForkLottery_AnHunQu",
+            "fork_Arachne",
+            "2026-06-01 00:05:00",
+        ),
+        record(
+            "up-five",
+            "ForkLottery_AnHunQu",
+            "fork_Rose",
+            "2026-06-01 00:06:00",
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::ForkLottery,
+            },
+        )
+        .unwrap();
+
+    assert_eq!(detail.summary.total_pulls, 5);
+    assert_eq!(detail.summary.hit_count, 2);
+    assert_eq!(detail.summary.five_star_item_count, 2);
+    assert_eq!(detail.summary.up_count, 1);
+    assert_eq!(detail.summary.four_star_count, 1);
+    assert_eq!(detail.summary.average_4star_pity, Some(5.0 / 3.0));
+    assert!(detail.rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 5 && bucket.count == 2
+    }));
+    assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 5 && bucket.count == 1 && bucket.percent == 0.25
+    }));
+    assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 4 && bucket.count == 1 && bucket.percent == 0.25
+    }));
+    assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 3 && bucket.count == 2 && bucket.percent == 0.5
+    }));
+}
+
+#[test]
+fn standard_pool_counts_standard_five_pool_as_up_items() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut gift = record(
+        "standard-gift",
+        "CardPool_NewRole",
+        "1010",
+        "2026-06-02 00:02:00",
+    );
+    gift["roll_label_id"] = serde_json::json!("BPUI_LotteryResult_jidianzengli");
+    gift["roll_points"] = serde_json::Value::Null;
+    let document = public_document(vec![
+        record(
+            "standard-character",
+            "CardPool_NewRole",
+            "1003",
+            "2026-06-02 00:00:00",
+        ),
+        record(
+            "standard-fork",
+            "CardPool_NewRole",
+            "fork_wuhuakuang",
+            "2026-06-02 00:01:00",
+        ),
+        gift,
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyStandard,
+            },
+        )
+        .unwrap();
+    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
+    let standard_banner = overview
+        .banners
+        .iter()
+        .find(|banner| banner.banner_id == "monopoly_standard")
+        .unwrap();
+    let fork_rank = detail
+        .item_ranking
+        .iter()
+        .find(|item| item.item_id == "fork_wuhuakuang")
+        .unwrap();
+
+    assert_eq!(detail.summary.total_pulls, 2);
+    assert_eq!(detail.summary.hit_count, 1);
+    assert_eq!(detail.summary.five_star_item_count, 2);
+    assert_eq!(detail.summary.up_count, 2);
+    assert_eq!(detail.summary.off_rate_count, 0);
+    assert_eq!(detail.summary.not_applicable_rate_up_count, 0);
+    assert_eq!(detail.summary.unknown_rate_up_count, 0);
+    assert_eq!(detail.five_star_history.len(), 1);
+    assert_eq!(
+        detail.five_star_history[0].record.record_id,
+        "standard-character"
+    );
+    assert!(detail.rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 5 && bucket.count == 2
+    }));
+    assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 5 && bucket.count == 1
+    }));
+    assert_eq!(standard_banner.rate_up_5_count, 2);
+    assert!(fork_rank.item_asset_refs.contains_key("icon"));
+}
+
+#[test]
 fn stats_skip_unknown_banner_for_banner_summary() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

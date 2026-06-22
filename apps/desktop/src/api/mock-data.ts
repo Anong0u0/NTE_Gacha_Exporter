@@ -58,8 +58,8 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInPoolKind: 146,
       pullNoInBanner: 74,
       pity5Before: 73,
-      pity5After: 0,
-      rollGiftProgressAfter: 6,
+      pity5After: 74,
+      tenPullProgressAfter: 6,
       hitRarity: 5,
       rateUpResult: "up",
       guarantee5Before: false,
@@ -91,7 +91,7 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInBanner: 73,
       pity5Before: 72,
       pity5After: 73,
-      rollGiftProgressAfter: 5,
+      tenPullProgressAfter: 5,
       hitRarity: 3,
       rateUpResult: "unknown",
       guarantee5Before: false,
@@ -122,8 +122,8 @@ export const mockRecords: DisplayRecord[] = [
       pullNoInPoolKind: 24,
       pullNoInBanner: 24,
       pity5Before: 23,
-      pity5After: 0,
-      rollGiftProgressAfter: 4,
+      pity5After: 24,
+      tenPullProgressAfter: 4,
       hitRarity: 5,
       rateUpResult: "up",
       guarantee5Before: true,
@@ -154,6 +154,8 @@ function mockBanner(
     title,
     rate_up_5: [],
     rate_up_4: [],
+    standard_5_pool: [],
+    standard_4_pool: [],
     rule_id: poolKind === "fork_lottery" ? "fork_lottery_s" : poolKind,
     asset_refs: bannerType === "fork" ? forkAssetRefs : limitedAssetRefs,
   };
@@ -183,9 +185,10 @@ function mockDerived(
     pullNoInBanner: number | null;
     pity5Before: number;
     pity5After: number;
-    rollGiftProgressAfter: number | null;
+    tenPullProgressAfter: number | null;
     hitRarity: number | null;
     rateUpResult: RateUpResult;
+    pityBadge?: RecordDerived["pity_badge"];
     guarantee5Before: boolean;
     guarantee5After: boolean;
     ruleId: string;
@@ -201,9 +204,10 @@ function mockDerived(
     pull_no_in_banner: options.pullNoInBanner,
     pity_5_before: options.pity5Before,
     pity_5_after: options.pity5After,
-    roll_gift_progress_after: options.rollGiftProgressAfter,
+    ten_pull_progress_after: options.tenPullProgressAfter,
     hit_rarity: options.hitRarity,
     rate_up_result: options.rateUpResult,
+    pity_badge: options.pityBadge ?? null,
     guarantee_5_before: options.guarantee5Before,
     guarantee_5_after: options.guarantee5After,
     fork_up_pity_before: options.poolKind === "fork_lottery" ? options.pity5Before : null,
@@ -253,10 +257,13 @@ export const mockSummary: PoolKindSummary[] = [
     known_roll_point_records: 146,
     missing_roll_point_records: 0,
     hit_count: 2,
+    five_star_item_count: 2,
     current_pity: 73,
+    current_ten_pull_progress: 6,
     current_guarantee: false,
     hard_pity: 90,
     average_5star_pity: 72.5,
+    average_4star_pity: 10,
     min_5star_pity: 71,
     max_5star_pity: 74,
     early_hit_count: 2,
@@ -286,10 +293,13 @@ export const mockSummary: PoolKindSummary[] = [
     known_roll_point_records: 36,
     missing_roll_point_records: 0,
     hit_count: 1,
+    five_star_item_count: 1,
     current_pity: 12,
+    current_ten_pull_progress: 4,
     current_guarantee: false,
     hard_pity: 60,
     average_5star_pity: 24,
+    average_4star_pity: 10,
     min_5star_pity: 24,
     max_5star_pity: 24,
     early_hit_count: 1,

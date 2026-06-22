@@ -291,7 +291,7 @@ fn fork_pool_missing_from_maps_rejects_entire_import() {
 }
 
 #[test]
-fn public_json_accepts_v1_v2_v3_and_rejects_unsupported_major_versions() {
+fn public_json_accepts_v1_v2_v3_v4_and_rejects_unsupported_major_versions() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let v1_minor = serde_json::json!({
@@ -367,6 +367,23 @@ fn public_json_accepts_v1_v2_v3_and_rejects_unsupported_major_versions() {
     assert!(
         store
             .import_public_document("default", &v4_major, "json", None)
+            .is_ok()
+    );
+    let v5_major = serde_json::json!({
+        "info": {
+            "schema": "nte-gacha-exporter-export",
+            "schema_version": "5.0"
+        },
+        "nte": {
+            "list": [
+                record("r5", "CardPool_Character", "fork_dustbin", "2026-01-01 10:04:00")
+            ]
+        }
+    })
+    .to_string();
+    assert!(
+        store
+            .import_public_document("default", &v5_major, "json", None)
             .is_err()
     );
 }

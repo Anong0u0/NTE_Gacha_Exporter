@@ -1,4 +1,22 @@
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum PityBadge {
+    #[serde(rename = "fork_up_guarantee")]
+    ForkUpGuarantee,
+    #[serde(rename = "fork_5star_guarantee", alias = "fork_five_star_guarantee")]
+    ForkFiveStarGuarantee,
+    #[serde(rename = "fork_4star_guarantee", alias = "fork_four_star_guarantee")]
+    ForkFourStarGuarantee,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ForkResultMark {
+    Win,
+    Guaranteed,
+    Lose,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordDerived {
     pub record_id: String,
     pub banner_id: Option<String>,
@@ -9,9 +27,10 @@ pub struct RecordDerived {
     pub pull_no_in_banner: Option<u64>,
     pub pity_5_before: u64,
     pub pity_5_after: u64,
-    pub roll_gift_progress_after: Option<u8>,
+    pub ten_pull_progress_after: Option<u8>,
     pub hit_rarity: Option<u8>,
     pub rate_up_result: RateUpResult,
+    pub pity_badge: Option<PityBadge>,
     pub guarantee_5_before: Option<bool>,
     pub guarantee_5_after: Option<bool>,
     pub fork_up_pity_before: Option<u64>,
@@ -60,6 +79,10 @@ pub struct RecordFilter {
     pub roll_buckets: Vec<RollBucket>,
     #[serde(default)]
     pub item_kinds: Vec<ItemKind>,
+    #[serde(default)]
+    pub fork_result_marks: Vec<ForkResultMark>,
+    #[serde(default)]
+    pub fork_pity_badges: Vec<PityBadge>,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
     pub search: Option<String>,

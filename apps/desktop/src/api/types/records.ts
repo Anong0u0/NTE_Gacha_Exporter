@@ -37,6 +37,8 @@ type RuleResolutionIssue =
   | "unsupported_scope";
 
 export type RateUpResult = "up" | "off_rate" | "not_applicable" | "unknown";
+export type PityBadge = "fork_up_guarantee" | "fork_5star_guarantee" | "fork_4star_guarantee";
+export type ForkResultMark = "win" | "guaranteed" | "lose";
 export type RollBucket = "gift" | "sleep" | "1" | "2" | "3" | "4" | "5" | "6" | "not_applicable";
 export type ItemKind = "character" | "fork" | "appearance" | "inventory" | "vehicle_module" | "unknown";
 
@@ -54,6 +56,8 @@ export type ResolvedBanner = {
   timezone?: string | null;
   rate_up_5: string[];
   rate_up_4: string[];
+  standard_5_pool: string[];
+  standard_4_pool: string[];
   rule_id?: string | null;
   asset_refs: AssetRefs;
 };
@@ -81,9 +85,10 @@ export type RecordDerived = {
   pull_no_in_banner?: number | null;
   pity_5_before: number;
   pity_5_after: number;
-  roll_gift_progress_after?: number | null;
+  ten_pull_progress_after?: number | null;
   hit_rarity?: number | null;
   rate_up_result: RateUpResult;
+  pity_badge?: PityBadge | null;
   guarantee_5_before?: boolean | null;
   guarantee_5_after?: boolean | null;
   fork_up_pity_before?: number | null;
@@ -100,6 +105,8 @@ export type RecordFilter = {
   rate_up_results?: RateUpResult[] | null;
   roll_buckets?: RollBucket[] | null;
   item_kinds?: ItemKind[] | null;
+  fork_result_marks?: ForkResultMark[] | null;
+  fork_pity_badges?: PityBadge[] | null;
   date_from?: string | null;
   date_to?: string | null;
   search?: string | null;

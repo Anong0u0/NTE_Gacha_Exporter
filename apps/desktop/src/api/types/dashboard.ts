@@ -9,10 +9,13 @@ export type PoolKindSummary = {
   known_roll_point_records: number;
   missing_roll_point_records: number;
   hit_count: number;
+  five_star_item_count: number;
   current_pity: number;
+  current_ten_pull_progress?: number | null;
   current_guarantee: boolean;
   hard_pity: number;
   average_5star_pity?: number | null;
+  average_4star_pity?: number | null;
   min_5star_pity?: number | null;
   max_5star_pity?: number | null;
   early_hit_count: number;
@@ -93,9 +96,10 @@ type RarityBucket = {
   percent: number;
 };
 
-type ItemRank = {
+export type ItemRank = {
   item_id: string;
   item_name: string;
+  item_asset_refs: AssetRefs;
   rarity?: number | null;
   count: number;
 };
@@ -130,5 +134,6 @@ export type DashboardSelection =
 
 export type DashboardSelectionDetail = PoolKindDetail & {
   rarity_distribution: RarityBucket[];
+  hit_rarity_distribution: RarityBucket[];
   item_ranking: ItemRank[];
 };

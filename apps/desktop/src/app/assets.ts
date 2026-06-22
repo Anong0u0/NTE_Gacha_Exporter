@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from "vue";
-import { api, type AssetResolveRequest, type BannerSummary, type DashboardSelectionDetail, type DisplayRecord } from "../api";
+import { api, type AssetResolveRequest, type BannerSummary, type DashboardSelectionDetail, type DisplayRecord, type ItemRank } from "../api";
 
 type AssetRefEntry = { key: string; kind: string; value: unknown };
 
@@ -45,8 +45,8 @@ export function createAssetTools(options: AssetToolsOptions) {
     return "";
   }
 
-  function itemVisualUrl(record?: DisplayRecord | null) {
-    return record ? firstAssetUrl(record.item_asset_refs, ["portrait", "icon", "head_icon"]) : "";
+  function itemVisualUrl(item?: Pick<DisplayRecord, "item_asset_refs"> | Pick<ItemRank, "item_asset_refs"> | null) {
+    return item ? firstAssetUrl(item.item_asset_refs, ["portrait", "icon", "head_icon"]) : "";
   }
 
   function bannerVisualUrl(banner?: BannerSummary | DisplayRecord["banner"] | null) {
@@ -55,6 +55,10 @@ export function createAssetTools(options: AssetToolsOptions) {
 
   function hasRecordVisual(record?: DisplayRecord | null) {
     return Boolean(itemVisualUrl(record));
+  }
+
+  function hasItemVisual(item?: Pick<ItemRank, "item_asset_refs"> | null) {
+    return Boolean(itemVisualUrl(item));
   }
 
   function hasBannerVisual(banner?: BannerSummary | DisplayRecord["banner"] | null) {
@@ -84,6 +88,7 @@ export function createAssetTools(options: AssetToolsOptions) {
     for (const banner of bannerSummaries.value) requests.push(...collectAssetRequestsFromRefs(banner.asset_refs));
     for (const record of records.value) requests.push(...collectRecordAssetRequests(record));
     for (const hit of detail.value?.five_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
+    for (const item of detail.value?.item_ranking ?? []) requests.push(...collectAssetRequestsFromRefs(item.item_asset_refs));
     const seen = new Set<string>();
     return requests.filter((request) => {
       const key = assetCacheKey(request.asset_ref, request.kind);
@@ -112,6 +117,7 @@ export function createAssetTools(options: AssetToolsOptions) {
     itemVisualUrl,
     bannerVisualUrl,
     hasRecordVisual,
+    hasItemVisual,
     hasBannerVisual,
     recordsHaveAnyVisual,
     resolveVisibleAssets,

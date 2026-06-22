@@ -47,17 +47,17 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
                 five_star_count: count_hits(&banner_records, 5),
                 four_star_count: count_hits(&banner_records, 4),
                 current_5star_pity: latest
-                    .map(|record| record.derived.pity_5_after)
+                    .map(current_5star_pity_after_record)
                     .unwrap_or_default(),
                 average_5star_pity: average_u64(&five_star_pity),
-                rate_up_5_count: count_hit_rate_up(&banner_records, 5, RateUpResult::Up),
-                off_rate_5_count: count_hit_rate_up(&banner_records, 5, RateUpResult::OffRate),
-                not_applicable_rate_up_5_count: count_hit_rate_up(
+                rate_up_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::Up),
+                off_rate_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::OffRate),
+                not_applicable_rate_up_5_count: count_item_rate_up(
                     &banner_records,
                     5,
                     RateUpResult::NotApplicable,
                 ),
-                unknown_rate_up_5_count: count_hit_rate_up(
+                unknown_rate_up_5_count: count_item_rate_up(
                     &banner_records,
                     5,
                     RateUpResult::Unknown,
@@ -199,6 +199,28 @@ fn roll_point_costs_to_5star<'a>(
     costs
 }
 
+fn average_4star_pity_from_display_refs<'a>(
+    records: impl IntoIterator<Item = &'a DisplayRecord>,
+    banner_id: Option<&str>,
+) -> Option<f64> {
+    let mut ordered = records.into_iter().collect::<Vec<_>>();
+    ordered.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
+
+    let mut intervals = Vec::new();
+    let mut current = 0;
+    for record in ordered {
+        if !record.derived.counts_as_pull {
+            continue;
+        }
+        current += 1;
+        if matches!(record.derived.hit_rarity, Some(4 | 5)) {
+            intervals.push(current);
+            current = 0;
+        }
+    }
+    average_u64(&intervals)
+}
+
 #[derive(Default)]
 struct BucketAccumulator {
     total_pulls: u64,
@@ -258,6 +280,24 @@ fn count_hits(records: &[&DisplayRecord], rarity: u8) -> u64 {
         .count() as u64
 }
 
+fn count_items_by_rarity(records: &[&DisplayRecord], rarity: u8) -> u64 {
+    records
+        .iter()
+        .filter(|record| record.derived.counts_as_pull && record.rarity == Some(rarity))
+        .count() as u64
+}
+
+fn count_item_rate_up(records: &[&DisplayRecord], rarity: u8, result: RateUpResult) -> u64 {
+    records
+        .iter()
+        .filter(|record| {
+            record.derived.counts_as_pull
+                && record.rarity == Some(rarity)
+                && record.derived.rate_up_result == result
+        })
+        .count() as u64
+}
+
 fn count_hit_rate_up(records: &[&DisplayRecord], rarity: u8, result: RateUpResult) -> u64 {
     records
         .iter()
@@ -301,6 +341,14 @@ fn latest_countable_record<'a>(
             Some(_) => record.derived.pull_no_in_banner,
             None => record.derived.pull_no_in_pool_kind,
         })
+}
+
+fn current_5star_pity_after_record(record: &DisplayRecord) -> u64 {
+    if record.derived.hit_rarity == Some(5) {
+        0
+    } else {
+        record.derived.pity_5_after
+    }
 }
 
 fn compare_scoped_analysis(

@@ -12,7 +12,7 @@ use crate::compare_display_newest_first;
 use crate::display_records;
 use crate::{DisplayRecord, GuiError, InternalRecord};
 
-const CSV_FIELDS: [&str; 20] = [
+const CSV_FIELDS: [&str; 21] = [
     "time",
     "global_pull_no",
     "pool_group",
@@ -27,9 +27,10 @@ const CSV_FIELDS: [&str; 20] = [
     "pull_no",
     "pool_pull_no",
     "pity_5_before",
-    "roll_gift_progress",
+    "ten_pull_progress",
     "hit_rarity",
     "rate_up_result",
+    "pity_badge",
     "guarantee_5_before",
     "guarantee_5_after",
     "roll_points",
@@ -50,7 +51,7 @@ pub fn export_public_json(
     let document = json!({
         "info": {
             "schema": "nte-gacha-exporter-export",
-            "schema_version": "3.0",
+            "schema_version": "4.0",
             "export_app": "nte-gacha-exporter",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -144,8 +145,8 @@ fn public_record(display: &DisplayRecord) -> Value {
         json!(display.derived.pity_5_after),
     );
     object.insert(
-        "roll_gift_progress_after".to_string(),
-        json!(display.derived.roll_gift_progress_after),
+        "ten_pull_progress_after".to_string(),
+        json!(display.derived.ten_pull_progress_after),
     );
     object.insert(
         "rate_up_result".to_string(),
@@ -168,6 +169,9 @@ fn public_record(display: &DisplayRecord) -> Value {
     }
     if let Some(rarity) = display.derived.hit_rarity {
         object.insert("hit_rarity".to_string(), json!(rarity));
+    }
+    if let Some(pity_badge) = display.derived.pity_badge.as_ref() {
+        object.insert("pity_badge".to_string(), json!(pity_badge));
     }
     if let Some(value) = display.derived.guarantee_5_before {
         object.insert("guarantee_5_before".to_string(), json!(value));
@@ -208,9 +212,10 @@ struct CsvRow {
     pull_no: String,
     pool_pull_no: String,
     pity_5_before: String,
-    roll_gift_progress: String,
+    ten_pull_progress: String,
     hit_rarity: String,
     rate_up_result: String,
+    pity_badge: String,
     guarantee_5_before: String,
     guarantee_5_after: String,
     roll_points: String,
@@ -251,9 +256,9 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
             .map(|value| value.to_string())
             .unwrap_or_default(),
         pity_5_before: record.derived.pity_5_before.to_string(),
-        roll_gift_progress: record
+        ten_pull_progress: record
             .derived
-            .roll_gift_progress_after
+            .ten_pull_progress_after
             .map(|value| value.to_string())
             .unwrap_or_default(),
         hit_rarity: record
@@ -262,6 +267,13 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
             .map(|value| value.to_string())
             .unwrap_or_default(),
         rate_up_result: json_label(record.derived.rate_up_result)?,
+        pity_badge: record
+            .derived
+            .pity_badge
+            .as_ref()
+            .map(json_label)
+            .transpose()?
+            .unwrap_or_default(),
         guarantee_5_before: bool_cell(record.derived.guarantee_5_before),
         guarantee_5_after: bool_cell(record.derived.guarantee_5_after),
         roll_points: record
@@ -287,9 +299,10 @@ fn row_value<'a>(row: &'a CsvRow, field: &str) -> &'a str {
         "pull_no" => &row.pull_no,
         "pool_pull_no" => &row.pool_pull_no,
         "pity_5_before" => &row.pity_5_before,
-        "roll_gift_progress" => &row.roll_gift_progress,
+        "ten_pull_progress" => &row.ten_pull_progress,
         "hit_rarity" => &row.hit_rarity,
         "rate_up_result" => &row.rate_up_result,
+        "pity_badge" => &row.pity_badge,
         "guarantee_5_before" => &row.guarantee_5_before,
         "guarantee_5_after" => &row.guarantee_5_after,
         "roll_points" => &row.roll_points,

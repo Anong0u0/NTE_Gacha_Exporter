@@ -4,7 +4,8 @@ use std::io::Write;
 
 use super::{JsonStore, StoreDefaults};
 use nte_core::{
-    DashboardSelection, ItemKind, PoolKind, RateUpResult, RecordFilter, RollBucket,
+    DashboardSelection, ForkResultMark, ItemKind, PityBadge, PoolKind, RateUpResult, RecordFilter,
+    RollBucket,
     SettingsPatch, SortDirection,
 };
 

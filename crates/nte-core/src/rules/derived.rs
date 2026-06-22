@@ -18,7 +18,11 @@ pub fn derive_pool_kind_hits(
             continue;
         }
         total_pulls += 1;
-        current_5star_pity = record.pity_5_after;
+        current_5star_pity = if record.hit_rarity == Some(5) {
+            0
+        } else {
+            record.pity_5_after
+        };
         current_5star_guarantee = record.guarantee_5_after;
         if summary_rule.is_none() {
             summary_rule = Some(rule_resolution_from_view(&record.rule));

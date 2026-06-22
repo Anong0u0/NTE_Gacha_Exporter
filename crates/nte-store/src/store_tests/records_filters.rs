@@ -222,6 +222,208 @@ fn records_list_filters_by_derived_fields() {
 }
 
 #[test]
+fn records_list_filters_by_fork_result_marks() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = vec![
+        record(
+            "lose",
+            "ForkLottery_AnHunQu",
+            "fork_Arachne",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "win",
+            "ForkLottery_AnHunQu",
+            "fork_Rose",
+            "2026-01-01 10:01:00",
+        ),
+    ];
+    push_fork_dustbin_records(&mut records, "guarantee-pull", 11, 79);
+    records.push(record(
+        "guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_Rose",
+        "2026-01-01 12:19:00",
+    ));
+    store
+        .import_public_document("default", &public_document(records), "json", None)
+        .unwrap();
+
+    let wins = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                fork_result_marks: vec![ForkResultMark::Win, ForkResultMark::Guaranteed],
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+    let losses = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                fork_result_marks: vec![ForkResultMark::Lose],
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(
+        wins.records
+            .iter()
+            .map(|record| record.record_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["win", "guaranteed"]
+    );
+    assert_eq!(
+        wins.records[0].derived.fork_up_pity_before,
+        Some(1)
+    );
+    assert_eq!(
+        wins.records[1].derived.fork_up_pity_before,
+        Some(79)
+    );
+    assert_eq!(
+        wins.records[1].derived.pity_badge.clone(),
+        Some(PityBadge::ForkUpGuarantee)
+    );
+    assert_eq!(losses.total, 1);
+    assert_eq!(losses.records[0].record_id, "lose");
+}
+
+#[test]
+fn records_list_filters_by_fork_pity_badges() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    push_fork_dustbin_records(&mut records, "up-pull", 10, 79);
+    records.push(record(
+        "up-guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_Rose",
+        "2026-01-01 11:19:00",
+    ));
+    push_fork_dustbin_records(&mut records, "five-pull", 12, 59);
+    records.push(record(
+        "five-guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_Arachne",
+        "2026-01-01 12:59:00",
+    ));
+    push_fork_dustbin_records(&mut records, "four-pull", 13, 9);
+    records.push(record(
+        "four-guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_jiaojuan",
+        "2026-01-01 13:09:00",
+    ));
+    store
+        .import_public_document("default", &public_document(records), "json", None)
+        .unwrap();
+
+    let up_and_four = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                fork_pity_badges: vec![
+                    PityBadge::ForkUpGuarantee,
+                    PityBadge::ForkFourStarGuarantee,
+                ],
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+    let five = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                fork_pity_badges: vec![PityBadge::ForkFiveStarGuarantee],
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(
+        up_and_four
+            .records
+            .iter()
+            .map(|record| record.record_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["up-guaranteed", "four-guaranteed"]
+    );
+    assert_eq!(
+        up_and_four.records[0].derived.pity_badge.clone(),
+        Some(PityBadge::ForkUpGuarantee)
+    );
+    assert_eq!(
+        up_and_four.records[1].derived.pity_badge.clone(),
+        Some(PityBadge::ForkFourStarGuarantee)
+    );
+    assert_eq!(five.total, 1);
+    assert_eq!(five.records[0].record_id, "five-guaranteed");
+    assert_eq!(
+        five.records[0].derived.pity_badge.clone(),
+        Some(PityBadge::ForkFiveStarGuarantee)
+    );
+}
+
+#[test]
+fn records_list_accepts_frontend_fork_pity_badge_filter_values() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    push_fork_dustbin_records(&mut records, "five-pull", 10, 59);
+    records.push(record(
+        "five-guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_Arachne",
+        "2026-01-01 10:59:00",
+    ));
+    push_fork_dustbin_records(&mut records, "four-pull", 12, 9);
+    records.push(record(
+        "four-guaranteed",
+        "ForkLottery_AnHunQu",
+        "fork_jiaojuan",
+        "2026-01-01 12:09:00",
+    ));
+    store
+        .import_public_document("default", &public_document(records), "json", None)
+        .unwrap();
+
+    let filter: RecordFilter = serde_json::from_value(json!({
+        "fork_pity_badges": ["fork_5star_guarantee", "fork_4star_guarantee"],
+        "sort_direction": "asc"
+    }))
+    .unwrap();
+    let list = store.list_records("default", "zh-Hant", &filter).unwrap();
+
+    assert_eq!(
+        serde_json::to_value(PityBadge::ForkFiveStarGuarantee).unwrap(),
+        "fork_5star_guarantee"
+    );
+    assert_eq!(
+        serde_json::to_value(PityBadge::ForkFourStarGuarantee).unwrap(),
+        "fork_4star_guarantee"
+    );
+    assert_eq!(
+        list.records
+            .iter()
+            .map(|record| record.record_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["five-guaranteed", "four-guaranteed"]
+    );
+}
+
+#[test]
 fn records_list_exposes_global_pull_no_and_filters_three_star_hits() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
@@ -289,6 +491,26 @@ fn records_list_exposes_global_pull_no_and_filters_three_star_hits() {
     assert_eq!(three_star.records[0].derived.hit_rarity, Some(3));
     assert_eq!(three_star.records[1].record_id, "five");
     assert_eq!(three_star.records[1].derived.hit_rarity, Some(5));
+}
+
+fn push_fork_dustbin_records(
+    records: &mut Vec<serde_json::Value>,
+    prefix: &str,
+    start_hour: usize,
+    count: usize,
+) {
+    for index in 0..count {
+        records.push(record(
+            &format!("{prefix}-{index}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!(
+                "2026-01-01 {:02}:{:02}:00",
+                start_hour + index / 60,
+                index % 60
+            ),
+        ));
+    }
 }
 
 #[test]

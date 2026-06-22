@@ -1,4 +1,4 @@
-import type { BannerSummary, DisplayRecord, ItemKind, RollBucket } from "../api";
+import type { BannerSummary, DisplayRecord, ForkResultMark, ItemKind, PityBadge, RollBucket } from "../api";
 import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
@@ -9,9 +9,14 @@ const english: Translator = (key, params) => {
     "format.offRate": "Off-rate",
     "format.windowUnknown": "window unknown",
     "format.ongoing": "ongoing",
-    "format.guaranteeBefore": "G before",
-    "format.guaranteeAfter": "G after",
     "records.rollGift": "Gift",
+    "records.pityBadgeForkUpGuarantee": "UP guarantee",
+    "records.pityBadgeForkFiveStarGuarantee": "5★ guarantee",
+    "records.pityBadgeForkFourStarGuarantee": "4★ guarantee",
+    "records.forkResultWin": "Win",
+    "records.forkResultGuaranteed": "Guaranteed",
+    "records.forkResultLose": "Lose",
+    "records.nonUpFiveStar": "Non-UP 5★",
     "records.rollSleep": "Sleep",
     "records.rollNotApplicable": "N/A",
     "records.itemKindCharacter": "Character",
@@ -57,6 +62,16 @@ export function formatRecordResultBadge(value: string, t: Translator = english) 
   return formatResult(value, t);
 }
 
+export function primaryRecordBadge(record: DisplayRecord, t: Translator = english) {
+  const forkBadge = forkHitBadge(record);
+  if (forkBadge) return forkBadge;
+  return formatRecordResultBadge(record.derived.rate_up_result, t);
+}
+
+export function isHitBadgeLabel(value: string) {
+  return value === "W" || value === "G" || value === "L";
+}
+
 export function formatRollBucket(value: RollBucket, t: Translator = english) {
   if (value === "gift") return t("records.rollGift");
   if (value === "sleep") return t("records.rollSleep");
@@ -92,16 +107,21 @@ export function formatPullNo(record: DisplayRecord) {
   return record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? "-";
 }
 
-export function formatGlobalPullNo(record: DisplayRecord) {
-  return record.derived.global_pull_no ?? "-";
+export function formatPoolKindPullNo(record: DisplayRecord) {
+  return record.derived.pull_no_in_pool_kind ?? "-";
 }
 
 export function forkHitBadge(record: DisplayRecord) {
   if (record.pool_kind !== "fork_lottery" || record.derived.hit_rarity !== 5) return "";
-  if (record.derived.rate_up_result === "up" && record.derived.fork_forced_up) return "G";
-  if (record.derived.rate_up_result === "up") return "W";
+  if (record.derived.rate_up_result === "up") return isForkUpGuaranteeHit(record) ? "G" : "W";
   if (record.derived.rate_up_result === "off_rate") return "L";
   return "";
+}
+
+export function formatForkResultMark(value: ForkResultMark, t: Translator = english) {
+  if (value === "win") return t("records.forkResultWin");
+  if (value === "guaranteed") return t("records.forkResultGuaranteed");
+  return t("records.forkResultLose");
 }
 
 export function forkWinRate(summary?: { fork_observed_25_75_win_rate?: number | null } | null) {
@@ -113,17 +133,36 @@ export function formatPity(record: DisplayRecord) {
   return String(record.derived.pity_5_after);
 }
 
-export function formatRollGiftProgress(record: DisplayRecord) {
-  const progress = record.derived.roll_gift_progress_after;
+export function formatTenPullProgress(record: DisplayRecord) {
+  const progress = record.derived.ten_pull_progress_after;
   return progress == null ? "-" : String(progress);
 }
 
-export function formatGuarantee(record: DisplayRecord, t: Translator = english) {
-  const parts = [
-    record.derived.guarantee_5_before ? t("format.guaranteeBefore") : "",
-    record.derived.guarantee_5_after ? t("format.guaranteeAfter") : "",
-  ].filter(Boolean);
-  return parts.join(" / ");
+export function formatTenPullProgressSummary(progress?: number | null) {
+  return progress == null ? "-" : `${progress}/10`;
+}
+
+export function formatPityBadge(record: DisplayRecord, t: Translator = english) {
+  const badge = record.derived.pity_badge;
+  if (!badge) return "";
+  return formatPityBadgeValue(badge, t);
+}
+
+export function formatRolls(record: DisplayRecord) {
+  if (record.pool_kind === "fork_lottery") return "-";
+  return record.roll_label ?? record.roll_points ?? "-";
+}
+
+export function formatPityBadgeValue(value: PityBadge, t: Translator = english) {
+  if (value === "fork_up_guarantee") return t("records.pityBadgeForkUpGuarantee");
+  if (value === "fork_5star_guarantee") return t("records.pityBadgeForkFiveStarGuarantee");
+  return t("records.pityBadgeForkFourStarGuarantee");
+}
+
+function isForkUpGuaranteeHit(record: DisplayRecord) {
+  const before = record.derived.fork_up_pity_before;
+  const hard = record.derived.rule.hard_up_pity_5;
+  return before != null && hard != null && before + 1 === hard;
 }
 
 export function formatCaptureState(value?: string | null, t: Translator = english) {

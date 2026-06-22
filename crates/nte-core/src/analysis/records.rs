@@ -80,6 +80,21 @@ pub fn list_records(
         {
             continue;
         }
+        if !filter.fork_result_marks.is_empty()
+            && !fork_result_mark(&display)
+                .is_some_and(|mark| filter.fork_result_marks.contains(&mark))
+        {
+            continue;
+        }
+        if !filter.fork_pity_badges.is_empty()
+            && !display
+                .derived
+                .pity_badge
+                .as_ref()
+                .is_some_and(|badge| filter.fork_pity_badges.contains(badge))
+        {
+            continue;
+        }
         if date_from.is_some() || date_to.is_some() {
             let Some(time) = display.time.as_deref() else {
                 continue;
@@ -256,6 +271,26 @@ fn roll_bucket_order() -> &'static [RollBucket] {
         RollBucket::Six,
         RollBucket::NotApplicable,
     ]
+}
+
+pub fn fork_result_mark(record: &DisplayRecord) -> Option<ForkResultMark> {
+    if record.pool_kind != PoolKind::ForkLottery || record.derived.hit_rarity != Some(5) {
+        return None;
+    }
+    match record.derived.rate_up_result {
+        RateUpResult::Up if fork_up_guarantee_hit(record) => Some(ForkResultMark::Guaranteed),
+        RateUpResult::Up => Some(ForkResultMark::Win),
+        RateUpResult::OffRate => Some(ForkResultMark::Lose),
+        RateUpResult::NotApplicable | RateUpResult::Unknown => None,
+    }
+}
+
+fn fork_up_guarantee_hit(record: &DisplayRecord) -> bool {
+    record
+        .derived
+        .fork_up_pity_before
+        .zip(record.derived.rule.hard_up_pity_5)
+        .is_some_and(|(before, hard)| before + 1 == hard)
 }
 
 fn item_kind_order() -> &'static [ItemKind] {

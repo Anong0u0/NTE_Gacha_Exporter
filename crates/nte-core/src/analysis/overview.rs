@@ -5,11 +5,11 @@ use crate::RuleResolutionIssue;
 use crate::derive_records;
 use crate::{
     BannerSummary, DashboardOverview, DashboardSelection, DashboardSelectionDetail,
-    DisplayRecord, FiveStarRecord, FiveStarResult, GuiError, ImportReport, InternalRecord,
-    ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile, RarityBucket,
-    RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
-    RecordItemKindOption, RecordList, RecordRollBucketOption, RollBucket, SortDirection,
-    TimeBucketSummary, TimeStats,
+    DisplayRecord, FiveStarRecord, FiveStarResult, ForkResultMark, GuiError, ImportReport,
+    InternalRecord, ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile,
+    RarityBucket, RateUpResult, RecordBannerOption, RecordDerived, RecordFilter,
+    RecordFilterOptions, RecordItemKindOption, RecordList, RecordRollBucketOption, RollBucket,
+    SortDirection, TimeBucketSummary, TimeStats,
 };
 use crate::{classify_pool_id, fallback_rule_for, fallback_rule_resolution};
 use crate::{compare_display_chronological, compare_display_newest_first};
@@ -145,17 +145,20 @@ fn selection_detail_from_display_records(
         .map(|record| record.pity_distance)
         .collect::<Vec<_>>();
     let hit_count = five_star_history.len() as u64;
+    let five_star_item_count = count_items_by_rarity(&pool_records, 5);
     let four_star_count = count_hits(&pool_records, 4);
     let average_5star_pity = (!pity_distances.is_empty())
         .then(|| pity_distances.iter().sum::<u64>() as f64 / pity_distances.len() as f64);
+    let average_4star_pity =
+        average_4star_pity_from_display_refs(pool_records.iter().copied(), banner_id);
     let min_5star_pity = pity_distances.iter().min().copied();
     let max_5star_pity = pity_distances.iter().max().copied();
 
-    let up_count = count_rate_up(&five_star_history, RateUpResult::Up);
-    let off_rate_count = count_rate_up(&five_star_history, RateUpResult::OffRate);
+    let up_count = count_item_rate_up(&pool_records, 5, RateUpResult::Up);
+    let off_rate_count = count_item_rate_up(&pool_records, 5, RateUpResult::OffRate);
     let not_applicable_rate_up_count =
-        count_rate_up(&five_star_history, RateUpResult::NotApplicable);
-    let unknown_rate_up_count = count_rate_up(&five_star_history, RateUpResult::Unknown);
+        count_item_rate_up(&pool_records, 5, RateUpResult::NotApplicable);
+    let unknown_rate_up_count = count_item_rate_up(&pool_records, 5, RateUpResult::Unknown);
     let rate_up_4_count = count_hit_rate_up(&pool_records, 4, RateUpResult::Up);
     let off_rate_4_count = count_hit_rate_up(&pool_records, 4, RateUpResult::OffRate);
     let not_applicable_rate_up_4_count =
@@ -198,14 +201,16 @@ fn selection_detail_from_display_records(
             known_roll_point_records: resource.known,
             missing_roll_point_records: resource.missing,
             hit_count,
-            current_pity: latest
-                .map(|record| record.derived.pity_5_after)
-                .unwrap_or_default(),
+            five_star_item_count,
+            current_pity: latest.map(current_5star_pity_after_record).unwrap_or_default(),
+            current_ten_pull_progress: latest
+                .and_then(|record| record.derived.ten_pull_progress_after),
             current_guarantee: latest
                 .and_then(|record| record.derived.guarantee_5_after)
                 .unwrap_or(false),
             hard_pity,
             average_5star_pity,
+            average_4star_pity,
             min_5star_pity,
             max_5star_pity,
             early_hit_count,
@@ -229,6 +234,9 @@ fn selection_detail_from_display_records(
         },
         five_star_history,
         rarity_distribution: rarity_distribution_from_display_refs(pool_records.iter().copied()),
+        hit_rarity_distribution: hit_rarity_distribution_from_display_refs(
+            pool_records.iter().copied(),
+        ),
         item_ranking: item_ranking_from_display_refs(pool_records.iter().copied(), map),
     }
 }
@@ -250,13 +258,6 @@ fn five_star_result(result: RateUpResult) -> FiveStarResult {
         RateUpResult::NotApplicable => FiveStarResult::NotApplicable,
         RateUpResult::Unknown => FiveStarResult::Unknown,
     }
-}
-
-fn count_rate_up(history: &[FiveStarRecord], result: RateUpResult) -> u64 {
-    history
-        .iter()
-        .filter(|hit| hit.record.derived.rate_up_result == result)
-        .count() as u64
 }
 
 #[derive(Default)]

@@ -1,5 +1,5 @@
-import { BarChart } from "echarts/charts";
-import { GridComponent, TooltipComponent } from "echarts/components";
+import { PieChart } from "echarts/charts";
+import { TooltipComponent } from "echarts/components";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
@@ -16,8 +16,10 @@ import {
   type DashboardSelectionDetail,
   type DisplayRecord,
   type DoctorReport,
+  type ForkResultMark,
   type ImportReport,
   type ItemKind,
+  type PityBadge,
   type PoolKind,
   type RecordFilter,
   type RecordFilterOptions,
@@ -41,18 +43,18 @@ import { createTranslator, uiLocaleDisplayName } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode, type PoolKindFilter } from "./options";
-import { defaultRecordViewPrefs, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordPageSizes, recordPrefsKey, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
+import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordPageSizes, recordPrefsKey, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
 import { createProfileActions } from "./profileActions";
 import { createTaskRunner } from "./task";
-import { bannerMeta, bannerTitle, captureRecordMeta, captureRecordName, forkHitBadge, forkWinRate, formatBannerWindow, formatCaptureMode, formatCaptureState, formatError, formatGlobalPullNo, formatGuarantee, formatItemKind, formatPity, formatPullNo, formatRecordResultBadge, formatResult, formatRollBucket, formatRollGiftProgress, formatTime, numberOrDash, percent } from "./viewHelpers";
+import { bannerMeta, bannerTitle, captureRecordMeta, captureRecordName, forkHitBadge, forkWinRate, formatBannerWindow, formatCaptureMode, formatCaptureState, formatError, formatForkResultMark, formatItemKind, formatPity, formatPityBadge, formatPityBadgeValue, formatPoolKindPullNo, formatPullNo, formatRecordResultBadge, formatResult, formatRollBucket, formatRolls, formatTenPullProgress, formatTenPullProgressSummary, formatTime, isHitBadgeLabel, numberOrDash, percent, primaryRecordBadge } from "./viewHelpers";
 
-use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
+use([PieChart, TooltipComponent, CanvasRenderer]);
 
 export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default"), newProfileName = ref("");
   const profileRenameSource = ref(""), profileRenameName = ref(""), profileDeleteTarget = ref("");
   const locale = ref("en"), uiLocale = ref("en"), locales = ref<string[]>(["en"]), uiLocales = ref<string[]>(["en"]), summary = ref<DashboardOverview | null>(null);
-  const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedDashboardScope = ref<DashboardSelection>({ kind: "pool_kind", pool_kind: "monopoly_limited" }), detail = ref<DashboardSelectionDetail | null>(null);
+  const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedDashboardScope = ref<DashboardSelection>({ kind: "pool_kind", pool_kind: "monopoly_limited" }), detail = ref<DashboardSelectionDetail | null>(null), detailLoading = ref(false);
   const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ banners: [], roll_buckets: [], item_kinds: [] });
   const importPath = ref(""), importMode = ref<ImportMode>("raw"), exportPath = ref(""), exportMode = ref<ExportMode>("json");
   const backupPath = ref(""), restorePath = ref(""), captureMode = ref<CaptureMode>("live_only");
@@ -62,6 +64,7 @@ export function useApp() {
   const assetsPackStatus = ref<AssetsPackStatus | null>(null), assetsPackCheckReport = ref<AssetsPackCheckReport | null>(null), lastAssetsPackInstall = ref<AssetsPackInstallReport | null>(null);
   const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
   const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
+  const rankingDialogOpen = ref(false);
   const t = createTranslator(uiLocale);
   statusText.value = t("status.ready");
   const kindLabels = {
@@ -81,8 +84,8 @@ export function useApp() {
   const bannerMetaText = (banner?: Parameters<typeof bannerMeta>[0]) => bannerMeta(banner);
   const formatBannerWindowText = (start?: string | null, end?: string | null) => formatBannerWindow(start, end, t);
   const formatPityText = (record: DisplayRecord) => formatPity(record);
-  const formatRollGiftProgressText = (record: DisplayRecord) => formatRollGiftProgress(record);
-  const formatGuaranteeText = (record: DisplayRecord) => formatGuarantee(record, t);
+  const formatTenPullProgressText = (record: DisplayRecord) => formatTenPullProgress(record);
+  const formatPityBadgeText = (record: DisplayRecord) => formatPityBadge(record, t);
   const formatCaptureStateText = (value?: string | null) => formatCaptureState(value, t);
   const formatCaptureModeText = (value?: string | null) => formatCaptureMode(value, t);
   const uiLocaleName = (value: string) => uiLocaleDisplayName(value, t);
@@ -94,6 +97,7 @@ export function useApp() {
 
   const recordPoolKind = ref<PoolKindFilter>("all"), recordBannerIds = ref<string[]>([]), itemRarities = ref<number[]>([]);
   const hitRarities = ref<number[]>([]), rateUpResults = ref<RateUpResult[]>([]), rollBuckets = ref<RollBucket[]>([]), itemKinds = ref<ItemKind[]>([]);
+  const forkResultMarks = ref<ForkResultMark[]>([]), forkPityBadges = ref<PityBadge[]>([]);
   const dateFrom = ref(""), dateTo = ref(""), search = ref("");
   const sortDirection = ref<SortDirection>("desc"), pageSize = ref<number>(defaultRecordViewPrefs.pageSize), pageIndex = ref(0);
   const recordAdvancedFiltersOpen = ref(false);
@@ -127,6 +131,8 @@ export function useApp() {
       rateUpResults.value.length > 0,
       rollBuckets.value.length > 0,
       itemKinds.value.length > 0,
+      forkResultMarks.value.length > 0,
+      forkPityBadges.value.length > 0,
       Boolean(dateFrom.value),
       Boolean(dateTo.value),
       Boolean(search.value.trim()),
@@ -136,11 +142,8 @@ export function useApp() {
   const {
     activeProfile,
     allPoolSummaries,
-    trackedPoolCount,
     bannerSummaries,
     selectedPoolBannerSummaries,
-    trackedBannerCount,
-    totalRollPoints,
     selectedSummary: selectedPoolSummary,
     recordPageStart,
     recordPageEnd,
@@ -171,7 +174,37 @@ export function useApp() {
     pageIndex,
     t,
   });
-  const selectedSummary = computed(() => detail.value?.summary ?? selectedPoolSummary.value);
+  const selectedSummary = computed(() =>
+    detail.value?.summary ?? (selectedDashboardScope.value.kind === "pool_kind" ? selectedPoolSummary.value : null),
+  );
+  const selectedScopeLabel = computed(() => {
+    const scope = selectedDashboardScope.value;
+    if (scope.kind === "banner") {
+      return bannerSummaries.value.find((banner) => banner.banner_id === scope.banner_id)?.title;
+    }
+    return selectedPoolSummary.value?.label;
+  });
+  const isDashboardPoolScope = computed(() => selectedDashboardScope.value.kind === "pool_kind");
+  const showDashboardBannerRail = computed(() => selectedPoolKind.value !== "monopoly_standard");
+  const selectedDetailTitle = computed(() => {
+    if (isDashboardPoolScope.value) return t("dashboard.poolDetail");
+    const label = selectedScopeLabel.value?.trim();
+    return label ? `${label} ${t("dashboard.detailSuffix")}` : t("dashboard.bannerDetail");
+  });
+  const itemRankingShares = computed(() => {
+    const ranking = detail.value?.item_ranking ?? [];
+    const total = ranking.reduce((sum, item) => sum + item.count, 0);
+    return ranking.map((item) => {
+      const share = total > 0 ? item.count / total : 0;
+      return {
+        ...item,
+        share,
+        shareWidth: `${Math.round(share * 100)}%`,
+      };
+    });
+  });
+  const rankingDialogTitle = computed(() => `${selectedDetailTitle.value} · ${t("dashboard.itemRanking")}`);
+  const selectedRarityShares = computed(() => displayRarityShares(detail.value));
   const recordBannerOptions = computed(() =>
     bannersForRecordKind.value.map((banner) => ({
       value: banner.banner_id,
@@ -211,12 +244,26 @@ export function useApp() {
       meta: String(itemKind.count),
     })),
   );
+  const showForkRecordFilters = computed(() => recordPoolKind.value === "all" || recordPoolKind.value === "fork_lottery");
+  const forkResultMarkSelectOptions = computed(() =>
+    forkResultMarkOptions.map((mark) => ({
+      value: mark,
+      label: formatForkResultMark(mark, t),
+    })),
+  );
+  const forkPityBadgeSelectOptions = computed(() =>
+    forkPityBadgeOptions.map((badge) => ({
+      value: badge,
+      label: formatPityBadgeValue(badge, t),
+    })),
+  );
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
 
   const {
     itemVisualUrl,
     bannerVisualUrl,
     hasRecordVisual,
+    hasItemVisual,
     hasBannerVisual,
     recordsHaveAnyVisual,
     resolveVisibleAssets,
@@ -232,7 +279,6 @@ export function useApp() {
     normalizeDashboardScope,
     selectDashboardPool,
     selectDashboardBanner,
-    selectDashboardBannerById,
     isSelectedDashboardPool,
     isSelectedDashboardBanner,
     loadDetail,
@@ -243,6 +289,9 @@ export function useApp() {
     selectedPoolKind,
     selectedDashboardScope,
     detail,
+    detailLoading,
+    errorText,
+    formatError,
     resolveVisibleAssets,
   });
   const maintenance = createMaintenanceActions({
@@ -263,6 +312,8 @@ export function useApp() {
       rateUpResults: [...rateUpResults.value],
       rollBuckets: [...rollBuckets.value],
       itemKinds: [...itemKinds.value],
+      forkResultMarks: [...forkResultMarks.value],
+      forkPityBadges: [...forkPityBadges.value],
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
       search: search.value,
@@ -318,6 +369,8 @@ export function useApp() {
       rateUpResults.value = [...prefs.rateUpResults];
       rollBuckets.value = [...prefs.rollBuckets];
       itemKinds.value = [...prefs.itemKinds];
+      forkResultMarks.value = [...prefs.forkResultMarks];
+      forkPityBadges.value = [...prefs.forkPityBadges];
       dateFrom.value = prefs.dateFrom;
       dateTo.value = prefs.dateTo;
       search.value = prefs.search;
@@ -343,6 +396,13 @@ export function useApp() {
     rateUpResults.value = rateUpResults.value.filter((result) => rateUpResultOptions.includes(result));
     rollBuckets.value = rollBuckets.value.filter((bucket) => availableRollBuckets.has(bucket));
     itemKinds.value = itemKinds.value.filter((itemKind) => availableItemKinds.has(itemKind));
+    if (recordPoolKind.value === "monopoly_limited" || recordPoolKind.value === "monopoly_standard") {
+      forkResultMarks.value = [];
+      forkPityBadges.value = [];
+    } else {
+      forkResultMarks.value = forkResultMarks.value.filter((mark) => forkResultMarkOptions.includes(mark));
+      forkPityBadges.value = forkPityBadges.value.filter((badge) => forkPityBadgeOptions.includes(badge));
+    }
     if (!recordPageSizes.includes(pageSize.value as RecordPageSize)) pageSize.value = defaultRecordViewPrefs.pageSize;
   }
 
@@ -448,8 +508,17 @@ export function useApp() {
     disposeChart();
   });
 
-  watch(() => detail.value?.rarity_distribution, async () => { await nextTick(); renderChart(); }, { deep: true });
-  watch([recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, dateFrom, dateTo, search, sortDirection, pageSize], () => {
+  watch(chartEl, async (element) => {
+    if (!element) {
+      disposeChart();
+      return;
+    }
+    await nextTick();
+    renderChart();
+  });
+  watch(detail, async () => { await nextTick(); renderChart(); }, { deep: true });
+  watch(() => selectedDashboardScope.value, () => { rankingDialogOpen.value = false; }, { deep: true });
+  watch([recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize], () => {
     if (applyingRecordPrefs || normalizingRecordFilters) return;
     normalizingRecordFilters = true;
     try {
@@ -549,6 +618,8 @@ export function useApp() {
       rate_up_results: rateUpResults.value,
       roll_buckets: rollBuckets.value,
       item_kinds: itemKinds.value,
+      fork_result_marks: forkResultMarks.value,
+      fork_pity_badges: forkPityBadges.value,
       date_from: dateFrom.value || null,
       date_to: dateTo.value || null,
       search: search.value || null,
@@ -562,6 +633,100 @@ export function useApp() {
     await resolveVisibleAssets();
   }
 
+  function showDashboardFiveStarRecords() {
+    const scope = selectedDashboardScope.value;
+    applyingRecordPrefs = true;
+    try {
+      recordPoolKind.value = scope.pool_kind;
+      recordBannerIds.value = scope.kind === "banner" ? [scope.banner_id] : [];
+      itemRarities.value = [];
+      hitRarities.value = [5];
+      rateUpResults.value = [];
+      rollBuckets.value = [];
+      itemKinds.value = [];
+      forkResultMarks.value = [];
+      forkPityBadges.value = [];
+      dateFrom.value = "";
+      dateTo.value = "";
+      search.value = "";
+      recordAdvancedFiltersOpen.value = false;
+      pageIndex.value = 0;
+      activeView.value = "records";
+    } finally {
+      applyingRecordPrefs = false;
+    }
+    normalizeRecordFilterSelection();
+    saveRecordViewPrefs();
+    void loadRecords();
+  }
+
+  function compactPercent(value?: number | null) {
+    if (value === null || value === undefined) return "-";
+    return `${Number((value * 100).toFixed(2))}%`;
+  }
+
+  function displayRarityShares(selectedDetail?: DashboardSelectionDetail | null) {
+    if (!selectedDetail) return [];
+    const hitBuckets = selectedDetail.hit_rarity_distribution ?? [];
+    const sourceBuckets = hitBuckets.length ? hitBuckets : selectedDetail.rarity_distribution;
+    const upCount = selectedDetail.summary.up_count ?? 0;
+    const fiveBucket = sourceBuckets.find((bucket) => bucket.rarity === 5);
+    const fiveCount = upCount > 0 ? upCount : (fiveBucket?.count ?? 0);
+    const rows: Array<{ key: string; rarity: number; className: string; label: string; count: number }> = [];
+    if (fiveCount > 0) {
+      rows.push({
+        key: upCount > 0 ? "5-up" : "5",
+        rarity: 5,
+        className: upCount > 0 ? "rarity-5-up" : "rarity-5",
+        label: upCount > 0 ? "5★UP" : "5★",
+        count: fiveCount,
+      });
+    }
+    for (const bucket of sourceBuckets) {
+      if (bucket.rarity === 5) continue;
+      rows.push({
+        key: String(bucket.rarity),
+        rarity: bucket.rarity,
+        className: `rarity-${bucket.rarity}`,
+        label: `${bucket.rarity}★`,
+        count: bucket.count,
+      });
+    }
+    const total = rows.reduce((sum, bucket) => sum + bucket.count, 0);
+    return rows.map((bucket) => ({
+      ...bucket,
+      percent: total > 0 ? bucket.count / total : 0,
+      percentText: compactPercent(total > 0 ? bucket.count / total : 0),
+    }));
+  }
+
+  function summaryProgressLabel(summary?: { pool_kind?: PoolKind } | null) {
+    return summary?.pool_kind === "fork_lottery" ? t("dashboard.fourStarGuarantee") : t("dashboard.giftProgress");
+  }
+
+  function fiveUpHitRatio(summary?: { up_count?: number; hit_count?: number; five_star_item_count?: number } | null) {
+    return `${summary?.up_count ?? 0}/${summary?.five_star_item_count ?? summary?.hit_count ?? 0}`;
+  }
+
+  function openRankingDialog() {
+    if (itemRankingShares.value.length) rankingDialogOpen.value = true;
+  }
+
+  function closeRankingDialog() {
+    rankingDialogOpen.value = false;
+  }
+
+  function fiveWallPityTone(pity: number, poolKind?: PoolKind) {
+    if (poolKind === "fork_lottery") {
+      if (pity > 50) return "pity-danger";
+      if (pity > 30) return "pity-warn";
+      return "pity-good";
+    }
+    if (pity <= 70) return "pity-good";
+    if (pity < 90) return "pity-warn";
+    return "pity-danger";
+  }
+
   function resetRecordFilters() {
     applyingRecordPrefs = true;
     try {
@@ -572,6 +737,8 @@ export function useApp() {
       rateUpResults.value = [];
       rollBuckets.value = [];
       itemKinds.value = [];
+      forkResultMarks.value = [];
+      forkPityBadges.value = [];
       dateFrom.value = "";
       dateTo.value = "";
       search.value = "";
@@ -584,14 +751,14 @@ export function useApp() {
   }
 
   return reactive({
-    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, records, recordTotal, filterOptions, importPath, importMode,
+    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
-    capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, dateFrom, dateTo, search,
-    sortDirection, pageSize, pageIndex, recordPageSizes, recordAdvancedFiltersOpen, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, hitRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, trackedPoolCount, bannerSummaries, selectedPoolBannerSummaries, trackedBannerCount, totalRollPoints, selectedSummary, recordPageStart, recordPageEnd, canPrevPage,
-    canNextPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, selectDashboardBannerById, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
+    capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
+    sortDirection, pageSize, pageIndex, recordPageSizes, recordAdvancedFiltersOpen, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, hitRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, itemRankingShares, recordPageStart, recordPageEnd, canPrevPage,
+    canNextPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, showDashboardBannerRail, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
     runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
-    formatBannerWindow: formatBannerWindowText, formatPullNo, formatGlobalPullNo, formatPity: formatPityText, formatRollGiftProgress: formatRollGiftProgressText, formatGuarantee: formatGuaranteeText, formatRecordResultBadge: formatRecordResultBadgeText, forkHitBadge, forkWinRate, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
+    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, fiveUpHitRatio, fiveWallPityTone, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }
 

@@ -54,7 +54,7 @@ Public JSON contains export info and `nte.list` records:
 {
   "info": {
     "schema": "nte-gacha-exporter-export",
-    "schema_version": "3.0",
+    "schema_version": "4.0",
     "privacy": "sanitized"
   },
   "nte": {

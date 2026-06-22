@@ -22,7 +22,7 @@ export function createTranslator(uiLocale: Ref<string>) {
 
 function translate(locale: string, key: I18nKey, params?: I18nParams) {
   const messages = dictionaries[locale] ?? dictionaries[fallbackUiLocale];
-  return interpolate(messages[key] ?? en[key] ?? key, params);
+  return interpolate(messages[key] || en[key] || key, params);
 }
 
 export function uiLocaleDisplayName(locale: string, t: (key: I18nKey, params?: I18nParams) => string) {

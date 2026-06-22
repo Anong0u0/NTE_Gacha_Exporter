@@ -51,13 +51,21 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
   const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
   const countableRecords = records.filter((record) => record.derived.counts_as_pull);
   const fiveStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 5);
+  const fiveStarItemRecords = countableRecords.filter((record) => record.rarity === 5);
   const fourStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 4);
+  const average4StarPity = mockAverage4StarPity(countableRecords);
   const summary: PoolKindSummary = {
     ...fallback,
     label: label ?? fallback.label,
     total_pulls: countableRecords.length,
     hit_count: fiveStarRecords.length,
+    five_star_item_count: fiveStarItemRecords.length,
+    up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "up").length,
+    off_rate_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "off_rate").length,
+    not_applicable_rate_up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "not_applicable").length,
+    unknown_rate_up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "unknown").length,
     four_star_count: fourStarRecords.length,
+    average_4star_pity: average4StarPity,
     latest_5star: fiveStarRecords[0] ?? null,
   };
   const rarityCounts = new Map<number, number>();
@@ -68,10 +76,22 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
   const rarity_distribution = [...rarityCounts.entries()]
     .sort(([left], [right]) => right - left)
     .map(([rarity, count]) => ({ rarity, count, percent: knownTotal ? count / knownTotal : 0 }));
-  const itemCounts = new Map<string, { item_name: string; rarity?: number | null; count: number }>();
+  const hitRarityCounts = new Map<number, number>();
+  for (const record of countableRecords) {
+    if (record.derived.hit_rarity === 5 && record.derived.rate_up_result !== "up") continue;
+    if (record.derived.hit_rarity === 5 || record.derived.hit_rarity === 4 || record.derived.hit_rarity === 3) {
+      hitRarityCounts.set(record.derived.hit_rarity, (hitRarityCounts.get(record.derived.hit_rarity) ?? 0) + 1);
+    }
+  }
+  const knownHitTotal = [...hitRarityCounts.values()].reduce((total, count) => total + count, 0);
+  const hit_rarity_distribution = [...hitRarityCounts.entries()]
+    .sort(([left], [right]) => right - left)
+    .map(([rarity, count]) => ({ rarity, count, percent: knownHitTotal ? count / knownHitTotal : 0 }));
+  const itemCounts = new Map<string, { item_name: string; item_asset_refs: Record<string, unknown>; rarity?: number | null; count: number }>();
   for (const record of countableRecords) {
     const entry = itemCounts.get(record.item_id) ?? {
       item_name: record.item_name,
+      item_asset_refs: record.item_asset_refs,
       rarity: record.rarity,
       count: 0,
     };
@@ -93,8 +113,22 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
       guarantee_after: record.derived.guarantee_5_after,
     })),
     rarity_distribution,
+    hit_rarity_distribution,
     item_ranking,
   };
+}
+
+function mockAverage4StarPity(records: typeof mockRecords) {
+  const intervals: number[] = [];
+  let current = 0;
+  for (const record of [...records].sort((left, right) => (left.derived.pull_no_in_banner ?? 0) - (right.derived.pull_no_in_banner ?? 0))) {
+    current += 1;
+    if (record.derived.hit_rarity === 4 || record.derived.hit_rarity === 5) {
+      intervals.push(current);
+      current = 0;
+    }
+  }
+  return intervals.length ? intervals.reduce((total, value) => total + value, 0) / intervals.length : null;
 }
 
 export const mockApi: AppApi = {
@@ -182,10 +216,13 @@ export const mockApi: AppApi = {
           known_roll_point_records: 0,
           missing_roll_point_records: 0,
           hit_count: 0,
+          five_star_item_count: 0,
           current_pity: 0,
+          current_ten_pull_progress: null,
           current_guarantee: false,
           hard_pity: 90,
           average_5star_pity: null,
+          average_4star_pity: null,
           min_5star_pity: null,
           max_5star_pity: null,
           early_hit_count: 0,
@@ -216,8 +253,8 @@ export const mockApi: AppApi = {
         { rarity: 3, count: 161, percent: 0.885 },
       ],
       item_ranking: [
-        { item_id: "common_2", item_name: "Training Log", rarity: 3, count: 44 },
-        { item_id: "rare_1", item_name: "Sigrid", rarity: 5, count: 2 },
+        { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, count: 44 },
+        { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[0].item_asset_refs, rarity: 5, count: 2 },
       ],
     };
   },
@@ -251,6 +288,14 @@ export const mockApi: AppApi = {
       if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;
       if (filter.roll_buckets?.length && !filter.roll_buckets.includes(mockRollBucket(record))) return false;
       if (filter.item_kinds?.length && !filter.item_kinds.includes(mockItemKind(record))) return false;
+      if (filter.fork_result_marks?.length) {
+        const mark = mockForkResultMark(record);
+        if (!mark || !filter.fork_result_marks.includes(mark)) return false;
+      }
+      if (filter.fork_pity_badges?.length) {
+        const badge = record.derived.pity_badge;
+        if (!badge || !filter.fork_pity_badges.includes(badge)) return false;
+      }
       if (search && !`${record.item_name} ${record.item_id}`.toLowerCase().includes(search)) return false;
       return true;
     });
@@ -423,6 +468,15 @@ function mockRollBucket(record: { roll_label_id?: string | null; roll_points?: n
   if (record.roll_label_id === "BPUI_LotteryResult_chenmiandi") return "sleep";
   if (record.roll_points != null && record.roll_points >= 1 && record.roll_points <= 6) return String(record.roll_points) as RollBucket;
   return "not_applicable";
+}
+
+function mockForkResultMark(record: typeof mockRecords[number]) {
+  if (record.pool_kind !== "fork_lottery" || record.derived.hit_rarity !== 5) return null;
+  if (record.derived.rate_up_result === "off_rate") return "lose";
+  if (record.derived.rate_up_result !== "up") return null;
+  const before = record.derived.fork_up_pity_before;
+  const hard = record.derived.rule.hard_up_pity_5;
+  return before != null && hard != null && before + 1 === hard ? "guaranteed" : "win";
 }
 
 function mockItemKind(record: { item_id: string; record_type: string }): ItemKind {

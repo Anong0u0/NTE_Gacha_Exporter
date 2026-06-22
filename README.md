@@ -54,7 +54,7 @@ Public JSON 只包含匯出資訊與 `nte.list` 紀錄：
 {
   "info": {
     "schema": "nte-gacha-exporter-export",
-    "schema_version": "3.0",
+    "schema_version": "4.0",
     "privacy": "sanitized"
   },
   "nte": {

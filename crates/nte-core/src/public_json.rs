@@ -21,7 +21,7 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
             GuiError::InvalidDocument("info.schema_version must be a string".to_string())
         })?;
     let schema_major = schema_version.split('.').next();
-    if !matches!(schema_major, Some("1" | "2" | "3")) {
+    if !matches!(schema_major, Some("1" | "2" | "3" | "4")) {
         return Err(GuiError::InvalidDocument(format!(
             "unsupported schema_version: {schema_version}"
         )));

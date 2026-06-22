@@ -165,6 +165,12 @@ pub fn rate_up_result(
     }
     let canonical = map.canonical_item_id(&record.item_id);
     let candidates = match rarity {
+        5 if banner.rate_up_5.is_empty()
+            && banner.banner_type.as_deref() == Some("standard")
+            && !banner.standard_5_pool.is_empty() =>
+        {
+            &banner.standard_5_pool
+        }
         5 => &banner.rate_up_5,
         4 => &banner.rate_up_4,
         _ => return RateUpResult::Unknown,

@@ -16,6 +16,9 @@ type DashboardActionDeps = {
   selectedPoolKind: Ref<PoolKind>;
   selectedDashboardScope: Ref<DashboardSelection>;
   detail: Ref<DashboardSelectionDetail | null>;
+  detailLoading: Ref<boolean>;
+  errorText: Ref<string>;
+  formatError(error: unknown): string;
   resolveVisibleAssets(): Promise<void>;
 };
 
@@ -42,24 +45,18 @@ export function createDashboardActions(deps: DashboardActionDeps) {
   function selectDashboardPool(poolKind: PoolKind) {
     deps.selectedPoolKind.value = poolKind;
     deps.selectedDashboardScope.value = { kind: "pool_kind", pool_kind: poolKind };
-    void loadDetail();
+    void loadDetail().catch(handleDetailError);
   }
 
   function selectDashboardBanner(banner: BannerSummary) {
     deps.selectedPoolKind.value = banner.pool_kind;
     deps.selectedDashboardScope.value = { kind: "banner", pool_kind: banner.pool_kind, banner_id: banner.banner_id };
-    void loadDetail();
-  }
-
-  function selectDashboardBannerById(bannerId?: string | null) {
-    if (!bannerId) return;
-    const banner = deps.summary.value?.banners.find((item) => item.banner_id === bannerId);
-    if (banner) selectDashboardBanner(banner);
+    void loadDetail().catch(handleDetailError);
   }
 
   function isSelectedDashboardPool(poolKind: PoolKind) {
     const scope = deps.selectedDashboardScope.value;
-    return scope.kind === "pool_kind" && scope.pool_kind === poolKind;
+    return scope.pool_kind === poolKind;
   }
 
   function isSelectedDashboardBanner(bannerId: string) {
@@ -73,30 +70,51 @@ export function createDashboardActions(deps: DashboardActionDeps) {
     return left.banner_id === right.banner_id;
   }
 
+  function handleDetailError(error: unknown) {
+    deps.errorText.value = deps.formatError(error);
+  }
+
   async function loadDetail() {
-    if (!deps.activeProfileName.value) return;
+    if (!deps.activeProfileName.value) {
+      deps.detail.value = null;
+      deps.detailLoading.value = false;
+      return;
+    }
     const requestId = ++detailLoadId;
     const profileName = deps.activeProfileName.value;
     const requestLocale = deps.locale.value;
     const requestScope = deps.selectedDashboardScope.value;
-    const nextDetail = await api.dashboardSelectionDetail(profileName, requestScope, requestLocale);
-    if (
-      requestId !== detailLoadId
-      || profileName !== deps.activeProfileName.value
-      || requestLocale !== deps.locale.value
-      || !isSameDashboardScope(requestScope, deps.selectedDashboardScope.value)
-    ) {
-      return;
+    deps.errorText.value = "";
+    deps.detail.value = null;
+    deps.detailLoading.value = true;
+    try {
+      const nextDetail = await api.dashboardSelectionDetail(profileName, requestScope, requestLocale);
+      if (
+        requestId !== detailLoadId
+        || profileName !== deps.activeProfileName.value
+        || requestLocale !== deps.locale.value
+        || !isSameDashboardScope(requestScope, deps.selectedDashboardScope.value)
+      ) {
+        return;
+      }
+      deps.detail.value = nextDetail;
+      await deps.resolveVisibleAssets();
+    } finally {
+      if (
+        requestId === detailLoadId
+        && profileName === deps.activeProfileName.value
+        && requestLocale === deps.locale.value
+        && isSameDashboardScope(requestScope, deps.selectedDashboardScope.value)
+      ) {
+        deps.detailLoading.value = false;
+      }
     }
-    deps.detail.value = nextDetail;
-    await deps.resolveVisibleAssets();
   }
 
   return {
     normalizeDashboardScope,
     selectDashboardPool,
     selectDashboardBanner,
-    selectDashboardBannerById,
     isSelectedDashboardPool,
     isSelectedDashboardBanner,
     loadDetail,
