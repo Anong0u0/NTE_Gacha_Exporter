@@ -36,6 +36,8 @@ pub struct Settings {
     pub ui_locale: String,
     pub update_channel: String,
     pub check_updates_on_startup: bool,
+    pub capture_auto_page_enabled: bool,
+    pub capture_full_update_enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -45,6 +47,8 @@ pub struct SettingsPatch {
     pub ui_locale: Option<String>,
     pub update_channel: Option<String>,
     pub check_updates_on_startup: Option<bool>,
+    pub capture_auto_page_enabled: Option<bool>,
+    pub capture_full_update_enabled: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

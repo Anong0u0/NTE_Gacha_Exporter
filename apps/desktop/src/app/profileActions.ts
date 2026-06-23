@@ -1,6 +1,6 @@
 import type { Ref } from "vue";
 
-import { api, type Profile } from "../api";
+import { api, type Profile, type Settings } from "../api";
 import type { I18nKey } from "./i18n";
 
 type ProfileActionsDeps = {
@@ -10,10 +10,7 @@ type ProfileActionsDeps = {
   profileRenameSource: Ref<string>;
   profileRenameName: Ref<string>;
   profileDeleteTarget: Ref<string>;
-  locale: Ref<string>;
-  uiLocale: Ref<string>;
-  settingsUpdateChannel: Ref<string>;
-  settingsCheckUpdates: Ref<boolean>;
+  applySettings(settings: Settings): void;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
   t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
   saveRecordViewPrefs(profileName?: string): void;
@@ -97,11 +94,7 @@ export function createProfileActions(deps: ProfileActionsDeps) {
       const settings = await api.deleteProfile(profile.name);
       deps.removeRecordViewPrefs(profile.name);
       if (profile.name !== deps.activeProfileName.value) deps.saveRecordViewPrefs();
-      deps.setActiveProfileName(settings.active_profile);
-      deps.locale.value = settings.locale;
-      deps.uiLocale.value = settings.ui_locale || deps.uiLocale.value;
-      deps.settingsUpdateChannel.value = settings.update_channel;
-      deps.settingsCheckUpdates.value = settings.check_updates_on_startup;
+      deps.applySettings(settings);
       if (deps.profileRenameSource.value === profile.name) {
         cancelRenameProfile();
       }
@@ -121,10 +114,7 @@ export function createProfileActions(deps: ProfileActionsDeps) {
     await deps.runTask(deps.t("status.profileSelected"), async () => {
       try {
         const settings = await api.updateSettings({ active_profile: profileName });
-        deps.locale.value = settings.locale;
-        deps.uiLocale.value = settings.ui_locale || deps.uiLocale.value;
-        deps.settingsUpdateChannel.value = settings.update_channel;
-        deps.settingsCheckUpdates.value = settings.check_updates_on_startup;
+        deps.applySettings(settings);
         await loadProfiles();
         await deps.refreshAll();
       } catch (error) {

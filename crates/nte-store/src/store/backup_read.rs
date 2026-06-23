@@ -41,6 +41,12 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
         }
         validate_ui_locale(&settings.ui_locale)?;
         validate_update_channel(&settings.update_channel)?;
+        if settings.capture_full_update_enabled {
+            settings.capture_auto_page_enabled = true;
+        }
+        if !settings.capture_auto_page_enabled {
+            settings.capture_full_update_enabled = false;
+        }
 
         let mut profiles = BTreeMap::new();
         for name in backup_profile_names(&files)? {

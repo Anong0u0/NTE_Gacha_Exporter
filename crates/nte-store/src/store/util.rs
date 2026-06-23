@@ -277,6 +277,10 @@ fn default_update_channel() -> String {
     DEFAULT_UPDATE_CHANNEL.to_string()
 }
 
+fn default_capture_auto_page_enabled() -> bool {
+    true
+}
+
 fn default_locale() -> String {
     DEFAULT_LOCALE.to_string()
 }

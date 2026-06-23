@@ -31,7 +31,6 @@ export type AppApi = {
   uiLocaleList(): Promise<MapLocaleList>;
   systemLocale(): Promise<string | null>;
   doctorRun(): Promise<DoctorReport>;
-  runtimePing(): Promise<unknown>;
   updaterStatus(): Promise<UpdateStatus>;
   updaterCheck(channel?: string): Promise<UpdateCheckReport>;
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;

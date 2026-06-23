@@ -225,4 +225,3 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         error,
     );
 }
-

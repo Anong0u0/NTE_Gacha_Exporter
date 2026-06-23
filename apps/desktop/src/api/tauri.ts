@@ -58,7 +58,6 @@ export const tauriApi: AppApi = {
   uiLocaleList: () => invoke<MapLocaleList>("ui_locale_list"),
   systemLocale: () => invoke<string | null>("system_locale"),
   doctorRun: () => invoke<DoctorReport>("doctor_run"),
-  runtimePing: () => invoke<unknown>("runtime_ping"),
   updaterStatus: () => invoke<UpdateStatus>("updater_status"),
   updaterCheck: (channel) => invoke<UpdateCheckReport>("updater_check", { channel }),
   updaterDownloadAndStage: (packageInfo) =>

@@ -144,10 +144,19 @@ const app = useAppContext();
         <section class="panel" data-agent-id="records-history">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">{{ app.t("records.pageRange", { start: app.recordPageStart, end: app.recordPageEnd, total: app.recordTotal }) }}</span>
               <h2>{{ app.t("records.history") }}</h2>
             </div>
             <div class="pager">
+              <MultiSelectDropdown
+                v-model="app.visibleRecordColumns"
+                class="record-column-select"
+                :label="app.t('records.columns')"
+                :all-label="app.t('records.noColumns')"
+                :all-selected-label="app.t('records.allColumns')"
+                :selected-label="app.t('records.selectedCount')"
+                :options="app.recordColumnOptions"
+                :disabled="app.isWorkflowBusy"
+              />
               <select v-model="app.sortDirection" class="time-order-select" :title="app.t('records.timeOrder')">
                 <option value="desc">{{ app.t("records.newestFirst") }}</option>
                 <option value="asc">{{ app.t("records.oldestFirst") }}</option>
@@ -155,30 +164,31 @@ const app = useAppContext();
               <select v-model.number="app.pageSize">
                 <option v-for="size in app.recordPageSizes" :key="size" :value="size">{{ size }}</option>
               </select>
-              <button type="button" :disabled="!app.canPrevPage || app.isWorkflowBusy" :title="app.t('records.previousPage')" @click="app.pageIndex--">
+              <button type="button" class="page-button" :disabled="!app.canPrevPage || app.isWorkflowBusy" :title="app.t('records.previousPage')" @click="app.pageIndex--">
                 <ChevronLeft :size="16" />
               </button>
-              <button type="button" :disabled="!app.canNextPage || app.isWorkflowBusy" :title="app.t('records.nextPage')" @click="app.pageIndex++">
+              <span class="pager-range">{{ app.t("records.pageRange", { start: app.recordPageStart, end: app.recordPageEnd, total: app.recordTotal }) }}</span>
+              <button type="button" class="page-button" :disabled="!app.canNextPage || app.isWorkflowBusy" :title="app.t('records.nextPage')" @click="app.pageIndex++">
                 <ChevronRight :size="16" />
               </button>
             </div>
           </div>
           <div class="record-table history-table">
-            <div class="record-header history-header">
-              <span>#</span>
-              <span>{{ app.t("common.time") }}</span>
-              <span>{{ app.t("common.banner") }}</span>
-              <span>{{ app.t("common.item") }}</span>
-              <span>{{ app.t("dashboard.rarity") }}</span>
-              <span>{{ app.t("records.pullNo") }}</span>
-              <span>{{ app.t("records.fiveStarProgress") }}</span>
-              <span>{{ app.t("records.tenPullProgress") }}</span>
-              <span>{{ app.t("records.rolls") }}</span>
+            <div class="record-header history-header" :style="{ '--history-grid-template': app.visibleRecordGridTemplate }">
+              <span v-if="app.isRecordColumnVisible('index')">#</span>
+              <span v-if="app.isRecordColumnVisible('time')">{{ app.t("common.time") }}</span>
+              <span v-if="app.isRecordColumnVisible('banner')">{{ app.t("common.banner") }}</span>
+              <span v-if="app.isRecordColumnVisible('item')">{{ app.t("common.item") }}</span>
+              <span v-if="app.isRecordColumnVisible('rarity')">{{ app.t("dashboard.rarity") }}</span>
+              <span v-if="app.isRecordColumnVisible('pullNo')">{{ app.t("records.pullNo") }}</span>
+              <span v-if="app.isRecordColumnVisible('fiveStarProgress')">{{ app.t("records.fiveStarProgress") }}</span>
+              <span v-if="app.isRecordColumnVisible('tenPullProgress')">{{ app.t("records.tenPullProgress") }}</span>
+              <span v-if="app.isRecordColumnVisible('rolls')">{{ app.t("records.rolls") }}</span>
             </div>
-            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line">
-              <span>{{ app.formatPoolKindPullNo(record) }}</span>
-              <span>{{ app.formatTime(record.time) }}</span>
-              <span class="history-banner-cell">
+            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line" :style="{ '--history-grid-template': app.visibleRecordGridTemplate }">
+              <span v-if="app.isRecordColumnVisible('index')">{{ app.formatPoolKindPullNo(record) }}</span>
+              <span v-if="app.isRecordColumnVisible('time')">{{ app.formatTime(record.time) }}</span>
+              <span v-if="app.isRecordColumnVisible('banner')" class="history-banner-cell">
                 <span v-if="app.hasBannerVisual(record.banner)" class="banner-row-thumb">
                   <img :src="app.bannerVisualUrl(record.banner)" alt="" />
                 </span>
@@ -188,7 +198,7 @@ const app = useAppContext();
                   <small v-if="app.bannerMeta(record.banner)">{{ app.bannerMeta(record.banner) }}</small>
                 </span>
               </span>
-              <span class="history-item-cell">
+              <span v-if="app.isRecordColumnVisible('item')" class="history-item-cell">
                 <span v-if="app.hasRecordVisual(record)" class="history-item-thumb">
                   <img :src="app.itemVisualUrl(record)" alt="" />
                 </span>
@@ -206,11 +216,11 @@ const app = useAppContext();
                   <small v-if="record.secondary_item_name">{{ app.formatQuantityName(record.secondary_item_name, record.secondary_count) }}</small>
                 </span>
               </span>
-              <span class="record-rarity" :class="app.recordRarityClass(record)">{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
-              <span>{{ app.formatPullNo(record) }}</span>
-              <span>{{ app.formatPity(record) }}</span>
-              <span>{{ app.formatTenPullProgress(record) }}</span>
-              <span>{{ app.formatRolls(record) }}</span>
+              <span v-if="app.isRecordColumnVisible('rarity')" class="record-rarity" :class="app.recordRarityClass(record)">{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
+              <span v-if="app.isRecordColumnVisible('pullNo')">{{ app.formatPullNo(record) }}</span>
+              <span v-if="app.isRecordColumnVisible('fiveStarProgress')">{{ app.formatPity(record) }}</span>
+              <span v-if="app.isRecordColumnVisible('tenPullProgress')">{{ app.formatTenPullProgress(record) }}</span>
+              <span v-if="app.isRecordColumnVisible('rolls')">{{ app.formatRolls(record) }}</span>
             </div>
             <div v-if="app.records.length === 0" class="empty-row">{{ app.t("records.empty") }}</div>
           </div>

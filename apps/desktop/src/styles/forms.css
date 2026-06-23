@@ -6,7 +6,16 @@
   width: 132px;
 }
 
-.pager button {
+.pager-range {
+  min-width: 88px;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pager .page-button {
   width: 32px;
   padding: 0;
 }
@@ -108,12 +117,13 @@
 }
 
 .settings-workbench {
+  align-self: start;
   align-items: start;
-}
-
-.settings-workbench {
+  overflow: auto;
   width: 100%;
+  padding-bottom: 20px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
 }
 
 .settings-workbench > .panel:first-child {

@@ -81,4 +81,3 @@ pub(crate) fn capture_stop(
     }
     capture_status_with_merge(&state, &session_id)
 }
-

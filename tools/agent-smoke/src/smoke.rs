@@ -197,6 +197,20 @@ fn capture_navigation_views(
         wait_agent(addr, &format!("view-{view}"), Duration::from_secs(10))?;
         let layout = audit_layout(addr, view)?;
         push_step(report, format!("layout_{view}"), Some(layout));
+        if view == "dashboard" {
+            let regions = audit_dashboard_scroll_regions(addr, "initial")?;
+            push_step(report, "layout_dashboard_scroll_regions", Some(regions));
+            let five_wall_contract = audit_dashboard_five_wall_contract(addr)?;
+            push_step(
+                report,
+                "layout_dashboard_five_wall_contract",
+                Some(five_wall_contract),
+            );
+            let dialog = audit_status_dialog(addr)?;
+            push_step(report, "layout_status_dialog", Some(dialog));
+            let expanded = audit_dashboard_expanded_layout(addr)?;
+            push_step(report, "layout_dashboard_expanded", Some(expanded));
+        }
         capture_step(report, screenshots, &format!("{view}_after"), window)?;
         push_step(report, format!("view_{view}"), None);
     }
@@ -214,14 +228,19 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
         const metricsFor = (el) => {{
           if (!el) return null;
           const rect = el.getBoundingClientRect();
-          return {{
-            left: round(rect.left),
-            right: round(rect.right),
-            width: round(rect.width),
-            clientWidth: el.clientWidth,
-            scrollWidth: el.scrollWidth,
+            return {{
+              left: round(rect.left),
+              top: round(rect.top),
+              right: round(rect.right),
+              bottom: round(rect.bottom),
+              width: round(rect.width),
+              height: round(rect.height),
+              clientWidth: el.clientWidth,
+              scrollWidth: el.scrollWidth,
+              clientHeight: el.clientHeight,
+              scrollHeight: el.scrollHeight,
+            }};
           }};
-        }};
 
         const doc = document.documentElement;
         const body = document.body;
@@ -230,8 +249,10 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
         if (!workspace || !workbench) fail("layout root missing", {{ view }});
 
         const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         const docOverflow = Math.max(doc.scrollWidth, body.scrollWidth) - viewportWidth;
         const workspaceOverflow = workspace.scrollWidth - workspace.clientWidth;
+        const workspaceVerticalOverflow = workspace.scrollHeight - workspace.clientHeight;
         if (docOverflow > 1) fail("document horizontal overflow", {{ view, docOverflow }});
         if (workspaceOverflow > 1) fail("workspace horizontal overflow", {{ view, workspaceOverflow }});
 
@@ -280,12 +301,42 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
         const result = {{
           view,
           viewportWidth,
+          viewportHeight,
           document: {{ scrollWidth: doc.scrollWidth, overflow: round(docOverflow) }},
-          workspace: metricsFor(workspace),
+          workspace: {{ ...metricsFor(workspace), verticalOverflow: round(workspaceVerticalOverflow) }},
           workbench: metricsFor(workbench),
           trailingBlank: round(trailingBlank),
           trailingBlankRatio: round(trailingBlankRatio),
         }};
+
+        if (view === "dashboard") {{
+          const detailBody = document.querySelector(".selected-detail-body");
+          const detailPanel = document.querySelector(".selected-detail-panel");
+          if (!detailBody || !detailPanel) fail("dashboard detail missing", {{ view }});
+
+          const detailBodyOverflow = detailBody.scrollHeight - detailBody.clientHeight;
+          const detailPanelOverflow = detailPanel.scrollHeight - detailPanel.clientHeight;
+          const detailBodyStyle = window.getComputedStyle(detailBody);
+          if (detailBodyOverflow > 1) {{
+            fail("dashboard detail body has inner vertical overflow", {{
+              detailBodyOverflow: round(detailBodyOverflow),
+              detailBody: metricsFor(detailBody),
+            }});
+          }}
+          if (["auto", "scroll"].includes(detailBodyStyle.overflowY)) {{
+            fail("dashboard detail body is configured as inner scroll region", {{
+              overflowY: detailBodyStyle.overflowY,
+            }});
+          }}
+
+          result.dashboardDetail = {{
+            body: metricsFor(detailBody),
+            panel: metricsFor(detailPanel),
+            bodyOverflow: round(detailBodyOverflow),
+            panelOverflow: round(detailPanelOverflow),
+            bodyOverflowY: detailBodyStyle.overflowY,
+          }};
+        }}
 
         if (view === "records") {{
           const table = document.querySelector(".history-table");
@@ -293,11 +344,13 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
           if (!table || !header) fail("records table missing", {{ view }});
           const tableOverflow = table.scrollWidth - table.clientWidth;
           if (tableOverflow > 1) fail("records table horizontal overflow", {{ tableOverflow }});
+          const tableRect = table.getBoundingClientRect();
+          const tableBottomOverflow = tableRect.bottom - workspaceRect.bottom;
+          if (tableBottomOverflow > 1) fail("records table exceeds workspace", {{ tableBottomOverflow: round(tableBottomOverflow) }});
 
           const headerCells = Array.from(header.children);
           const bannerRect = headerCells[2]?.getBoundingClientRect();
           const itemRect = headerCells[3]?.getBoundingClientRect();
-          const tableRect = table.getBoundingClientRect();
           if (!bannerRect || !itemRect) fail("records table header cells missing", {{ view }});
 
           const itemRatio = itemRect.width / Math.max(1, tableRect.width);
@@ -312,6 +365,7 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
           result.recordsTable = {{
             table: metricsFor(table),
             overflow: round(tableOverflow),
+            bottomOverflow: round(tableBottomOverflow),
             bannerColumnWidth: round(bannerRect.width),
             itemColumnWidth: round(itemRect.width),
             itemRatio: round(itemRatio),
@@ -324,6 +378,361 @@ fn audit_layout(addr: &str, view: &str) -> Result<Value> {
         view_json = serde_json::to_string(view)?,
     );
     eval_js(addr, &script, 5000)
+}
+
+fn audit_dashboard_five_wall_contract(addr: &str) -> Result<Value> {
+    eval_js(
+        addr,
+        r#"
+        const fail = (message, detail = {}) => {
+          throw new Error(`${message} ${JSON.stringify(detail)}`);
+        };
+        const round = (value) => Math.round(value * 1000) / 1000;
+        const metricsFor = (el) => {
+          const rect = el.getBoundingClientRect();
+          return {
+            width: round(rect.width),
+            height: round(rect.height),
+            clientHeight: el.clientHeight,
+            scrollHeight: el.scrollHeight,
+          };
+        };
+        const fixture = document.createElement("section");
+        fixture.className = "panel latest-five-wall";
+        fixture.style.cssText = [
+          "position: fixed",
+          "left: -10000px",
+          "top: 0",
+          "width: 420px",
+          "visibility: hidden",
+          "pointer-events: none",
+        ].join(";");
+        const items = Array.from({ length: 24 }, (_, index) => (
+          `<div class="five-wall-item rarity-5"><span class="five-wall-thumb empty">${index}</span><span class="five-wall-pity">${index + 1}</span></div>`
+        )).join("");
+        fixture.innerHTML = `
+          <div class="panel-head"><h2>contract</h2></div>
+          <div class="five-wall-shell is-expanded" style="--five-wall-row-height: 74px">
+            <div class="five-wall-grid">${items}</div>
+            <div class="five-wall-toolbar"><button type="button">toggle</button></div>
+          </div>
+        `;
+        document.body.appendChild(fixture);
+        try {
+          const shell = fixture.querySelector(".five-wall-shell");
+          void shell.offsetHeight;
+
+          const expandedOverflowY = window.getComputedStyle(shell).overflowY;
+          const expandedOverflow = shell.scrollHeight - shell.clientHeight;
+          if (["auto", "scroll"].includes(expandedOverflowY)) {
+            fail("synthetic expanded five wall is configured as inner scroll region", {
+              overflowY: expandedOverflowY,
+            });
+          }
+          if (expandedOverflow > 1) {
+            fail("synthetic expanded five wall has inner vertical overflow", {
+              overflow: round(expandedOverflow),
+              shell: metricsFor(shell),
+            });
+          }
+
+          shell.classList.remove("is-expanded");
+          shell.classList.add("is-collapsed");
+          void shell.offsetHeight;
+
+          const collapsedOverflowY = window.getComputedStyle(shell).overflowY;
+          const collapsedOverflow = shell.scrollHeight - shell.clientHeight;
+          if (collapsedOverflowY !== "hidden") {
+            fail("synthetic collapsed five wall does not mask preview", {
+              overflowY: collapsedOverflowY,
+            });
+          }
+          if (collapsedOverflow <= 1) {
+            fail("synthetic collapsed five wall did not create preview overflow", {
+              overflow: round(collapsedOverflow),
+              shell: metricsFor(shell),
+            });
+          }
+
+          return {
+            expanded: {
+              overflow: round(expandedOverflow),
+              overflowY: expandedOverflowY,
+            },
+            collapsed: {
+              overflow: round(collapsedOverflow),
+              overflowY: collapsedOverflowY,
+            },
+          };
+        } finally {
+          fixture.remove();
+        }
+        "#,
+        5000,
+    )
+}
+
+fn audit_dashboard_scroll_regions(addr: &str, phase: &str) -> Result<Value> {
+    let script = format!(
+        "const phase = {};\n{}",
+        serde_json::to_string(phase)?,
+        r#"
+        const fail = (message, detail = {}) => {
+          throw new Error(`${message} ${JSON.stringify(detail)}`);
+        };
+        const round = (value) => Math.round(value * 1000) / 1000;
+        const metricsFor = (el) => {
+          if (!el) return null;
+          const rect = el.getBoundingClientRect();
+          return {
+            left: round(rect.left),
+            top: round(rect.top),
+            right: round(rect.right),
+            bottom: round(rect.bottom),
+            width: round(rect.width),
+            height: round(rect.height),
+            clientWidth: el.clientWidth,
+            scrollWidth: el.scrollWidth,
+            clientHeight: el.clientHeight,
+            scrollHeight: el.scrollHeight,
+          };
+        };
+
+        const workspace = document.querySelector(".workspace");
+        const detailBody = document.querySelector(".selected-detail-body");
+        const detailPanel = document.querySelector(".selected-detail-panel");
+        const fiveWallShell = document.querySelector(".five-wall-shell");
+        if (!workspace || !detailBody || !detailPanel || !fiveWallShell) {
+          fail("dashboard scroll region missing", {
+            phase,
+            hasWorkspace: Boolean(workspace),
+            hasDetailBody: Boolean(detailBody),
+            hasDetailPanel: Boolean(detailPanel),
+            hasFiveWallShell: Boolean(fiveWallShell),
+          });
+        }
+
+        const detailBodyStyle = window.getComputedStyle(detailBody);
+        const fiveWallStyle = window.getComputedStyle(fiveWallShell);
+        const detailBodyOverflow = detailBody.scrollHeight - detailBody.clientHeight;
+        const detailPanelOverflow = detailPanel.scrollHeight - detailPanel.clientHeight;
+        const fiveWallOverflow = fiveWallShell.scrollHeight - fiveWallShell.clientHeight;
+        const fiveWallClasses = [...fiveWallShell.classList];
+        const fiveWallCollapsed = fiveWallShell.classList.contains("is-collapsed");
+
+        if (detailBodyOverflow > 1) {
+          fail("dashboard detail body has inner vertical overflow", {
+            phase,
+            detailBodyOverflow: round(detailBodyOverflow),
+            detailBody: metricsFor(detailBody),
+          });
+        }
+        if (["auto", "scroll"].includes(detailBodyStyle.overflowY)) {
+          fail("dashboard detail body is configured as inner scroll region", {
+            phase,
+            overflowY: detailBodyStyle.overflowY,
+          });
+        }
+        if (["auto", "scroll"].includes(fiveWallStyle.overflowY)) {
+          fail("dashboard five wall shell is configured as inner scroll region", {
+            phase,
+            overflowY: fiveWallStyle.overflowY,
+            classes: fiveWallClasses,
+          });
+        }
+        if (fiveWallCollapsed && fiveWallStyle.overflowY !== "hidden") {
+          fail("dashboard collapsed five wall shell does not mask preview", {
+            phase,
+            overflowY: fiveWallStyle.overflowY,
+            classes: fiveWallClasses,
+          });
+        }
+        if (!fiveWallCollapsed && fiveWallOverflow > 1) {
+          fail("dashboard five wall shell has inner vertical overflow", {
+            phase,
+            fiveWallOverflow: round(fiveWallOverflow),
+            classes: fiveWallClasses,
+            fiveWallShell: metricsFor(fiveWallShell),
+          });
+        }
+
+        return {
+          phase,
+          workspace: {
+            ...metricsFor(workspace),
+            verticalOverflow: round(workspace.scrollHeight - workspace.clientHeight),
+            overflowY: window.getComputedStyle(workspace).overflowY,
+          },
+          dashboardDetail: {
+            body: metricsFor(detailBody),
+            panel: metricsFor(detailPanel),
+            bodyOverflow: round(detailBodyOverflow),
+            panelOverflow: round(detailPanelOverflow),
+            bodyOverflowY: detailBodyStyle.overflowY,
+          },
+          fiveWall: {
+            shell: metricsFor(fiveWallShell),
+            overflow: round(fiveWallOverflow),
+            overflowY: fiveWallStyle.overflowY,
+            classes: fiveWallClasses,
+          },
+        };
+        "#,
+    );
+    eval_js(addr, &script, 5000)
+}
+
+fn audit_dashboard_expanded_layout(addr: &str) -> Result<Value> {
+    let interaction = eval_js(
+        addr,
+        r#"
+        const toggle = document.querySelector('[data-agent-id="dashboard-five-wall-toggle"]');
+        if (!toggle) {
+          return { skipped: true, reason: "five wall toggle not visible" };
+        }
+        const expandedBefore = toggle.getAttribute("aria-expanded") === "true";
+        if (!expandedBefore) toggle.click();
+        return { skipped: false, expandedBefore, clicked: !expandedBefore };
+        "#,
+        5000,
+    )?;
+    thread::sleep(Duration::from_millis(250));
+
+    let skipped = interaction
+        .get("skipped")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let expanded_state = eval_js(
+        addr,
+        r#"
+        const toggle = document.querySelector('[data-agent-id="dashboard-five-wall-toggle"]');
+        const shell = document.querySelector(".five-wall-shell");
+        return {
+          hasToggle: Boolean(toggle),
+          ariaExpanded: toggle?.getAttribute("aria-expanded") ?? null,
+          shellClasses: shell ? [...shell.classList] : [],
+          shellExpanded: shell?.classList.contains("is-expanded") ?? false,
+        };
+        "#,
+        5000,
+    )?;
+    if !skipped
+        && !expanded_state
+            .get("shellExpanded")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+    {
+        bail!("dashboard five wall did not enter expanded state: {expanded_state}");
+    }
+
+    let regions = audit_dashboard_scroll_regions(
+        addr,
+        if skipped {
+            "expanded-skipped"
+        } else {
+            "expanded"
+        },
+    )?;
+    let restore = if skipped {
+        json!({ "skipped": true })
+    } else {
+        eval_js(
+            addr,
+            r#"
+            const toggle = document.querySelector('[data-agent-id="dashboard-five-wall-toggle"]');
+            if (toggle?.getAttribute("aria-expanded") === "true") toggle.click();
+            return { clicked: Boolean(toggle), ariaExpanded: toggle?.getAttribute("aria-expanded") ?? null };
+            "#,
+            5000,
+        )?
+    };
+    thread::sleep(Duration::from_millis(100));
+
+    Ok(json!({
+        "interaction": interaction,
+        "expandedState": expanded_state,
+        "regions": regions,
+        "restore": restore,
+    }))
+}
+
+fn audit_status_dialog(addr: &str) -> Result<Value> {
+    eval_js(
+        addr,
+        r#"
+        const status = document.querySelector('[data-agent-id="topbar-status"]');
+        if (!status) throw new Error("topbar status trigger missing");
+        status.click();
+        return { clicked: true };
+        "#,
+        5000,
+    )?;
+    thread::sleep(Duration::from_millis(250));
+    let result = eval_js(
+        addr,
+        r#"
+        const fail = (message, detail = {}) => {
+          throw new Error(`${message} ${JSON.stringify(detail)}`);
+        };
+        const round = (value) => Math.round(value * 1000) / 1000;
+        const metricsFor = (el) => {
+          const rect = el.getBoundingClientRect();
+          return {
+            left: round(rect.left),
+            top: round(rect.top),
+            right: round(rect.right),
+            bottom: round(rect.bottom),
+            width: round(rect.width),
+            height: round(rect.height),
+          };
+        };
+        const backdrop = document.querySelector(".status-dialog-backdrop");
+        const dialog = document.querySelector(".status-dialog");
+        if (!backdrop || !dialog) fail("status dialog missing");
+
+        const backdropRect = backdrop.getBoundingClientRect();
+        const dialogRect = dialog.getBoundingClientRect();
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+        const tolerances = {
+          left: Math.abs(backdropRect.left),
+          top: Math.abs(backdropRect.top),
+          right: Math.abs(backdropRect.right - viewport.width),
+          bottom: Math.abs(backdropRect.bottom - viewport.height),
+        };
+        if (Object.values(tolerances).some((value) => value > 1)) {
+          fail("status dialog backdrop does not cover viewport", {
+            viewport,
+            backdrop: metricsFor(backdrop),
+            tolerances: Object.fromEntries(Object.entries(tolerances).map(([key, value]) => [key, round(value)])),
+          });
+        }
+        if (dialogRect.top < 0 || dialogRect.bottom > viewport.height || dialogRect.left < 0 || dialogRect.right > viewport.width) {
+          fail("status dialog outside viewport", {
+            viewport,
+            dialog: metricsFor(dialog),
+          });
+        }
+
+        return {
+          viewport,
+          backdrop: metricsFor(backdrop),
+          dialog: metricsFor(dialog),
+          parentTag: backdrop.parentElement?.tagName.toLowerCase() ?? null,
+        };
+        "#,
+        5000,
+    )?;
+    let _ = eval_js(
+        addr,
+        r#"
+        const backdrop = document.querySelector(".status-dialog-backdrop");
+        if (backdrop) backdrop.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return { closed: true };
+        "#,
+        5000,
+    );
+    thread::sleep(Duration::from_millis(100));
+    Ok(result)
 }
 
 fn capture_final_snapshot(addr: &str, logs: &Path, report: &mut Report) -> Result<()> {

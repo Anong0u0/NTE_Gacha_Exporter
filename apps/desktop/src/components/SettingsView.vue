@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArchiveRestore, Database, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
+import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -40,10 +40,6 @@ const app = useAppContext();
               <input v-model="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" />
               <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
-            <button type="button" data-agent-id="runtime-ping" :disabled="app.isWorkflowBusy" @click="app.pingRuntime">
-              <Database :size="17" />
-              <span>{{ app.t("settings.pingRuntime") }}</span>
-            </button>
             <button type="button" data-agent-id="doctor-run" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
               <Stethoscope :size="17" />
               <span>{{ app.t("common.doctor") }}</span>

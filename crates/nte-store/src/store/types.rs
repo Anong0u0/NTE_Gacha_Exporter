@@ -64,6 +64,10 @@ struct DiskSettings {
     update_channel: String,
     #[serde(default)]
     check_updates_on_startup: bool,
+    #[serde(default = "default_capture_auto_page_enabled")]
+    capture_auto_page_enabled: bool,
+    #[serde(default)]
+    capture_full_update_enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

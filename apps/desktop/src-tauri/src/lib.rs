@@ -70,7 +70,6 @@ pub fn run() {
             system_commands::ui_locale_list,
             system_commands::system_locale,
             system_commands::doctor_run,
-            system_commands::runtime_ping,
             admin::request_admin_capture_start,
             admin::take_pending_admin_capture,
             capture::capture_start,

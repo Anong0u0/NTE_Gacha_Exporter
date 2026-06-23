@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, CircleStop, Eye, EyeOff, ListFilter, ListOrdered, RadioTower, RefreshCw, X } from "lucide-vue-next";
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { ChevronDown, ChevronUp, Crown, Eye, EyeOff, Gem, ListFilter, ListOrdered, Target, Ticket, TrendingDown, TrendingUp, X, Zap } from "lucide-vue-next";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from "vue";
 import { useAppContext } from "../app/context";
+import DashboardSummaryMetric from "./DashboardSummaryMetric.vue";
 
 const app = useAppContext();
 const fiveWallGrid = ref<HTMLElement | null>(null);
@@ -9,6 +10,18 @@ const fiveWallOverflowsOneRow = ref(false);
 const fiveWallRowHeight = ref(84);
 const fiveWallFirstRowItemCount = ref(0);
 let fiveWallResizeObserver: ResizeObserver | null = null;
+
+type SummaryMetricTone = "default" | "rarity-5" | "rarity-4" | "currency";
+
+type SummaryMetricCard = {
+  key: string;
+  title: string;
+  value: string | number;
+  icon: Component;
+  tone?: SummaryMetricTone;
+  progressWidth?: string;
+  className: string;
+};
 
 const dashboardScopeKey = computed(() =>
   app.selectedDashboardScope.kind === "banner"
@@ -23,6 +36,80 @@ const fiveWallShellClasses = computed(() => ({
 const fiveWallShellStyle = computed<Record<string, string>>(() => ({
   "--five-wall-row-height": `${fiveWallRowHeight.value}px`,
 }));
+const summaryMetricCards = computed<SummaryMetricCard[]>(() => {
+  const summary = app.selectedSummary;
+  const cards: SummaryMetricCard[] = [
+    {
+      key: "five-pity",
+      title: app.t("dashboard.selected5Pity"),
+      value: `${summary?.current_pity ?? 0}/${summary?.hard_pity ?? 0}`,
+      icon: Crown,
+      tone: "rarity-5",
+      progressWidth: summaryProgressWidth(summary?.current_pity, summary?.hard_pity),
+      className: "summary-metric-card--five-pity",
+    },
+    {
+      key: "four-progress",
+      title: app.summaryProgressLabel(summary),
+      value: app.formatTenPullProgressSummary(summary?.current_ten_pull_progress),
+      icon: Zap,
+      tone: "rarity-4",
+      progressWidth: summaryProgressWidth(summary?.current_ten_pull_progress, 10),
+      className: "summary-metric-card--four-progress",
+    },
+    {
+      key: "total-pulls",
+      title: app.t("dashboard.totalPulls"),
+      value: summary?.total_pulls ?? 0,
+      icon: Ticket,
+      className: "summary-metric-card--total-pulls",
+    },
+    {
+      key: "currency",
+      title: app.t("dashboard.convertedCurrency"),
+      value: app.pullCurrency(summary?.total_pulls),
+      icon: Gem,
+      tone: "currency",
+      className: "summary-metric-card--currency",
+    },
+    {
+      key: "avg-five-pity",
+      title: app.t("dashboard.avg5Pity"),
+      value: app.numberOrDash(summary?.average_5star_pity),
+      icon: TrendingUp,
+      className: "summary-metric-card--avg-five-pity",
+    },
+    {
+      key: "avg-four-pity",
+      title: app.t("dashboard.avg4Pity"),
+      value: app.numberOrDash(summary?.average_4star_pity),
+      icon: TrendingDown,
+      className: "summary-metric-card--avg-four-pity",
+    },
+  ];
+
+  if (summary?.pool_kind === "fork_lottery") {
+    cards.push({
+      key: "fork-win-rate",
+      title: app.t("dashboard.forkWinRate"),
+      value: app.forkWinRate(summary),
+      icon: Target,
+      className: "summary-metric-card--fork-win-rate",
+    });
+  }
+
+  return cards;
+});
+const summaryMetricColumns = computed(() => ({
+  pity: summaryMetricCards.value.slice(0, 2),
+  detail: summaryMetricCards.value.slice(2),
+}));
+
+function summaryProgressWidth(current?: number | null, max?: number | null) {
+  const total = max ?? 0;
+  if (total <= 0) return "0%";
+  return `${Math.min(100, Math.max(0, ((current ?? 0) / total) * 100))}%`;
+}
 
 function updateFiveWallLayout() {
   const grid = fiveWallGrid.value;
@@ -68,73 +155,6 @@ watch(
 
 <template>
       <section class="view-stack dashboard-workbench" data-agent-id="view-dashboard">
-        <section class="update-band">
-          <div>
-            <span class="eyebrow">{{ app.t("import.updateData") }}</span>
-            <h2>{{ app.captureTitle }}</h2>
-            <p>{{ app.captureSubtitle }}</p>
-            <div v-if="app.captureStatus" class="capture-summary">
-              <div class="capture-stats">
-                <span>{{ app.captureModeLabel }}</span>
-                <span>{{ app.formatCaptureState(app.captureStatus.state) }}</span>
-                <span>{{ app.t("capture.packets", { count: app.captureStatus.counters.packets_seen }) }}</span>
-                <span>{{ app.t("capture.decoded", { count: app.captureStatus.counters.decoded_packets }) }}</span>
-                <span>{{ app.t("capture.dropped", { count: app.captureStatus.counters.dropped_packets }) }}</span>
-                <span v-if="app.captureStatus.counters.duplicate_packets">{{ app.t("capture.duplicates", { count: app.captureStatus.counters.duplicate_packets }) }}</span>
-              </div>
-              <div v-if="app.autoPageStatusLine" class="capture-target">{{ app.autoPageStatusLine }}</div>
-              <div v-if="app.captureStatus.auto_page" class="capture-stats">
-                <span>{{ app.t("capture.poolsDone", { count: app.captureStatus.auto_page.completed_pools?.length ?? 0 }) }}</span>
-                <span>{{ app.t("capture.poolsSkipped", { count: app.captureStatus.auto_page.skipped_pools?.length ?? 0 }) }}</span>
-              </div>
-              <div v-if="app.captureStatus.raw_path" class="capture-target">{{ app.captureStatus.raw_path }}</div>
-              <div v-if="app.captureStatus.target" class="capture-target">
-                {{ app.captureStatus.target.pid ?? "-" }} · {{ app.captureStatus.target.interface ?? "-" }}
-              </div>
-              <div v-if="app.captureStatus.latest_records.length" class="capture-latest">
-                <div v-for="record in app.captureStatus.latest_records.slice(-3)" :key="String(record.record_id ?? record.item_id ?? app.captureRecordName(record))">
-                  <span>{{ app.captureRecordName(record) }}</span>
-                  <small>{{ app.captureRecordMeta(record) }}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="capture-command">
-            <div class="action-row">
-              <div class="segmented mode-toggle">
-                <button
-                  type="button"
-                  :class="{ active: app.captureMode === 'auto_page_incremental' }"
-                  :disabled="app.isWorkflowBusy"
-                  @click="app.captureMode = 'auto_page_incremental'"
-                >
-                  {{ app.t("capture.autoPage") }}
-                </button>
-                <button
-                  type="button"
-                  :class="{ active: app.captureMode === 'live_only' }"
-                  :disabled="app.isWorkflowBusy"
-                  @click="app.captureMode = 'live_only'"
-                >
-                  {{ app.t("capture.liveOnly") }}
-                </button>
-              </div>
-              <button class="primary" type="button" :disabled="app.isWorkflowBusy" @click="app.startLiveCapture()">
-                <RadioTower :size="17" />
-                <span>{{ app.t("import.updateData") }}</span>
-              </button>
-              <button type="button" :disabled="app.isWorkflowBusy" @click="app.startFullCapture">
-                <RefreshCw :size="17" />
-                <span>{{ app.t("capture.fullUpdate") }}</span>
-              </button>
-              <button type="button" :disabled="!app.isCaptureActive || app.captureActionBusy" @click="app.stopLiveCapture">
-                <CircleStop :size="17" />
-                <span>{{ app.t("capture.stop") }}</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
         <section class="pool-strip">
           <button
             v-for="pool in app.allPoolSummaries"
@@ -245,6 +265,7 @@ watch(
               <button
                 type="button"
                 class="ghost"
+                data-agent-id="dashboard-five-wall-toggle"
                 :title="app.fiveWallExpanded ? app.t('dashboard.collapseFiveWall') : app.t('dashboard.expandFiveWall')"
                 :aria-expanded="app.fiveWallExpanded"
                 @click="app.toggleFiveWallExpanded"
@@ -296,13 +317,32 @@ watch(
               </div>
             </div>
             <div class="selected-summary-grid">
-              <div class="summary-kpi-row summary-kpi-pity rarity-5"><span>{{ app.t("dashboard.selected5Pity") }}</span><strong>{{ app.selectedSummary?.current_pity ?? 0 }}/{{ app.selectedSummary?.hard_pity ?? 0 }}</strong></div>
-              <div class="summary-kpi-row summary-kpi-pity rarity-4"><span>{{ app.summaryProgressLabel(app.selectedSummary) }}</span><strong>{{ app.formatTenPullProgressSummary(app.selectedSummary?.current_ten_pull_progress) }}</strong></div>
-              <div class="summary-kpi-row"><span>{{ app.t("dashboard.totalPulls") }}</span><strong>{{ app.selectedSummary?.total_pulls ?? 0 }}</strong></div>
-              <div class="summary-kpi-row summary-kpi-currency"><span>{{ app.t("dashboard.convertedCurrency") }}</span><strong>{{ app.pullCurrency(app.selectedSummary?.total_pulls) }}</strong></div>
-              <div class="summary-kpi-row"><span>{{ app.t("dashboard.avg5Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_5star_pity) }}</strong></div>
-              <div class="summary-kpi-row"><span>{{ app.t("dashboard.avg4Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_4star_pity) }}</strong></div>
-              <div v-if="app.selectedSummary?.pool_kind === 'fork_lottery'" class="summary-kpi-row"><span>{{ app.t("dashboard.forkWinRate") }}</span><strong>{{ app.forkWinRate(app.selectedSummary) }}</strong></div>
+              <div class="summary-metric-grid">
+                <div class="summary-metric-column summary-metric-column--pity">
+                  <DashboardSummaryMetric
+                    v-for="card in summaryMetricColumns.pity"
+                    :key="card.key"
+                    :class="card.className"
+                    :icon="card.icon"
+                    :title="card.title"
+                    :value="card.value"
+                    :tone="card.tone"
+                    :progress-width="card.progressWidth"
+                  />
+                </div>
+                <div class="summary-metric-column summary-metric-column--detail">
+                  <DashboardSummaryMetric
+                    v-for="card in summaryMetricColumns.detail"
+                    :key="card.key"
+                    :class="card.className"
+                    :icon="card.icon"
+                    :title="card.title"
+                    :value="card.value"
+                    :tone="card.tone"
+                    :progress-width="card.progressWidth"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>

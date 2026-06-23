@@ -10,6 +10,8 @@ fn store_bootstraps_default_profile_and_files() {
     assert_eq!(settings.ui_locale, "en");
     assert_eq!(settings.update_channel, "stable");
     assert!(!settings.check_updates_on_startup);
+    assert!(settings.capture_auto_page_enabled);
+    assert!(!settings.capture_full_update_enabled);
     assert_eq!(profiles.len(), 1);
     assert_eq!(profiles[0].name, "default");
     assert!(tmp.path().join("data/settings.json").exists());
@@ -49,7 +51,10 @@ fn store_migrates_missing_ui_locale_from_defaults() {
     let settings = store.settings().unwrap();
     let settings_text = std::fs::read_to_string(tmp.path().join("data/settings.json")).unwrap();
     assert_eq!(settings.ui_locale, "zh-Hant");
+    assert!(settings.capture_auto_page_enabled);
+    assert!(!settings.capture_full_update_enabled);
     assert!(settings_text.contains("\"ui_locale\""));
+    assert!(settings_text.contains("\"capture_auto_page_enabled\""));
 }
 
 #[test]
@@ -65,6 +70,8 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
             ui_locale: Some("zh-Hant".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
+            capture_auto_page_enabled: Some(true),
+            capture_full_update_enabled: Some(true),
         })
         .unwrap();
 
@@ -73,6 +80,16 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
     assert_eq!(settings.ui_locale, "zh-Hant");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
+    assert!(settings.capture_auto_page_enabled);
+    assert!(settings.capture_full_update_enabled);
+    let settings = store
+        .update_settings(SettingsPatch {
+            capture_auto_page_enabled: Some(false),
+            ..SettingsPatch::default()
+        })
+        .unwrap();
+    assert!(!settings.capture_auto_page_enabled);
+    assert!(!settings.capture_full_update_enabled);
     assert!(
         store
             .update_settings(SettingsPatch {

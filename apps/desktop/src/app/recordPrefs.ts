@@ -4,6 +4,21 @@ import { kindOrder, type PoolKindFilter } from "./options";
 export const recordPageSizes = [5, 10, 20, 50, 100] as const;
 export type RecordPageSize = (typeof recordPageSizes)[number];
 
+export const recordColumnIds = ["index", "time", "banner", "item", "rarity", "pullNo", "fiveStarProgress", "tenPullProgress", "rolls"] as const;
+export type RecordColumnId = (typeof recordColumnIds)[number];
+
+export const recordColumnGridTracks: Record<RecordColumnId, string> = {
+  index: "minmax(48px, 0.55fr)",
+  time: "minmax(124px, 1.05fr)",
+  banner: "minmax(136px, 1.15fr)",
+  item: "minmax(170px, 1.35fr)",
+  rarity: "minmax(40px, 0.45fr)",
+  pullNo: "minmax(44px, 0.5fr)",
+  fiveStarProgress: "minmax(72px, 0.75fr)",
+  tenPullProgress: "minmax(76px, 0.8fr)",
+  rolls: "minmax(48px, 0.55fr)",
+};
+
 export type RecordViewPrefs = {
   recordPoolKind: PoolKindFilter;
   recordBannerIds: string[];
@@ -19,6 +34,7 @@ export type RecordViewPrefs = {
   search: string;
   sortDirection: SortDirection;
   pageSize: RecordPageSize;
+  visibleRecordColumns: RecordColumnId[];
   recordAdvancedFiltersOpen: boolean;
   showLatestFiveStarItems: boolean;
 };
@@ -38,6 +54,7 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
   search: "",
   sortDirection: "desc",
   pageSize: 10,
+  visibleRecordColumns: [...recordColumnIds],
   recordAdvancedFiltersOpen: false,
   showLatestFiveStarItems: false,
 };
@@ -47,7 +64,7 @@ export const forkResultMarkOptions: ForkResultMark[] = ["win", "guaranteed", "lo
 export const forkPityBadgeOptions: PityBadge[] = ["fork_up_guarantee", "fork_5star_guarantee", "fork_4star_guarantee"];
 
 export function recordPrefsKey(profileName: string) {
-  return `nte.recordView.v5:${profileName}`;
+  return `nte.recordView.v6:${profileName}`;
 }
 
 export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
@@ -76,6 +93,7 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       search: readString(source.search),
       sortDirection: sortDirection === "asc" || sortDirection === "desc" ? sortDirection : defaultRecordViewPrefs.sortDirection,
       pageSize: recordPageSizes.includes(pageSize as RecordPageSize) ? (pageSize as RecordPageSize) : defaultRecordViewPrefs.pageSize,
+      visibleRecordColumns: readRecordColumnArray(source.visibleRecordColumns),
       recordAdvancedFiltersOpen: typeof source.recordAdvancedFiltersOpen === "boolean" ? source.recordAdvancedFiltersOpen : defaultRecordViewPrefs.recordAdvancedFiltersOpen,
       showLatestFiveStarItems: typeof source.showLatestFiveStarItems === "boolean" ? source.showLatestFiveStarItems : defaultRecordViewPrefs.showLatestFiveStarItems,
     };
@@ -106,4 +124,14 @@ function isRollBucket(value: string): value is RollBucket {
 
 function isItemKind(value: string): value is ItemKind {
   return value === "character" || value === "fork" || value === "appearance" || value === "inventory" || value === "vehicle_module" || value === "unknown";
+}
+
+function readRecordColumnArray(value: unknown): RecordColumnId[] {
+  if (!Array.isArray(value)) return [...defaultRecordViewPrefs.visibleRecordColumns];
+  const columns = value.filter((item): item is RecordColumnId => isRecordColumnId(item));
+  return recordColumnIds.filter((column) => columns.includes(column));
+}
+
+function isRecordColumnId(value: unknown): value is RecordColumnId {
+  return typeof value === "string" && recordColumnIds.includes(value as RecordColumnId);
 }

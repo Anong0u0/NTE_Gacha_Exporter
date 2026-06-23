@@ -26,6 +26,8 @@ impl JsonStore {
             ui_locale: settings.ui_locale,
             update_channel: settings.update_channel,
             check_updates_on_startup: settings.check_updates_on_startup,
+            capture_auto_page_enabled: settings.capture_auto_page_enabled,
+            capture_full_update_enabled: settings.capture_full_update_enabled,
         })
     }
 
@@ -48,6 +50,18 @@ impl JsonStore {
         }
         if let Some(check_updates_on_startup) = patch.check_updates_on_startup {
             settings.check_updates_on_startup = check_updates_on_startup;
+        }
+        if let Some(capture_auto_page_enabled) = patch.capture_auto_page_enabled {
+            settings.capture_auto_page_enabled = capture_auto_page_enabled;
+            if !capture_auto_page_enabled {
+                settings.capture_full_update_enabled = false;
+            }
+        }
+        if let Some(capture_full_update_enabled) = patch.capture_full_update_enabled {
+            settings.capture_full_update_enabled = capture_full_update_enabled;
+            if capture_full_update_enabled {
+                settings.capture_auto_page_enabled = true;
+            }
         }
         self.write_settings(&settings)?;
         self.settings()

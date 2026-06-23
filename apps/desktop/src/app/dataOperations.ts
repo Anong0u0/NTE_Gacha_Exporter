@@ -1,7 +1,7 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { Ref } from "vue";
 
-import { api, type BackupReport, type ImportReport, type RestoreReport } from "../api";
+import { api, type BackupReport, type ImportReport, type RestoreReport, type Settings } from "../api";
 import type { I18nKey } from "./i18n";
 import type { ExportMode, ImportMode } from "./options";
 
@@ -10,7 +10,6 @@ export type DataOperationKind = "import" | "export" | "backup" | "restore";
 type DataOperationDeps = {
   activeProfileName: Ref<string>;
   locale: Ref<string>;
-  uiLocale: Ref<string>;
   importPath: Ref<string>;
   importMode: Ref<ImportMode>;
   exportPath: Ref<string>;
@@ -21,12 +20,10 @@ type DataOperationDeps = {
   lastBackup: Ref<BackupReport | null>;
   lastRestore: Ref<RestoreReport | null>;
   lastDataOperation: Ref<DataOperationKind | null>;
-  settingsUpdateChannel: Ref<string>;
-  settingsCheckUpdates: Ref<boolean>;
+  applySettings(settings: Settings): void;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
   t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
   saveRecordViewPrefs(profileName?: string): void;
-  setActiveProfileName(profileName: string): void;
   loadProfiles(): Promise<void>;
   refreshAll(): Promise<void>;
 };
@@ -130,11 +127,7 @@ export function createDataOperations(deps: DataOperationDeps) {
       deps.lastDataOperation.value = "restore";
       const settings = await api.getSettings();
       deps.saveRecordViewPrefs();
-      deps.setActiveProfileName(settings.active_profile);
-      deps.locale.value = settings.locale;
-      deps.uiLocale.value = settings.ui_locale || deps.uiLocale.value;
-      deps.settingsUpdateChannel.value = settings.update_channel;
-      deps.settingsCheckUpdates.value = settings.check_updates_on_startup;
+      deps.applySettings(settings);
       await deps.loadProfiles();
       await deps.refreshAll();
     });

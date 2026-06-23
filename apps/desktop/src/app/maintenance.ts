@@ -28,10 +28,6 @@ type MaintenanceDeps = {
 };
 
 export function createMaintenanceActions(deps: MaintenanceDeps) {
-  async function pingRuntime() {
-    await deps.runTask(deps.t("status.runtimeResponded"), () => api.runtimePing());
-  }
-
   async function runDoctor() {
     await deps.runTask(deps.t("status.doctorCompleted"), async () => {
       deps.doctorReport.value = await api.doctorRun();
@@ -95,7 +91,6 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   }
 
   return {
-    pingRuntime,
     runDoctor,
     loadUpdaterStatus,
     checkForUpdates,

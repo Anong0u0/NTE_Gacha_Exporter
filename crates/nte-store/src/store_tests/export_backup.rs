@@ -237,6 +237,8 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
             ui_locale: Some("ja".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
+            capture_auto_page_enabled: Some(true),
+            capture_full_update_enabled: Some(true),
         })
         .unwrap();
     let default_doc = public_document(vec![
@@ -302,4 +304,6 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(settings.ui_locale, "ja");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
+    assert!(settings.capture_auto_page_enabled);
+    assert!(settings.capture_full_update_enabled);
 }

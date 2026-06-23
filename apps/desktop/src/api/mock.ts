@@ -31,6 +31,8 @@ let mockLocale = "zh-Hant";
 let mockUiLocale = "zh-Hant";
 let mockUpdateChannel = "stable";
 let mockCheckUpdatesOnStartup = false;
+let mockCaptureAutoPageEnabled = true;
+let mockCaptureFullUpdateEnabled = false;
 
 async function mockOverview() {
   return {
@@ -304,6 +306,8 @@ export const mockApi: AppApi = {
       ui_locale: mockUiLocale,
       update_channel: mockUpdateChannel,
       check_updates_on_startup: mockCheckUpdatesOnStartup,
+      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
+      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
     };
   },
   async updateSettings(patch: SettingsPatch) {
@@ -312,12 +316,18 @@ export const mockApi: AppApi = {
     mockUiLocale = patch.ui_locale ?? mockUiLocale;
     mockUpdateChannel = patch.update_channel ?? mockUpdateChannel;
     mockCheckUpdatesOnStartup = patch.check_updates_on_startup ?? mockCheckUpdatesOnStartup;
+    mockCaptureAutoPageEnabled = patch.capture_auto_page_enabled ?? mockCaptureAutoPageEnabled;
+    mockCaptureFullUpdateEnabled = patch.capture_full_update_enabled ?? mockCaptureFullUpdateEnabled;
+    if (!mockCaptureAutoPageEnabled) mockCaptureFullUpdateEnabled = false;
+    if (mockCaptureFullUpdateEnabled) mockCaptureAutoPageEnabled = true;
     return {
       active_profile: mockActiveProfileName,
       locale: mockLocale,
       ui_locale: mockUiLocale,
       update_channel: mockUpdateChannel,
       check_updates_on_startup: mockCheckUpdatesOnStartup,
+      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
+      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
     };
   },
   async listProfiles() {
@@ -336,6 +346,8 @@ export const mockApi: AppApi = {
       ui_locale: mockUiLocale,
       update_channel: mockUpdateChannel,
       check_updates_on_startup: mockCheckUpdatesOnStartup,
+      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
+      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
     };
   },
   async renameProfile(oldName: string, newName: string) {
@@ -358,6 +370,8 @@ export const mockApi: AppApi = {
       ui_locale: mockUiLocale,
       update_channel: mockUpdateChannel,
       check_updates_on_startup: mockCheckUpdatesOnStartup,
+      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
+      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
     };
   },
   async importPublicJson(profileName: string, path: string) {
@@ -439,9 +453,6 @@ export const mockApi: AppApi = {
   },
   async doctorRun() {
     return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };
-  },
-  async runtimePing() {
-    return { ok: true, runtime: "rust" };
   },
   async updaterStatus() {
     return {

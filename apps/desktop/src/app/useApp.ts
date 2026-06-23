@@ -29,6 +29,7 @@ import {
   type SortDirection,
   type Profile,
   type RestoreReport,
+  type Settings,
   type UpdateCheckReport,
   type UpdateStageReport,
   type UpdateStatus,
@@ -44,7 +45,7 @@ import { createTranslator, uiLocaleDisplayName } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode, type PoolKindFilter } from "./options";
-import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordPageSizes, recordPrefsKey, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
+import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordColumnGridTracks, recordColumnIds, recordPageSizes, recordPrefsKey, type RecordColumnId, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
 import { createProfileActions } from "./profileActions";
 import { rarityClass } from "./rarityColors";
 import { dashboardRaritySlices } from "./rarityBuckets";
@@ -117,6 +118,7 @@ export function useApp() {
   const forkResultMarks = ref<ForkResultMark[]>([]), forkPityBadges = ref<PityBadge[]>([]);
   const dateFrom = ref(""), dateTo = ref(""), search = ref("");
   const sortDirection = ref<SortDirection>("desc"), pageSize = ref<number>(defaultRecordViewPrefs.pageSize), pageIndex = ref(0);
+  const visibleRecordColumns = ref<RecordColumnId[]>([...defaultRecordViewPrefs.visibleRecordColumns]);
   const recordAdvancedFiltersOpen = ref(false);
   const showLatestFiveStarItems = ref(defaultRecordViewPrefs.showLatestFiveStarItems);
   const rankingRaritySelectionsByPoolKind = ref<Record<PoolKind, RankingRaritySelection>>({
@@ -130,6 +132,11 @@ export function useApp() {
     fork_lottery: false,
   });
   const settingsUpdateChannel = ref("stable"), settingsCheckUpdates = ref(false);
+  const captureAutoPageEnabled = ref(true), captureFullUpdateEnabled = ref(false);
+  const effectiveCaptureMode = computed<CaptureMode>(() => {
+    if (!captureAutoPageEnabled.value) return "live_only";
+    return captureFullUpdateEnabled.value ? "auto_page_full" : "auto_page_incremental";
+  });
   let recordPrefsReady = false;
   let applyingRecordPrefs = false;
   let normalizingRecordFilters = false;
@@ -165,6 +172,16 @@ export function useApp() {
       Boolean(dateTo.value),
       Boolean(search.value.trim()),
     ].filter(Boolean).length,
+  );
+  const recordColumnOptions = computed(() =>
+    recordColumnIds.map((column) => ({
+      value: column,
+      label: recordColumnLabel(column),
+    })),
+  );
+  const visibleRecordColumnSet = computed(() => new Set(visibleRecordColumns.value));
+  const visibleRecordGridTemplate = computed(() =>
+    visibleRecordColumns.value.map((column) => recordColumnGridTracks[column]).join(" ") || "none",
   );
 
   const {
@@ -314,6 +331,48 @@ export function useApp() {
   );
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
 
+  function applySettings(settings: Settings) {
+    setActiveProfileName(settings.active_profile);
+    locale.value = settings.locale;
+    uiLocale.value = settings.ui_locale || uiLocale.value;
+    settingsUpdateChannel.value = settings.update_channel;
+    settingsCheckUpdates.value = settings.check_updates_on_startup;
+    captureAutoPageEnabled.value = settings.capture_auto_page_enabled;
+    captureFullUpdateEnabled.value = settings.capture_auto_page_enabled && settings.capture_full_update_enabled;
+    captureMode.value = effectiveCaptureMode.value;
+  }
+
+  async function saveCaptureSettings() {
+    try {
+      const settings = await api.updateSettings({
+        capture_auto_page_enabled: captureAutoPageEnabled.value,
+        capture_full_update_enabled: captureFullUpdateEnabled.value,
+      });
+      applySettings(settings);
+    } catch (error) {
+      errorText.value = formatError(error);
+    }
+  }
+
+  function setCaptureAutoPageEnabled(value: boolean) {
+    captureAutoPageEnabled.value = value;
+    if (!value) captureFullUpdateEnabled.value = false;
+    captureMode.value = effectiveCaptureMode.value;
+    void saveCaptureSettings();
+  }
+
+  function setCaptureFullUpdateEnabled(value: boolean) {
+    captureFullUpdateEnabled.value = value;
+    if (value) captureAutoPageEnabled.value = true;
+    captureMode.value = effectiveCaptureMode.value;
+    void saveCaptureSettings();
+  }
+
+  async function startPreferredCapture() {
+    captureMode.value = effectiveCaptureMode.value;
+    await startLiveCapture();
+  }
+
   const {
     itemVisualUrl,
     bannerVisualUrl,
@@ -353,7 +412,7 @@ export function useApp() {
     doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport,
     lastAssetsPackInstall, assetUrlCache, settingsUpdateChannel, statusText, runTask, resolveVisibleAssets, t,
   });
-  const { pingRuntime, runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack } = maintenance;
+  const { runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack } = maintenance;
 
   function currentRecordViewPrefs(): RecordViewPrefs {
     const normalizedPageSize = recordPageSizes.includes(pageSize.value as RecordPageSize)
@@ -374,6 +433,7 @@ export function useApp() {
       search: search.value,
       sortDirection: sortDirection.value,
       pageSize: normalizedPageSize,
+      visibleRecordColumns: [...visibleRecordColumns.value],
       recordAdvancedFiltersOpen: recordAdvancedFiltersOpen.value,
       showLatestFiveStarItems: showLatestFiveStarItems.value,
     };
@@ -432,6 +492,7 @@ export function useApp() {
       search.value = prefs.search;
       sortDirection.value = prefs.sortDirection;
       pageSize.value = prefs.pageSize;
+      visibleRecordColumns.value = [...prefs.visibleRecordColumns];
       recordAdvancedFiltersOpen.value = prefs.recordAdvancedFiltersOpen;
       showLatestFiveStarItems.value = prefs.showLatestFiveStarItems;
       pageIndex.value = 0;
@@ -461,6 +522,34 @@ export function useApp() {
       forkPityBadges.value = forkPityBadges.value.filter((badge) => forkPityBadgeOptions.includes(badge));
     }
     if (!recordPageSizes.includes(pageSize.value as RecordPageSize)) pageSize.value = defaultRecordViewPrefs.pageSize;
+    visibleRecordColumns.value = recordColumnIds.filter((column) => visibleRecordColumns.value.includes(column));
+  }
+
+  function recordColumnLabel(column: RecordColumnId) {
+    switch (column) {
+      case "index":
+        return "#";
+      case "time":
+        return t("common.time");
+      case "banner":
+        return t("common.banner");
+      case "item":
+        return t("common.item");
+      case "rarity":
+        return t("dashboard.rarity");
+      case "pullNo":
+        return t("records.pullNo");
+      case "fiveStarProgress":
+        return t("records.fiveStarProgress");
+      case "tenPullProgress":
+        return t("records.tenPullProgress");
+      case "rolls":
+        return t("records.rolls");
+    }
+  }
+
+  function isRecordColumnVisible(column: RecordColumnId) {
+    return visibleRecordColumnSet.value.has(column);
   }
 
   function currentRecordFilter(): RecordFilter {
@@ -510,10 +599,7 @@ export function useApp() {
     profileRenameSource,
     profileRenameName,
     profileDeleteTarget,
-    locale,
-    uiLocale,
-    settingsUpdateChannel,
-    settingsCheckUpdates,
+    applySettings,
     runTask,
     t,
     saveRecordViewPrefs,
@@ -565,7 +651,6 @@ export function useApp() {
   } = createDataOperations({
     activeProfileName,
     locale,
-    uiLocale,
     importPath,
     importMode,
     exportPath,
@@ -576,12 +661,10 @@ export function useApp() {
     lastBackup,
     lastRestore,
     lastDataOperation,
-    settingsUpdateChannel,
-    settingsCheckUpdates,
+    applySettings,
     runTask,
     t,
     saveRecordViewPrefs,
-    setActiveProfileName,
     loadProfiles,
     refreshAll,
   });
@@ -631,17 +714,23 @@ export function useApp() {
     if (applyingRecordPrefs) return;
     saveRecordViewPrefs();
   }, { flush: "sync" });
+  watch(visibleRecordColumns, () => {
+    if (applyingRecordPrefs || normalizingRecordFilters) return;
+    normalizingRecordFilters = true;
+    try {
+      normalizeRecordFilterSelection();
+    } finally {
+      normalizingRecordFilters = false;
+    }
+    saveRecordViewPrefs();
+  }, { flush: "sync" });
   async function bootstrap() {
     busy.value = true;
     try {
       const [settings, maps, uiLocaleList] = await Promise.all([api.getSettings(), api.mapsList(), api.uiLocaleList()]);
-      locale.value = settings.locale;
-      uiLocale.value = settings.ui_locale || "en";
-      settingsUpdateChannel.value = settings.update_channel;
-      settingsCheckUpdates.value = settings.check_updates_on_startup;
+      applySettings(settings);
       locales.value = maps.locales;
       uiLocales.value = uiLocaleList.locales;
-      setActiveProfileName(settings.active_profile);
       await loadProfiles();
       await refreshAll();
       await loadUpdaterStatus();
@@ -664,13 +753,11 @@ export function useApp() {
         ui_locale: uiLocale.value,
         update_channel: settingsUpdateChannel.value,
         check_updates_on_startup: settingsCheckUpdates.value,
+        capture_auto_page_enabled: captureAutoPageEnabled.value,
+        capture_full_update_enabled: captureFullUpdateEnabled.value,
       });
       saveRecordViewPrefs();
-      setActiveProfileName(settings.active_profile);
-      locale.value = settings.locale;
-      uiLocale.value = settings.ui_locale || uiLocale.value;
-      settingsUpdateChannel.value = settings.update_channel;
-      settingsCheckUpdates.value = settings.check_updates_on_startup;
+      applySettings(settings);
       await loadProfiles();
       await refreshAll();
     });
@@ -841,11 +928,11 @@ export function useApp() {
 
   return reactive({
     t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
-    exportPath, exportMode, backupPath, restorePath, captureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
+    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
     capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
-    sortDirection, pageSize, pageIndex, recordPageSizes, recordAdvancedFiltersOpen, showLatestFiveStarItems, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, hitRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, canPrevPage,
+    sortDirection, pageSize, pageIndex, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, showLatestFiveStarItems, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, hitRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, canPrevPage,
     canNextPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, showDashboardBannerRail, showLatestFiveStarItemToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, hiddenLatestFiveStarItemCount, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
-    loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startLiveCapture, startFullCapture, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore, pingRuntime,
+    loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
     runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
     formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatPityRatio, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatQuantityName, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarItems, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });

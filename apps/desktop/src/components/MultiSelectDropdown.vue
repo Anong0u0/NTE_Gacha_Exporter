@@ -12,6 +12,7 @@ type MultiSelectOption<TValue extends string | number> = {
 const props = defineProps<{
   label: string;
   allLabel: string;
+  allSelectedLabel?: string;
   selectedLabel: string;
   modelValue: T[];
   options: MultiSelectOption<T>[];
@@ -29,6 +30,7 @@ const selected = computed(() => new Set(props.modelValue));
 const triggerLabel = computed(() => {
   const selectedOptions = props.options.filter((option) => selected.value.has(option.value));
   if (selectedOptions.length === 0) return props.allLabel;
+  if (props.allSelectedLabel && selectedOptions.length === props.options.length) return props.allSelectedLabel;
   if (selectedOptions.length === 1) return selectedOptions[0].label;
   return props.selectedLabel.replace("{count}", String(selectedOptions.length));
 });

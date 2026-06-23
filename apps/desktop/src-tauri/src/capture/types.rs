@@ -182,4 +182,3 @@ impl From<nte_capture::CaptureCounters> for CaptureCounters {
         }
     }
 }
-
