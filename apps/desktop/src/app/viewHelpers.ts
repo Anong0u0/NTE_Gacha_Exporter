@@ -16,6 +16,11 @@ export function formatTime(value?: string | null) {
   return value?.replace("T", " ").replace("Z", "") ?? "-";
 }
 
+export function formatQuantityName(name: string, count?: number | null) {
+  const quantity = count ?? 1;
+  return Number.isFinite(quantity) && quantity > 1 ? `${name} x${quantity}` : name;
+}
+
 export function formatResult(value: string, t: Translator) {
   if (value === "up") return "UP";
   if (value === "not_applicable") return t("format.notApplicable");

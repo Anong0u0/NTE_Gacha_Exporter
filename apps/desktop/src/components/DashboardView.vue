@@ -1,8 +1,69 @@
 <script setup lang="ts">
-import { CircleStop, ListFilter, ListOrdered, RadioTower, RefreshCw, X } from "lucide-vue-next";
+import { ChevronDown, ChevronUp, CircleStop, Eye, EyeOff, ListFilter, ListOrdered, RadioTower, RefreshCw, X } from "lucide-vue-next";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
+const fiveWallGrid = ref<HTMLElement | null>(null);
+const fiveWallOverflowsOneRow = ref(false);
+const fiveWallRowHeight = ref(84);
+const fiveWallFirstRowItemCount = ref(0);
+let fiveWallResizeObserver: ResizeObserver | null = null;
+
+const dashboardScopeKey = computed(() =>
+  app.selectedDashboardScope.kind === "banner"
+    ? `${app.selectedDashboardScope.pool_kind}:${app.selectedDashboardScope.banner_id}`
+    : app.selectedDashboardScope.pool_kind,
+);
+const fiveWallShellClasses = computed(() => ({
+  "is-collapsible": fiveWallOverflowsOneRow.value,
+  "is-collapsed": fiveWallOverflowsOneRow.value && !app.fiveWallExpanded,
+  "is-expanded": fiveWallOverflowsOneRow.value && app.fiveWallExpanded,
+}));
+const fiveWallShellStyle = computed<Record<string, string>>(() => ({
+  "--five-wall-row-height": `${fiveWallRowHeight.value}px`,
+}));
+
+function updateFiveWallLayout() {
+  const grid = fiveWallGrid.value;
+  if (!grid) {
+    fiveWallOverflowsOneRow.value = false;
+    return;
+  }
+  const items = [...grid.querySelectorAll<HTMLElement>(".five-wall-item")];
+  if (!items.length) {
+    fiveWallOverflowsOneRow.value = false;
+    return;
+  }
+  const firstTop = items[0].offsetTop;
+  fiveWallRowHeight.value = items[0].offsetHeight;
+  fiveWallFirstRowItemCount.value = items.filter((item) => Math.abs(item.offsetTop - firstTop) <= 1).length;
+  fiveWallOverflowsOneRow.value = items.some((item) => item.offsetTop > firstTop + 1);
+}
+
+async function refreshFiveWallLayout() {
+  await nextTick();
+  updateFiveWallLayout();
+}
+
+onMounted(() => {
+  void refreshFiveWallLayout();
+  if (fiveWallGrid.value) {
+    fiveWallResizeObserver = new ResizeObserver(updateFiveWallLayout);
+    fiveWallResizeObserver.observe(fiveWallGrid.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  fiveWallResizeObserver?.disconnect();
+});
+
+watch(
+  () => [app.displayedLatestFiveStarHits.length, app.selectedPoolKind, dashboardScopeKey.value, app.showLatestFiveStarItems],
+  () => {
+    void refreshFiveWallLayout();
+  },
+);
 </script>
 
 <template>
@@ -83,12 +144,21 @@ const app = useAppContext();
             :aria-pressed="app.isSelectedDashboardPool(pool.pool_kind)"
             @click="app.selectDashboardPool(pool.pool_kind)"
           >
-            <span>
+            <span class="pool-main">
               <strong>{{ pool.label }}</strong>
               <small>{{ app.kindLabels[pool.pool_kind] }} · {{ app.t("dashboard.pulls", { count: pool.total_pulls }) }}</small>
             </span>
-            <span class="pity">{{ pool.current_pity }}/{{ pool.hard_pity }}</span>
-            <span class="pool-latest">{{ app.t("dashboard.latest5") }} · {{ pool.latest_5star?.item_name ?? "-" }}</span>
+            <span class="pool-pity-stack">
+              <span class="pool-pity-line rarity-5">
+                <span>5★</span>
+                <strong>{{ app.formatPityRatio(pool.current_pity, pool.hard_pity) }}</strong>
+              </span>
+              <span class="pool-pity-line rarity-4">
+                <span>4★</span>
+                <strong>{{ app.formatPityRatio(pool.current_ten_pull_progress ?? 0, 10) }}</strong>
+              </span>
+            </span>
+            <span class="pool-latest">{{ app.t("dashboard.latest5") }} · {{ app.latestFiveStarNameForPool(pool) }}</span>
           </button>
         </section>
 
@@ -129,33 +199,63 @@ const app = useAppContext();
               <span class="eyebrow">{{ app.selectedScopeLabel ?? app.t("dashboard.pool") }}</span>
               <h2>{{ app.t("dashboard.latest5") }}</h2>
             </div>
-            <button
-              type="button"
-              class="ghost"
-              :disabled="!app.detail?.five_star_history.length || app.isWorkflowBusy"
-              @click="app.showDashboardFiveStarRecords"
-            >
-              <ListFilter :size="16" />
-              <span>{{ app.t("dashboard.viewDetailedRecords") }}</span>
-            </button>
+            <div class="latest-five-actions">
+              <button
+                v-if="app.showLatestFiveStarItemToggle"
+                type="button"
+                class="ghost latest-item-toggle"
+                :aria-pressed="app.showLatestFiveStarItems"
+                :title="app.showLatestFiveStarItems ? app.t('dashboard.hideFiveStarItems') : app.t('dashboard.showFiveStarItems')"
+                :aria-label="app.showLatestFiveStarItems ? app.t('dashboard.hideFiveStarItems') : app.t('dashboard.showFiveStarItems')"
+                @click="app.toggleLatestFiveStarItems"
+              >
+                <component :is="app.showLatestFiveStarItems ? Eye : EyeOff" :size="16" />
+                <span>{{ app.showLatestFiveStarItems ? app.t("dashboard.showingFiveStarItems") : app.t("dashboard.hidingFiveStarItems") }}</span>
+              </button>
+              <button
+                type="button"
+                class="ghost"
+                :disabled="!app.visibleLatestFiveStarHits.length || app.isWorkflowBusy"
+                @click="app.showDashboardFiveStarRecords"
+              >
+                <ListFilter :size="16" />
+                <span>{{ app.t("dashboard.viewDetailedRecords") }}</span>
+              </button>
+            </div>
           </div>
-          <div class="five-wall-grid">
-            <div
-              v-for="hit in (app.detail?.five_star_history ?? []).slice(-12).reverse()"
-              :key="hit.record.record_id"
-              class="five-wall-item"
-              :title="`${hit.record.item_name} · ${app.formatTime(hit.record.time)}`"
-              :aria-label="`${hit.record.item_name} ${hit.pity_distance}`"
-            >
-              <span v-if="app.hasRecordVisual(hit.record)" class="five-wall-thumb">
-                <img :src="app.itemVisualUrl(hit.record)" :alt="hit.record.item_name" />
-              </span>
-              <span v-else class="five-wall-thumb empty">{{ hit.record.item_name.slice(0, 1) }}</span>
-              <span class="five-wall-pity" :class="app.fiveWallPityTone(hit.pity_distance, hit.record.pool_kind)">{{ hit.pity_distance }}</span>
+          <div class="five-wall-shell" :class="fiveWallShellClasses" :style="fiveWallShellStyle">
+            <div ref="fiveWallGrid" class="five-wall-grid">
+              <div
+                v-for="(hit, index) in app.displayedLatestFiveStarHits"
+                :key="hit.record.record_id"
+                class="five-wall-item"
+                :class="[app.recordRarityClass(hit.record), { 'is-after-first-row': fiveWallOverflowsOneRow && index >= fiveWallFirstRowItemCount }]"
+                :title="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} · ${app.formatTime(hit.record.time)}`"
+                :aria-label="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} ${hit.pity_distance}`"
+              >
+                <span v-if="app.hasRecordVisual(hit.record)" class="five-wall-thumb">
+                  <img :src="app.itemVisualUrl(hit.record)" :alt="app.formatQuantityName(hit.record.item_name, hit.record.count)" />
+                </span>
+                <span v-else class="five-wall-thumb empty">{{ hit.record.item_name.slice(0, 1) }}</span>
+                <span v-if="hit.record.count && hit.record.count > 1" class="five-wall-quantity" aria-hidden="true">x{{ hit.record.count }}</span>
+                <span class="five-wall-pity" :class="app.fiveWallPityTone(hit.pity_distance, hit.record.pool_kind)">{{ hit.pity_distance }}</span>
+              </div>
+            </div>
+            <div v-if="fiveWallOverflowsOneRow" class="five-wall-toolbar">
+              <button
+                type="button"
+                class="ghost"
+                :title="app.fiveWallExpanded ? app.t('dashboard.collapseFiveWall') : app.t('dashboard.expandFiveWall')"
+                :aria-expanded="app.fiveWallExpanded"
+                @click="app.toggleFiveWallExpanded"
+              >
+                <component :is="app.fiveWallExpanded ? ChevronUp : ChevronDown" :size="16" />
+                <span>{{ app.fiveWallExpanded ? app.t("dashboard.collapseFiveWall") : app.t("dashboard.expandFiveWall") }}</span>
+              </button>
             </div>
           </div>
           <div v-if="app.detailLoading" class="empty-row">{{ app.t("common.loading") }}</div>
-          <div v-else-if="!app.detail?.five_star_history.length" class="empty-row">{{ app.t("dashboard.fiveStarRecordsEmpty") }}</div>
+          <div v-else-if="!app.visibleLatestFiveStarHits.length" class="empty-row">{{ app.latestFiveStarEmptyText }}</div>
         </section>
 
         <section class="panel selected-detail-panel" data-agent-id="dashboard-selected-detail">
@@ -164,7 +264,7 @@ const app = useAppContext();
               <h2>{{ app.selectedDetailTitle }}</h2>
             </div>
             <button
-              v-if="app.itemRankingShares.length"
+              v-if="app.hasItemRankingRows"
               type="button"
               class="ranking-details ghost"
               @click="app.openRankingDialog"
@@ -195,15 +295,14 @@ const app = useAppContext();
                 </div>
               </div>
             </div>
-            <div class="stat-table selected-summary-grid">
-              <div><span>{{ app.t("dashboard.selected5Pity") }}</span><strong>{{ app.selectedSummary?.current_pity ?? 0 }}/{{ app.selectedSummary?.hard_pity ?? 0 }}</strong></div>
-              <div><span>{{ app.summaryProgressLabel(app.selectedSummary) }}</span><strong>{{ app.formatTenPullProgressSummary(app.selectedSummary?.current_ten_pull_progress) }}</strong></div>
-              <div><span>{{ app.t("dashboard.totalPulls") }}</span><strong>{{ app.selectedSummary?.total_pulls ?? 0 }}</strong></div>
-              <div><span>{{ app.t("dashboard.fiveUpHits") }}</span><strong>{{ app.fiveUpHitRatio(app.selectedSummary) }}</strong></div>
-              <div><span>{{ app.t("dashboard.fourHits") }}</span><strong>{{ app.selectedSummary?.four_star_count ?? 0 }}</strong></div>
-              <div><span>{{ app.t("dashboard.avg5Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_5star_pity) }}</strong></div>
-              <div><span>{{ app.t("dashboard.avg4Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_4star_pity) }}</strong></div>
-              <div v-if="app.selectedSummary?.pool_kind === 'fork_lottery'"><span>{{ app.t("dashboard.forkWinRate") }}</span><strong>{{ app.forkWinRate(app.selectedSummary) }}</strong></div>
+            <div class="selected-summary-grid">
+              <div class="summary-kpi-row summary-kpi-pity rarity-5"><span>{{ app.t("dashboard.selected5Pity") }}</span><strong>{{ app.selectedSummary?.current_pity ?? 0 }}/{{ app.selectedSummary?.hard_pity ?? 0 }}</strong></div>
+              <div class="summary-kpi-row summary-kpi-pity rarity-4"><span>{{ app.summaryProgressLabel(app.selectedSummary) }}</span><strong>{{ app.formatTenPullProgressSummary(app.selectedSummary?.current_ten_pull_progress) }}</strong></div>
+              <div class="summary-kpi-row"><span>{{ app.t("dashboard.totalPulls") }}</span><strong>{{ app.selectedSummary?.total_pulls ?? 0 }}</strong></div>
+              <div class="summary-kpi-row summary-kpi-currency"><span>{{ app.t("dashboard.convertedCurrency") }}</span><strong>{{ app.pullCurrency(app.selectedSummary?.total_pulls) }}</strong></div>
+              <div class="summary-kpi-row"><span>{{ app.t("dashboard.avg5Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_5star_pity) }}</strong></div>
+              <div class="summary-kpi-row"><span>{{ app.t("dashboard.avg4Pity") }}</span><strong>{{ app.numberOrDash(app.selectedSummary?.average_4star_pity) }}</strong></div>
+              <div v-if="app.selectedSummary?.pool_kind === 'fork_lottery'" class="summary-kpi-row"><span>{{ app.t("dashboard.forkWinRate") }}</span><strong>{{ app.forkWinRate(app.selectedSummary) }}</strong></div>
             </div>
           </div>
         </section>
@@ -213,17 +312,30 @@ const app = useAppContext();
               <div>
                 <h2>{{ app.rankingDialogTitle }}</h2>
               </div>
+              <div class="ranking-rarity-toggle" role="group" :aria-label="app.t('dashboard.rankingRarityFilter')">
+                <button
+                  v-for="option in app.rankingRarityOptions"
+                  :key="option.rarity"
+                  type="button"
+                  :class="[option.className, { active: option.active }]"
+                  :aria-pressed="option.active"
+                  @click="app.toggleRankingRarity(option.rarity)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
               <button type="button" :title="app.t('common.close')" :aria-label="app.t('common.close')" @click="app.closeRankingDialog">
                 <X :size="17" />
               </button>
             </div>
             <div class="ranking-share-list">
-              <div v-for="item in app.itemRankingShares" :key="item.item_id" class="ranking-share-row">
+              <div v-if="!app.itemRankingShares.length" class="ranking-empty">{{ app.t("dashboard.noRankingRarityItems") }}</div>
+              <div v-for="item in app.itemRankingShares" :key="`${item.item_id}:${item.reward_count}`" class="ranking-share-row" :class="app.recordRarityClass(item)">
                 <span v-if="app.hasItemVisual(item)" class="ranking-item-thumb">
                   <img :src="app.itemVisualUrl(item)" alt="" />
                 </span>
                 <span v-else class="ranking-item-thumb empty">{{ item.item_name.slice(0, 1) }}</span>
-                <span class="ranking-name">{{ item.item_name }}</span>
+                <span class="ranking-name">{{ app.formatQuantityName(item.item_name, item.reward_count) }}</span>
                 <strong>{{ item.count }}</strong>
                 <span>{{ app.percent(item.share) }}</span>
                 <span class="ranking-share-bar" aria-hidden="true">

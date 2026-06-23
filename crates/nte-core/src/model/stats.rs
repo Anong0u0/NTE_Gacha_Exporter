@@ -131,6 +131,7 @@ pub struct PoolKindSummary {
     pub fork_forced_up_count: u64,
     pub fork_observed_25_75_win_rate: Option<f64>,
     pub latest_5star: Option<DisplayRecord>,
+    pub latest_5star_any: Option<DisplayRecord>,
     pub four_star_count: u64,
     pub rate_up_4_count: u64,
     pub off_rate_4_count: u64,
@@ -144,6 +145,7 @@ pub struct PoolKindSummary {
 pub struct PoolKindDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
+    pub five_star_display_history: Vec<FiveStarRecord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -160,6 +162,7 @@ pub enum DashboardSelection {
 pub struct DashboardSelectionDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
+    pub five_star_display_history: Vec<FiveStarRecord>,
     pub rarity_distribution: Vec<RarityBucket>,
     pub hit_rarity_distribution: Vec<RarityBucket>,
     pub pull_rarity_distribution: Vec<PullRarityBucket>,
@@ -219,5 +222,6 @@ pub struct ItemRank {
     pub item_name: String,
     pub item_asset_refs: BTreeMap<String, serde_json::Value>,
     pub rarity: Option<u8>,
+    pub reward_count: i64,
     pub count: u64,
 }

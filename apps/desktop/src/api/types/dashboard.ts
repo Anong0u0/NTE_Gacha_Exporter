@@ -29,6 +29,7 @@ export type PoolKindSummary = {
   fork_forced_up_count: number;
   fork_observed_25_75_win_rate?: number | null;
   latest_5star?: DisplayRecord | null;
+  latest_5star_any?: DisplayRecord | null;
   four_star_count: number;
   rate_up_4_count: number;
   off_rate_4_count: number;
@@ -119,6 +120,7 @@ export type ItemRank = {
   item_name: string;
   item_asset_refs: AssetRefs;
   rarity?: number | null;
+  reward_count: number;
   count: number;
 };
 
@@ -133,7 +135,7 @@ export type DashboardOverview = {
   item_ranking: ItemRank[];
 };
 
-type FiveStarRecord = {
+export type FiveStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
   result: RateUpResult;
@@ -144,6 +146,7 @@ type FiveStarRecord = {
 export type PoolKindDetail = {
   summary: PoolKindSummary;
   five_star_history: FiveStarRecord[];
+  five_star_display_history: FiveStarRecord[];
 };
 
 export type DashboardSelection =

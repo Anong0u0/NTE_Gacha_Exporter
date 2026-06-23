@@ -202,11 +202,11 @@ const app = useAppContext();
                     </span>
                     <small v-if="app.formatPityBadge(record)" class="record-guarantee-badge">{{ app.formatPityBadge(record) }}</small>
                   </span>
-                  <strong>{{ record.item_name }}</strong>
-                  <small v-if="record.secondary_item_name">{{ record.secondary_item_name }} x{{ record.secondary_count ?? 1 }}</small>
+                  <strong class="history-item-name" :class="app.recordRarityClass(record)">{{ app.formatQuantityName(record.item_name, record.count) }}</strong>
+                  <small v-if="record.secondary_item_name">{{ app.formatQuantityName(record.secondary_item_name, record.secondary_count) }}</small>
                 </span>
               </span>
-              <span>{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
+              <span class="record-rarity" :class="app.recordRarityClass(record)">{{ record.rarity ? `${record.rarity}★` : "-" }}</span>
               <span>{{ app.formatPullNo(record) }}</span>
               <span>{{ app.formatPity(record) }}</span>
               <span>{{ app.formatTenPullProgress(record) }}</span>

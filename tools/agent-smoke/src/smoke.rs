@@ -195,10 +195,135 @@ fn capture_navigation_views(
     for view in ["dashboard", "records", "settings"] {
         click_nav(addr, view)?;
         wait_agent(addr, &format!("view-{view}"), Duration::from_secs(10))?;
+        let layout = audit_layout(addr, view)?;
+        push_step(report, format!("layout_{view}"), Some(layout));
         capture_step(report, screenshots, &format!("{view}_after"), window)?;
         push_step(report, format!("view_{view}"), None);
     }
     Ok(())
+}
+
+fn audit_layout(addr: &str, view: &str) -> Result<Value> {
+    let script = format!(
+        r#"
+        const view = {view_json};
+        const fail = (message, detail = {{}}) => {{
+          throw new Error(`${{message}} ${{JSON.stringify(detail)}}`);
+        }};
+        const round = (value) => Math.round(value * 1000) / 1000;
+        const metricsFor = (el) => {{
+          if (!el) return null;
+          const rect = el.getBoundingClientRect();
+          return {{
+            left: round(rect.left),
+            right: round(rect.right),
+            width: round(rect.width),
+            clientWidth: el.clientWidth,
+            scrollWidth: el.scrollWidth,
+          }};
+        }};
+
+        const doc = document.documentElement;
+        const body = document.body;
+        const workspace = document.querySelector(".workspace");
+        const workbench = document.querySelector(`[data-agent-id="view-${{view}}"]`);
+        if (!workspace || !workbench) fail("layout root missing", {{ view }});
+
+        const viewportWidth = window.innerWidth;
+        const docOverflow = Math.max(doc.scrollWidth, body.scrollWidth) - viewportWidth;
+        const workspaceOverflow = workspace.scrollWidth - workspace.clientWidth;
+        if (docOverflow > 1) fail("document horizontal overflow", {{ view, docOverflow }});
+        if (workspaceOverflow > 1) fail("workspace horizontal overflow", {{ view, workspaceOverflow }});
+
+        const workspaceRect = workspace.getBoundingClientRect();
+        const workbenchRect = workbench.getBoundingClientRect();
+        const trailingBlank = Math.max(0, workspaceRect.right - workbenchRect.right);
+        const trailingBlankRatio = trailingBlank / Math.max(1, workspaceRect.width);
+        if (trailingBlankRatio > 0.05) {{
+          fail("workbench trailing blank too large", {{
+            view,
+            trailingBlank: round(trailingBlank),
+            trailingBlankRatio: round(trailingBlankRatio),
+          }});
+        }}
+
+        const clippedControls = Array.from(workbench.querySelectorAll("button, input, select"))
+          .filter((el) => !el.closest(".record-table, .banner-thumb-rail"))
+          .map((el) => {{
+            const rect = el.getBoundingClientRect();
+            const style = window.getComputedStyle(el);
+            return {{
+              tag: el.tagName.toLowerCase(),
+              text: (el.innerText || el.value || el.getAttribute("aria-label") || "").trim().slice(0, 80),
+              display: style.display,
+              visibility: style.visibility,
+              width: rect.width,
+              height: rect.height,
+              left: rect.left,
+              right: rect.right,
+            }};
+          }})
+          .filter((item) => item.display !== "none" && item.visibility !== "hidden" && item.width > 1 && item.height > 1)
+          .filter((item) => item.left < workspaceRect.left - 1 || item.right > workspaceRect.right + 1);
+        if (clippedControls.length) {{
+          fail("visible control clipped horizontally", {{
+            view,
+            controls: clippedControls.slice(0, 6).map((item) => ({{
+              tag: item.tag,
+              text: item.text,
+              left: round(item.left),
+              right: round(item.right),
+            }})),
+          }});
+        }}
+
+        const result = {{
+          view,
+          viewportWidth,
+          document: {{ scrollWidth: doc.scrollWidth, overflow: round(docOverflow) }},
+          workspace: metricsFor(workspace),
+          workbench: metricsFor(workbench),
+          trailingBlank: round(trailingBlank),
+          trailingBlankRatio: round(trailingBlankRatio),
+        }};
+
+        if (view === "records") {{
+          const table = document.querySelector(".history-table");
+          const header = document.querySelector(".history-header");
+          if (!table || !header) fail("records table missing", {{ view }});
+          const tableOverflow = table.scrollWidth - table.clientWidth;
+          if (tableOverflow > 1) fail("records table horizontal overflow", {{ tableOverflow }});
+
+          const headerCells = Array.from(header.children);
+          const bannerRect = headerCells[2]?.getBoundingClientRect();
+          const itemRect = headerCells[3]?.getBoundingClientRect();
+          const tableRect = table.getBoundingClientRect();
+          if (!bannerRect || !itemRect) fail("records table header cells missing", {{ view }});
+
+          const itemRatio = itemRect.width / Math.max(1, tableRect.width);
+          const itemToBannerRatio = itemRect.width / Math.max(1, bannerRect.width);
+          if (itemRatio > 0.34 || itemToBannerRatio > 1.35) {{
+            fail("records item column too wide", {{
+              itemRatio: round(itemRatio),
+              itemToBannerRatio: round(itemToBannerRatio),
+            }});
+          }}
+
+          result.recordsTable = {{
+            table: metricsFor(table),
+            overflow: round(tableOverflow),
+            bannerColumnWidth: round(bannerRect.width),
+            itemColumnWidth: round(itemRect.width),
+            itemRatio: round(itemRatio),
+            itemToBannerRatio: round(itemToBannerRatio),
+          }};
+        }}
+
+        return result;
+        "#,
+        view_json = serde_json::to_string(view)?,
+    );
+    eval_js(addr, &script, 5000)
 }
 
 fn capture_final_snapshot(addr: &str, logs: &Path, report: &mut Report) -> Result<()> {

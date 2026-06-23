@@ -158,6 +158,7 @@ impl From<DashboardSelectionDetail> for PoolKindDetail {
         Self {
             summary: value.summary,
             five_star_history: value.five_star_history,
+            five_star_display_history: value.five_star_display_history,
         }
     }
 }
@@ -183,6 +184,16 @@ fn selection_detail_from_display_records(
         .collect::<Vec<_>>();
     five_star_records.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
     let five_star_history = five_star_records
+        .into_iter()
+        .map(five_star_record)
+        .collect::<Vec<_>>();
+    let mut five_star_display_records = pool_records
+        .iter()
+        .copied()
+        .filter(|record| record.rarity == Some(5))
+        .collect::<Vec<_>>();
+    five_star_display_records.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
+    let five_star_display_history = five_star_display_records
         .into_iter()
         .map(five_star_record)
         .collect::<Vec<_>>();
@@ -234,6 +245,9 @@ fn selection_detail_from_display_records(
         (rate_up_sample_count > 0).then(|| up_count as f64 / rate_up_sample_count as f64);
     let fork_win_stats = fork_win_stats(pool_records.iter().copied());
     let latest_5star = five_star_history.last().map(|hit| hit.record.clone());
+    let latest_5star_any = five_star_display_history
+        .last()
+        .map(|hit| hit.record.clone());
     let latest = latest_countable_record(&pool_records, banner_id);
     let resource = resource_counters(pool_records.iter().copied());
     let roll_point_costs = roll_point_costs_to_5star(pool_records.iter().copied(), banner_id);
@@ -270,6 +284,7 @@ fn selection_detail_from_display_records(
             fork_forced_up_count: fork_win_stats.forced_up_count,
             fork_observed_25_75_win_rate: fork_win_stats.observed_win_rate(),
             latest_5star,
+            latest_5star_any,
             four_star_count,
             rate_up_4_count,
             off_rate_4_count,
@@ -279,6 +294,7 @@ fn selection_detail_from_display_records(
             roll_point_cost_samples_5star: roll_point_costs.len() as u64,
         },
         five_star_history,
+        five_star_display_history,
         rarity_distribution: rarity_distribution_from_display_refs(pool_records.iter().copied()),
         hit_rarity_distribution: hit_rarity_distribution_from_display_refs(
             pool_records.iter().copied(),

@@ -88,6 +88,7 @@ export function createAssetTools(options: AssetToolsOptions) {
     for (const banner of bannerSummaries.value) requests.push(...collectAssetRequestsFromRefs(banner.asset_refs));
     for (const record of records.value) requests.push(...collectRecordAssetRequests(record));
     for (const hit of detail.value?.five_star_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
+    for (const hit of detail.value?.five_star_display_history ?? []) requests.push(...collectRecordAssetRequests(hit.record));
     for (const item of detail.value?.item_ranking ?? []) requests.push(...collectAssetRequestsFromRefs(item.item_asset_refs));
     const seen = new Set<string>();
     return requests.filter((request) => {

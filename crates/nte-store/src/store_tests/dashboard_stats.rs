@@ -78,8 +78,14 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
     assert_eq!(limited.known_roll_point_records, 4);
     assert_eq!(limited.missing_roll_point_records, 0);
     assert_eq!(limited.hit_count, 0);
+    assert_eq!(limited.five_star_item_count, 1);
     assert_eq!(limited.current_pity, 4);
     assert_eq!(limited.average_5star_pity, None);
+    assert_eq!(limited.latest_5star, None);
+    assert_eq!(
+        limited.latest_5star_any.as_ref().map(|record| record.record_id.as_str()),
+        Some("c2")
+    );
     assert_eq!(limited.average_roll_points_to_5star, None);
     assert_eq!(limited.roll_point_cost_samples_5star, 0);
     assert_eq!(limited.early_hit_count, 0);
@@ -98,6 +104,16 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
         Some("ForkLottery_AnHunQu")
     );
     assert_eq!(fork.five_star_history[1].record.derived.hit_rarity, Some(5));
+    assert_eq!(fork.five_star_display_history.len(), 2);
+    assert_eq!(limited_detail.five_star_history.len(), 0);
+    assert_eq!(limited_detail.five_star_display_history.len(), 1);
+    assert_eq!(
+        limited_detail.five_star_display_history[0]
+            .record
+            .record_id
+            .as_str(),
+        "c2"
+    );
     assert!(
         overview
             .rarity_distribution
@@ -284,6 +300,65 @@ fn dashboard_overview_includes_banner_roll_points_and_time_stats() {
     assert_eq!(day.total_pulls, 2);
     assert_eq!(day.roll_points_total, 10);
     assert_eq!(overview.time_stats.missing_time_records, 0);
+}
+
+#[test]
+fn item_ranking_splits_same_item_by_reward_quantity() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut dustbin_30_a = record(
+        "dustbin-30-a",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    );
+    let mut dustbin_30_b = record(
+        "dustbin-30-b",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:01:00",
+    );
+    let mut dustbin_50 = record(
+        "dustbin-50",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:02:00",
+    );
+    dustbin_30_a["count"] = json!(30);
+    dustbin_30_b["count"] = json!(30);
+    dustbin_50["count"] = json!(50);
+    let document = public_document(vec![dustbin_30_a, dustbin_30_b, dustbin_50]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyLimited,
+            },
+        )
+        .unwrap();
+    let dustbin_ranks = detail
+        .item_ranking
+        .iter()
+        .filter(|item| item.item_id == "fork_dustbin")
+        .collect::<Vec<_>>();
+    let dustbin_30 = dustbin_ranks
+        .iter()
+        .find(|item| item.reward_count == 30)
+        .unwrap();
+    let dustbin_50 = dustbin_ranks
+        .iter()
+        .find(|item| item.reward_count == 50)
+        .unwrap();
+
+    assert_eq!(dustbin_ranks.len(), 2);
+    assert_eq!(dustbin_30.count, 2);
+    assert_eq!(dustbin_50.count, 1);
+    assert_eq!(dustbin_30.item_name, dustbin_50.item_name);
 }
 
 #[test]

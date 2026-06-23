@@ -67,6 +67,7 @@ async function mockOverview() {
         fork_forced_up_count: 0,
         fork_observed_25_75_win_rate: null,
         latest_5star: null,
+        latest_5star_any: null,
         four_star_count: 0,
         rate_up_4_count: 0,
         off_rate_4_count: 0,
@@ -84,8 +85,8 @@ async function mockOverview() {
       { rarity: 3, count: 161, percent: 0.885 },
     ],
     item_ranking: [
-      { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, count: 44 },
-      { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[0].item_asset_refs, rarity: 5, count: 2 },
+      { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, reward_count: 1, count: 44 },
+      { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[1].item_asset_refs, rarity: 5, reward_count: 1, count: 2 },
     ],
   };
 }
@@ -107,8 +108,9 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
   const poolKind = selection.pool_kind;
   const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
   const countableRecords = records.filter((record) => record.derived.counts_as_pull);
-  const fiveStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 5);
-  const fiveStarItemRecords = countableRecords.filter((record) => record.rarity === 5);
+  const chronologicalRecords = [...countableRecords].sort((left, right) => left.source_order - right.source_order);
+  const fiveStarRecords = chronologicalRecords.filter((record) => record.derived.hit_rarity === 5);
+  const fiveStarItemRecords = chronologicalRecords.filter((record) => record.rarity === 5);
   const fourStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 4);
   const average4StarPity = mockAverage4StarPity(countableRecords);
   const summary: PoolKindSummary = {
@@ -123,7 +125,8 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     unknown_rate_up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "unknown").length,
     four_star_count: fourStarRecords.length,
     average_4star_pity: average4StarPity,
-    latest_5star: fiveStarRecords[0] ?? null,
+    latest_5star: fiveStarRecords.at(-1) ?? null,
+    latest_5star_any: fiveStarItemRecords.at(-1) ?? null,
   };
   const rarityCounts = new Map<number, number>();
   for (const record of countableRecords) {
@@ -160,25 +163,41 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
       };
     })
     .filter((bucket) => bucket.count > 0);
-  const itemCounts = new Map<string, { item_name: string; item_asset_refs: Record<string, unknown>; rarity?: number | null; count: number }>();
+  const itemCounts = new Map<string, { item_id: string; item_name: string; item_asset_refs: Record<string, unknown>; rarity?: number | null; reward_count: number; count: number }>();
   for (const record of countableRecords) {
-    const entry = itemCounts.get(record.item_id) ?? {
+    const reward_count = record.count ?? 1;
+    const key = `${record.item_id}\0${reward_count}`;
+    const entry = itemCounts.get(key) ?? {
+      item_id: record.item_id,
       item_name: record.item_name,
       item_asset_refs: record.item_asset_refs,
       rarity: record.rarity,
+      reward_count,
       count: 0,
     };
     entry.count += 1;
-    itemCounts.set(record.item_id, entry);
+    itemCounts.set(key, entry);
   }
-  const item_ranking = [...itemCounts.entries()]
-    .map(([item_id, item]) => ({ item_id, ...item }))
-    .sort((left, right) => right.count - left.count || (right.rarity ?? 0) - (left.rarity ?? 0) || left.item_name.localeCompare(right.item_name))
+  const item_ranking = [...itemCounts.values()]
+    .sort(
+      (left, right) =>
+        right.count - left.count ||
+        (right.rarity ?? 0) - (left.rarity ?? 0) ||
+        left.item_name.localeCompare(right.item_name) ||
+        left.reward_count - right.reward_count,
+    )
     .slice(0, 20);
 
   return {
     summary,
     five_star_history: fiveStarRecords.map((record) => ({
+      record,
+      pity_distance: record.derived.pity_5_before + 1,
+      result: record.derived.rate_up_result,
+      guarantee_before: record.derived.guarantee_5_before,
+      guarantee_after: record.derived.guarantee_5_after,
+    })),
+    five_star_display_history: fiveStarItemRecords.map((record) => ({
       record,
       pity_distance: record.derived.pity_5_before + 1,
       result: record.derived.rate_up_result,
@@ -360,19 +379,11 @@ export const mockApi: AppApi = {
   },
   async poolKindDetail(_profileName: string, poolKind: PoolKind) {
     const summary = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
+    const detail = mockSelectionDetail({ kind: "pool_kind", pool_kind: poolKind });
     return {
       summary,
-      five_star_history: summary.latest_5star
-        ? [
-            {
-              record: summary.latest_5star,
-              pity_distance: Math.round(summary.average_5star_pity ?? 0),
-              result: "up",
-              guarantee_before: false,
-              guarantee_after: false,
-            },
-          ]
-        : [],
+      five_star_history: detail.five_star_history,
+      five_star_display_history: detail.five_star_display_history,
     };
   },
   async dashboardSelectionDetail(_profileName: string, selection: DashboardSelection) {

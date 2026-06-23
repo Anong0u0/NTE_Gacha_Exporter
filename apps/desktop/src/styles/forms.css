@@ -112,7 +112,7 @@
 }
 
 .settings-workbench {
-  width: min(100%, 920px);
+  width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 

@@ -20,6 +20,7 @@ export type RecordViewPrefs = {
   sortDirection: SortDirection;
   pageSize: RecordPageSize;
   recordAdvancedFiltersOpen: boolean;
+  showLatestFiveStarItems: boolean;
 };
 
 export const defaultRecordViewPrefs: RecordViewPrefs = {
@@ -38,6 +39,7 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
   sortDirection: "desc",
   pageSize: 10,
   recordAdvancedFiltersOpen: false,
+  showLatestFiveStarItems: false,
 };
 
 export const rateUpResultOptions: RateUpResult[] = ["up", "off_rate", "not_applicable", "unknown"];
@@ -75,6 +77,7 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       sortDirection: sortDirection === "asc" || sortDirection === "desc" ? sortDirection : defaultRecordViewPrefs.sortDirection,
       pageSize: recordPageSizes.includes(pageSize as RecordPageSize) ? (pageSize as RecordPageSize) : defaultRecordViewPrefs.pageSize,
       recordAdvancedFiltersOpen: typeof source.recordAdvancedFiltersOpen === "boolean" ? source.recordAdvancedFiltersOpen : defaultRecordViewPrefs.recordAdvancedFiltersOpen,
+      showLatestFiveStarItems: typeof source.showLatestFiveStarItems === "boolean" ? source.showLatestFiveStarItems : defaultRecordViewPrefs.showLatestFiveStarItems,
     };
   } catch {
     return { ...defaultRecordViewPrefs };

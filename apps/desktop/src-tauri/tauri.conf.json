@@ -12,9 +12,9 @@
     "windows": [
       {
         "title": "NTE Gacha Exporter",
-        "width": 1440,
-        "height": 880,
-        "minWidth": 1280,
+        "width": 1240,
+        "height": 800,
+        "minWidth": 1240,
         "minHeight": 760
       }
     ],

@@ -17,6 +17,13 @@
   --warning: #efc45a;
   --danger: #9c2f2f;
   --danger-soft: #fff5f5;
+  --rarity-5: #c59245;
+  --rarity-5-soft: #fbf2e3;
+  --rarity-4: #915bb1;
+  --rarity-4-soft: #f3e9f8;
+  --rarity-3: #327eb6;
+  --rarity-3-soft: #e6f1fa;
+  --rarity-unknown: #c3cec7;
   color: var(--text-strong);
   background: var(--surface-page);
   font-family:

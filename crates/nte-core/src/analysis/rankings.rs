@@ -186,30 +186,35 @@ fn item_ranking_from_display_refs<'a>(
     records: impl IntoIterator<Item = &'a DisplayRecord>,
     map: &MapData,
 ) -> Vec<ItemRank> {
-    let mut counts: HashMap<String, ItemRankAccumulator> = HashMap::new();
+    let mut counts: HashMap<(String, i64), ItemRankAccumulator> = HashMap::new();
     for record in records {
         if !record.derived.counts_as_pull {
             continue;
         }
         let item_id = map.canonical_item_id(&record.item_id).to_string();
-        let entry = counts.entry(item_id.clone()).or_insert_with(|| ItemRankAccumulator {
-            item_name: map.item_name(&item_id),
-            item_asset_refs: map
-                .item(&item_id)
-                .map(|(_, item)| item.asset_refs.clone())
-                .unwrap_or_default(),
-            rarity: map.item_rarity(&item_id),
-            count: 0,
-        });
+        let reward_count = record.count.unwrap_or(1);
+        let entry =
+            counts
+                .entry((item_id.clone(), reward_count))
+                .or_insert_with(|| ItemRankAccumulator {
+                    item_name: map.item_name(&item_id),
+                    item_asset_refs: map
+                        .item(&item_id)
+                        .map(|(_, item)| item.asset_refs.clone())
+                        .unwrap_or_default(),
+                    rarity: map.item_rarity(&item_id),
+                    count: 0,
+                });
         entry.count += 1;
     }
     let mut ranking = counts
         .into_iter()
-        .map(|(item_id, item)| ItemRank {
+        .map(|((item_id, reward_count), item)| ItemRank {
             item_id,
             item_name: item.item_name,
             item_asset_refs: item.item_asset_refs,
             rarity: item.rarity,
+            reward_count,
             count: item.count,
         })
         .collect::<Vec<_>>();
@@ -219,6 +224,7 @@ fn item_ranking_from_display_refs<'a>(
             .cmp(&left.count)
             .then_with(|| right.rarity.cmp(&left.rarity))
             .then_with(|| left.item_name.cmp(&right.item_name))
+            .then_with(|| left.reward_count.cmp(&right.reward_count))
     });
     ranking.truncate(20);
     ranking
