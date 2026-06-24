@@ -70,7 +70,7 @@ fn replay_writes_public_outputs() {
         String::from_utf8_lossy(&output.stderr)
     );
     let public = std::fs::read_to_string(json).unwrap();
-    assert!(public.contains("\"schema\": \"nte-gacha-exporter-export\""));
+    assert!(public.contains("\"schema\": \"nte-gacha-export\""));
     assert!(public.contains("\"nte\""));
     assert!(!public.contains("\"_debug\""));
     assert!(std::fs::read_to_string(csv).unwrap().contains("獲得時間"));

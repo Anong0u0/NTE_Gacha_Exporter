@@ -693,7 +693,7 @@ fn dashboard_selection_detail_reports_hit_distribution_and_average_four_star_pit
 }
 
 #[test]
-fn standard_pool_counts_standard_five_pool_as_up_items() {
+fn standard_pool_uses_item_quality_for_display_rarity() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let mut gift = record(
@@ -746,8 +746,8 @@ fn standard_pool_counts_standard_five_pool_as_up_items() {
 
     assert_eq!(detail.summary.total_pulls, 2);
     assert_eq!(detail.summary.hit_count, 1);
-    assert_eq!(detail.summary.five_star_item_count, 2);
-    assert_eq!(detail.summary.up_count, 2);
+    assert_eq!(detail.summary.five_star_item_count, 1);
+    assert_eq!(detail.summary.up_count, 1);
     assert_eq!(detail.summary.off_rate_count, 0);
     assert_eq!(detail.summary.not_applicable_rate_up_count, 0);
     assert_eq!(detail.summary.unknown_rate_up_count, 0);
@@ -757,7 +757,10 @@ fn standard_pool_counts_standard_five_pool_as_up_items() {
         "standard-character"
     );
     assert!(detail.rarity_distribution.iter().any(|bucket| {
-        bucket.rarity == 5 && bucket.count == 2
+        bucket.rarity == 5 && bucket.count == 1
+    }));
+    assert!(detail.rarity_distribution.iter().any(|bucket| {
+        bucket.rarity == 4 && bucket.count == 1
     }));
     assert!(detail.hit_rarity_distribution.iter().any(|bucket| {
         bucket.rarity == 5 && bucket.count == 1
@@ -777,13 +780,15 @@ fn standard_pool_counts_standard_five_pool_as_up_items() {
             && bucket.percent == 0.5
     }));
     assert!(detail.pull_rarity_distribution.iter().any(|bucket| {
-        bucket.key == PullRarityBucketKey::FiveItem
-            && bucket.rarity == Some(5)
+        bucket.key == PullRarityBucketKey::FourItem
+            && bucket.rarity == Some(4)
             && bucket.count == 1
             && bucket.percent == 0.5
     }));
-    assert_eq!(standard_banner.rate_up_5_count, 2);
-    assert!(fork_rank.item_asset_refs.contains_key("icon"));
+    assert_eq!(standard_banner.rate_up_5_count, 1);
+    assert_eq!(fork_rank.rarity, Some(4));
+    assert!(fork_rank.item_asset_refs.contains_key("portrait"));
+    assert!(!fork_rank.item_asset_refs.contains_key("icon"));
 }
 
 #[test]
@@ -824,7 +829,7 @@ fn limited_and_standard_pull_rarity_distribution_split_character_and_items() {
         record(
             "standard-five-item",
             "CardPool_NewRole",
-            "fork_wuhuakuang",
+            "fork_rishi",
             "2026-06-02 00:05:00",
         ),
         record(

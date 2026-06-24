@@ -4,12 +4,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use atomic_write_file::AtomicWriteFile;
 use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 
 use crate::MapData;
 use crate::classify_pool_id;
 use crate::compare_display_newest_first;
 use crate::display_records;
+use crate::public_json::PUBLIC_JSON_SCHEMA;
 use crate::{DisplayRecord, GuiError, InternalRecord};
 
 const CSV_FIELDS: [&str; 21] = [
@@ -50,14 +51,14 @@ pub fn export_public_json(
         .collect::<Vec<_>>();
     let document = json!({
         "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "5.0",
+            "schema": PUBLIC_JSON_SCHEMA,
+            "schema_version": "2.0",
             "export_app": "nte-gacha-exporter",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
             "locale": locale,
             "name_source": "localization_map",
-            "time_source": "json_store",
+            "time_source": "decoded_dotnet_ticks",
             "privacy": "sanitized"
         },
         "nte": {
@@ -95,19 +96,20 @@ pub fn export_csv(path: &Path, records: &[InternalRecord], map: &MapData) -> Res
 }
 
 fn public_record(display: &DisplayRecord) -> Value {
-    let mut value = json!({
-        "record_id": display.record_id,
-        "source_order": display.source_order,
-        "record_type": display.record_type,
-        "pool_id": display.pool_id,
-        "pool_name": display.pool_label,
-        "item_id": display.item_id,
-        "item_name": display.item_name
-    });
-    let object = value.as_object_mut().expect("json object");
+    let mut object = Map::new();
+    object.insert("record_id".to_string(), json!(display.record_id));
+    object.insert("source_order".to_string(), json!(display.source_order));
+    object.insert("record_type".to_string(), json!(display.record_type));
     if let Some(time) = display.time.as_ref() {
         object.insert("time".to_string(), json!(time));
     }
+    object.insert("pool_id".to_string(), json!(display.pool_id));
+    object.insert("pool_name".to_string(), json!(display.pool_label));
+    if let Some(banner_id) = display.derived.banner_id.as_ref() {
+        object.insert("banner_id".to_string(), json!(banner_id));
+    }
+    object.insert("item_id".to_string(), json!(display.item_id));
+    object.insert("item_name".to_string(), json!(display.item_name));
     if let Some(rarity) = display.rarity {
         object.insert("rarity".to_string(), json!(rarity));
     }
@@ -123,69 +125,6 @@ fn public_record(display: &DisplayRecord) -> Value {
     if let Some(roll_label) = display.roll_label.as_ref() {
         object.insert("roll_label".to_string(), json!(roll_label));
     }
-    object.insert("pool_kind".to_string(), json!(display.pool_kind));
-    object.insert(
-        "counts_as_pull".to_string(),
-        json!(display.derived.counts_as_pull),
-    );
-    object.insert(
-        "pull_no_in_pool_kind".to_string(),
-        json!(display.derived.pull_no_in_pool_kind),
-    );
-    object.insert(
-        "global_pull_no".to_string(),
-        json!(display.derived.global_pull_no),
-    );
-    object.insert(
-        "pity_5_before".to_string(),
-        json!(display.derived.pity_5_before),
-    );
-    object.insert(
-        "pity_5_after".to_string(),
-        json!(display.derived.pity_5_after),
-    );
-    object.insert(
-        "ten_pull_progress_after".to_string(),
-        json!(display.derived.ten_pull_progress_after),
-    );
-    object.insert(
-        "ten_pull_progress_before".to_string(),
-        json!(display.derived.ten_pull_progress_before),
-    );
-    object.insert(
-        "rate_up_result".to_string(),
-        json!(display.derived.rate_up_result),
-    );
-    if let Some(banner_id) = display.banner.banner_id.as_ref() {
-        object.insert("banner_id".to_string(), json!(banner_id));
-    }
-    if let Some(banner_name) = display.banner.title.as_ref() {
-        object.insert("banner_name".to_string(), json!(banner_name));
-    }
-    if let Some(banner_type) = display.banner.banner_type.as_ref() {
-        object.insert("banner_type".to_string(), json!(banner_type));
-    }
-    if let Some(version) = display.derived.banner_version.as_ref() {
-        object.insert("banner_version".to_string(), json!(version));
-    }
-    if let Some(pull_no) = display.derived.pull_no_in_banner {
-        object.insert("pull_no_in_banner".to_string(), json!(pull_no));
-    }
-    if let Some(rarity) = display.derived.hit_rarity {
-        object.insert("hit_rarity".to_string(), json!(rarity));
-    }
-    if let Some(pity_badge) = display.derived.pity_badge.as_ref() {
-        object.insert("pity_badge".to_string(), json!(pity_badge));
-    }
-    if let Some(value) = display.derived.guarantee_5_before {
-        object.insert("guarantee_5_before".to_string(), json!(value));
-    }
-    if let Some(value) = display.derived.guarantee_5_after {
-        object.insert("guarantee_5_after".to_string(), json!(value));
-    }
-    if let Some(rule_id) = display.derived.rule.rule_id.as_ref() {
-        object.insert("rule_id".to_string(), json!(rule_id));
-    }
     if let Some(secondary_item_id) = display.secondary_item_id.as_ref() {
         object.insert("secondary_item_id".to_string(), json!(secondary_item_id));
     }
@@ -198,7 +137,7 @@ fn public_record(display: &DisplayRecord) -> Value {
     if let Some(secondary_count) = display.secondary_count {
         object.insert("secondary_count".to_string(), json!(secondary_count));
     }
-    value
+    Value::Object(object)
 }
 
 struct CsvRow {

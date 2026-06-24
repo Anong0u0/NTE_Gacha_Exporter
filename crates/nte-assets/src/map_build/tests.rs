@@ -12,11 +12,42 @@ mod tests {
         assert_eq!(map["schema_version"], 4);
         assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
         assert_eq!(map["items"]["1010"]["rarity"], 5);
-        assert_eq!(map["items"]["1010"]["asset_refs"]["banner"], "/Game/Banner");
+        assert_eq!(map["items"]["201"]["name"], "Arc·Forgotten");
+        assert_eq!(map["items"]["201"]["rarity"], 4);
+        assert_eq!(
+            map["banners"]["monopoly_standard"]["standard_5_pool"],
+            json!(["1010", "201"])
+        );
+        let nanali_refs = map["items"]["1010"]["asset_refs"].as_object().unwrap();
+        assert_eq!(nanali_refs.get("portrait"), Some(&json!("/Game/Portrait")));
+        assert_eq!(nanali_refs.get("head_icon"), Some(&json!("/Game/SmallIcon")));
+        assert_eq!(nanali_refs.get("banner"), Some(&json!("/Game/Banner")));
+        assert!(!nanali_refs.contains_key("icon"));
+        assert!(!nanali_refs.contains_key("material"));
+        let forgotten_refs = map["items"]["201"]["asset_refs"].as_object().unwrap();
+        assert_eq!(forgotten_refs.get("icon"), Some(&json!("/Game/ForkIcon")));
+        assert_eq!(
+            forgotten_refs.get("head_icon"),
+            Some(&json!("/Game/ForkSmallIcon"))
+        );
+        assert_eq!(forgotten_refs.get("banner"), Some(&json!("/Game/ForkBanner")));
+        assert_eq!(
+            forgotten_refs.get("material"),
+            Some(&json!("/Game/ForkMaterial"))
+        );
         assert_eq!(map["pools"]["CardPool_NewRole"]["title"], "Standard Title");
         assert_eq!(
             map["pools"]["ForkLottery_Test"]["banner_ids"][0],
             "ForkLottery_Test"
+        );
+        assert!(map["pools"]["ForkLottery_Test"]["asset_refs"].is_null());
+        assert_eq!(
+            map["banners"]["ForkLottery_Test"]["asset_refs"]["background"],
+            "/Game/UI/UI/Gacha/ForkBg.ForkBg"
+        );
+        assert_eq!(
+            map["banners"]["ForkLottery_Test"]["asset_refs"]["icon"],
+            "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
         );
         assert_eq!(
             map["banners"]["monopoly_limited_Nanali"]["end_at"],
@@ -103,7 +134,8 @@ mod tests {
                 "1010": {
                     "ItemName": {"Key": "char_1010", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
-                    "ItemIcon": {"AssetPathName": "/Game/Icon"},
+                    "ItemIcon": {"AssetPathName": "/Game/Portrait"},
+                    "ItemIconSmall": {"AssetPathName": "/Game/SmallIcon"},
                     "ItemIconBig": {"AssetPathName": "/Game/Portrait"}
                 }
             }}),
@@ -114,6 +146,12 @@ mod tests {
                 "200": {
                     "ItemName": {"Key": "fork_200", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                },
+                "201": {
+                    "ItemName": {"Key": "fork_201", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_PURPLE",
+                    "ItemIcon": {"AssetPathName": "/Game/ForkIcon"},
+                    "ItemIconSmall": {"AssetPathName": "/Game/ForkSmallIcon"}
                 }
             }}),
         );
@@ -126,7 +164,8 @@ mod tests {
                 },
                 "ST_Item": {
                     "char_1010": "Nanali",
-                    "fork_200": "Fork Weapon"
+                    "fork_200": "Fork Weapon",
+                    "fork_201": "Forgotten"
                 },
                 "ST_Ui": {
                     "BPUI_LotteryDiceRecord_biaozhunqipan": "標準棋盤",
@@ -141,7 +180,7 @@ mod tests {
             root.join("DataTable/Gacha/DT_LotteryDataTable_Nanali.json"),
             json!({"Rows": {
                 "row": {
-                    "SSRItems": [{"ItemID": "1010"}],
+                    "SSRItems": [{"ItemID": "1010"}, {"ItemID": "201"}],
                     "SRItems": []
                 }
             }}),
@@ -152,7 +191,12 @@ mod tests {
                 "1010": {
                     "ItemIcon": {"AssetPathName": "/Game/Portrait"},
                     "ActivityHeadIcon": {"AssetPathName": "/Game/Banner"},
+                    "MaterialTexture": {"AssetPathName": "/Game/Banner"},
                     "OutlineColor": {"Hex": "ffcc00"}
+                },
+                "201": {
+                    "ActivityHeadIcon": {"AssetPathName": "/Game/ForkBanner"},
+                    "MaterialTexture": {"AssetPathName": "/Game/ForkMaterial"}
                 }
             }}),
         );
@@ -167,7 +211,9 @@ mod tests {
                     "UpGuaranteeCnt": 80,
                     "CurrencyID": "1010",
                     "CurrencyCnt": 1,
-                    "OnceLotteryCnt": 1
+                    "OnceLotteryCnt": 1,
+                    "Bg": {"AssetPathName": "/Game/UI/UI/Gacha/ForkBg.ForkBg"},
+                    "Icon": {"AssetPathName": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"}
                 }
             }}),
         );

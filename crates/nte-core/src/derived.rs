@@ -401,6 +401,32 @@ mod tests {
     }
 
     #[test]
+    fn fork_item_in_standard_five_pool_uses_source_quality_for_pity() {
+        let map = load_map("zh-Hant").expect("map should load");
+        let records = vec![
+            record(
+                "three",
+                "ForkLottery_Nanali",
+                "fork_dustbin",
+                "2026-01-01 00:00:00",
+            ),
+            record(
+                "forgotten",
+                "ForkLottery_Nanali",
+                "fork_wuhuakuang",
+                "2026-01-01 00:01:00",
+            ),
+        ];
+
+        let derived = derive_records(&records, &map).expect("records should derive");
+
+        assert_eq!(derived[1].hit_rarity, Some(4));
+        assert_eq!(derived[1].pity_5_before, 1);
+        assert_eq!(derived[1].pity_5_after, 2);
+        assert_eq!(derived[1].ten_pull_progress_after, Some(0));
+    }
+
+    #[test]
     fn monopoly_ten_pull_progress_has_before_and_after_state() {
         let map = load_map("zh-Hant").expect("map should load");
         let limited_records = (0..11)

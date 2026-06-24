@@ -32,26 +32,6 @@ fn source_evidence(tables: &[String], notes: &[&str]) -> Value {
     Value::Object(object)
 }
 
-fn asset_path(value: Option<&Value>) -> Option<String> {
-    value
-        .and_then(Value::as_object)
-        .and_then(|object| object.get("AssetPathName"))
-        .and_then(Value::as_str)
-        .filter(|path| path.starts_with("/Game/"))
-        .map(ToString::to_string)
-}
-
-fn pool_asset_refs(row: &JsonObject) -> JsonObject {
-    let mut refs = JsonObject::new();
-    if let Some(background) = asset_path(row.get("Bg")) {
-        refs.insert("background".to_string(), Value::String(background));
-    }
-    if let Some(icon) = asset_path(row.get("Icon")) {
-        refs.insert("icon".to_string(), Value::String(icon));
-    }
-    refs
-}
-
 fn fork_pickup_item_ids(
     pool_id: &str,
     row: &JsonObject,
@@ -117,10 +97,6 @@ fn fork_pool_meta(
                 .collect(),
         ),
     );
-    let refs = pool_asset_refs(row);
-    if !refs.is_empty() {
-        meta.insert("asset_refs".to_string(), Value::Object(refs));
-    }
     Ok(meta)
 }
 

@@ -2084,7 +2084,7 @@ dependencies = [
 
 [[package]]
 name = "nte-assets"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "image",
  "nte-core",
@@ -2098,7 +2098,7 @@ dependencies = [
 
 [[package]]
 name = "nte-automation"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "image",
  "serde",
@@ -2110,7 +2110,7 @@ dependencies = [
 
 [[package]]
 name = "nte-capture"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2127,7 +2127,7 @@ dependencies = [
 
 [[package]]
 name = "nte-core"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "atomic-write-file",
  "serde",
@@ -2139,7 +2139,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-cli"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "chrono",
  "clap",
@@ -2158,7 +2158,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-desktop"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "nte-assets",
  "nte-automation",
@@ -2179,7 +2179,7 @@ dependencies = [
 
 [[package]]
 name = "nte-store"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "atomic-write-file",
  "nte-core",
@@ -2191,7 +2191,7 @@ dependencies = [
 
 [[package]]
 name = "nte-update"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "nte-core",
  "semver",
@@ -3172,6 +3172,7 @@ version = "1.0.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
 dependencies = [
+ "indexmap 2.14.0",
  "itoa",
  "memchr",
  "serde",

@@ -36,7 +36,7 @@ pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,
     compare_records_for_analysis, compare_time_asc,
 };
-pub use public_json::parse_public_document;
+pub use public_json::{PUBLIC_JSON_SCHEMA, parse_public_document, public_record_id_from_material};
 pub use rules::{
     DerivedHit, GachaRule, PoolKindDerivedStats, RuleResolution, classify_pool_id,
     derive_pool_kind_hits, fallback_rule_for, fallback_rule_resolution, rate_up_result, rule_for,

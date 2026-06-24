@@ -53,24 +53,26 @@ Public JSON 只包含匯出資訊與 `nte.list` 紀錄：
 ```json
 {
   "info": {
-    "schema": "nte-gacha-exporter-export",
-    "schema_version": "4.0",
-    "privacy": "sanitized"
+    "schema": "nte-gacha-export",
+    "schema_version": "2.0",
+    "locale": "zh-Hant",
   },
   "nte": {
     "list": [
       {
-        "record_id": "b4b36f5d...",
+        "record_id": "02539eac...",
         "source_order": 0,
         "record_type": "monopoly",
         "time": "2026-04-30 17:02:15",
         "pool_id": "CardPool_Character",
         "pool_name": "王牌一代目",
+        "banner_id": "monopoly_limited_Nanali",
         "item_id": "Fashion_vehicle_1010_V008",
         "item_name": "改裝件·萌虎來襲-塗裝",
+        "rarity": 5,
         "count": 1,
-        "roll_label": "3",
-        "roll_points": 3
+        "roll_points": 2,
+        "roll_label": "2"
       }
     ]
   }

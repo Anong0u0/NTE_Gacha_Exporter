@@ -2,10 +2,9 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value, json};
-use sha2::{Digest, Sha256};
 
 use crate::protocol::{ParsedRow, RecordType, row_public_time};
-use nte_core::GuiError;
+use nte_core::{GuiError, PUBLIC_JSON_SCHEMA, public_record_id_from_material};
 use nte_core::{MapData, load_map};
 
 #[derive(Debug, Clone)]
@@ -24,7 +23,9 @@ pub struct CaptureRecordBuilder {
 
 struct CanonicalRow<'a> {
     row: &'a ParsedRow,
+    banner_id: Option<String>,
     item_id: String,
+    rarity: Option<u8>,
     secondary_item_id: Option<String>,
 }
 
@@ -86,8 +87,8 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
         .collect::<Vec<_>>();
     Ok(json!({
         "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "3.0",
+            "schema": PUBLIC_JSON_SCHEMA,
+            "schema_version": "2.0",
             "export_app": "nte-gacha-exporter-desktop",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -103,9 +104,18 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
 }
 
 fn canonical_row<'a>(row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
+    let banner = row
+        .pool_id
+        .as_deref()
+        .map(|pool_id| map.resolve_banner(pool_id, row_public_time(row).as_deref()));
+    let item_id = map.canonical_item_id(&row.item_id).to_string();
     CanonicalRow {
         row,
-        item_id: map.canonical_item_id(&row.item_id).to_string(),
+        banner_id: banner
+            .filter(|banner| banner.resolution_issue.is_none())
+            .and_then(|banner| banner.banner_id),
+        rarity: map.item_rarity(&item_id),
+        item_id,
         secondary_item_id: row
             .secondary_item_id
             .as_deref()
@@ -120,7 +130,11 @@ fn public_record(row: &CanonicalRow<'_>, record_id: String, source_order: u64) -
     insert_string(&mut object, "record_type", row.row.record_type.as_str());
     insert_opt_string(&mut object, "time", row_public_time(row.row));
     insert_opt_string(&mut object, "pool_id", row.row.pool_id.clone());
+    insert_opt_string(&mut object, "banner_id", row.banner_id.clone());
     insert_string(&mut object, "item_id", row.item_id.clone());
+    if let Some(rarity) = row.rarity {
+        object.insert("rarity".to_string(), json!(rarity));
+    }
     object.insert("count".to_string(), json!(row.row.count));
     if let Some(roll_points) = row.row.roll_points {
         object.insert("roll_points".to_string(), json!(roll_points));
@@ -211,9 +225,7 @@ fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
 }
 
 fn record_id_from_material(material: &[String]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(material.join("\x1f").as_bytes());
-    hex::encode(hasher.finalize())
+    public_record_id_from_material(material)
 }
 
 fn insert_string(object: &mut Map<String, Value>, key: &str, value: impl Into<String>) {
@@ -260,10 +272,14 @@ mod tests {
             records[0]["record_id"],
             "02539eac1cdcfe813b158e11d27f81742e76fd30c05b93cf42615b5dd43f9c1f"
         );
+        assert_eq!(records[0]["banner_id"], "monopoly_limited_Nanali");
+        assert_eq!(records[0]["rarity"], 5);
         assert_eq!(
             records[1]["record_id"],
             "c56d8202675fe561fbfaca53f78f01eaa5184c66e48b20573841f883e8c84fbc"
         );
+        assert_eq!(records[1]["banner_id"], "ForkLottery_AnHunQu");
+        assert_eq!(records[1]["rarity"], 3);
         assert_eq!(records[0]["source_order"], 0);
         assert_eq!(records[1]["source_order"], 1);
 
@@ -373,7 +389,9 @@ mod tests {
     fn fork_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
         CanonicalRow {
             row,
+            banner_id: None,
             item_id: "fork_dustbin".to_string(),
+            rarity: None,
             secondary_item_id: None,
         }
     }
@@ -412,7 +430,9 @@ mod tests {
     fn monopoly_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
         CanonicalRow {
             row,
+            banner_id: None,
             item_id: "fork_dustbin".to_string(),
+            rarity: None,
             secondary_item_id: None,
         }
     }

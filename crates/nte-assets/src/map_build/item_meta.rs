@@ -2,16 +2,32 @@ fn asset_refs_from_fields(row: &JsonObject, fields: &[(&str, &str)]) -> JsonObje
     let mut refs = JsonObject::new();
     for (source_field, target_field) in fields {
         if let Some(asset_path) = asset_path(row.get(*source_field)) {
-            refs.insert(
-                (*target_field).to_string(),
-                Value::String(asset_path.clone()),
-            );
-            if *target_field == "icon" {
-                refs.insert("head_icon".to_string(), Value::String(asset_path));
-            }
+            refs.insert((*target_field).to_string(), Value::String(asset_path));
         }
     }
     refs
+}
+
+fn asset_ref_str<'a>(refs: &'a JsonObject, key: &str) -> Option<&'a str> {
+    refs.get(key).and_then(Value::as_str)
+}
+
+fn same_asset_ref(refs: &JsonObject, left: &str, right: &str) -> bool {
+    asset_ref_str(refs, left).zip(asset_ref_str(refs, right)).is_some_and(
+        |(left, right)| left == right,
+    )
+}
+
+fn prune_item_asset_refs(refs: &mut JsonObject) {
+    if same_asset_ref(refs, "icon", "portrait") {
+        refs.remove("icon");
+    }
+    if same_asset_ref(refs, "head_icon", "icon") || same_asset_ref(refs, "head_icon", "portrait") {
+        refs.remove("head_icon");
+    }
+    if same_asset_ref(refs, "material", "banner") {
+        refs.remove("material");
+    }
 }
 
 fn rarity_from_quality(value: Option<&Value>) -> Option<u64> {
@@ -120,53 +136,6 @@ fn add_vehicle_module_meta(
     Ok(())
 }
 
-fn add_lottery_table_meta(
-    meta: &mut BTreeMap<String, JsonObject>,
-    assets_root: &Path,
-    known_ids: &BTreeSet<String>,
-    canonicalizer: &ItemCanonicalizer,
-) -> Result<(), GuiError> {
-    for path in lottery_table_paths(assets_root)? {
-        for row in rows_from_table(&path)?.values() {
-            let Some(row) = row.as_object() else {
-                continue;
-            };
-            add_lottery_items(meta, row.get("SSRItems"), known_ids, canonicalizer, 5);
-            add_lottery_items(meta, row.get("SRItems"), known_ids, canonicalizer, 4);
-            add_lottery_items(meta, row.get("RItems"), known_ids, canonicalizer, 3);
-        }
-    }
-    Ok(())
-}
-
-fn add_lottery_items(
-    meta: &mut BTreeMap<String, JsonObject>,
-    values: Option<&Value>,
-    known_ids: &BTreeSet<String>,
-    canonicalizer: &ItemCanonicalizer,
-    rarity: u64,
-) {
-    let Some(values) = values.and_then(Value::as_array) else {
-        return;
-    };
-    for value in values {
-        let Some(value) = value.as_object() else {
-            continue;
-        };
-        let item_id = value
-            .get("ItemID")
-            .and_then(value_to_text)
-            .map(|item_id| canonicalizer.canonicalize(&item_id));
-        if let Some(item_id) = item_id.filter(|item_id| known_ids.contains(item_id)) {
-            merge_item_meta(
-                &mut *meta,
-                item_id,
-                map_from_pairs([("rarity", json!(rarity))]),
-            );
-        }
-    }
-}
-
 fn add_gacha_illustrate_meta(
     meta: &mut BTreeMap<String, JsonObject>,
     assets_root: &Path,
@@ -246,7 +215,6 @@ fn build_item_meta_rows(
         }
     }
     add_vehicle_module_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
-    add_lottery_table_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
     add_gacha_illustrate_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
 
     let mut rows = Vec::new();
@@ -272,7 +240,11 @@ fn build_item_meta_rows(
             .get("asset_refs")
             .filter(|value| value.as_object().is_some_and(|object| !object.is_empty()))
         {
-            row.insert("asset_refs".to_string(), Value::Object(refs.clone()));
+            let mut refs = refs.clone();
+            prune_item_asset_refs(&mut refs);
+            if !refs.is_empty() {
+                row.insert("asset_refs".to_string(), Value::Object(refs));
+            }
         }
         rows.push(row);
     }
@@ -335,4 +307,3 @@ fn normalized_pools(
     }
     normalized
 }
-

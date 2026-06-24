@@ -1,290 +1,5 @@
 {
-  "banners": {
-    "ForkLottery_AnHunQu": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
-      },
-      "banner_id": "ForkLottery_AnHunQu",
-      "banner_type": "fork",
-      "currency_count": 10,
-      "currency_id": "WeaponGacha",
-      "pool_id": "ForkLottery_AnHunQu",
-      "pool_kind": "fork_lottery",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "fork_Rose"
-      ],
-      "roll_unit": 10,
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
-      "title": "Nocturne Special"
-    },
-    "ForkLottery_Kaesi": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
-      },
-      "banner_id": "ForkLottery_Kaesi",
-      "banner_type": "fork",
-      "currency_count": 10,
-      "currency_id": "WeaponGacha",
-      "pool_id": "ForkLottery_Kaesi",
-      "pool_kind": "fork_lottery",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "fork_GoldWool"
-      ],
-      "roll_unit": 10,
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
-      "title": "Pursuit Special"
-    },
-    "ForkLottery_Nanali": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
-      },
-      "banner_id": "ForkLottery_Nanali",
-      "banner_type": "fork",
-      "currency_count": 10,
-      "currency_id": "WeaponGacha",
-      "pool_id": "ForkLottery_Nanali",
-      "pool_kind": "fork_lottery",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "fork_TigerTally"
-      ],
-      "roll_unit": 10,
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
-      "title": "Tiger Special"
-    },
-    "ForkLottery_Xun": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
-      },
-      "banner_id": "ForkLottery_Xun",
-      "banner_type": "fork",
-      "currency_count": 10,
-      "currency_id": "WeaponGacha",
-      "pool_id": "ForkLottery_Xun",
-      "pool_kind": "fork_lottery",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "fork_Time"
-      ],
-      "roll_unit": 10,
-      "rule_id": "fork_lottery_s",
-      "source": {
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json"
-        ]
-      },
-      "title": "Bright Moon Special"
-    },
-    "monopoly_limited_AnHunQu": {
-      "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
-      },
-      "banner_id": "monopoly_limited_AnHunQu",
-      "banner_type": "limited",
-      "end_at": "2026-06-24 05:59:00",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "1004"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
-        ],
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/en/game.json"
-        ]
-      },
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "start_at": "2026-06-03 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "title": "Fading Reverie"
-    },
-    "monopoly_limited_Kaesi": {
-      "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
-      },
-      "banner_id": "monopoly_limited_Kaesi",
-      "banner_type": "limited",
-      "end_at": "2026-07-08 05:59:00",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "1020"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
-        ],
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/en/game.json"
-        ]
-      },
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "start_at": "2026-06-24 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "title": "Forsaken Path"
-    },
-    "monopoly_limited_Nanali": {
-      "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
-      },
-      "banner_id": "monopoly_limited_Nanali",
-      "banner_type": "limited",
-      "end_at": "2026-05-13 05:59:00",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "1010"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
-        ],
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/en/game.json"
-        ]
-      },
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "timezone": "Asia/Shanghai",
-      "title": "The Ichi-daime"
-    },
-    "monopoly_limited_Xun": {
-      "asset_refs": {
-        "featured_portraits": [
-          "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
-        ],
-        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
-      },
-      "banner_id": "monopoly_limited_Xun",
-      "banner_type": "limited",
-      "end_at": "2026-06-03 05:59:00",
-      "pool_id": "CardPool_Character",
-      "pool_kind": "monopoly_limited",
-      "rate_up_4": [],
-      "rate_up_5": [
-        "1052"
-      ],
-      "rule_id": "monopoly_limited",
-      "source": {
-        "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
-        ],
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/en/game.json"
-        ]
-      },
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "start_at": "2026-05-13 05:59:00",
-      "timezone": "Asia/Shanghai",
-      "title": "Misty Tipsy Style"
-    },
-    "monopoly_standard": {
-      "banner_id": "monopoly_standard",
-      "banner_type": "standard",
-      "pool_id": "CardPool_NewRole",
-      "pool_kind": "monopoly_standard",
-      "rate_up_4": [],
-      "rate_up_5": [],
-      "rule_id": "monopoly_standard",
-      "source": {
-        "notes": [
-          "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
-        ],
-        "tables": [
-          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
-          "Localization/en/game.json"
-        ]
-      },
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "title": "Strange Encounters"
-    }
-  },
+  "schema_version": 4,
   "csv_headers": {
     "count": "Quantity",
     "item_name": "Item Name",
@@ -295,68 +10,868 @@
     "secondary_item_name": "Extra Reward",
     "time": "Acquisition Time"
   },
-  "gacha_rules": {
-    "fork_lottery_s": {
-      "carry_scope": "pool_kind",
-      "guarantee_scope": "pool_kind",
-      "hard_pity_5": 60,
-      "hard_up_pity_5": 80,
-      "has_guarantee_5": true,
-      "pickup_win_rate_5": 25,
-      "pool_kind": "fork_lottery",
-      "rule_id": "fork_lottery_s",
-      "rule_text_refs": {
-        "probability_desc": "ui_forkshop_12_anhunqu",
-        "rule_desc_1": "ui_forklottery_rule_04_AnHunQu",
-        "rule_desc_2": "ui_forklottery_rule_05_AnHunQu"
-      },
-      "source": {
-        "notes": [
-          "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
-        ],
-        "tables": [
-          "DataTable/Fork/DT_ForkLotteryPoolData.json",
-          "DataTable/Drop/Client/ClientDropGroupDataTable.json",
-          "DataTable/Drop/DropSequenceDataTable.json"
-        ]
+  "items": {
+    "1003": {
+      "name": "Character·Sakiri",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F3655F",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_003x100.player_003x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_zaowu.YH_lihui_character_zaowu",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11"
       }
     },
-    "monopoly_limited": {
-      "carry_scope": "pool_kind",
-      "guarantee_scope": "unknown",
-      "hard_pity_5": 90,
-      "has_guarantee_5": false,
-      "pool_kind": "monopoly_limited",
-      "rule_id": "monopoly_limited",
-      "rule_text_refs": {
-        "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
-      },
-      "source": {
-        "notes": [
-          "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
-        ],
-        "tables": [
-          "Localization/en/game.json"
-        ]
+    "1004": {
+      "name": "Character·Lacrimosa",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#E7495A",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_004x100.player_004x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
       }
     },
-    "monopoly_standard": {
-      "carry_scope": "pool_kind",
-      "guarantee_scope": "unknown",
-      "hard_pity_5": 90,
-      "has_guarantee_5": false,
-      "pool_kind": "monopoly_standard",
-      "rule_id": "monopoly_standard",
-      "rule_text_refs": {
-        "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
-      },
-      "source": {
-        "notes": [
-          "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
-        ],
-        "tables": [
-          "Localization/en/game.json"
-        ]
+    "1008": {
+      "name": "Character·Skia",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#5D667B",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_008x100.player_008x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_langren.YH_lihui_character_langren",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07"
+      }
+    },
+    "1010": {
+      "name": "Character·Nanally",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F24B7E",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_010x100.player_010x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
+      }
+    },
+    "1019": {
+      "name": "Character·Mint",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#79E6EB",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_019x100.player_019x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_bohe.YH_lihui_character_bohe",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10"
+      }
+    },
+    "1020": {
+      "name": "Character·Haniel",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#F5C7EC",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_020.player_020",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
+      }
+    },
+    "1021": {
+      "name": "Character·Edgar",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#D5EFFF",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_021_100.player_021_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_aidejia.YH_lihui_character_aidejia",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14"
+      }
+    },
+    "1023": {
+      "name": "Character·Baicang",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#CBC2D9",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_028x100.player_028x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_baizhang.YH_lihui_character_baizhang",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13"
+      }
+    },
+    "1025": {
+      "name": "Character·Hathor",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#FFFFFF",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_012_100.player_012_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_hahuosuoer.YH_lihui_character_hahuosuoer",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12"
+      }
+    },
+    "1033": {
+      "name": "Character·Adler",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#EDCA95",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_015x100.player_015x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_adele.YH_lihui_character_adele",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09"
+      }
+    },
+    "1039": {
+      "name": "Character·Fadia",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#B095D9",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_027x100.player_027x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_fadiya.YH_lihui_character_fadiya",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08"
+      }
+    },
+    "1052": {
+      "name": "Character·Hotori",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#E7495A",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_013x100.player_013x100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
+      }
+    },
+    "1054": {
+      "name": "Character·Daffodill",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#42A6FF",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_005_100.player_005_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_dafudier.YH_lihui_character_dafudier",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06"
+      }
+    },
+    "1055": {
+      "name": "Character·Jiuyuan",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#A595D1",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_104_100.player_104_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_jiuyuan.YH_lihui_character_jiuyuan",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05"
+      }
+    },
+    "1070": {
+      "name": "Character·Aurelia",
+      "rarity": 4,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#40CEFE",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_haiyue_100.player_haiyue_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_haiyue1.YH_lihui_fashionshop_haiyue1",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16"
+      }
+    },
+    "1073": {
+      "name": "Character·Chiz",
+      "rarity": 5,
+      "category": "character",
+      "domain_type": "character",
+      "color": "#D9A5BC",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_073_100.player_073_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xiaozhi.YH_lihui_character_xiaozhi",
+        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17"
+      }
+    },
+    "Characterawaken_Adler": {
+      "name": "Item·Mind Shard - Adler",
+      "rarity": 4,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Adler.Characterawaken_Adler",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Adler.Characterawaken_Adler",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_015_256.YH_UI_awaken_015_256"
+      }
+    },
+    "Characterawaken_Hathor": {
+      "name": "Item·Mind Shard - Hathor",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Hathor.Characterawaken_Hathor",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Hathor.Characterawaken_Hathor",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_025_256.YH_UI_awaken_025_256"
+      }
+    },
+    "Characterawaken_Jin": {
+      "name": "Item·Mind Shard - Hotori",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Jin.Characterawaken_Jin",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Jin.Characterawaken_Jin",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_052_256.YH_UI_awaken_052_256"
+      }
+    },
+    "Characterawaken_Mint": {
+      "name": "Item·Mind Shard - Mint",
+      "rarity": 4,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Mint.Characterawaken_Mint",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Mint.Characterawaken_Mint",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_019_256.YH_UI_awaken_019_256"
+      }
+    },
+    "Characterawaken_Nanally": {
+      "name": "Item·Mind Shard - Nanally",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Nanally.Characterawaken_Nanally",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Nanally.Characterawaken_Nanally",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_010_256.YH_UI_awaken_010_256"
+      }
+    },
+    "Characterawaken_Sagiri": {
+      "name": "Item·Mind Shard - Sakiri",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Sagiri.Characterawaken_Sagiri",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_003_256.YH_UI_awaken_003_256"
+      }
+    },
+    "Characterawaken_cang": {
+      "name": "Item·Mind Shard - Baicang",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_cang.Characterawaken_cang",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_cang.Characterawaken_cang",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_023_256.YH_UI_awaken_023_256"
+      }
+    },
+    "Characterawaken_daffodill": {
+      "name": "Item·Mind Shard - Daffodill",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_daffodill.Characterawaken_daffodill",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_daffodill.Characterawaken_daffodill",
+        "portrait": "/Game/UI/UI_Icon/Item/UI_YH_Item_Icon_linshi_Oversea.UI_YH_Item_Icon_linshi_Oversea"
+      }
+    },
+    "Characterawaken_fadia": {
+      "name": "Item·Mind Shard - Fadia",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_fadia.Characterawaken_fadia",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_fadia.Characterawaken_fadia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_027_256.YH_UI_awaken_027_256"
+      }
+    },
+    "Characterawaken_lacrimosa": {
+      "name": "Item·Mind Shard - Lacrimosa",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_004_256.YH_UI_awaken_004_256"
+      }
+    },
+    "Characterawaken_skia": {
+      "name": "Item·Mind Shard - Skia",
+      "rarity": 4,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_skia.Characterawaken_skia",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_skia.Characterawaken_skia",
+        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_008_256.YH_UI_awaken_008_256"
+      }
+    },
+    "DiceNormal": {
+      "name": "Item·Fabricated Dice",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/item_100/DiceNormal_256.DiceNormal_256",
+        "head_icon": "/Game/UI/UI_Icon/item_100/DiceNormal_100.DiceNormal_100",
+        "portrait": "/Game/UI/UI_Icon/Item/DiceNormal.DIceNormal"
+      }
+    },
+    "Dice_ticket_01": {
+      "name": "Item·Warp Piece",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer",
+        "head_icon": "/Game/UI/UI_Icon/item_100/gold_chequer_100.gold_chequer_100"
+      }
+    },
+    "Dice_ticket_02": {
+      "name": "Item·Lost Piece",
+      "rarity": 4,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer",
+        "head_icon": "/Game/UI/UI_Icon/item_100/silver_chequer_100.silver_chequer_100"
+      }
+    },
+    "Dicelimite": {
+      "name": "Item·Solid Dice",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Dicelimite_100.Dicelimite_100"
+      }
+    },
+    "Fashion_Glide_1004": {
+      "name": "Glider·Tomato Duo",
+      "rarity": 4,
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly09.YH_UI_shizhuang_big_fly09",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu1.YH_UI_1024_anhunqu1"
+      }
+    },
+    "Fashion_Glide_1010": {
+      "name": "Glider·Underboss-of-the-Underboss",
+      "rarity": 4,
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly05.YH_UI_shizhuang_big_fly05",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi1.YH_lihui_fashionshop_huaxiangyi1"
+      }
+    },
+    "Fashion_Glide_1052": {
+      "name": "Glider·Orchid Breeze",
+      "rarity": 4,
+      "category": "appearance",
+      "domain_type": "appearance",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
+        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly07.YH_UI_shizhuang_big_fly07",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi2.YH_lihui_fashionshop_huaxiangyi2"
+      }
+    },
+    "Fashion_character_1004_01": {
+      "name": "Outfit·Gilded Rhapsody",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_004_3_100.player_004_3_100",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu4.YH_lihui_fashionshopi_anhunqu4"
+      }
+    },
+    "Fashion_character_1010": {
+      "name": "Outfit·Phoenix Kick",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_010_3_100.player_010_3_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali3.YH_lihui_character_nanali3"
+      }
+    },
+    "Fashion_character_1052_01": {
+      "name": "Outfit·Priceless Orchid",
+      "rarity": 5,
+      "category": "inventory",
+      "domain_type": "inventory",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_052_3_100.player_052_3_100",
+        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_xun1.YH_lihui_fashionshop_xun1"
+      }
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Mod Parts·Golden Breeze - Livery",
+      "rarity": 5,
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_V016_Decal_002.YH_UI_car_icon_V016_Decal_002",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai11.YH_lihui_character_cai11"
+      }
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Mod Parts·Tomato Cruise - Livery",
+      "rarity": 5,
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_V021_Decal_02.YH_UI_car_icon_V021_Decal_02",
+        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu2.YH_UI_1024_anhunqu2"
+      }
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Mod Parts·Tiger Incoming! - Livery",
+      "rarity": 5,
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_decal_Nanally_01.YH_UI_car_icon_decal_Nanally_01",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai3.YH_lihui_character_cai3"
+      }
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Mod Parts·Autumn Haze - Livery",
+      "rarity": 5,
+      "category": "vehicle_module",
+      "domain_type": "vehicle_module",
+      "color": "#000000",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_V024_Decal_003.YH_UI_car_icon_V024_Decal_003",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai5.YH_lihui_character_cai5"
+      }
+    },
+    "fork_Arachne": {
+      "name": "Arc·Eternal Waltz",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_100.fork_Arachne_100"
+      }
+    },
+    "fork_BitGame": {
+      "name": "Arc·Blow up the Crowd",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_100.fork_BitGame_100"
+      }
+    },
+    "fork_BitterCake": {
+      "name": "Arc·The Good, The Bad, The Bitter",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_100.fork_BitterCake_100"
+      }
+    },
+    "fork_BlackBook": {
+      "name": "Arc·Youthful Fantasy",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_100.fork_BlackBook_100"
+      }
+    },
+    "fork_Butterfly": {
+      "name": "Arc·Reality Refuge",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_256.fork_Butterfly_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_100.fork_Butterfly_100"
+      }
+    },
+    "fork_GoldWool": {
+      "name": "Arc·What's Desired",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_256.fork_GoldWool_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_100.fork_GoldWool_100"
+      }
+    },
+    "fork_Kite": {
+      "name": "Arc·Watch Your Heads!",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Kite_100.fork_Kite_100"
+      }
+    },
+    "fork_Nakupeda": {
+      "name": "Arc·Your Happiness is Priceless",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_100.fork_Nakupeda_100"
+      }
+    },
+    "fork_PaperPlane": {
+      "name": "Arc·Clear Skies",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_100.fork_PaperPlane_100"
+      }
+    },
+    "fork_PoliceRat": {
+      "name": "Arc·Hethereau's Keeper",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_100.fork_PoliceRat_100"
+      }
+    },
+    "fork_Prokaryon": {
+      "name": "Arc·Us.",
+      "rarity": 3,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_100.fork_yuanheti_100"
+      }
+    },
+    "fork_Rose": {
+      "name": "Arc·The Last Rose",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Rose_256.fork_Rose_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Rose_100.fork_Rose_100"
+      }
+    },
+    "fork_TigerTally": {
+      "name": "Arc·Ready-Ready",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_256.fork_TigerTally_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_100.fork_TigerTally_100"
+      }
+    },
+    "fork_Time": {
+      "name": "Arc·Marching Beyond Time",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_Time_256.fork_Time_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Time_100.fork_Time_100"
+      }
+    },
+    "fork_appliance": {
+      "name": "Arc·\"Real Music\"",
+      "rarity": 3,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_100.fork_fudianling_100"
+      }
+    },
+    "fork_bopu": {
+      "name": "Arc·Cosmos Daze, Wild Reverie",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_bopu_100.fork_bopu_100"
+      }
+    },
+    "fork_dustbin": {
+      "name": "Arc·Dangerous Game",
+      "rarity": 3,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_100.fork_dustbin_100"
+      }
+    },
+    "fork_jiaojuan": {
+      "name": "Arc·Shiny Days",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_100.fork_jiaojuan_100"
+      }
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arc·Camellia Society",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_100.fork_jingmotingyuan_100"
+      }
+    },
+    "fork_koinobori": {
+      "name": "Arc·A Time Will Come",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_100.fork_koinobori_100"
+      }
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arc·Mind Royale",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_100.fork_lingganzhongjiezhe_100"
+      }
+    },
+    "fork_mamen": {
+      "name": "Arc·Contemplative Cat",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mamen_100.fork_mamen_100"
+      }
+    },
+    "fork_mofeikesi": {
+      "name": "Arc·Good Boy's Grand Adventure",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_100.fork_mofeikesi_100"
+      }
+    },
+    "fork_nonos": {
+      "name": "Arc·First Step to Success",
+      "rarity": 3,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_nonos_100.fork_nonos_100"
+      }
+    },
+    "fork_oulaquantao": {
+      "name": "Arc·Oraora!",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_100.fork_oulaquantao_100"
+      }
+    },
+    "fork_rishi": {
+      "name": "Arc·Day Off",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_rishi_100.fork_rishi_100"
+      }
+    },
+    "fork_spider": {
+      "name": "Arc·Failing You, Heavy in My Heart",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_spider_100.fork_spider_100"
+      }
+    },
+    "fork_tuansanlang": {
+      "name": "Arc·The Great Thief",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_100.fork_tuansanlang_100"
+      }
+    },
+    "fork_vine": {
+      "name": "Arc·Be Happy",
+      "rarity": 3,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_100.fork_HugVine_100"
+      }
+    },
+    "fork_wuhuakuang": {
+      "name": "Arc·The Forgotten",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_100.fork_wuhuakuang_100"
+      }
+    },
+    "fork_wushoutieyu": {
+      "name": "Arc·Raging Flames",
+      "rarity": 5,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_100.fork_wushoutieyu_100"
+      }
+    },
+    "fork_yaodao": {
+      "name": "Arc·Drawn Blade",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_100.fork_yaodao_100"
+      }
+    },
+    "fork_yuren": {
+      "name": "Arc·Umbrella",
+      "rarity": 4,
+      "category": "fork",
+      "domain_type": "fork",
+      "color": "#000000",
+      "asset_refs": {
+        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuren_100.fork_yuren_100"
       }
     }
   },
@@ -370,919 +885,440 @@
     "Fork_TigerTally": "fork_TigerTally",
     "fork_Vine": "fork_vine"
   },
-  "items": {
-    "1003": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng11.YH_UI_choukahuodong_xinzheng11",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_zaowu.YH_lihui_character_zaowu"
-      },
-      "category": "character",
-      "color": "#F3655F",
-      "domain_type": "character",
-      "name": "Character·Sakiri",
-      "rarity": 5
-    },
-    "1004": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
-      },
-      "category": "character",
-      "color": "#E7495A",
-      "domain_type": "character",
-      "name": "Character·Lacrimosa",
-      "rarity": 5
-    },
-    "1008": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng07.YH_UI_choukahuodong_xinzheng07",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_langren.YH_lihui_character_langren"
-      },
-      "category": "character",
-      "color": "#5D667B",
-      "domain_type": "character",
-      "name": "Character·Skia",
-      "rarity": 4
-    },
-    "1010": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
-      },
-      "category": "character",
-      "color": "#F24B7E",
-      "domain_type": "character",
-      "name": "Character·Nanally",
-      "rarity": 5
-    },
-    "1019": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng10.YH_UI_choukahuodong_xinzheng10",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_bohe.YH_lihui_character_bohe"
-      },
-      "category": "character",
-      "color": "#79E6EB",
-      "domain_type": "character",
-      "name": "Character·Mint",
-      "rarity": 4
-    },
-    "1020": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
-      },
-      "category": "character",
-      "color": "#F5C7EC",
-      "domain_type": "character",
-      "name": "Character·Haniel",
-      "rarity": 4
-    },
-    "1021": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng14.YH_UI_choukahuodong_xinzheng14",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_aidejia.YH_lihui_character_aidejia"
-      },
-      "category": "character",
-      "color": "#D5EFFF",
-      "domain_type": "character",
-      "name": "Character·Edgar",
-      "rarity": 4
-    },
-    "1023": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng13.YH_UI_choukahuodong_xinzheng13",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_baizhang.YH_lihui_character_baizhang"
-      },
-      "category": "character",
-      "color": "#CBC2D9",
-      "domain_type": "character",
-      "name": "Character·Baicang",
-      "rarity": 5
-    },
-    "1025": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng12.YH_UI_choukahuodong_xinzheng12",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_hahuosuoer.YH_lihui_character_hahuosuoer"
-      },
-      "category": "character",
-      "color": "#FFFFFF",
-      "domain_type": "character",
-      "name": "Character·Hathor",
-      "rarity": 5
-    },
-    "1033": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng09.YH_UI_choukahuodong_xinzheng09",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_adele.YH_lihui_character_adele"
-      },
-      "category": "character",
-      "color": "#EDCA95",
-      "domain_type": "character",
-      "name": "Character·Adler",
-      "rarity": 4
-    },
-    "1039": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng08.YH_UI_choukahuodong_xinzheng08",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_fadiya.YH_lihui_character_fadiya"
-      },
-      "category": "character",
-      "color": "#B095D9",
-      "domain_type": "character",
-      "name": "Character·Fadia",
-      "rarity": 5
-    },
-    "1052": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
-      },
-      "category": "character",
-      "color": "#E7495A",
-      "domain_type": "character",
-      "name": "Character·Hotori",
-      "rarity": 5
-    },
-    "1054": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng06.YH_UI_choukahuodong_xinzheng06",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_dafudier.YH_lihui_character_dafudier"
-      },
-      "category": "character",
-      "color": "#42A6FF",
-      "domain_type": "character",
-      "name": "Character·Daffodill",
-      "rarity": 5
-    },
-    "1055": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng05.YH_UI_choukahuodong_xinzheng05",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_jiuyuan.YH_lihui_character_jiuyuan"
-      },
-      "category": "character",
-      "color": "#A595D1",
-      "domain_type": "character",
-      "name": "Character·Jiuyuan",
-      "rarity": 5
-    },
-    "1070": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng16.YH_UI_choukahuodong_xinzheng16",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_haiyue1.YH_lihui_fashionshop_haiyue1"
-      },
-      "category": "character",
-      "color": "#40CEFE",
-      "domain_type": "character",
-      "name": "Character·Aurelia",
-      "rarity": 4
-    },
-    "1073": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
-        "material": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng17.YH_UI_choukahuodong_xinzheng17",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_xiaozhi.YH_lihui_character_xiaozhi"
-      },
-      "category": "character",
-      "color": "#D9A5BC",
-      "domain_type": "character",
-      "name": "Character·Chiz",
-      "rarity": 5
-    },
-    "Characterawaken_Adler": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Adler.Characterawaken_Adler",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Adler.Characterawaken_Adler",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_015_256.YH_UI_awaken_015_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Adler",
-      "rarity": 4
-    },
-    "Characterawaken_Hathor": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Hathor.Characterawaken_Hathor",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Hathor.Characterawaken_Hathor",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_025_256.YH_UI_awaken_025_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Hathor",
-      "rarity": 5
-    },
-    "Characterawaken_Jin": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Jin.Characterawaken_Jin",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Jin.Characterawaken_Jin",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_052_256.YH_UI_awaken_052_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Hotori",
-      "rarity": 5
-    },
-    "Characterawaken_Mint": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Mint.Characterawaken_Mint",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Mint.Characterawaken_Mint",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_019_256.YH_UI_awaken_019_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Mint",
-      "rarity": 4
-    },
-    "Characterawaken_Nanally": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Nanally.Characterawaken_Nanally",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Nanally.Characterawaken_Nanally",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_010_256.YH_UI_awaken_010_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Nanally",
-      "rarity": 5
-    },
-    "Characterawaken_Sagiri": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_Sagiri.Characterawaken_Sagiri",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_Sagiri.Characterawaken_Sagiri",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_003_256.YH_UI_awaken_003_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Sakiri",
-      "rarity": 5
-    },
-    "Characterawaken_cang": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_cang.Characterawaken_cang",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_cang.Characterawaken_cang",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_023_256.YH_UI_awaken_023_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Baicang",
-      "rarity": 5
-    },
-    "Characterawaken_daffodill": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_daffodill.Characterawaken_daffodill",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_daffodill.Characterawaken_daffodill",
-        "portrait": "/Game/UI/UI_Icon/Item/UI_YH_Item_Icon_linshi_Oversea.UI_YH_Item_Icon_linshi_Oversea"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Daffodill",
-      "rarity": 5
-    },
-    "Characterawaken_fadia": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_fadia.Characterawaken_fadia",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_fadia.Characterawaken_fadia",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_027_256.YH_UI_awaken_027_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Fadia",
-      "rarity": 5
-    },
-    "Characterawaken_lacrimosa": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_lacrimosa.Characterawaken_lacrimosa",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_004_256.YH_UI_awaken_004_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Lacrimosa",
-      "rarity": 5
-    },
-    "Characterawaken_skia": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Characterawaken_skia.Characterawaken_skia",
-        "icon": "/Game/UI/UI_Icon/Item/Characterawaken_skia.Characterawaken_skia",
-        "portrait": "/Game/UI/UI_Icon/Item/YH_UI_awaken_008_256.YH_UI_awaken_008_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Mind Shard - Skia",
-      "rarity": 4
-    },
-    "DiceNormal": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/DiceNormal_100.DiceNormal_100",
-        "icon": "/Game/UI/UI_Icon/item_100/DiceNormal_256.DiceNormal_256",
-        "portrait": "/Game/UI/UI_Icon/Item/DiceNormal.DIceNormal"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Fabricated Dice",
-      "rarity": 5
-    },
-    "Dice_ticket_01": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/gold_chequer_100.gold_chequer_100",
-        "icon": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer",
-        "portrait": "/Game/UI/UI_Icon/Item/gold_chequer.gold_chequer"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Warp Piece",
-      "rarity": 5
-    },
-    "Dice_ticket_02": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/silver_chequer_100.silver_chequer_100",
-        "icon": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer",
-        "portrait": "/Game/UI/UI_Icon/Item/silver_chequer.silver_chequer"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Lost Piece",
-      "rarity": 4
-    },
-    "Dicelimite": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/item_100/Dicelimite_100.Dicelimite_100",
-        "icon": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256",
-        "portrait": "/Game/UI/UI_Icon/item_100/Dicelimite_256.Dicelimite_256"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Item·Solid Dice",
-      "rarity": 5
-    },
-    "Fashion_Glide_1004": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly09.YH_UI_shizhuang_big_fly09",
-        "head_icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
-        "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1",
-        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu1.YH_UI_1024_anhunqu1"
-      },
-      "category": "appearance",
-      "color": "#000000",
-      "domain_type": "appearance",
-      "name": "Glider·Tomato Duo",
-      "rarity": 4
-    },
-    "Fashion_Glide_1010": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly05.YH_UI_shizhuang_big_fly05",
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi1.YH_lihui_fashionshop_huaxiangyi1"
-      },
-      "category": "appearance",
-      "color": "#000000",
-      "domain_type": "appearance",
-      "name": "Glider·Underboss-of-the-Underboss",
-      "rarity": 4
-    },
-    "Fashion_Glide_1052": {
-      "asset_refs": {
-        "banner": "/Game/UI/UI/Appearance/Fashion/2160/YH_UI_shizhuang_big_fly07.YH_UI_shizhuang_big_fly07",
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_huaxiangyi2.YH_lihui_fashionshop_huaxiangyi2"
-      },
-      "category": "appearance",
-      "color": "#000000",
-      "domain_type": "appearance",
-      "name": "Glider·Orchid Breeze",
-      "rarity": 4
-    },
-    "Fashion_character_1004_01": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu4.YH_lihui_fashionshopi_anhunqu4"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Outfit·Gilded Rhapsody",
-      "rarity": 5
-    },
-    "Fashion_character_1010": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_character_nanali3.YH_lihui_character_nanali3"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Outfit·Phoenix Kick",
-      "rarity": 5
-    },
-    "Fashion_character_1052_01": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
-        "portrait": "/Game/UI/UI/Gacha/YH_lihui_fashionshop_xun1.YH_lihui_fashionshop_xun1"
-      },
-      "category": "inventory",
-      "color": "#000000",
-      "domain_type": "inventory",
-      "name": "Outfit·Priceless Orchid",
-      "rarity": 5
-    },
-    "Fashion_vehicleSkin_1052_V016": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicleSkin_1052_V016.Fashion_vehicleSkin_1052_V016",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai11.YH_lihui_character_cai11"
-      },
-      "category": "vehicle_module",
-      "color": "#000000",
-      "domain_type": "vehicle_module",
-      "name": "Mod Parts·Golden Breeze - Livery",
-      "rarity": 5
-    },
-    "Fashion_vehicle_1004_V021": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1004_V021.Fashion_vehicle_1004_V021",
-        "portrait": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_1024_anhunqu2.YH_UI_1024_anhunqu2"
-      },
-      "category": "vehicle_module",
-      "color": "#000000",
-      "domain_type": "vehicle_module",
-      "name": "Mod Parts·Tomato Cruise - Livery",
-      "rarity": 5
-    },
-    "Fashion_vehicle_1010_V008": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1010_V008.Fashion_vehicle_1010_V008",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai3.YH_lihui_character_cai3"
-      },
-      "category": "vehicle_module",
-      "color": "#000000",
-      "domain_type": "vehicle_module",
-      "name": "Mod Parts·Tiger Incoming! - Livery",
-      "rarity": 5
-    },
-    "Fashion_vehicle_1052_V024": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
-        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_character_cai5.YH_lihui_character_cai5"
-      },
-      "category": "vehicle_module",
-      "color": "#000000",
-      "domain_type": "vehicle_module",
-      "name": "Mod Parts·Autumn Haze - Livery",
-      "rarity": 5
-    },
-    "fork_Arachne": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_100.fork_Arachne_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Arachne_256.fork_Arachne_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Eternal Waltz",
-      "rarity": 5
-    },
-    "fork_BitGame": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_100.fork_BitGame_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitGame_256.fork_BitGame_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Blow up the Crowd",
-      "rarity": 5
-    },
-    "fork_BitterCake": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_100.fork_BitterCake_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BitterCake_256.fork_BitterCake_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·The Good, The Bad, The Bitter",
-      "rarity": 4
-    },
-    "fork_BlackBook": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_100.fork_BlackBook_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_BlackBook_256.fork_BlackBook_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Youthful Fantasy",
-      "rarity": 5
-    },
-    "fork_Butterfly": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_100.fork_Butterfly_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Butterfly_256.fork_Butterfly_256"
-      },
-      "category": "fork",
-      "domain_type": "fork",
-      "name": "Arc·Reality Refuge",
-      "rarity": 5
-    },
-    "fork_GoldWool": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_100.fork_GoldWool_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_GoldWool_256.fork_GoldWool_256"
-      },
-      "category": "fork",
-      "domain_type": "fork",
-      "name": "Arc·What's Desired",
-      "rarity": 5
-    },
-    "fork_Kite": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Kite_100.fork_Kite_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Kite_256.fork_Kite_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Watch Your Heads!",
-      "rarity": 4
-    },
-    "fork_Nakupeda": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_100.fork_Nakupeda_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_Nakupeda_256.fork_Nakupeda_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Your Happiness is Priceless",
-      "rarity": 5
-    },
-    "fork_PaperPlane": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_100.fork_PaperPlane_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_PaperPlane_256.fork_PaperPlane_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Clear Skies",
-      "rarity": 4
-    },
-    "fork_PoliceRat": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_100.fork_PoliceRat_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_PoliceRat_256.fork_PoliceRat_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Hethereau's Keeper",
-      "rarity": 5
-    },
-    "fork_Prokaryon": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_100.fork_yuanheti_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuanheti_256.fork_yuanheti_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Us.",
-      "rarity": 3
-    },
-    "fork_Rose": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Rose_100.fork_Rose_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Rose_256.fork_Rose_256"
-      },
-      "category": "fork",
-      "domain_type": "fork",
-      "name": "Arc·The Last Rose",
-      "rarity": 5
-    },
-    "fork_TigerTally": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_100.fork_TigerTally_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_TigerTally_256.fork_TigerTally_256"
-      },
-      "category": "fork",
-      "domain_type": "fork",
-      "name": "Arc·Ready-Ready",
-      "rarity": 5
-    },
-    "fork_Time": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_Time_100.fork_Time_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_Time_256.fork_Time_256"
-      },
-      "category": "fork",
-      "domain_type": "fork",
-      "name": "Arc·Marching Beyond Time",
-      "rarity": 5
-    },
-    "fork_appliance": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_100.fork_fudianling_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_fudianling_256.fork_fudianling_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·\"Real Music\"",
-      "rarity": 3
-    },
-    "fork_bopu": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_bopu_100.fork_bopu_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_bopu_256.fork_bopu_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Cosmos Daze, Wild Reverie",
-      "rarity": 4
-    },
-    "fork_dustbin": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_100.fork_dustbin_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_dustbin_256.fork_dustbin_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Dangerous Game",
-      "rarity": 3
-    },
-    "fork_jiaojuan": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_100.fork_jiaojuan_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_jiaojuan_256.fork_jiaojuan_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Shiny Days",
-      "rarity": 4
-    },
-    "fork_jingmotingyuan": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_100.fork_jingmotingyuan_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_jingmotingyuan_256.fork_jingmotingyuan_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Camellia Society",
-      "rarity": 5
-    },
-    "fork_koinobori": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_100.fork_koinobori_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_koinobori_256.fork_koinobori_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·A Time Will Come",
-      "rarity": 4
-    },
-    "fork_lingganzhongjiezhe": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_100.fork_lingganzhongjiezhe_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_lingganzhongjiezhe_256.fork_lingganzhongjiezhe_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Mind Royale",
-      "rarity": 4
-    },
-    "fork_mamen": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mamen_100.fork_mamen_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_mamen_256.fork_mamen_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Contemplative Cat",
-      "rarity": 5
-    },
-    "fork_mofeikesi": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_100.fork_mofeikesi_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_mofeikesi_256.fork_mofeikesi_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Good Boy's Grand Adventure",
-      "rarity": 5
-    },
-    "fork_nonos": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_nonos_100.fork_nonos_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_nonos_256.fork_nonos_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·First Step to Success",
-      "rarity": 3
-    },
-    "fork_oulaquantao": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_100.fork_oulaquantao_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_oulaquantao_256.fork_oulaquantao_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Oraora!",
-      "rarity": 4
-    },
-    "fork_rishi": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_rishi_100.fork_rishi_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Day Off",
-      "rarity": 5
-    },
-    "fork_spider": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_spider_100.fork_spider_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_spider_256.fork_spider_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Failing You, Heavy in My Heart",
-      "rarity": 4
-    },
-    "fork_tuansanlang": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_100.fork_tuansanlang_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_tuansanlang_256.fork_tuansanlang_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·The Great Thief",
-      "rarity": 4
-    },
-    "fork_vine": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_100.fork_HugVine_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_HugVine_256.fork_HugVine_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Be Happy",
-      "rarity": 3
-    },
-    "fork_wuhuakuang": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_100.fork_wuhuakuang_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_wuhuakuang_256.fork_wuhuakuang_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·The Forgotten",
-      "rarity": 5
-    },
-    "fork_wushoutieyu": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_100.fork_wushoutieyu_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_wushoutieyu_256.fork_wushoutieyu_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Raging Flames",
-      "rarity": 5
-    },
-    "fork_yaodao": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_100.fork_yaodao_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yaodao_256.fork_yaodao_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Drawn Blade",
-      "rarity": 4
-    },
-    "fork_yuren": {
-      "asset_refs": {
-        "head_icon": "/Game/UI/UI_Icon/Fork/fork_yuren_100.fork_yuren_100",
-        "icon": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256",
-        "portrait": "/Game/UI/UI_Icon/Fork/fork_yuren_256.fork_yuren_256"
-      },
-      "category": "fork",
-      "color": "#000000",
-      "domain_type": "fork",
-      "name": "Arc·Umbrella",
-      "rarity": 4
+  "pools": {
+    "1": {
+      "name": "Miracle Box"
+    },
+    "CardPool_Character": {
+      "name": "Limited Board",
+      "group_label": "Limited Board",
+      "title_windows": [
+        {
+          "end_at_tz8": "2026-05-13 05:59:00",
+          "title": "The Ichi-daime"
+        },
+        {
+          "end_at_tz8": "2026-06-03 05:59:00",
+          "title": "Misty Tipsy Style"
+        },
+        {
+          "end_at_tz8": "2026-06-24 05:59:00",
+          "title": "Fading Reverie"
+        },
+        {
+          "end_at_tz8": "2026-07-08 05:59:00",
+          "title": "Forsaken Path"
+        }
+      ],
+      "banner_ids": [
+        "monopoly_limited_AnHunQu",
+        "monopoly_limited_Kaesi",
+        "monopoly_limited_Nanali",
+        "monopoly_limited_Xun"
+      ]
+    },
+    "CardPool_NewRole": {
+      "name": "Standard Board",
+      "group_label": "Standard Board",
+      "title": "Strange Encounters",
+      "banner_ids": [
+        "monopoly_standard"
+      ]
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Nocturne Special",
+      "pickup_item_ids": [
+        "fork_Rose"
+      ],
+      "banner_ids": [
+        "ForkLottery_AnHunQu"
+      ]
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Pursuit Special",
+      "pickup_item_ids": [
+        "fork_GoldWool"
+      ],
+      "banner_ids": [
+        "ForkLottery_Kaesi"
+      ]
+    },
+    "ForkLottery_Nanali": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Tiger Special",
+      "pickup_item_ids": [
+        "fork_TigerTally"
+      ],
+      "banner_ids": [
+        "ForkLottery_Nanali"
+      ]
+    },
+    "ForkLottery_Xun": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Bright Moon Special",
+      "pickup_item_ids": [
+        "fork_Time"
+      ],
+      "banner_ids": [
+        "ForkLottery_Xun"
+      ]
+    }
+  },
+  "banners": {
+    "monopoly_standard": {
+      "banner_id": "monopoly_standard",
+      "pool_id": "CardPool_NewRole",
+      "pool_kind": "monopoly_standard",
+      "banner_type": "standard",
+      "title": "Strange Encounters",
+      "rate_up_5": [],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_standard",
+      "source": {
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Standard pool uses the available monopoly lottery table; banner instance is not explicit."
+        ]
+      }
+    },
+    "monopoly_limited_Nanali": {
+      "banner_id": "monopoly_limited_Nanali",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "The Ichi-daime",
+      "end_at": "2026-05-13 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1010"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up use available lottery data and localized text."
+        ]
+      },
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_nanali.YH_lihui_character_nanali"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng01.YH_UI_choukahuodong_xinzheng01"
+      }
+    },
+    "monopoly_limited_Xun": {
+      "banner_id": "monopoly_limited_Xun",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Misty Tipsy Style",
+      "end_at": "2026-06-03 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1052"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up use available lottery data and localized text."
+        ]
+      },
+      "start_at": "2026-05-13 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_xun.YH_lihui_character_xun"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng02.YH_UI_choukahuodong_xinzheng02"
+      }
+    },
+    "monopoly_limited_AnHunQu": {
+      "banner_id": "monopoly_limited_AnHunQu",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Fading Reverie",
+      "end_at": "2026-06-24 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1004"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up use available lottery data and localized text."
+        ]
+      },
+      "start_at": "2026-06-03 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03"
+      }
+    },
+    "monopoly_limited_Kaesi": {
+      "banner_id": "monopoly_limited_Kaesi",
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "title": "Forsaken Path",
+      "end_at": "2026-07-08 05:59:00",
+      "timezone": "Asia/Shanghai",
+      "rate_up_5": [
+        "1020"
+      ],
+      "rate_up_4": [],
+      "standard_5_pool": [
+        "1003",
+        "1010",
+        "fork_wuhuakuang",
+        "fork_rishi"
+      ],
+      "standard_4_pool": [
+        "1019",
+        "fork_jiaojuan"
+      ],
+      "rule_id": "monopoly_limited",
+      "source": {
+        "tables": [
+          "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Schedule and rate-up use available lottery data and localized text."
+        ]
+      },
+      "start_at": "2026-06-24 05:59:00",
+      "asset_refs": {
+        "featured_portraits": [
+          "/Game/UI/UI/Gacha/YH_lihui_character_haniya.YH_lihui_character_haniya"
+        ],
+        "image": "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng04.YH_UI_choukahuodong_xinzheng04"
+      }
+    },
+    "ForkLottery_Nanali": {
+      "banner_id": "ForkLottery_Nanali",
+      "pool_id": "ForkLottery_Nanali",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Tiger Special",
+      "rate_up_5": [
+        "fork_TigerTally"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_Xun": {
+      "banner_id": "ForkLottery_Xun",
+      "pool_id": "ForkLottery_Xun",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Bright Moon Special",
+      "rate_up_5": [
+        "fork_Time"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_AnHunQu": {
+      "banner_id": "ForkLottery_AnHunQu",
+      "pool_id": "ForkLottery_AnHunQu",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Nocturne Special",
+      "rate_up_5": [
+        "fork_Rose"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    },
+    "ForkLottery_Kaesi": {
+      "banner_id": "ForkLottery_Kaesi",
+      "pool_id": "ForkLottery_Kaesi",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "title": "Pursuit Special",
+      "rate_up_5": [
+        "fork_GoldWool"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "source": {
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json"
+        ]
+      },
+      "asset_refs": {
+        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
+        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
+      },
+      "currency_id": "WeaponGacha",
+      "currency_count": 10,
+      "roll_unit": 10
+    }
+  },
+  "gacha_rules": {
+    "monopoly_limited": {
+      "rule_id": "monopoly_limited",
+      "pool_kind": "monopoly_limited",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "guarantee_scope": "unknown",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_XiandingJishiguize_Des"
+      },
+      "source": {
+        "tables": [
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."
+        ]
+      }
+    },
+    "monopoly_standard": {
+      "rule_id": "monopoly_standard",
+      "pool_kind": "monopoly_standard",
+      "hard_pity_5": 90,
+      "has_guarantee_5": false,
+      "guarantee_scope": "unknown",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "LotteryDes_Changzhujishiguize_Des"
+      },
+      "source": {
+        "tables": [
+          "Localization/en/game.json"
+        ],
+        "notes": [
+          "Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."
+        ]
+      }
+    },
+    "fork_lottery_s": {
+      "rule_id": "fork_lottery_s",
+      "pool_kind": "fork_lottery",
+      "hard_pity_5": 60,
+      "hard_up_pity_5": 80,
+      "pickup_win_rate_5": 25,
+      "has_guarantee_5": true,
+      "guarantee_scope": "pool_kind",
+      "carry_scope": "pool_kind",
+      "rule_text_refs": {
+        "rule_desc_1": "ui_forklottery_rule_04",
+        "rule_desc_2": "ui_forklottery_rule_05",
+        "probability_desc": "ui_forkshop_12"
+      },
+      "source": {
+        "tables": [
+          "DataTable/Fork/DT_ForkLotteryPoolData.json",
+          "DataTable/Drop/Client/ClientDropGroupDataTable.json",
+          "DataTable/Drop/DropSequenceDataTable.json"
+        ],
+        "notes": [
+          "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump."
+        ]
+      }
     }
   },
   "labels": {
@@ -1308,107 +1344,5 @@
     "ui_forkshop_03": "Arc Research Program",
     "ui_forkshop_07": "Details",
     "ui_forkshop_10": "Records"
-  },
-  "pools": {
-    "1": {
-      "name": "Miracle Box"
-    },
-    "CardPool_Character": {
-      "banner_ids": [
-        "monopoly_limited_AnHunQu",
-        "monopoly_limited_Kaesi",
-        "monopoly_limited_Nanali",
-        "monopoly_limited_Xun"
-      ],
-      "group_label": "Limited Board",
-      "name": "Limited Board",
-      "title_windows": [
-        {
-          "end_at_tz8": "2026-05-13 05:59:00",
-          "title": "The Ichi-daime"
-        },
-        {
-          "end_at_tz8": "2026-06-03 05:59:00",
-          "title": "Misty Tipsy Style"
-        },
-        {
-          "end_at_tz8": "2026-06-24 05:59:00",
-          "title": "Fading Reverie"
-        },
-        {
-          "end_at_tz8": "2026-07-08 05:59:00",
-          "title": "Forsaken Path"
-        }
-      ]
-    },
-    "CardPool_NewRole": {
-      "banner_ids": [
-        "monopoly_standard"
-      ],
-      "group_label": "Standard Board",
-      "name": "Standard Board",
-      "title": "Strange Encounters"
-    },
-    "ForkLottery_AnHunQu": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandibanahqbg.UI_YH_Shoppingmall_hupandibanahqbg",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
-      },
-      "banner_ids": [
-        "ForkLottery_AnHunQu"
-      ],
-      "group_label": "Arc Research",
-      "name": "Miracle Box",
-      "pickup_item_ids": [
-        "fork_Rose"
-      ],
-      "title": "Nocturne Special"
-    },
-    "ForkLottery_Kaesi": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_GoldWool.fork_GoldWool"
-      },
-      "banner_ids": [
-        "ForkLottery_Kaesi"
-      ],
-      "group_label": "Arc Research",
-      "name": "Miracle Box",
-      "pickup_item_ids": [
-        "fork_GoldWool"
-      ],
-      "title": "Pursuit Special"
-    },
-    "ForkLottery_Nanali": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_TigerTally.fork_TigerTally"
-      },
-      "banner_ids": [
-        "ForkLottery_Nanali"
-      ],
-      "group_label": "Arc Research",
-      "name": "Miracle Box",
-      "pickup_item_ids": [
-        "fork_TigerTally"
-      ],
-      "title": "Tiger Special"
-    },
-    "ForkLottery_Xun": {
-      "asset_refs": {
-        "background": "/Game/UI/UI/ForkShop/UI_YH_Shoppingmall_hupandiban.UI_YH_Shoppingmall_hupandiban",
-        "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Time.fork_Time"
-      },
-      "banner_ids": [
-        "ForkLottery_Xun"
-      ],
-      "group_label": "Arc Research",
-      "name": "Miracle Box",
-      "pickup_item_ids": [
-        "fork_Time"
-      ],
-      "title": "Bright Moon Special"
-    }
-  },
-  "schema_version": 4
+  }
 }

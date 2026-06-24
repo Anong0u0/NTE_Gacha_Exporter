@@ -41,6 +41,14 @@ struct AssetRefUse {
     max_edge: u32,
 }
 
+#[derive(Debug, Clone)]
+struct EncodedAssetUse {
+    pack_path: String,
+    width: u32,
+    height: u32,
+    sha256: String,
+}
+
 pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBuild, GuiError> {
     if options.out_path.exists() {
         return Err(invalid_pack(format!(
@@ -74,28 +82,42 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
     let mut manifest_assets = Vec::new();
     let mut used_pack_paths = BTreeSet::new();
     let mut encoded_paths: BTreeMap<String, String> = BTreeMap::new();
+    let mut encoded_refs: BTreeMap<String, EncodedAssetUse> = BTreeMap::new();
 
     for asset in refs {
-        let source = options.assets_root.join(&asset.source_path);
-        let encoded = encode_asset_webp(&source, asset.max_edge, f32::from(options.webp_quality))?;
-        let sha256 = sha256_bytes(&encoded.bytes);
-        let pack_path = if let Some(path) = encoded_paths.get(&sha256) {
-            path.clone()
+        let encoded = if let Some(encoded) = encoded_refs.get(&asset.asset_ref) {
+            encoded.clone()
         } else {
-            let path = unique_pack_path(&sha256, &mut used_pack_paths);
-            zip.start_file(&path, options_zip)?;
-            zip.write_all(&encoded.bytes)?;
-            encoded_paths.insert(sha256.clone(), path.clone());
-            path
+            let source = options.assets_root.join(&asset.source_path);
+            let encoded =
+                encode_asset_webp(&source, asset.max_edge, f32::from(options.webp_quality))?;
+            let sha256 = sha256_bytes(&encoded.bytes);
+            let pack_path = if let Some(path) = encoded_paths.get(&sha256) {
+                path.clone()
+            } else {
+                let path = unique_pack_path(&sha256, &mut used_pack_paths);
+                zip.start_file(&path, options_zip)?;
+                zip.write_all(&encoded.bytes)?;
+                encoded_paths.insert(sha256.clone(), path.clone());
+                path
+            };
+            let encoded = EncodedAssetUse {
+                pack_path,
+                width: encoded.width,
+                height: encoded.height,
+                sha256,
+            };
+            encoded_refs.insert(asset.asset_ref.clone(), encoded.clone());
+            encoded
         };
         manifest_assets.push(AssetsPackAsset {
             asset_ref: asset.asset_ref,
             kind: asset.kind,
             source_path: asset.source_path,
-            pack_path,
+            pack_path: encoded.pack_path,
             width: encoded.width,
             height: encoded.height,
-            sha256,
+            sha256: encoded.sha256,
         });
     }
 
@@ -158,7 +180,28 @@ fn collect_asset_ref_uses(maps_dir: &Path) -> Result<Vec<AssetRefUse>, GuiError>
         let value: Value = serde_json::from_str(&text)?;
         collect_asset_refs_from_value(&value, &mut refs);
     }
-    Ok(refs.into_values().collect())
+    let max_edges_by_ref = refs
+        .values()
+        .map(|asset| (asset.asset_ref.clone(), asset.max_edge))
+        .fold(
+            BTreeMap::<String, u32>::new(),
+            |mut max_edges, (asset_ref, max_edge)| {
+                max_edges
+                    .entry(asset_ref)
+                    .and_modify(|current| *current = (*current).max(max_edge))
+                    .or_insert(max_edge);
+                max_edges
+            },
+        );
+    Ok(refs
+        .into_values()
+        .map(|mut asset| {
+            if let Some(max_edge) = max_edges_by_ref.get(&asset.asset_ref) {
+                asset.max_edge = *max_edge;
+            }
+            asset
+        })
+        .collect())
 }
 
 fn collect_asset_refs_from_value(
@@ -221,7 +264,8 @@ fn collect_asset_refs_from_asset_refs(
 
 fn max_edge_for_kind(kind: &str) -> u32 {
     match kind {
-        "icon" | "head_icon" => 128,
+        "icon" => 256,
+        "head_icon" => 128,
         "portrait" | "featured_portraits" => 512,
         "image" | "background" | "banner" => 768,
         _ => 512,
@@ -386,18 +430,37 @@ mod tests {
         let assets_root = temp.path().join("assets");
         let maps_dir = temp.path().join("maps");
         fs::create_dir_all(assets_root.join("UI_Icon/Fork/1024")).unwrap();
+        fs::create_dir_all(assets_root.join("UI/Gacha")).unwrap();
         fs::create_dir_all(&maps_dir).unwrap();
-        let image = image::RgbaImage::from_pixel(2, 2, image::Rgba([255, 0, 0, 255]));
+        let image = image::RgbaImage::from_pixel(512, 512, image::Rgba([255, 0, 0, 255]));
         image
             .save(assets_root.join("UI_Icon/Fork/1024/fork_Rose.png"))
             .unwrap();
+        image
+            .save(assets_root.join("UI_Icon/Fork/1024/fork_Small.png"))
+            .unwrap();
+        image.save(assets_root.join("UI/Gacha/shared.png")).unwrap();
         fs::write(
             maps_dir.join("en.json"),
             r#"{
               "items": {
                 "rose": {
                   "asset_refs": {
-                    "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose"
+                    "icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
+                    "head_icon": "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
+                    "portrait": "/Game/UI/UI/Gacha/shared.shared"
+                  }
+                },
+                "small": {
+                  "asset_refs": {
+                    "head_icon": "/Game/UI/UI_Icon/Fork/1024/fork_Small.fork_Small"
+                  }
+                }
+              },
+              "banners": {
+                "rose": {
+                  "asset_refs": {
+                    "image": "/Game/UI/UI/Gacha/shared.shared"
                   }
                 }
               }
@@ -416,11 +479,46 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(build.manifest.file_count, 1);
+        assert_eq!(build.manifest.file_count, 5);
         let mut zip = zip::ZipArchive::new(fs::File::open(out_path).unwrap()).unwrap();
         let manifest = read_zip_manifest(&mut zip).unwrap();
-        assert_eq!(manifest.assets.len(), 1);
-        assert_eq!(manifest.assets[0].kind, "icon");
-        assert!(zip.by_name(&manifest.assets[0].pack_path).is_ok());
+        assert_eq!(manifest.assets.len(), 5);
+        let icon = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.kind == "icon")
+            .unwrap();
+        let head_icon = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.kind == "head_icon")
+            .unwrap();
+        let standalone_head_icon = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.asset_ref.contains("fork_Small"))
+            .unwrap();
+        let image = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.kind == "image")
+            .unwrap();
+        let portrait = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.kind == "portrait")
+            .unwrap();
+        assert_eq!((icon.width, icon.height), (256, 256));
+        assert_eq!((head_icon.width, head_icon.height), (256, 256));
+        assert_eq!(head_icon.pack_path, icon.pack_path);
+        assert_eq!(
+            (standalone_head_icon.width, standalone_head_icon.height),
+            (128, 128)
+        );
+        assert_eq!((image.width, image.height), (512, 512));
+        assert_eq!((portrait.width, portrait.height), (512, 512));
+        assert_eq!(portrait.pack_path, image.pack_path);
+        assert!(zip.by_name(&icon.pack_path).is_ok());
+        assert!(zip.by_name(&image.pack_path).is_ok());
     }
 }

@@ -22,10 +22,32 @@ fn export_public_json_and_csv_from_store() {
     let exported_json: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
     let first = &exported_json["nte"]["list"][0];
-    assert_eq!(exported_json["info"]["schema_version"], "5.0");
+    assert_eq!(exported_json["info"]["schema_version"], "2.0");
     assert_eq!(first["record_id"], "c1");
     assert_eq!(first["source_order"], 0);
+    assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
+    assert_eq!(first["pool_name"], "王牌一代目");
+    assert_eq!(first["item_name"], "改裝件·萌虎來襲-塗裝");
     assert_eq!(first["rarity"], 5);
+    let expected_keys = vec![
+        "record_id",
+        "source_order",
+        "record_type",
+        "time",
+        "pool_id",
+        "pool_name",
+        "banner_id",
+        "item_id",
+        "item_name",
+        "rarity",
+        "count",
+        "roll_points",
+        "roll_label",
+    ];
+    assert_eq!(
+        first.as_object().unwrap().keys().cloned().collect::<Vec<_>>(),
+        expected_keys
+    );
     assert!(
         first
             .as_object()
@@ -33,24 +55,9 @@ fn export_public_json_and_csv_from_store() {
             .keys()
             .all(|key| !key.contains("resolution"))
     );
-    assert_eq!(first["pool_kind"], "monopoly_limited");
-    assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
-    assert_eq!(first["banner_name"], "王牌一代目");
-    assert_eq!(first["banner_type"], "limited");
-    assert_eq!(first["counts_as_pull"], true);
-    assert_eq!(first["pull_no_in_pool_kind"], 1);
-    assert_eq!(first["pull_no_in_banner"], 1);
-    assert_eq!(first["pity_5_before"], 0);
-    assert_eq!(first["pity_5_after"], 1);
-    assert_eq!(first["ten_pull_progress_before"], 1);
-    assert_eq!(first["ten_pull_progress_after"], 1);
-    for key in removed_four_star_export_keys() {
+    for key in derived_export_keys() {
         assert!(first.get(key).is_none(), "{key} should not be exported");
     }
-    assert!(first.get("hit_rarity").is_none());
-    assert_eq!(first["rate_up_result"], "not_applicable");
-    assert_eq!(first["rule_id"], "monopoly_limited");
-    assert!(first.get("derived").is_none());
 
     let csv = std::fs::read_to_string(csv_path).unwrap();
     assert!(csv.contains("獲得時間"));
@@ -117,22 +124,18 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
         "BPUI_LotteryResult_jidianzengli"
     );
     assert_eq!(records[0]["roll_label"], "集點贈禮");
-    assert_eq!(records[0]["counts_as_pull"], false);
-    assert!(records[0]["pull_no_in_pool_kind"].is_null());
-    assert!(records[0]["ten_pull_progress_before"].is_null());
-    assert!(records[0]["ten_pull_progress_after"].is_null());
-    assert!(records[0].get("pull_no_in_banner").is_none());
+    for key in derived_export_keys() {
+        assert!(records[0].get(key).is_none(), "{key} should not be exported");
+    }
     assert!(records[0].get("roll_points").is_none());
     assert_eq!(
         records[2]["roll_label_id"],
         "BPUI_LotteryResult_chenmiandi"
     );
     assert_eq!(records[2]["roll_label"], "沉眠地");
-    assert_eq!(records[2]["counts_as_pull"], false);
-    assert!(records[2]["pull_no_in_pool_kind"].is_null());
-    assert!(records[2]["ten_pull_progress_before"].is_null());
-    assert!(records[2]["ten_pull_progress_after"].is_null());
-    assert!(records[2].get("pull_no_in_banner").is_none());
+    for key in derived_export_keys() {
+        assert!(records[2].get(key).is_none(), "{key} should not be exported");
+    }
     assert!(records[2].get("roll_points").is_none());
 
     let csv = std::fs::read_to_string(csv_path).unwrap();
@@ -170,12 +173,29 @@ fn data_backup_zip_contains_manifest_and_profile_files() {
     assert!(names.contains(&"profiles/default/last-run.json".to_string()));
 }
 
-fn removed_four_star_export_keys() -> [&'static str; 4] {
+fn derived_export_keys() -> [&'static str; 21] {
     [
+        "banner_name",
+        "banner_type",
+        "banner_version",
+        "counts_as_pull",
+        "global_pull_no",
+        "guarantee_5_after",
+        "guarantee_5_before",
+        "hit_rarity",
+        "pity_5_after",
+        "pity_5_before",
+        "pity_badge",
+        "pool_kind",
+        "pull_no_in_banner",
+        "pull_no_in_pool_kind",
+        "rate_up_result",
+        "rule_id",
+        "ten_pull_progress_after",
+        "ten_pull_progress_before",
         concat!("pity_", "4_before"),
         concat!("pity_", "4_after"),
-        concat!("guarantee_", "4_before"),
-        concat!("guarantee_", "4_after"),
+        "item_kind",
     ]
 }
 

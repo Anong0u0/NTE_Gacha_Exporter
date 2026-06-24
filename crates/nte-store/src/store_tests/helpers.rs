@@ -11,8 +11,8 @@ use nte_core::{
 fn public_document(records: Vec<serde_json::Value>) -> String {
     json!({
         "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "1.0"
+            "schema": nte_core::PUBLIC_JSON_SCHEMA,
+            "schema_version": "2.0"
         },
         "nte": {
             "list": records

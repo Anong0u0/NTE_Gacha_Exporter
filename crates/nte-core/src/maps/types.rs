@@ -87,8 +87,6 @@ pub struct MapPool {
     pub title_windows: Option<Vec<PoolTitleWindow>>,
     pub pickup_item_ids: Option<Vec<String>>,
     pub banner_ids: Option<Vec<String>>,
-    #[serde(default)]
-    pub asset_refs: BTreeMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

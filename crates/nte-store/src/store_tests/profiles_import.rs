@@ -358,21 +358,9 @@ fn fork_pool_missing_from_maps_rejects_entire_import() {
 }
 
 #[test]
-fn public_json_accepts_v1_to_v5_and_rejects_unsupported_major_versions() {
+fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let v1_minor = serde_json::json!({
-        "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "1.7"
-        },
-        "nte": {
-            "list": [
-                record("r1", "CardPool_Character", "fork_dustbin", "2026-01-01 10:00:00")
-            ]
-        }
-    })
-    .to_string();
     let mut v2_record = record(
         "r2",
         "CardPool_Character",
@@ -381,9 +369,11 @@ fn public_json_accepts_v1_to_v5_and_rejects_unsupported_major_versions() {
     );
     v2_record["pool_kind"] = serde_json::json!("monopoly_limited");
     v2_record["pity_5_before"] = serde_json::json!(99);
+    v2_record["banner_id"] = serde_json::json!("ignored_banner");
+    v2_record["rarity"] = serde_json::json!(1);
     let v2_major = serde_json::json!({
         "info": {
-            "schema": "nte-gacha-exporter-export",
+            "schema": nte_core::PUBLIC_JSON_SCHEMA,
             "schema_version": "2.0"
         },
         "nte": {
@@ -391,84 +381,119 @@ fn public_json_accepts_v1_to_v5_and_rejects_unsupported_major_versions() {
         }
     })
     .to_string();
-    let v3_major = serde_json::json!({
-        "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "3.0"
-        },
-        "nte": {
-            "list": [
-                record("r3", "CardPool_Character", "fork_dustbin", "2026-01-01 10:02:00")
-            ]
-        }
-    })
-    .to_string();
-    let v4_major = serde_json::json!({
-        "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "4.0"
-        },
-        "nte": {
-            "list": [
-                record("r4", "CardPool_Character", "fork_dustbin", "2026-01-01 10:03:00")
-            ]
-        }
-    })
-    .to_string();
 
-    assert!(
-        store
-            .import_public_document("default", &v1_minor, "json", None)
-            .is_ok()
-    );
     assert!(
         store
             .import_public_document("default", &v2_major, "json", None)
             .is_ok()
     );
-    assert!(
-        store
-            .import_public_document("default", &v3_major, "json", None)
-            .is_ok()
-    );
-    assert!(
-        store
-            .import_public_document("default", &v4_major, "json", None)
-            .is_ok()
-    );
-    let v5_major = serde_json::json!({
-        "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "5.0"
-        },
-        "nte": {
-            "list": [
-                record("r5", "CardPool_Character", "fork_dustbin", "2026-01-01 10:04:00")
-            ]
-        }
-    })
-    .to_string();
-    assert!(
-        store
-            .import_public_document("default", &v5_major, "json", None)
-            .is_ok()
-    );
-    let v6_major = serde_json::json!({
-        "info": {
-            "schema": "nte-gacha-exporter-export",
-            "schema_version": "6.0"
-        },
-        "nte": {
-            "list": [
-                record("r6", "CardPool_Character", "fork_dustbin", "2026-01-01 10:05:00")
-            ]
-        }
-    })
-    .to_string();
-    assert!(
-        store
-            .import_public_document("default", &v6_major, "json", None)
-            .is_err()
+
+    for version in ["1.7", "3.0", "4.0", "5.0", "6.0"] {
+        let document = serde_json::json!({
+            "info": {
+                "schema": nte_core::PUBLIC_JSON_SCHEMA,
+                "schema_version": version
+            },
+            "nte": {
+                "list": [
+                    record(
+                        &format!("r-{version}"),
+                        "CardPool_Character",
+                        "fork_dustbin",
+                        "2026-01-01 10:05:00"
+                    )
+                ]
+            }
+        })
+        .to_string();
+        assert!(
+            store
+                .import_public_document("default", &document, "json", None)
+                .is_err(),
+            "{version} should be rejected"
+        );
+    }
+
+    let list = store
+        .list_records("default", "zh-Hant", &RecordFilter::default())
+        .unwrap();
+    assert_eq!(list.records.len(), 1);
+    assert_eq!(list.records[0].record_id, "r2");
+    assert_eq!(list.records[0].derived.banner_id.as_deref(), Some("monopoly_limited_Nanali"));
+    assert_eq!(list.records[0].rarity, Some(3));
+}
+
+#[test]
+fn legacy_composite_record_ids_are_normalized_to_current_hash_ids() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let expected_monopoly_id =
+        "4ac84ae07badd64a63e5632b0d3924280a2e89cbd2db689a7937017736f437ce";
+    let expected_fork_id =
+        "4d3b4dea20fba035e186eeb58a4f88250cd5fbe72eb760a6e9ba2d28f07d2a41";
+    let legacy = public_document(vec![
+        json!({
+            "record_id": "monopoly:639165793295740000:CardPool_Character:0:0:fork_yuren:1:fork_yuren:1",
+            "record_type": "monopoly",
+            "time": "2026-06-09 05:22:09",
+            "pool_id": "CardPool_Character",
+            "item_id": "fork_yuren",
+            "count": 1,
+            "roll_points": 0,
+            "roll_label": "display must be ignored"
+        }),
+        json!({
+            "record_id": "fork:639161037582960000:ForkLottery_AnHunQu:0::fork_Rose:1::",
+            "record_type": "fork",
+            "time": "2026-06-03 17:15:58",
+            "pool_id": "ForkLottery_AnHunQu",
+            "item_id": "fork_Rose",
+            "count": 1
+        }),
+    ]);
+
+    let first = store
+        .import_public_document("default", &legacy, "json", None)
+        .unwrap();
+    let equivalent_current = public_document(vec![
+        json!({
+            "record_id": expected_monopoly_id,
+            "source_order": 0,
+            "record_type": "monopoly",
+            "time": "2026-06-09 05:22:09",
+            "pool_id": "CardPool_Character",
+            "item_id": "fork_yuren",
+            "count": 1,
+            "roll_label_id": "BPUI_LotteryResult_jidianzengli",
+            "pool_name": "display must be ignored",
+            "item_name": "display must be ignored",
+            "roll_label": "display must be ignored"
+        }),
+        json!({
+            "record_id": expected_fork_id,
+            "source_order": 1,
+            "record_type": "fork",
+            "time": "2026-06-03 17:15:58",
+            "pool_id": "ForkLottery_AnHunQu",
+            "item_id": "fork_Rose",
+            "count": 1,
+            "pool_name": "display must be ignored",
+            "item_name": "display must be ignored"
+        }),
+    ]);
+    let second = store
+        .import_public_document("default", &equivalent_current, "json", None)
+        .unwrap();
+
+    assert_eq!(first.records_inserted, 2);
+    assert_eq!(second.records_inserted, 0);
+    assert_eq!(second.records_skipped, 2);
+    assert_eq!(
+        store.profile_record_ids("default").unwrap(),
+        vec![
+            expected_fork_id.to_string(),
+            expected_monopoly_id.to_string()
+        ]
     );
 }
 
