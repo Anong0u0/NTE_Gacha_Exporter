@@ -1,0 +1,282 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run a build-only artifact or publish a GitHub Release."
+        required: true
+        default: "build"
+        type: choice
+        options:
+          - "build"
+          - "release"
+      tagName:
+        description: "Existing release tag, for example v0.1.1. Required for manual release."
+        required: false
+        type: string
+      prerelease:
+        description: "Force GitHub Release prerelease flag."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.inputs.tagName }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libatk1.0-dev \
+            libayatana-appindicator3-dev \
+            libcairo2-dev \
+            libgdk-pixbuf-2.0-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev
+
+      - name: Desktop install
+        working-directory: apps/desktop
+        run: bun install --frozen-lockfile
+
+      - name: Rust format
+        run: cargo fmt --check
+
+      - name: Rust test
+        run: cargo test --workspace
+
+      - name: Rust clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Desktop build
+        working-directory: apps/desktop
+        run: bun run build
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs:
+      - checks
+      - build-assets-pack
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      tagName: ${{ steps.package.outputs.tagName }}
+      zipPath: ${{ steps.package.outputs.zipPath }}
+      assetName: ${{ steps.package.outputs.assetName }}
+      manifestPath: ${{ steps.package.outputs.manifestPath }}
+      manifestName: ${{ steps.package.outputs.manifestName }}
+      prerelease: ${{ steps.package.outputs.prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: resolve
+        shell: pwsh
+        run: |
+          $tagName = ""
+          if ("${{ github.event_name }}" -eq "push") {
+              $tagName = "${{ github.ref_name }}"
+          } elseif ("${{ github.event.inputs.tagName }}" -ne "") {
+              $tagName = "${{ github.event.inputs.tagName }}".Trim()
+          }
+
+          if ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.mode }}" -eq "release" -and $tagName -eq "") {
+              throw "tagName is required for manual release mode."
+          }
+
+          "tagName=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Download bundled assets pack
+        uses: actions/download-artifact@v8
+        with:
+          name: bundled-assets-pack
+          path: dist
+
+      - name: Build, smoke, and stage portable package
+        id: package
+        shell: pwsh
+        run: .\packaging\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}" -AssetsPackZip "dist\nte-assets-pack.zip"
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-release-assets
+          path: |
+            ${{ steps.package.outputs.zipPath }}
+            ${{ steps.package.outputs.manifestPath }}
+          if-no-files-found: error
+
+  build-assets-pack:
+    name: Build Assets Pack
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout latest NTE_Assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --sparse https://github.com/Waifus-Grace/NTE_Assets.git nte-assets-src
+          git -C nte-assets-src sparse-checkout set DataTable Localization UI UI_Icon
+
+      - name: Build assets pack
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          source_commit="$(git -C nte-assets-src rev-parse HEAD)"
+          cargo run -p nte-gacha-exporter-cli --bin nte-gacha-exporter-cli -- assets pack build \
+            --assets-root nte-assets-src \
+            --out dist/nte-assets-pack.zip \
+            --source-commit "$source_commit"
+          test -s dist/nte-assets-pack.zip
+
+      - name: Upload assets pack
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundled-assets-pack
+          path: dist/nte-assets-pack.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: build-windows
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'release') }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.build-windows.outputs.tagName }}
+          fetch-depth: 0
+
+      - name: Download release assets
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-release-assets
+          path: release-assets
+
+      - name: Build release notes
+        id: notes
+        shell: bash
+        env:
+          TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
+          ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          previous_tag="$(git tag --sort=-v:refname --merged "$TAG_NAME" | awk -v current="$TAG_NAME" '$0 != current { print; exit }')"
+          if [[ -n "$previous_tag" ]]; then
+            range="${previous_tag}..${TAG_NAME}"
+            title="更新日誌 ${previous_tag} -> ${TAG_NAME}:"
+          else
+            range="$TAG_NAME"
+            title="更新日誌 ${TAG_NAME}:"
+          fi
+
+          {
+            echo "### ${title}"
+            commits="$(git log --pretty=format:'* %s (%an)' "$range" || true)"
+            if [[ -n "$commits" ]]; then
+              echo "$commits"
+            else
+              echo "* Initial release notes range unavailable."
+            fi
+            echo
+            echo "### Download / 下載說明"
+            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha-exporter.exe\`。"
+            echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) Updater manifest for the desktop app."
+            echo "* Do not download Source code zip as the application package. 不要把 Source code zip 當作應用程式下載。"
+          } > release-notes.md
+
+      - name: Resolve release flags
+        id: flags
+        shell: bash
+        env:
+          AUTO_PRERELEASE: ${{ needs.build-windows.outputs.prerelease }}
+          FORCE_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.prerelease || 'false' }}
+        run: |
+          set -euo pipefail
+
+          prerelease_flag=""
+          if [[ "$AUTO_PRERELEASE" == "true" || "$FORCE_PRERELEASE" == "true" ]]; then
+            prerelease_flag="--prerelease"
+          fi
+
+          echo "prereleaseFlag=${prerelease_flag}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
+          ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+          PRERELEASE_FLAG: ${{ steps.flags.outputs.prereleaseFlag }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          gh release create "$TAG_NAME" \
+            "release-assets/${ASSET_NAME}#Windows portable package" \
+            "release-assets/${MANIFEST_NAME}#Desktop updater manifest" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG_NAME" \
+            --notes-file release-notes.md \
+            --verify-tag \
+            $PRERELEASE_FLAG

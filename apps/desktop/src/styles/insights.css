@@ -1,0 +1,133 @@
+.muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.derived-chip {
+  min-height: 22px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-body);
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0 7px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.hit-badge {
+  width: 22px;
+  height: 22px;
+  margin-left: 5px;
+  border-radius: 6px;
+  display: inline-grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.hit-w {
+  background: #20835a;
+}
+
+.hit-l {
+  background: #9b3d3d;
+}
+
+.hit-g {
+  background: #6f5a12;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  align-items: start;
+}
+
+.split.wide-left {
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+}
+
+.panel {
+  padding: 12px;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.panel h2 {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.chart {
+  height: 158px;
+}
+
+.stat-table {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.stat-table.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 8px;
+}
+
+.stat-table div {
+  min-height: 42px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 7px 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.stat-table span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.stat-table strong {
+  font-size: 16px;
+}
+
+.stat-table strong.stat-text {
+  min-width: 0;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 5px;
+}
+
+.timeline-list div {
+  min-height: 34px;
+  border-top: 1px solid var(--surface-muted);
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(220px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.timeline-list.compact-list div {
+  grid-template-columns: minmax(0, 1fr) auto;
+}

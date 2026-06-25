@@ -1,0 +1,27 @@
+[package]
+name = "nte-agent-smoke"
+version = "0.1.1"
+edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+
+[[bin]]
+name = "nte-agent-smoke"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = "2.12"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_Xps",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }

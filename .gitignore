@@ -1,11 +1,10 @@
 .local/
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
+node_modules/
 output/
 build/
 dist/
+target/
+apps/desktop/src-tauri/gen/
 *.spec
 *.log
 *.tmp

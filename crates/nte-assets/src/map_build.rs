@@ -1,0 +1,13 @@
+include!("map_build/types.rs");
+include!("map_build/entry.rs");
+include!("map_build/tables.rs");
+include!("map_build/item_names.rs");
+include!("map_build/item_refs.rs");
+include!("map_build/items.rs");
+include!("map_build/pools.rs");
+include!("map_build/item_meta.rs");
+include!("map_build/rules.rs");
+include!("map_build/banners.rs");
+include!("map_build/labels.rs");
+include!("map_build/validation.rs");
+include!("map_build/tests.rs");

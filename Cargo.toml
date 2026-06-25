@@ -1,0 +1,54 @@
+[workspace]
+members = [
+    "apps/cli",
+    "apps/desktop/src-tauri",
+    "crates/nte-assets",
+    "crates/nte-automation",
+    "crates/nte-capture",
+    "crates/nte-core",
+    "crates/nte-store",
+    "crates/nte-update",
+    "tools/xtask",
+]
+exclude = ["tools/agent-smoke"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+version = "1.0.0"
+
+[workspace.dependencies]
+anyhow = "1"
+atomic-write-file = "0.3"
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false }
+clap = "4"
+crossterm = "0.28"
+ctrlc = "3"
+hex = "0.4"
+image = { version = "0.25", default-features = false }
+pktmon = "0.6.2"
+regex = "1"
+semver = "1"
+serde = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+tauri = "2"
+tauri-build = "2"
+tauri-plugin-dialog = "2.7.1"
+tempfile = "3"
+thiserror = "2"
+ureq = "2.12"
+webp = "0.3.1"
+windows = "0.61"
+windows-sys = "0.61"
+zip = { version = "0.6", default-features = false }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"

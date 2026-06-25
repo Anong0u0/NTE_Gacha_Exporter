@@ -1,0 +1,21 @@
+[package]
+name = "nte-assets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+image = { workspace = true, default-features = false, features = ["png"] }
+nte-core = { path = "../nte-core" }
+regex.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+webp.workspace = true
+zip = { workspace = true, default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+tempfile.workspace = true
