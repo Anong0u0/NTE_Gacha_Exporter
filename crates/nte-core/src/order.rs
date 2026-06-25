@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn same_timestamp_source_order_is_chronological_low_to_high() {
-        let mut records = vec![
+        let mut records = [
             internal("newer", "2026-01-01 00:00:00", 2),
             internal("older", "2026-01-01 00:00:00", 1),
         ];
@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn same_timestamp_newest_first_uses_source_order_high_to_low() {
-        let mut records = vec![
+        let mut records = [
             display("older", "2026-01-01 00:00:00", 1),
             display("newer", "2026-01-01 00:00:00", 2),
         ];

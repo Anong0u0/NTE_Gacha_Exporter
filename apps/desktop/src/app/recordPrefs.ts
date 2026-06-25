@@ -59,8 +59,8 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
   visibleRecordColumns: [...recordColumnIds],
   recordAdvancedFiltersOpen: false,
   latestFiveStarWallModes: {
-    monopoly_limited: "all",
-    monopoly_standard: "all",
+    monopoly_limited: "focused",
+    monopoly_standard: "focused",
     fork_lottery: "focused",
   },
 };
@@ -70,7 +70,7 @@ export const forkResultMarkOptions: ForkResultMark[] = ["win", "guaranteed", "lo
 export const forkPityBadgeOptions: PityBadge[] = ["fork_up_guarantee", "fork_5star_guarantee", "fork_4star_guarantee"];
 
 export function recordPrefsKey(profileName: string) {
-  return `nte.recordView.v3:${profileName}`;
+  return `nte.recordView.v1:${profileName}`;
 }
 
 export function readRecordViewPrefs(profileName: string): RecordViewPrefs {

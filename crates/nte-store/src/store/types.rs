@@ -26,6 +26,7 @@ const DEFAULT_PROFILE: &str = "default";
 const DEFAULT_LOCALE: &str = "en";
 const DEFAULT_UI_LOCALE: &str = "en";
 const DEFAULT_UPDATE_CHANNEL: &str = "stable";
+const DEFAULT_CHECK_UPDATES_ON_STARTUP: bool = true;
 static UNIQUE_STAMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub struct JsonStore {
@@ -62,7 +63,7 @@ struct DiskSettings {
     ui_locale: String,
     #[serde(default = "default_update_channel")]
     update_channel: String,
-    #[serde(default)]
+    #[serde(default = "default_check_updates_on_startup")]
     check_updates_on_startup: bool,
     #[serde(default = "default_capture_auto_page_enabled")]
     capture_auto_page_enabled: bool,

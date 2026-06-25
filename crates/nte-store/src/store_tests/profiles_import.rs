@@ -9,7 +9,7 @@ fn store_bootstraps_default_profile_and_files() {
     assert_eq!(settings.active_profile, "default");
     assert_eq!(settings.ui_locale, "en");
     assert_eq!(settings.update_channel, "stable");
-    assert!(!settings.check_updates_on_startup);
+    assert!(settings.check_updates_on_startup);
     assert!(settings.capture_auto_page_enabled);
     assert!(!settings.capture_full_update_enabled);
     assert_eq!(profiles.len(), 1);
@@ -20,6 +20,31 @@ fn store_bootstraps_default_profile_and_files() {
             .join("data/profiles/default/records.json")
             .exists()
     );
+}
+
+#[test]
+fn store_migrates_missing_check_updates_on_startup_to_enabled() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(tmp.path().join("data")).unwrap();
+    std::fs::write(
+        tmp.path().join("data/settings.json"),
+        json!({
+            "schema_version": 1,
+            "active_profile": "default",
+            "locale": "en",
+            "ui_locale": "en",
+            "update_channel": "stable"
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let store = JsonStore::open(tmp.path()).unwrap();
+
+    let settings = store.settings().unwrap();
+    let settings_text = std::fs::read_to_string(tmp.path().join("data/settings.json")).unwrap();
+    assert!(settings.check_updates_on_startup);
+    assert!(settings_text.contains("\"check_updates_on_startup\": true"));
 }
 
 #[test]
@@ -109,7 +134,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
 }
 
 #[test]
-fn store_accepts_saved_map_ui_locale_for_future_i18n() {
+fn store_normalizes_saved_unsupported_ui_locale() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(tmp.path().join("data/profiles/default")).unwrap();
     std::fs::write(
@@ -147,7 +172,10 @@ fn store_accepts_saved_map_ui_locale_for_future_i18n() {
     .unwrap();
 
     let store = JsonStore::open(tmp.path()).unwrap();
-    assert_eq!(store.settings().unwrap().ui_locale, "ja");
+    let settings_text = std::fs::read_to_string(tmp.path().join("data/settings.json")).unwrap();
+    let settings_json: serde_json::Value = serde_json::from_str(&settings_text).unwrap();
+    assert_eq!(store.settings().unwrap().ui_locale, "en");
+    assert_eq!(settings_json["ui_locale"], "en");
 }
 
 #[test]

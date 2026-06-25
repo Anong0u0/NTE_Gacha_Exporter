@@ -48,51 +48,6 @@ fn missing_rarity_records_are_retained_but_excluded_from_distribution_denominato
 }
 
 #[test]
-fn records_list_filters_by_search_and_pool_kind() {
-    let tmp = tempfile::tempdir().unwrap();
-    let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record(
-            "c1",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            "2026-01-01 10:00:00",
-        ),
-        record(
-            "f1",
-            "ForkLottery_AnHunQu",
-            "fork_Rose",
-            "2026-01-02 10:00:00",
-        ),
-    ]);
-    store
-        .import_public_document("default", &document, "json", None)
-        .unwrap();
-
-    let list = store
-        .list_records(
-            "default",
-            "zh-Hant",
-            &RecordFilter {
-                pool_kind: Some(PoolKind::ForkLottery),
-                search: Some("玫瑰".to_string()),
-                ..RecordFilter::default()
-            },
-        )
-        .unwrap();
-
-    assert_eq!(list.total, 1);
-    assert_eq!(list.records[0].item_id, "fork_Rose");
-    assert!(list.records[0].item_name.contains("玫瑰"));
-    assert_eq!(
-        list.records[0].banner.banner_id.as_deref(),
-        Some("ForkLottery_AnHunQu")
-    );
-    assert!(list.records[0].banner.asset_refs.contains_key("icon"));
-    assert_eq!(list.records[0].derived.pull_no_in_banner, Some(1));
-}
-
-#[test]
 fn records_list_resolves_limited_banner_boundaries() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

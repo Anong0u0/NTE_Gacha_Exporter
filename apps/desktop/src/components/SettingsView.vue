@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope } from "lucide-vue-next";
+import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Stethoscope } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
+
+function selectValue(event: Event) {
+  return (event.target as HTMLSelectElement).value;
+}
+
+function checkedValue(event: Event) {
+  return (event.target as HTMLInputElement).checked;
+}
 </script>
 
 <template>
@@ -17,19 +25,19 @@ const app = useAppContext();
           <div class="form-grid runtime-grid">
             <label class="field">
               <span>{{ app.t("settings.uiLocale") }}</span>
-              <select v-model="app.uiLocale" :disabled="app.isWorkflowBusy">
+              <select :value="app.uiLocale" :disabled="app.isWorkflowBusy" @change="app.setUiLocale(selectValue($event))">
                 <option v-for="item in app.uiLocales" :key="item" :value="item">{{ app.uiLocaleName(item) }}</option>
               </select>
             </label>
             <label class="field">
               <span>{{ app.t("settings.dataLocale") }}</span>
-              <select v-model="app.locale" :disabled="app.isWorkflowBusy">
+              <select :value="app.locale" :disabled="app.isWorkflowBusy" @change="app.setDataLocale(selectValue($event))">
                 <option v-for="item in app.locales" :key="item" :value="item">{{ item }}</option>
               </select>
             </label>
             <label class="field">
               <span>{{ app.t("settings.updateChannel") }}</span>
-              <select v-model="app.settingsUpdateChannel" :disabled="app.isWorkflowBusy">
+              <select :value="app.settingsUpdateChannel" :disabled="app.isWorkflowBusy" @change="app.setUpdateChannel(selectValue($event))">
                 <option value="stable">{{ app.t("update.stable") }}</option>
                 <option value="beta">{{ app.t("update.beta") }}</option>
               </select>
@@ -37,16 +45,12 @@ const app = useAppContext();
           </div>
           <div class="settings-actions">
             <label class="check-field">
-              <input v-model="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" />
+              <input :checked="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" @change="app.setCheckUpdatesOnStartup(checkedValue($event))" />
               <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
             <button type="button" data-agent-id="doctor-run" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
               <Stethoscope :size="17" />
               <span>{{ app.t("common.doctor") }}</span>
-            </button>
-            <button class="primary" type="button" :disabled="app.isWorkflowBusy" @click="app.saveSettings">
-              <Settings :size="17" />
-              <span>{{ app.t("common.save") }}</span>
             </button>
           </div>
         </section>

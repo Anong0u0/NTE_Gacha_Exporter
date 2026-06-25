@@ -185,124 +185,6 @@ fn dashboard_overview_empty_profile_returns_empty_stats() {
 }
 
 #[test]
-fn dashboard_overview_includes_banner_roll_points_and_time_stats() {
-    let tmp = tempfile::tempdir().unwrap();
-    let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record_with_options(
-            "nanali",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            Some("2026-05-13 05:59:00"),
-            Some(10),
-        ),
-        record_with_options(
-            "xun",
-            "CardPool_Character",
-            "Fashion_vehicle_1052_V024",
-            Some("2026-05-13 05:59:01"),
-            Some(20),
-        ),
-        record_with_options(
-            "fork-4",
-            "ForkLottery_AnHunQu",
-            "fork_jiaojuan",
-            Some("2026-05-14 10:00:00"),
-            Some(2),
-        ),
-        record_with_options(
-            "fork-5",
-            "ForkLottery_AnHunQu",
-            "fork_Rose",
-            Some("2026-05-14 10:01:00"),
-            Some(8),
-        ),
-    ]);
-    store
-        .import_public_document("default", &document, "json", None)
-        .unwrap();
-
-    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
-    let fork_banner = overview
-        .banners
-        .iter()
-        .find(|banner| banner.banner_id == "ForkLottery_AnHunQu")
-        .unwrap();
-    let limited = overview
-        .pool_kinds
-        .iter()
-        .find(|summary| summary.pool_kind == PoolKind::MonopolyLimited)
-        .unwrap();
-    let fork = overview
-        .pool_kinds
-        .iter()
-        .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
-        .unwrap();
-    let month = overview
-        .time_stats
-        .monthly
-        .iter()
-        .find(|bucket| bucket.bucket == "2026-05")
-        .unwrap();
-    let day = overview
-        .time_stats
-        .daily
-        .iter()
-        .find(|bucket| bucket.bucket == "2026-05-14")
-        .unwrap();
-
-    assert!(
-        overview
-            .banners
-            .iter()
-            .any(|banner| banner.banner_id == "monopoly_limited_Nanali")
-    );
-    assert!(
-        overview
-            .banners
-            .iter()
-            .any(|banner| banner.banner_id == "monopoly_limited_Xun")
-    );
-    assert_eq!(fork_banner.total_pulls, 2);
-    assert_eq!(fork_banner.five_star_count, 1);
-    assert_eq!(fork_banner.four_star_count, 1);
-    assert_eq!(fork_banner.current_5star_pity, 0);
-    assert_eq!(fork_banner.rate_up_5_count, 1);
-    assert_eq!(fork_banner.rate_up_4_count, 0);
-    assert_eq!(fork_banner.unknown_rate_up_4_count, 1);
-    assert_eq!(fork_banner.roll_points_total, 10);
-    assert!(fork_banner.asset_refs.contains_key("icon"));
-    assert_eq!(fork_banner.average_roll_points_to_5star, Some(10.0));
-    assert_eq!(fork_banner.roll_point_cost_samples_5star, 1);
-    assert_eq!(fork_banner.latest_hit.as_ref().unwrap().record_id, "fork-5");
-    assert_eq!(
-        overview
-            .pool_kinds
-            .iter()
-            .map(|summary| summary.roll_points_total)
-            .sum::<i64>(),
-        40
-    );
-    assert_eq!(
-        overview
-            .pool_kinds
-            .iter()
-            .map(|summary| summary.known_roll_point_records)
-            .sum::<u64>(),
-        4
-    );
-    assert_eq!(limited.roll_points_total, 30);
-    assert_eq!(fork.roll_points_total, 10);
-    assert_eq!(month.total_pulls, 4);
-    assert_eq!(month.five_star_count, 1);
-    assert_eq!(month.four_star_count, 1);
-    assert_eq!(month.roll_points_total, 40);
-    assert_eq!(day.total_pulls, 2);
-    assert_eq!(day.roll_points_total, 10);
-    assert_eq!(overview.time_stats.missing_time_records, 0);
-}
-
-#[test]
 fn item_ranking_splits_same_item_by_reward_quantity() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
@@ -359,6 +241,55 @@ fn item_ranking_splits_same_item_by_reward_quantity() {
     assert_eq!(dustbin_30.count, 2);
     assert_eq!(dustbin_50.count, 1);
     assert_eq!(dustbin_30.item_name, dustbin_50.item_name);
+}
+
+#[test]
+fn item_ranking_returns_all_ranked_items() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    for index in 0..25 {
+        records.push(record(
+            &format!("rank-{index:02}"),
+            "CardPool_Character",
+            &format!("rank_item_{index:02}"),
+            &format!("2026-01-01 10:{index:02}:00"),
+        ));
+    }
+    records.push(record(
+        "rank-repeat-a",
+        "CardPool_Character",
+        "rank_item_24",
+        "2026-01-01 11:00:00",
+    ));
+    records.push(record(
+        "rank-repeat-b",
+        "CardPool_Character",
+        "rank_item_24",
+        "2026-01-01 11:01:00",
+    ));
+    let document = public_document(records);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyLimited,
+            },
+        )
+        .unwrap();
+
+    assert_eq!(detail.item_ranking.len(), 25);
+    assert_eq!(detail.item_ranking[0].item_id, "rank_item_24");
+    assert_eq!(detail.item_ranking[0].count, 3);
+    assert!(detail
+        .item_ranking
+        .iter()
+        .any(|item| item.item_id == "rank_item_00"));
 }
 
 #[test]

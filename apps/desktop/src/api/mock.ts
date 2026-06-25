@@ -29,7 +29,7 @@ let mockActiveProfileName = mockProfile.name;
 let mockLocale = "zh-Hant";
 let mockUiLocale = "zh-Hant";
 let mockUpdateChannel = "stable";
-let mockCheckUpdatesOnStartup = false;
+let mockCheckUpdatesOnStartup = true;
 let mockCaptureAutoPageEnabled = true;
 let mockCaptureFullUpdateEnabled = false;
 
@@ -186,8 +186,7 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
         (right.rarity ?? 0) - (left.rarity ?? 0) ||
         left.item_name.localeCompare(right.item_name) ||
         left.reward_count - right.reward_count,
-    )
-    .slice(0, 20);
+    );
 
   const fiveStarDistances = mockFiveStarDistances(records, poolKind);
 
@@ -530,7 +529,7 @@ export const mockApi: AppApi = {
     return { locales: ["zh-Hant", "en", "ja"] };
   },
   async uiLocaleList() {
-    return { locales: ["zh-Hant", "en", "ja"] };
+    return { locales: ["en", "zh-CN", "zh-Hant"] };
   },
   async systemLocale() {
     return "zh-TW";

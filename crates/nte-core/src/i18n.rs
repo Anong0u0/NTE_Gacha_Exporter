@@ -1,11 +1,25 @@
-use crate::maps::available_locales;
+const UI_LOCALES: &[&str] = &["en", "zh-CN", "zh-Hant"];
 
 pub fn available_ui_locales() -> Vec<String> {
-    available_locales()
+    UI_LOCALES
+        .iter()
+        .map(|locale| (*locale).to_string())
+        .collect()
 }
 
 pub fn is_ui_locale(locale: &str) -> bool {
-    available_ui_locales()
-        .iter()
-        .any(|available| available == locale)
+    UI_LOCALES.contains(&locale)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ui_locales_only_include_completed_dictionaries() {
+        assert_eq!(available_ui_locales(), vec!["en", "zh-CN", "zh-Hant"]);
+        assert!(is_ui_locale("en"));
+        assert!(is_ui_locale("zh-CN"));
+        assert!(is_ui_locale("zh-Hant"));
+    }
 }

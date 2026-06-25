@@ -128,7 +128,7 @@ impl JsonStore {
                 locale: defaults.locale.clone(),
                 ui_locale: defaults.ui_locale.clone(),
                 update_channel: DEFAULT_UPDATE_CHANNEL.to_string(),
-                check_updates_on_startup: false,
+                check_updates_on_startup: DEFAULT_CHECK_UPDATES_ON_STARTUP,
                 capture_auto_page_enabled: true,
                 capture_full_update_enabled: false,
             })?;
@@ -137,11 +137,9 @@ impl JsonStore {
             if settings.locale.trim().is_empty() {
                 settings.locale = defaults.locale.clone();
             }
-            if settings.ui_locale.trim().is_empty() {
-                settings.ui_locale = defaults.ui_locale.clone();
-            }
+            settings.ui_locale =
+                normalize_ui_locale_or_default(&settings.ui_locale, &defaults.ui_locale)?;
             validate_locale(&settings.locale)?;
-            validate_ui_locale(&settings.ui_locale)?;
             self.write_settings(&settings)?;
         }
         if !self.profile_dir(DEFAULT_PROFILE).exists() {

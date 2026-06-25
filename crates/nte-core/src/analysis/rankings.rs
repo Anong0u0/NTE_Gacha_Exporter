@@ -226,7 +226,6 @@ fn item_ranking_from_display_refs<'a>(
             .then_with(|| left.item_name.cmp(&right.item_name))
             .then_with(|| left.reward_count.cmp(&right.reward_count))
     });
-    ranking.truncate(20);
     ranking
 }
 

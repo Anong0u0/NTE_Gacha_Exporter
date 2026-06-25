@@ -108,6 +108,53 @@ fn restore_backup_maps_active_profile_to_existing_profile_casing() {
 }
 
 #[test]
+fn restore_backup_normalizes_unsupported_ui_locale() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let backup_path = tmp.path().join("unsupported-ui-locale.zip");
+    write_backup_zip(
+        &backup_path,
+        &[
+            (
+                "settings.json",
+                json!({
+                    "schema_version": 1,
+                    "active_profile": "default",
+                    "locale": "en",
+                    "ui_locale": "ja",
+                    "update_channel": "stable",
+                    "check_updates_on_startup": false
+                })
+                .to_string(),
+            ),
+            (
+                "profiles/default/profile.json",
+                json!({
+                    "schema_version": 1,
+                    "name": "default",
+                    "created_at": "1",
+                    "updated_at": "1"
+                })
+                .to_string(),
+            ),
+            (
+                "profiles/default/records.json",
+                json!({
+                    "schema_version": 1,
+                    "records": []
+                })
+                .to_string(),
+            ),
+        ],
+    );
+
+    let report = store.restore_data_backup_report(&backup_path).unwrap();
+
+    assert!(report.settings_restored);
+    assert_eq!(store.settings().unwrap().ui_locale, "en");
+}
+
+#[test]
 fn restore_backup_rejects_unsafe_zip_paths() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

@@ -1,6 +1,7 @@
 import type { Ref } from "vue";
 
 import enMessages from "../assets/i18n/en.json";
+import zhCnMessages from "../assets/i18n/zh-CN.json";
 import zhHantMessages from "../assets/i18n/zh-Hant.json";
 
 const en = enMessages;
@@ -11,6 +12,7 @@ type I18nParams = Record<string, string | number | boolean | null | undefined>;
 
 const dictionaries: Record<string, Messages> = {
   en,
+  "zh-CN": zhCnMessages,
   "zh-Hant": zhHantMessages,
 };
 
@@ -23,9 +25,10 @@ function translate(locale: string, key: I18nKey, params?: I18nParams) {
   return interpolate(messages?.[key] ?? "", params);
 }
 
-export function uiLocaleDisplayName(locale: string, t: (key: I18nKey, params?: I18nParams) => string) {
-  if (locale === "zh-Hant") return t("locale.zhHant");
-  if (locale === "en") return t("locale.en");
+export function uiLocaleDisplayName(locale: string) {
+  if (locale === "zh-CN") return "简体中文";
+  if (locale === "zh-Hant") return "繁體中文";
+  if (locale === "en") return "English";
   return "";
 }
 

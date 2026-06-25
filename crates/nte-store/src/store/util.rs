@@ -59,6 +59,10 @@ fn validate_ui_locale(locale: &str) -> Result<String, GuiError> {
     Err(GuiError::LocaleNotFound(locale.to_string()))
 }
 
+fn normalize_ui_locale_or_default(locale: &str, fallback: &str) -> Result<String, GuiError> {
+    validate_ui_locale(locale).or_else(|_| validate_ui_locale(fallback))
+}
+
 fn validate_update_channel(channel: &str) -> Result<String, GuiError> {
     let channel = channel.trim();
     if channel.is_empty() || channel.len() > 32 {
@@ -385,6 +389,10 @@ fn has_reparse_point(_metadata: &fs::Metadata) -> bool {
 
 fn default_update_channel() -> String {
     DEFAULT_UPDATE_CHANNEL.to_string()
+}
+
+fn default_check_updates_on_startup() -> bool {
+    DEFAULT_CHECK_UPDATES_ON_STARTUP
 }
 
 fn default_capture_auto_page_enabled() -> bool {

@@ -2084,7 +2084,7 @@ dependencies = [
 
 [[package]]
 name = "nte-assets"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "nte-core",
@@ -2098,7 +2098,7 @@ dependencies = [
 
 [[package]]
 name = "nte-automation"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "serde",
@@ -2110,7 +2110,7 @@ dependencies = [
 
 [[package]]
 name = "nte-capture"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2127,7 +2127,7 @@ dependencies = [
 
 [[package]]
 name = "nte-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "atomic-write-file",
  "serde",
@@ -2139,7 +2139,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "clap",
@@ -2158,7 +2158,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-desktop"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nte-assets",
  "nte-automation",
@@ -2180,7 +2180,7 @@ dependencies = [
 
 [[package]]
 name = "nte-store"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "atomic-write-file",
  "nte-core",
@@ -2192,7 +2192,7 @@ dependencies = [
 
 [[package]]
 name = "nte-update"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nte-core",
  "semver",

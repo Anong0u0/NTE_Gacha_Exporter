@@ -36,10 +36,8 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
         }
         let mut settings: DiskSettings = read_zip_json(&mut zip, "settings.json")?;
         validate_locale(&settings.locale)?;
-        if settings.ui_locale.trim().is_empty() {
-            settings.ui_locale = DEFAULT_UI_LOCALE.to_string();
-        }
-        validate_ui_locale(&settings.ui_locale)?;
+        settings.ui_locale =
+            normalize_ui_locale_or_default(&settings.ui_locale, DEFAULT_UI_LOCALE)?;
         validate_update_channel(&settings.update_channel)?;
         if settings.capture_full_update_enabled {
             settings.capture_auto_page_enabled = true;
