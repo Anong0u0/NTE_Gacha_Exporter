@@ -246,6 +246,11 @@
   border-color: var(--accent);
 }
 
+.banner-thumb-rail button.is-fork-banner {
+  width: 70px;
+  min-width: 70px;
+}
+
 .banner-thumb-rail .banner-rail-all {
   width: 88px;
   min-width: 88px;
@@ -267,11 +272,22 @@
   font-weight: 800;
 }
 
+.is-fork-banner .rail-thumb {
+  width: 56px;
+  height: 56px;
+  justify-self: center;
+  align-self: center;
+}
+
 .rail-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.is-fork-banner .rail-thumb img {
+  object-fit: contain;
 }
 
 .rail-thumb.empty span {

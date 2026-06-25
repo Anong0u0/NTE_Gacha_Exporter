@@ -7,13 +7,16 @@ fn asset_path(value: Option<&Value>) -> Option<String> {
         .map(ToString::to_string)
 }
 
-fn fork_banner_asset_refs(row: &JsonObject) -> JsonObject {
+fn fork_banner_image_ref(normalized_items: &JsonObject, rate_up_5: &[String]) -> Option<String> {
+    let item_id = rate_up_5.first()?;
+    item_asset_ref(normalized_items, item_id, "portrait")
+        .or_else(|| item_asset_ref(normalized_items, item_id, "icon"))
+}
+
+fn fork_banner_asset_refs(normalized_items: &JsonObject, rate_up_5: &[String]) -> JsonObject {
     let mut refs = JsonObject::new();
-    if let Some(background) = asset_path(row.get("Bg")) {
-        refs.insert("background".to_string(), Value::String(background));
-    }
-    if let Some(icon) = asset_path(row.get("Icon")) {
-        refs.insert("icon".to_string(), Value::String(icon));
+    if let Some(image) = fork_banner_image_ref(normalized_items, rate_up_5) {
+        refs.insert("image".to_string(), Value::String(image));
     }
     refs
 }
@@ -173,6 +176,7 @@ fn fork_banners(
     assets_root: &Path,
     localization: &Localization,
     canonicalizer: &ItemCanonicalizer,
+    normalized_items: &JsonObject,
 ) -> Result<JsonObject, GuiError> {
     let mut banners = JsonObject::new();
     for (pool_id, row) in fork_pool_rows(assets_root)? {
@@ -194,14 +198,10 @@ fn fork_banners(
         );
         banner.insert("banner_type".to_string(), Value::String("fork".to_string()));
         banner.insert("title".to_string(), Value::String(title));
+        let rate_up_5 = fork_pickup_item_ids(&pool_id, row, canonicalizer)?;
         banner.insert(
             "rate_up_5".to_string(),
-            Value::Array(
-                fork_pickup_item_ids(&pool_id, row, canonicalizer)?
-                    .into_iter()
-                    .map(Value::String)
-                    .collect(),
-            ),
+            Value::Array(rate_up_5.iter().cloned().map(Value::String).collect()),
         );
         banner.insert("rate_up_4".to_string(), Value::Array(Vec::new()));
         banner.insert(
@@ -212,7 +212,7 @@ fn fork_banners(
             "source".to_string(),
             source_evidence(&[FORK_POOL_TABLE.to_string()], &[]),
         );
-        let refs = fork_banner_asset_refs(row);
+        let refs = fork_banner_asset_refs(normalized_items, &rate_up_5);
         if !refs.is_empty() {
             banner.insert("asset_refs".to_string(), Value::Object(refs));
         }
@@ -268,7 +268,12 @@ fn build_banners(
         &standard_5_pool,
         &standard_4_pool,
     ));
-    banners.extend(fork_banners(assets_root, localization, canonicalizer)?);
+    banners.extend(fork_banners(
+        assets_root,
+        localization,
+        canonicalizer,
+        normalized_items,
+    )?);
     Ok(banners)
 }
 

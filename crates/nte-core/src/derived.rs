@@ -678,7 +678,7 @@ mod tests {
                 .iter()
                 .map(|record| record.record_id.as_str())
                 .collect::<Vec<_>>(),
-            vec!["same-b", "same-a"]
+            vec!["same-a", "same-b"]
         );
         assert_eq!(derived[0].pull_no_in_pool_kind, Some(1));
         assert_eq!(derived[1].pull_no_in_pool_kind, Some(2));

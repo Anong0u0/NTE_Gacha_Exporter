@@ -1,6 +1,12 @@
 
 const SUPPORT_SCHEMA: &str = "nte-gacha-capture-support";
 const SUPPORT_SCHEMA_VERSION: u32 = 1;
+const CAPTURE_SUPPORT_RETENTION_LIMIT: usize = 3;
+const SUPPORT_DATA_DIR: &str = "data";
+const SUPPORT_DIR: &str = "support";
+const SUPPORT_PREFIX: &str = "capture-";
+const SUPPORT_JSON_SUFFIX: &str = ".json";
+const SUPPORT_IMAGE_SUFFIX: &str = "-page-number.png";
 
 #[derive(Debug, Clone, Default)]
 struct SupportWriteResult {
@@ -50,14 +56,15 @@ fn attach_support_paths(error: &mut RuntimeError, result: SupportWriteResult) {
 }
 
 fn write_capture_support(request: SupportRequest<'_>) -> SupportWriteResult {
-    let support_dir = request.root.join("data/support");
-    if let Err(error) = fs::create_dir_all(&support_dir) {
-        return SupportWriteResult {
-            error: Some(error.to_string()),
-            ..SupportWriteResult::default()
-        };
-    }
-
+    let support_dir = match prepare_support_dir(request.root) {
+        Ok(path) => path,
+        Err(error) => {
+            return SupportWriteResult {
+                error: Some(error.to_string()),
+                ..SupportWriteResult::default()
+            };
+        }
+    };
     let base = sanitize_file_stem(&format!("capture-{}", request.status.session_id));
     let json_path = support_dir.join(format!("{base}.json"));
     let mut write_error = None;
@@ -69,6 +76,13 @@ fn write_capture_support(request: SupportRequest<'_>) -> SupportWriteResult {
             error: Some(error.to_string()),
             ..SupportWriteResult::default()
         };
+    }
+    if let Err(error) = rotate_capture_support_files(
+        request.root,
+        CAPTURE_SUPPORT_RETENTION_LIMIT,
+        Some(base.as_str()),
+    ) {
+        append_support_error(&mut write_error, format!("rotate support files failed: {error}"));
     }
     SupportWriteResult {
         json_path: Some(json_path),
@@ -97,6 +111,175 @@ fn write_support_image(
 fn write_support_json(path: &Path, report: &SupportReport) -> Result<(), std::io::Error> {
     let text = serde_json::to_string_pretty(report).map_err(std::io::Error::other)?;
     fs::write(path, text)
+}
+
+fn support_dir_path(root: &Path) -> PathBuf {
+    root.join(SUPPORT_DATA_DIR).join(SUPPORT_DIR)
+}
+
+fn prepare_support_dir(root: &Path) -> Result<PathBuf, std::io::Error> {
+    reject_existing_symlink_or_non_dir(root)?;
+    let data_dir = root.join(SUPPORT_DATA_DIR);
+    reject_existing_symlink_or_non_dir(&data_dir)?;
+    let support_dir = support_dir_path(root);
+    fs::create_dir_all(&support_dir)?;
+    reject_existing_symlink_or_non_dir(&data_dir)?;
+    reject_existing_symlink_or_non_dir(&support_dir)?;
+    Ok(support_dir)
+}
+
+fn reject_existing_symlink_or_non_dir(path: &Path) -> Result<(), std::io::Error> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    if metadata.file_type().is_symlink() {
+        return Err(std::io::Error::other(format!(
+            "support path is symlink: {}",
+            path.display()
+        )));
+    }
+    if !metadata.is_dir() {
+        return Err(std::io::Error::other(format!(
+            "support path is not directory: {}",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
+fn rotate_capture_support_files(
+    root: &Path,
+    keep: usize,
+    protected_base: Option<&str>,
+) -> Result<(), std::io::Error> {
+    reject_existing_symlink_or_non_dir(root)?;
+    let data_dir = root.join(SUPPORT_DATA_DIR);
+    reject_existing_symlink_or_non_dir(&data_dir)?;
+    let support_dir = support_dir_path(root);
+    match fs::symlink_metadata(&support_dir) {
+        Ok(_) => reject_existing_symlink_or_non_dir(&support_dir)?,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error),
+    }
+
+    let mut anchors = support_json_anchors(&support_dir)?;
+    anchors.sort_by(|left, right| {
+        let left_protected = Some(left.base.as_str()) == protected_base;
+        let right_protected = Some(right.base.as_str()) == protected_base;
+        right_protected
+            .cmp(&left_protected)
+            .then_with(|| right.modified.cmp(&left.modified))
+            .then_with(|| right.base.cmp(&left.base))
+    });
+
+    let keep = keep.max(1);
+    let keep_bases = anchors
+        .iter()
+        .take(keep)
+        .map(|anchor| anchor.base.clone())
+        .collect::<BTreeSet<_>>();
+    for anchor in anchors.iter().skip(keep) {
+        remove_regular_file_if_exists(&anchor.path)?;
+        remove_regular_file_if_exists(
+            &support_dir.join(format!("{}{}", anchor.base, SUPPORT_IMAGE_SUFFIX)),
+        )?;
+    }
+    remove_orphan_support_images(&support_dir, &keep_bases)
+}
+
+#[derive(Debug)]
+struct SupportJsonAnchor {
+    base: String,
+    path: PathBuf,
+    modified: std::time::SystemTime,
+}
+
+fn support_json_anchors(support_dir: &Path) -> Result<Vec<SupportJsonAnchor>, std::io::Error> {
+    let mut anchors = Vec::new();
+    for entry in fs::read_dir(support_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let metadata = fs::symlink_metadata(&path)?;
+        if !metadata.file_type().is_file() {
+            continue;
+        }
+        let Some(base) = path.file_name().and_then(support_json_base) else {
+            continue;
+        };
+        anchors.push(SupportJsonAnchor {
+            base,
+            path,
+            modified: metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH),
+        });
+    }
+    Ok(anchors)
+}
+
+fn remove_orphan_support_images(
+    support_dir: &Path,
+    keep_bases: &BTreeSet<String>,
+) -> Result<(), std::io::Error> {
+    for entry in fs::read_dir(support_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let metadata = fs::symlink_metadata(&path)?;
+        if !metadata.file_type().is_file() {
+            continue;
+        }
+        let Some(base) = path.file_name().and_then(support_image_base) else {
+            continue;
+        };
+        if !keep_bases.contains(&base) {
+            remove_regular_file_if_exists(&path)?;
+        }
+    }
+    Ok(())
+}
+
+fn remove_regular_file_if_exists(path: &Path) -> Result<(), std::io::Error> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    if metadata.file_type().is_file() {
+        fs::remove_file(path)?;
+    }
+    Ok(())
+}
+
+fn support_json_base(file_name: &std::ffi::OsStr) -> Option<String> {
+    let name = file_name.to_str()?;
+    let base = name.strip_suffix(SUPPORT_JSON_SUFFIX)?;
+    support_base_valid(base).then(|| base.to_string())
+}
+
+fn support_image_base(file_name: &std::ffi::OsStr) -> Option<String> {
+    let name = file_name.to_str()?;
+    let base = name.strip_suffix(SUPPORT_IMAGE_SUFFIX)?;
+    support_base_valid(base).then(|| base.to_string())
+}
+
+fn support_base_valid(base: &str) -> bool {
+    base.len() > SUPPORT_PREFIX.len()
+        && base.starts_with(SUPPORT_PREFIX)
+        && base
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+}
+
+fn append_support_error(target: &mut Option<String>, message: impl Into<String>) {
+    let message = message.into();
+    match target {
+        Some(existing) if !existing.is_empty() => {
+            existing.push_str("; ");
+            existing.push_str(&message);
+        }
+        Some(existing) => *existing = message,
+        None => *target = Some(message),
+    }
 }
 
 fn support_report(

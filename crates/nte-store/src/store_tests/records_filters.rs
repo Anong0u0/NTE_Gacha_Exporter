@@ -788,7 +788,7 @@ fn records_list_oldest_first_is_exact_newest_first_reverse() {
             .iter()
             .map(|record| record.record_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["source-1", "source-2"]
+        vec!["source-2", "source-1"]
     );
     assert_eq!(
         chronological
@@ -796,7 +796,7 @@ fn records_list_oldest_first_is_exact_newest_first_reverse() {
             .iter()
             .map(|record| record.record_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["source-2", "source-1"]
+        vec!["source-1", "source-2"]
     );
     assert_eq!(chronological.records[0].derived.pity_5_before, 0);
     assert_eq!(chronological.records[1].derived.pity_5_before, 1);

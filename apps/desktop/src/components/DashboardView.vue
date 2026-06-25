@@ -201,7 +201,7 @@ watch(
           <button
             v-for="banner in app.selectedPoolBannerSummaries"
             :key="banner.banner_id"
-            :class="{ active: app.isSelectedDashboardBanner(banner.banner_id) }"
+            :class="{ active: app.isSelectedDashboardBanner(banner.banner_id), 'is-fork-banner': banner.banner_type === 'fork' || banner.pool_kind === 'fork_lottery' }"
             type="button"
             :title="banner.title"
             :aria-label="banner.title"

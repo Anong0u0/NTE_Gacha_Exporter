@@ -133,7 +133,7 @@ fn maps_build_writes_locale_map() {
     let map: Value =
         serde_json::from_str(&std::fs::read_to_string(out_dir.join("zh-Hant.json")).unwrap())
             .unwrap();
-    assert_eq!(map["schema_version"], 4);
+    assert_eq!(map["schema_version"], 2);
     assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
     assert_eq!(
         map["banners"]["monopoly_standard"]["banner_type"],

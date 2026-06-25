@@ -1099,10 +1099,10 @@ fn dashboard_pity_keeps_existing_same_timestamp_analysis_order() {
         .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
         .unwrap();
 
-    assert_eq!(limited.current_pity, 1);
+    assert_eq!(limited.current_pity, 8);
     assert_eq!(limited.current_ten_pull_progress, Some(0));
-    assert_eq!(fork.current_pity, 0);
-    assert_eq!(fork.current_ten_pull_progress, Some(0));
+    assert_eq!(fork.current_pity, 9);
+    assert_eq!(fork.current_ten_pull_progress, Some(8));
 }
 
 #[test]
@@ -1175,10 +1175,10 @@ fn dashboard_five_star_wall_history_is_newest_first_without_pull_number_sort() {
             .collect::<Vec<_>>(),
         vec![
             "late-ticket",
-            "same-time-sleep-ticket",
             "same-time-character",
-            "old-character",
-            "old-dice"
+            "same-time-sleep-ticket",
+            "old-dice",
+            "old-character"
         ]
     );
     assert_eq!(
@@ -1187,7 +1187,7 @@ fn dashboard_five_star_wall_history_is_newest_first_without_pull_number_sort() {
             .iter()
             .map(|hit| hit.record.source_order)
             .collect::<Vec<_>>(),
-        vec![125, 300, 301, 209, 216]
+        vec![125, 301, 300, 216, 209]
     );
     assert_eq!(
         detail

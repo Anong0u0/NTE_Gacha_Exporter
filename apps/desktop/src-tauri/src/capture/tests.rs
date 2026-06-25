@@ -199,4 +199,140 @@ mod tests {
         assert!(error.support_path.unwrap().contains("data/support"));
         assert!(error.support_image_path.is_none());
     }
+
+    #[test]
+    fn support_rotate_keeps_latest_three_bundles() {
+        let tmp = tempfile::tempdir().unwrap();
+        let support_dir = tmp.path().join("data/support");
+        std::fs::create_dir_all(&support_dir).unwrap();
+        for index in 0..5 {
+            write_support_bundle(&support_dir, &format!("capture-s{index}"));
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+
+        rotate_capture_support_files(tmp.path(), 3, Some("capture-s4")).unwrap();
+
+        assert_support_bundle_exists(&support_dir, "capture-s4");
+        assert_support_bundle_exists(&support_dir, "capture-s3");
+        assert_support_bundle_exists(&support_dir, "capture-s2");
+        assert_support_bundle_missing(&support_dir, "capture-s1");
+        assert_support_bundle_missing(&support_dir, "capture-s0");
+    }
+
+    #[test]
+    fn support_rotate_removes_orphan_images_but_skips_unrelated_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let support_dir = tmp.path().join("data/support");
+        std::fs::create_dir_all(&support_dir).unwrap();
+        write_support_bundle(&support_dir, "capture-current");
+        std::fs::write(support_dir.join("capture-orphan-page-number.png"), b"orphan").unwrap();
+        std::fs::write(support_dir.join("notes.txt"), b"keep").unwrap();
+        std::fs::create_dir(support_dir.join("capture-dir.json")).unwrap();
+
+        rotate_capture_support_files(tmp.path(), 3, Some("capture-current")).unwrap();
+
+        assert_support_bundle_exists(&support_dir, "capture-current");
+        assert!(!support_dir
+            .join("capture-orphan-page-number.png")
+            .exists());
+        assert_eq!(std::fs::read(support_dir.join("notes.txt")).unwrap(), b"keep");
+        assert!(support_dir.join("capture-dir.json").is_dir());
+    }
+
+    #[test]
+    fn support_rotate_reports_symlink_support_dir_without_deleting_target() {
+        let tmp = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let data_dir = tmp.path().join("data");
+        std::fs::create_dir_all(&data_dir).unwrap();
+        if create_dir_symlink(outside.path(), data_dir.join("support")).is_err() {
+            return;
+        }
+        std::fs::write(outside.path().join("capture-outside.json"), b"outside").unwrap();
+
+        let error = rotate_capture_support_files(tmp.path(), 3, None).unwrap_err();
+
+        assert!(error.to_string().contains("support path is symlink"));
+        assert_eq!(std::fs::read(outside.path().join("capture-outside.json")).unwrap(), b"outside");
+    }
+
+    #[test]
+    fn support_writer_rejects_symlink_support_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let data_dir = tmp.path().join("data");
+        std::fs::create_dir_all(&data_dir).unwrap();
+        if create_dir_symlink(outside.path(), data_dir.join("support")).is_err() {
+            return;
+        }
+        let status = failed_status("session-symlink");
+
+        let result = write_capture_support(SupportRequest {
+            root: tmp.path(),
+            status: &status,
+            source_kind: "pktmon-auto-page-capture",
+            auto_result: None,
+        });
+
+        assert!(result.json_path.is_none());
+        assert!(result.error.unwrap().contains("support path is symlink"));
+        assert!(std::fs::read_dir(outside.path()).unwrap().next().is_none());
+    }
+
+    #[test]
+    fn support_writer_sanitizes_session_id_and_stays_in_support_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let status = failed_status("../../escape");
+
+        let result = write_capture_support(SupportRequest {
+            root: tmp.path(),
+            status: &status,
+            source_kind: "pktmon-auto-page-capture",
+            auto_result: None,
+        });
+
+        let path = result.json_path.unwrap();
+        assert_eq!(path.parent().unwrap(), tmp.path().join("data/support"));
+        assert_eq!(path.file_name().unwrap(), "capture-------escape.json");
+        assert!(!tmp.path().join("escape.json").exists());
+    }
+
+    fn write_support_bundle(support_dir: &Path, base: &str) {
+        std::fs::write(support_dir.join(format!("{base}.json")), b"json").unwrap();
+        std::fs::write(
+            support_dir.join(format!("{base}-page-number.png")),
+            b"png",
+        )
+        .unwrap();
+    }
+
+    fn assert_support_bundle_exists(support_dir: &Path, base: &str) {
+        assert!(support_dir.join(format!("{base}.json")).is_file());
+        assert!(support_dir
+            .join(format!("{base}-page-number.png"))
+            .is_file());
+    }
+
+    fn assert_support_bundle_missing(support_dir: &Path, base: &str) {
+        assert!(!support_dir.join(format!("{base}.json")).exists());
+        assert!(!support_dir
+            .join(format!("{base}-page-number.png"))
+            .exists());
+    }
+
+    #[cfg(unix)]
+    fn create_dir_symlink(
+        target: impl AsRef<Path>,
+        link: impl AsRef<Path>,
+    ) -> Result<(), std::io::Error> {
+        std::os::unix::fs::symlink(target, link)
+    }
+
+    #[cfg(windows)]
+    fn create_dir_symlink(
+        target: impl AsRef<Path>,
+        link: impl AsRef<Path>,
+    ) -> Result<(), std::io::Error> {
+        std::os::windows::fs::symlink_dir(target, link)
+    }
 }

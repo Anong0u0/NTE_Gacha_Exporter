@@ -18,7 +18,44 @@ fn same_asset_ref(refs: &JsonObject, left: &str, right: &str) -> bool {
     )
 }
 
-fn prune_item_asset_refs(refs: &mut JsonObject) {
+fn business_card_refs(assets_root: &Path) -> Result<BTreeMap<String, String>, GuiError> {
+    let path = assets_root.join(BUSINESS_CARD_TABLE);
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let mut refs = BTreeMap::new();
+    for row in rows_from_datatable(&path)?.values() {
+        let Some(row) = row.as_object() else {
+            continue;
+        };
+        let Some(key) = text_ref_key(row.get("UnlockDescription")) else {
+            continue;
+        };
+        let Some(character_id) = key.strip_prefix("likeability_card_") else {
+            continue;
+        };
+        let Some(icon) = asset_path(row.get("IconSource")) else {
+            continue;
+        };
+        refs.insert(character_id.to_string(), icon);
+    }
+    Ok(refs)
+}
+
+fn is_vehicle_fashion(item_id: &str) -> bool {
+    item_id.starts_with("Fashion_vehicle")
+}
+
+fn is_glide_fashion(item_id: &str) -> bool {
+    item_id.starts_with("Fashion_Glide") || item_id.starts_with("Fashion_glide")
+}
+
+fn prune_item_asset_refs(
+    refs: &mut JsonObject,
+    item_id: &str,
+    category: Option<&str>,
+    business_card_refs: &BTreeMap<String, String>,
+) {
     if same_asset_ref(refs, "icon", "portrait") {
         refs.remove("icon");
     }
@@ -27,6 +64,21 @@ fn prune_item_asset_refs(refs: &mut JsonObject) {
     }
     if same_asset_ref(refs, "material", "banner") {
         refs.remove("material");
+    }
+    if is_vehicle_fashion(item_id) {
+        refs.remove("portrait");
+    }
+    if is_glide_fashion(item_id) {
+        refs.remove("portrait");
+        refs.remove("banner");
+    }
+    if category == Some("character") {
+        refs.remove("portrait");
+        if let Some(card) = business_card_refs.get(item_id) {
+            refs.insert("banner".to_string(), Value::String(card.clone()));
+        } else {
+            refs.remove("banner");
+        }
     }
 }
 
@@ -200,6 +252,7 @@ fn build_item_meta_rows(
 ) -> Result<Vec<JsonObject>, GuiError> {
     let known_ids = items.keys().cloned().collect::<BTreeSet<_>>();
     let mut meta = BTreeMap::new();
+    let business_cards = business_card_refs(assets_root)?;
     for &(category, rel_path) in TABLES.iter().chain(APPEARANCE_TABLES.iter()) {
         let path = assets_root.join(rel_path);
         if !path.exists() {
@@ -241,7 +294,8 @@ fn build_item_meta_rows(
             .filter(|value| value.as_object().is_some_and(|object| !object.is_empty()))
         {
             let mut refs = refs.clone();
-            prune_item_asset_refs(&mut refs);
+            let category = asset_item.get("category").and_then(Value::as_str);
+            prune_item_asset_refs(&mut refs, item_id, category, &business_cards);
             if !refs.is_empty() {
                 row.insert("asset_refs".to_string(), Value::Object(refs));
             }

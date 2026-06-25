@@ -4,7 +4,7 @@ mod tests {
     use crate::model::BannerResolutionIssue;
 
     #[test]
-    fn load_bundled_v4_map_keeps_banner_and_rule_sections() {
+    fn load_bundled_map_keeps_banner_and_rule_sections() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
         let banner = map
@@ -32,7 +32,23 @@ mod tests {
         assert_eq!(rule.has_guarantee_5, Some(true));
 
         let item = map.items.get("1010").expect("item asset refs should exist");
-        assert!(item.asset_refs.contains_key("portrait"));
+        assert!(!item.asset_refs.contains_key("portrait"));
+        assert!(item.asset_refs.contains_key("head_icon"));
+        assert_eq!(
+            item.asset_refs.get("banner").and_then(|value| value.as_str()),
+            Some(
+                "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
+            )
+        );
+        assert_eq!(
+            map.banners
+                .get("monopoly_limited_Nanali")
+                .and_then(|banner| banner.asset_refs.get("image"))
+                .and_then(|value| value.as_str()),
+            Some(
+                "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
+            )
+        );
         assert_eq!(item.color.as_deref(), Some("#F24B7E"));
 
         assert_eq!(

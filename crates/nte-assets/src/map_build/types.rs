@@ -8,7 +8,7 @@ use serde_json::{json, Map, Value};
 
 use nte_core::GuiError;
 
-const MAP_SCHEMA_VERSION: u64 = 4;
+const MAP_SCHEMA_VERSION: u64 = 2;
 const ASSET_FALLBACK_LOCALE: &str = "en";
 const REMOVED_MAP_LOCALES: &[&str] = &["en-JM"];
 
@@ -30,6 +30,7 @@ const VEHICLE_MODULE_TABLES: &[(&str, &str)] = &[(
 )];
 const POOL_TABLES: &[(&str, &str)] = &[("fork_pool", "DataTable/Fork/DT_ForkLotteryPoolData.json")];
 const GACHA_ILLUSTRATE_TABLE: &str = "DataTable/Gacha/GachaIllustrate.json";
+const BUSINESS_CARD_TABLE: &str = "DataTable/PlayerInfo/DT_BusinessCardConfig.json";
 const DROP_GROUP_TABLE: &str = "DataTable/Drop/Client/ClientDropGroupDataTable.json";
 const DROP_SEQUENCE_TABLE: &str = "DataTable/Drop/DropSequenceDataTable.json";
 const MONOPOLY_TITLE_NAMESPACE: &str = "ST_Ui";

@@ -48,7 +48,7 @@ const BUNDLED_MAPS: &[(&str, &str)] = &[
         include_str!("../../../nte-assets/resources/maps/zh-Hant.json"),
     ),
 ];
-const MAP_SCHEMA_VERSION: u64 = 4;
+const MAP_SCHEMA_VERSION: u64 = 2;
 static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize)]

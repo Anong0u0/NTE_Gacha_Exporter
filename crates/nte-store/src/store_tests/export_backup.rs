@@ -117,17 +117,17 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
             .iter()
             .map(|record| record["record_id"].as_str().unwrap())
             .collect::<Vec<_>>(),
-        vec!["gift", "normal", "sleep"]
+        vec!["normal", "gift", "sleep"]
     );
     assert_eq!(
-        records[0]["roll_label_id"],
+        records[1]["roll_label_id"],
         "BPUI_LotteryResult_jidianzengli"
     );
-    assert_eq!(records[0]["roll_label"], "集點贈禮");
+    assert_eq!(records[1]["roll_label"], "集點贈禮");
     for key in derived_export_keys() {
-        assert!(records[0].get(key).is_none(), "{key} should not be exported");
+        assert!(records[1].get(key).is_none(), "{key} should not be exported");
     }
-    assert!(records[0].get("roll_points").is_none());
+    assert!(records[1].get("roll_points").is_none());
     assert_eq!(
         records[2]["roll_label_id"],
         "BPUI_LotteryResult_chenmiandi"
@@ -140,7 +140,7 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
 
     let csv = std::fs::read_to_string(csv_path).unwrap();
     let lines = csv.lines().collect::<Vec<_>>();
-    assert!(lines[1].contains("集點贈禮"));
+    assert!(lines[2].contains("集點贈禮"));
     assert!(lines[3].contains("沉眠地"));
 }
 

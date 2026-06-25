@@ -431,6 +431,7 @@ mod tests {
         let maps_dir = temp.path().join("maps");
         fs::create_dir_all(assets_root.join("UI_Icon/Fork/1024")).unwrap();
         fs::create_dir_all(assets_root.join("UI/Gacha")).unwrap();
+        fs::create_dir_all(assets_root.join("UI/PlayerInfo/BusinessCards/Card_Small")).unwrap();
         fs::create_dir_all(&maps_dir).unwrap();
         let image = image::RgbaImage::from_pixel(512, 512, image::Rgba([255, 0, 0, 255]));
         image
@@ -440,6 +441,13 @@ mod tests {
             .save(assets_root.join("UI_Icon/Fork/1024/fork_Small.png"))
             .unwrap();
         image.save(assets_root.join("UI/Gacha/shared.png")).unwrap();
+        image
+            .save(
+                assets_root.join(
+                    "UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.png",
+                ),
+            )
+            .unwrap();
         fs::write(
             maps_dir.join("en.json"),
             r#"{
@@ -454,6 +462,11 @@ mod tests {
                 "small": {
                   "asset_refs": {
                     "head_icon": "/Game/UI/UI_Icon/Fork/1024/fork_Small.fork_Small"
+                  }
+                },
+                "business_card": {
+                  "asset_refs": {
+                    "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
                   }
                 }
               },
@@ -479,10 +492,10 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(build.manifest.file_count, 5);
+        assert_eq!(build.manifest.file_count, 6);
         let mut zip = zip::ZipArchive::new(fs::File::open(out_path).unwrap()).unwrap();
         let manifest = read_zip_manifest(&mut zip).unwrap();
-        assert_eq!(manifest.assets.len(), 5);
+        assert_eq!(manifest.assets.len(), 6);
         let icon = manifest
             .assets
             .iter()
@@ -508,6 +521,11 @@ mod tests {
             .iter()
             .find(|asset| asset.kind == "portrait")
             .unwrap();
+        let card = manifest
+            .assets
+            .iter()
+            .find(|asset| asset.asset_ref.contains("YH_UI_bg_card_show_strip_08_s"))
+            .unwrap();
         assert_eq!((icon.width, icon.height), (256, 256));
         assert_eq!((head_icon.width, head_icon.height), (256, 256));
         assert_eq!(head_icon.pack_path, icon.pack_path);
@@ -518,7 +536,13 @@ mod tests {
         assert_eq!((image.width, image.height), (512, 512));
         assert_eq!((portrait.width, portrait.height), (512, 512));
         assert_eq!(portrait.pack_path, image.pack_path);
+        assert_eq!(card.kind, "banner");
+        assert_eq!(
+            card.source_path,
+            "UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.png"
+        );
         assert!(zip.by_name(&icon.pack_path).is_ok());
         assert!(zip.by_name(&image.pack_path).is_ok());
+        assert!(zip.by_name(&card.pack_path).is_ok());
     }
 }

@@ -408,7 +408,7 @@ fn records_with_effective_pull<'a>(
     let mut fallback_pull = 0_u64;
     let mut current_pull = 0_u64;
     let mut ordered = records.to_vec();
-    ordered.sort_by(|left, right| compare_display_analysis(left, right));
+    ordered.sort_by(|left, right| compare_display_chronological(left, right));
     let mut records_with_effective_pull = Vec::with_capacity(ordered.len());
     for record in ordered {
         if record.derived.counts_as_pull {
@@ -443,12 +443,6 @@ fn scoped_pull_no(record: &DisplayRecord, banner_id: Option<&str>) -> Option<u64
     } else {
         record.derived.pull_no_in_pool_kind
     }
-}
-
-fn compare_display_analysis(left: &DisplayRecord, right: &DisplayRecord) -> std::cmp::Ordering {
-    crate::compare_time_asc(left.time.as_deref(), right.time.as_deref())
-        .then_with(|| right.source_order.cmp(&left.source_order))
-        .then_with(|| left.record_id.cmp(&right.record_id))
 }
 
 fn is_five_star_wall_record(record: &DisplayRecord, pool_kind: PoolKind) -> bool {

@@ -49,7 +49,12 @@ export function createAssetTools(options: AssetToolsOptions) {
     return item ? firstAssetUrl(item.item_asset_refs, ["portrait", "icon", "head_icon"]) : "";
   }
 
+  function isForkBanner(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+    return banner?.banner_type === "fork" || banner?.pool_kind === "fork_lottery";
+  }
+
   function bannerVisualUrl(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+    if (isForkBanner(banner)) return firstAssetUrl(banner?.asset_refs, ["image"]);
     return firstAssetUrl(banner?.asset_refs, ["image", "background", "banner", "icon"]);
   }
 
