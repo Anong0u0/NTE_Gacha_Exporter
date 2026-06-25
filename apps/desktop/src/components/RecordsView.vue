@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-vue-next";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, SkipBack, SkipForward, SlidersHorizontal, X } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 import MultiSelectDropdown from "./MultiSelectDropdown.vue";
 
@@ -68,13 +68,13 @@ const app = useAppContext();
               />
             </label>
             <label class="field">
-              <span>{{ app.t("records.hitRarity") }}</span>
+              <span>{{ app.t("records.focusedRarity") }}</span>
               <MultiSelectDropdown
-                v-model="app.hitRarities"
-                :label="app.t('records.hitRarity')"
-                :all-label="app.t('records.allHits')"
+                v-model="app.focusedRarities"
+                :label="app.t('records.focusedRarity')"
+                :all-label="app.t('records.allFocusedRarities')"
                 :selected-label="app.t('records.selectedCount')"
-                :options="app.hitRarityOptions"
+                :options="app.focusedRarityOptions"
               />
             </label>
           </div>
@@ -164,12 +164,26 @@ const app = useAppContext();
               <select v-model.number="app.pageSize">
                 <option v-for="size in app.recordPageSizes" :key="size" :value="size">{{ size }}</option>
               </select>
-              <button type="button" class="page-button" :disabled="!app.canPrevPage || app.isWorkflowBusy" :title="app.t('records.previousPage')" @click="app.pageIndex--">
+              <button type="button" class="page-button" :disabled="!app.canFirstPage || app.isWorkflowBusy" :title="app.t('records.firstPage')" :aria-label="app.t('records.firstPage')" @click="app.goToFirstRecordPage">
+                <SkipBack :size="16" />
+              </button>
+              <button type="button" class="page-button" :disabled="!app.canPrevPage || app.isWorkflowBusy" :title="app.t('records.previousPage')" :aria-label="app.t('records.previousPage')" @click="app.pageIndex--">
                 <ChevronLeft :size="16" />
               </button>
-              <span class="pager-range">{{ app.t("records.pageRange", { start: app.recordPageStart, end: app.recordPageEnd, total: app.recordTotal }) }}</span>
-              <button type="button" class="page-button" :disabled="!app.canNextPage || app.isWorkflowBusy" :title="app.t('records.nextPage')" @click="app.pageIndex++">
+              <button
+                type="button"
+                class="pager-range"
+                :disabled="app.recordTotal === 0 || app.isWorkflowBusy"
+                :title="app.t('records.jumpToPage')"
+                @click="app.openRecordPageJump"
+              >
+                {{ app.t("records.pageRange", { start: app.recordPageStart, end: app.recordPageEnd, total: app.recordTotal }) }}
+              </button>
+              <button type="button" class="page-button" :disabled="!app.canNextPage || app.isWorkflowBusy" :title="app.t('records.nextPage')" :aria-label="app.t('records.nextPage')" @click="app.pageIndex++">
                 <ChevronRight :size="16" />
+              </button>
+              <button type="button" class="page-button" :disabled="!app.canLastPage || app.isWorkflowBusy" :title="app.t('records.lastPage')" :aria-label="app.t('records.lastPage')" @click="app.goToLastRecordPage">
+                <SkipForward :size="16" />
               </button>
             </div>
           </div>
@@ -225,5 +239,26 @@ const app = useAppContext();
             <div v-if="app.records.length === 0" class="empty-row">{{ app.t("records.empty") }}</div>
           </div>
         </section>
+        <div v-if="app.recordPageJumpOpen" class="page-jump-dialog-backdrop" @click.self="app.closeRecordPageJump">
+          <section class="page-jump-dialog" role="dialog" aria-modal="true" :aria-label="app.t('records.jumpToPage')" @keydown.esc="app.closeRecordPageJump">
+            <div class="page-jump-dialog-head">
+              <h2>{{ app.t("records.jumpToPage") }}</h2>
+              <button type="button" class="icon-button" :title="app.t('common.close')" @click="app.closeRecordPageJump">
+                <X :size="16" />
+              </button>
+            </div>
+            <form class="page-jump-dialog-body" @submit.prevent="app.confirmRecordPageJump">
+              <label class="field">
+                <span>{{ app.t("records.pageNumber") }}</span>
+                <input v-model="app.recordPageJumpInput" type="number" min="1" :max="app.recordPageCount || 1" step="1" autofocus />
+              </label>
+              <p>{{ app.t("records.pageCount", { count: app.recordPageCount }) }}</p>
+              <div class="page-jump-actions">
+                <button type="button" class="ghost" @click="app.closeRecordPageJump">{{ app.t("common.cancel") }}</button>
+                <button type="submit">{{ app.t("records.goToPage") }}</button>
+              </div>
+            </form>
+          </section>
+        </div>
       </section>
 </template>

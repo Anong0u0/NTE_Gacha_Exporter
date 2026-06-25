@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope, Trash2 } from "lucide-vue-next";
+import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Settings, Stethoscope } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -124,50 +124,6 @@ const app = useAppContext();
               <HardDriveUpload :size="17" />
               <span>{{ app.t("settings.restartUpdate") }}</span>
             </button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <span class="eyebrow">{{ app.t("settings.assetsPack") }}</span>
-              <h2>{{ app.t("settings.visualAssets") }}</h2>
-            </div>
-          </div>
-          <div class="stat-table compact">
-            <div><span>{{ app.t("common.status") }}</span><strong class="stat-text">{{ app.assetsPackSummary }}</strong></div>
-            <div><span>{{ app.t("common.version") }}</span><strong>{{ app.assetsPackStatus?.installed_app_version ?? "-" }}</strong></div>
-            <div><span>{{ app.t("settings.assetImages") }}</span><strong>{{ app.assetsPackStatus?.file_count ?? 0 }}</strong></div>
-            <div><span>{{ app.t("common.available") }}</span><strong class="stat-text">{{ app.assetsPackCheckReport?.package?.app_version ?? "-" }}</strong></div>
-            <div><span>{{ app.t("common.source") }}</span><strong class="stat-text">{{ app.assetsPackStatus?.source_commit?.slice(0, 12) ?? "-" }}</strong></div>
-            <div><span>{{ app.t("settings.map") }}</span><strong class="stat-text">{{ app.assetsPackStatus?.installed_map_hash?.slice(0, 12) ?? "-" }}</strong></div>
-          </div>
-          <div class="action-row">
-            <button type="button" data-agent-id="assets-check" :disabled="app.isWorkflowBusy" @click="app.checkAssetsPack">
-              <RefreshCw :size="17" />
-              <span>{{ app.t("settings.checkAssets") }}</span>
-            </button>
-            <button
-              class="primary"
-              type="button"
-              :disabled="app.isWorkflowBusy || !app.assetsPackCheckReport?.package"
-              @click="app.downloadAssetsPack"
-            >
-              <Download :size="17" />
-              <span>{{ app.t("settings.downloadAssets") }}</span>
-            </button>
-            <button
-              class="danger"
-              type="button"
-              :disabled="app.isWorkflowBusy || !app.assetsPackStatus?.installed"
-              @click="app.removeAssetsPack"
-            >
-              <Trash2 :size="17" />
-              <span>{{ app.t("common.remove") }}</span>
-            </button>
-          </div>
-          <div v-if="app.lastAssetsPackInstall" class="asset-pack-note">
-            {{ app.t("settings.installedAssets", { count: app.lastAssetsPackInstall.file_count, commit: app.lastAssetsPackInstall.source_commit.slice(0, 12) }) }}
           </div>
         </section>
 

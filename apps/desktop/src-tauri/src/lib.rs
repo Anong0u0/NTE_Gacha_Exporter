@@ -28,6 +28,7 @@ pub fn run() {
         .setup(move |app| {
             let root =
                 portable_root().map_err(|err| format!("failed to resolve portable root: {err}"))?;
+            let _ = nte_update::cleanup_update_artifacts_after_success(&root);
             let store = JsonStore::open_with_defaults(root, system_commands::store_defaults())
                 .map_err(|err| format!("failed to open JSON store: {err}"))?;
             app.manage(AppState::new(store, pending_admin_capture.clone()));
@@ -61,10 +62,6 @@ pub fn run() {
             update_commands::updater_check,
             update_commands::updater_download_and_stage,
             update_commands::updater_install_staged,
-            assets_commands::assets_pack_status,
-            assets_commands::assets_pack_check,
-            assets_commands::assets_pack_download_and_install,
-            assets_commands::assets_pack_remove,
             assets_commands::assets_resolve_refs,
             system_commands::maps_list,
             system_commands::ui_locale_list,

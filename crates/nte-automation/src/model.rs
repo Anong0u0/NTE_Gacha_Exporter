@@ -89,6 +89,57 @@ pub struct TemplateMatch {
     pub candidate_count: u64,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PageReadHintDiagnostics {
+    pub previous_current: Option<u32>,
+    pub expected_current: Option<u32>,
+    pub expected_total: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OcrAttemptDiagnostic {
+    pub candidate_index: usize,
+    pub size: Size,
+    pub text: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OcrReadDiagnostics {
+    pub hint: PageReadHintDiagnostics,
+    pub attempts: Vec<OcrAttemptDiagnostic>,
+    pub error: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutoPageWindowDiagnostics {
+    pub hwnd: usize,
+    pub pid: u32,
+    pub class_name: String,
+    pub title: String,
+    pub client_size: Size,
+    pub profile_base_size: Size,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AutoPageVisualDiagnostics {
+    pub pool: Option<String>,
+    pub page_rect: Option<Rect>,
+    pub context_rect: Option<Rect>,
+    pub next_button: Option<Point>,
+    pub last_template_matches: Vec<TemplateMatch>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AutoPageDiagnostics {
+    pub failure_kind: Option<String>,
+    pub window: Option<AutoPageWindowDiagnostics>,
+    pub visual: AutoPageVisualDiagnostics,
+    pub ocr: Option<OcrReadDiagnostics>,
+    #[serde(skip)]
+    pub page_context_png: Option<Vec<u8>>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutoPageStatus {
     pub elapsed_seconds: f64,
@@ -159,6 +210,8 @@ pub struct AutoPageResult {
     pub skipped_pools: Vec<String>,
     pub visited_pages_by_pool: BTreeMap<String, u32>,
     pub last_page_by_pool: BTreeMap<String, u32>,
+    #[serde(default)]
+    pub diagnostics: AutoPageDiagnostics,
 }
 
 impl AutoPageResult {
@@ -184,6 +237,7 @@ impl AutoPageResult {
             skipped_pools,
             visited_pages_by_pool,
             last_page_by_pool,
+            diagnostics: AutoPageDiagnostics::default(),
         }
     }
 
@@ -199,6 +253,7 @@ impl AutoPageResult {
             skipped_pools,
             visited_pages_by_pool: BTreeMap::new(),
             last_page_by_pool: BTreeMap::new(),
+            diagnostics: AutoPageDiagnostics::default(),
         }
     }
 
@@ -214,6 +269,41 @@ impl AutoPageResult {
             skipped_pools,
             visited_pages_by_pool: BTreeMap::new(),
             last_page_by_pool: BTreeMap::new(),
+            diagnostics: AutoPageDiagnostics::default(),
+        }
+    }
+
+    pub fn failed_with_diagnostics(
+        message: impl Into<String>,
+        completed_pools: Vec<String>,
+        skipped_pools: Vec<String>,
+        diagnostics: AutoPageDiagnostics,
+    ) -> Self {
+        Self {
+            status: "failed".to_string(),
+            message: message.into(),
+            completed_pools,
+            skipped_pools,
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
+            diagnostics,
+        }
+    }
+
+    pub fn manual_with_diagnostics(
+        message: impl Into<String>,
+        completed_pools: Vec<String>,
+        skipped_pools: Vec<String>,
+        diagnostics: AutoPageDiagnostics,
+    ) -> Self {
+        Self {
+            status: "manual".to_string(),
+            message: message.into(),
+            completed_pools,
+            skipped_pools,
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
+            diagnostics,
         }
     }
 

@@ -5,9 +5,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   api,
-  type AssetsPackCheckReport,
-  type AssetsPackInstallReport,
-  type AssetsPackStatus,
   type BackupReport,
   type CaptureMode,
   type CaptureStatus,
@@ -45,7 +42,7 @@ import { createTranslator, uiLocaleDisplayName } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode, type PoolKindFilter } from "./options";
-import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordColumnGridTracks, recordColumnIds, recordPageSizes, recordPrefsKey, type RecordColumnId, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
+import { defaultRecordViewPrefs, forkPityBadgeOptions, forkResultMarkOptions, isRecordRarity, rateUpResultOptions, readRecordViewPrefs, recordColumnGridTracks, recordColumnIds, recordPageSizes, recordPrefsKey, type FiveStarWallMode, type RecordColumnId, type RecordPageSize, type RecordViewPrefs } from "./recordPrefs";
 import { createProfileActions } from "./profileActions";
 import { rarityClass } from "./rarityColors";
 import { dashboardRaritySlices } from "./rarityBuckets";
@@ -78,7 +75,6 @@ export function useApp() {
   const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null), doctorReport = ref<DoctorReport | null>(null);
   const lastDataOperation = ref<DataOperationKind | null>(null);
   const updateStatus = ref<UpdateStatus | null>(null), updateCheckReport = ref<UpdateCheckReport | null>(null), stagedUpdate = ref<UpdateStageReport | null>(null);
-  const assetsPackStatus = ref<AssetsPackStatus | null>(null), assetsPackCheckReport = ref<AssetsPackCheckReport | null>(null), lastAssetsPackInstall = ref<AssetsPackInstallReport | null>(null);
   const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
   const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
   const rankingDialogOpen = ref(false);
@@ -114,13 +110,14 @@ export function useApp() {
   const { renderChart, disposeChart } = createChartTools(chartEl, detail, t);
 
   const recordPoolKind = ref<PoolKindFilter>("all"), recordBannerIds = ref<string[]>([]), itemRarities = ref<number[]>([]);
-  const hitRarities = ref<number[]>([]), rateUpResults = ref<RateUpResult[]>([]), rollBuckets = ref<RollBucket[]>([]), itemKinds = ref<ItemKind[]>([]);
+  const focusedRarities = ref<number[]>([]), rateUpResults = ref<RateUpResult[]>([]), rollBuckets = ref<RollBucket[]>([]), itemKinds = ref<ItemKind[]>([]);
   const forkResultMarks = ref<ForkResultMark[]>([]), forkPityBadges = ref<PityBadge[]>([]);
   const dateFrom = ref(""), dateTo = ref(""), search = ref("");
   const sortDirection = ref<SortDirection>("desc"), pageSize = ref<number>(defaultRecordViewPrefs.pageSize), pageIndex = ref(0);
+  const recordPageJumpOpen = ref(false), recordPageJumpInput = ref("1");
   const visibleRecordColumns = ref<RecordColumnId[]>([...defaultRecordViewPrefs.visibleRecordColumns]);
   const recordAdvancedFiltersOpen = ref(false);
-  const showLatestFiveStarItems = ref(defaultRecordViewPrefs.showLatestFiveStarItems);
+  const latestFiveStarWallModes = ref<Record<PoolKind, FiveStarWallMode>>({ ...defaultRecordViewPrefs.latestFiveStarWallModes });
   const rankingRaritySelectionsByPoolKind = ref<Record<PoolKind, RankingRaritySelection>>({
     monopoly_limited: defaultRankingRaritySelection(),
     monopoly_standard: defaultRankingRaritySelection(),
@@ -162,7 +159,7 @@ export function useApp() {
       recordPoolKind.value !== "all",
       recordBannerIds.value.length > 0,
       itemRarities.value.length > 0,
-      hitRarities.value.length > 0,
+      focusedRarities.value.length > 0,
       rateUpResults.value.length > 0,
       rollBuckets.value.length > 0,
       itemKinds.value.length > 0,
@@ -192,8 +189,11 @@ export function useApp() {
     selectedSummary: selectedPoolSummary,
     recordPageStart,
     recordPageEnd,
+    recordPageCount,
     canPrevPage,
     canNextPage,
+    canFirstPage,
+    canLastPage,
     bannersForRecordKind,
     isCaptureActive,
     isWorkflowBusy,
@@ -201,7 +201,6 @@ export function useApp() {
     captureSubtitle,
     autoPageStatusLine,
     captureModeLabel,
-    assetsPackSummary,
   } = createAppComputed({
     profiles,
     activeProfileName,
@@ -213,7 +212,6 @@ export function useApp() {
     captureMode,
     busy,
     captureActionBusy,
-    assetsPackStatus,
     recordPoolKind,
     pageSize,
     pageIndex,
@@ -264,19 +262,12 @@ export function useApp() {
   });
   const rankingDialogTitle = computed(() => `${selectedDetailTitle.value} · ${t("dashboard.itemRanking")}`);
   const selectedRarityShares = computed(() => dashboardRaritySlices(detail.value, t));
-  const showLatestFiveStarItemToggle = computed(() => selectedPoolKind.value !== "fork_lottery");
+  const latestFiveStarWallMode = computed(() => latestFiveStarWallModeForPool(selectedPoolKind.value));
+  const showLatestFiveStarWallModeToggle = computed(() => true);
   const visibleLatestFiveStarHits = computed(() => visibleFiveStarHits(detail.value));
-  const displayedLatestFiveStarHits = computed(() => [...visibleLatestFiveStarHits.value].reverse());
+  const displayedLatestFiveStarHits = computed(() => visibleLatestFiveStarHits.value);
   const fiveWallExpanded = computed(() => Boolean(fiveWallExpandedByPoolKind.value[selectedPoolKind.value]));
-  const hiddenLatestFiveStarItemCount = computed(() => {
-    if (!detail.value || selectedPoolKind.value === "fork_lottery" || showLatestFiveStarItems.value) return 0;
-    return (detail.value.five_star_display_history ?? []).filter((hit) => hit.record.item_kind !== "character").length;
-  });
-  const latestFiveStarEmptyText = computed(() =>
-    hiddenLatestFiveStarItemCount.value > 0
-      ? t("dashboard.fiveStarRecordsHiddenByItems")
-      : t("dashboard.fiveStarRecordsEmpty"),
-  );
+  const latestFiveStarEmptyText = computed(() => t("dashboard.fiveStarRecordsEmpty"));
   const recordBannerOptions = computed(() =>
     bannersForRecordKind.value.map((banner) => ({
       value: banner.banner_id,
@@ -284,7 +275,7 @@ export function useApp() {
       meta: String(banner.count),
     })),
   );
-  const hitRarityOptions = computed(() =>
+  const focusedRarityOptions = computed(() =>
     [5, 4, 3].map((rarity) => ({
       value: rarity,
       label: `${rarity}★`,
@@ -409,10 +400,9 @@ export function useApp() {
     resolveVisibleAssets,
   });
   const maintenance = createMaintenanceActions({
-    doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport,
-    lastAssetsPackInstall, assetUrlCache, settingsUpdateChannel, statusText, runTask, resolveVisibleAssets, t,
+    doctorReport, updateStatus, updateCheckReport, stagedUpdate, settingsUpdateChannel, statusText, runTask, t,
   });
-  const { runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack } = maintenance;
+  const { runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate } = maintenance;
 
   function currentRecordViewPrefs(): RecordViewPrefs {
     const normalizedPageSize = recordPageSizes.includes(pageSize.value as RecordPageSize)
@@ -422,7 +412,7 @@ export function useApp() {
       recordPoolKind: recordPoolKind.value,
       recordBannerIds: [...recordBannerIds.value],
       itemRarities: [...itemRarities.value],
-      hitRarities: [...hitRarities.value],
+      focusedRarities: [...focusedRarities.value],
       rateUpResults: [...rateUpResults.value],
       rollBuckets: [...rollBuckets.value],
       itemKinds: [...itemKinds.value],
@@ -435,7 +425,7 @@ export function useApp() {
       pageSize: normalizedPageSize,
       visibleRecordColumns: [...visibleRecordColumns.value],
       recordAdvancedFiltersOpen: recordAdvancedFiltersOpen.value,
-      showLatestFiveStarItems: showLatestFiveStarItems.value,
+      latestFiveStarWallModes: { ...latestFiveStarWallModes.value },
     };
   }
 
@@ -481,7 +471,7 @@ export function useApp() {
       recordPoolKind.value = prefs.recordPoolKind;
       recordBannerIds.value = [...prefs.recordBannerIds];
       itemRarities.value = [...prefs.itemRarities];
-      hitRarities.value = [...prefs.hitRarities];
+      focusedRarities.value = [...prefs.focusedRarities];
       rateUpResults.value = [...prefs.rateUpResults];
       rollBuckets.value = [...prefs.rollBuckets];
       itemKinds.value = [...prefs.itemKinds];
@@ -494,7 +484,7 @@ export function useApp() {
       pageSize.value = prefs.pageSize;
       visibleRecordColumns.value = [...prefs.visibleRecordColumns];
       recordAdvancedFiltersOpen.value = prefs.recordAdvancedFiltersOpen;
-      showLatestFiveStarItems.value = prefs.showLatestFiveStarItems;
+      latestFiveStarWallModes.value = { ...prefs.latestFiveStarWallModes };
       pageIndex.value = 0;
       normalizeRecordFilterSelection();
     } finally {
@@ -510,7 +500,7 @@ export function useApp() {
     const availableItemKinds = new Set(filterOptions.value.item_kinds.map((itemKind) => itemKind.item_kind));
     recordBannerIds.value = recordBannerIds.value.filter((bannerId) => availableBannerIds.has(bannerId));
     itemRarities.value = itemRarities.value.filter(isRecordRarity);
-    hitRarities.value = hitRarities.value.filter(isRecordRarity);
+    focusedRarities.value = focusedRarities.value.filter(isRecordRarity);
     rateUpResults.value = rateUpResults.value.filter((result) => rateUpResultOptions.includes(result));
     rollBuckets.value = rollBuckets.value.filter((bucket) => availableRollBuckets.has(bucket));
     itemKinds.value = itemKinds.value.filter((itemKind) => availableItemKinds.has(itemKind));
@@ -552,12 +542,44 @@ export function useApp() {
     return visibleRecordColumnSet.value.has(column);
   }
 
+  function goToRecordPage(pageNumber: number) {
+    if (recordPageCount.value === 0) return;
+    if (!Number.isFinite(pageNumber)) return;
+    const target = Math.trunc(pageNumber);
+    const clamped = Math.min(Math.max(target, 1), recordPageCount.value);
+    pageIndex.value = clamped - 1;
+  }
+
+  function goToFirstRecordPage() {
+    goToRecordPage(1);
+  }
+
+  function goToLastRecordPage() {
+    goToRecordPage(recordPageCount.value);
+  }
+
+  function openRecordPageJump() {
+    if (recordPageCount.value === 0 || isWorkflowBusy.value) return;
+    recordPageJumpInput.value = String(pageIndex.value + 1);
+    recordPageJumpOpen.value = true;
+  }
+
+  function closeRecordPageJump() {
+    recordPageJumpOpen.value = false;
+  }
+
+  function confirmRecordPageJump() {
+    const value = Number.parseInt(recordPageJumpInput.value, 10);
+    if (Number.isFinite(value)) goToRecordPage(value);
+    closeRecordPageJump();
+  }
+
   function currentRecordFilter(): RecordFilter {
     return {
       pool_kind: recordPoolKind.value === "all" ? null : recordPoolKind.value,
       banner_ids: recordBannerIds.value,
       rarities: itemRarities.value,
-      hit_rarities: hitRarities.value,
+      focused_rarities: focusedRarities.value,
       rate_up_results: rateUpResults.value,
       roll_buckets: rollBuckets.value,
       item_kinds: itemKinds.value,
@@ -689,7 +711,7 @@ export function useApp() {
   watch(detail, async () => { await nextTick(); renderChart(); }, { deep: true });
   watch(uiLocale, async () => { await nextTick(); renderChart(); });
   watch(() => selectedDashboardScope.value, () => { rankingDialogOpen.value = false; }, { deep: true });
-  watch([recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize], () => {
+  watch([recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize], () => {
     if (applyingRecordPrefs || normalizingRecordFilters) return;
     normalizingRecordFilters = true;
     try {
@@ -734,7 +756,6 @@ export function useApp() {
       await loadProfiles();
       await refreshAll();
       await loadUpdaterStatus();
-      await loadAssetsPackStatus();
       const startedPendingCapture = await startPendingAdminCapture();
       if (!startedPendingCapture && settings.check_updates_on_startup) {
         void checkForUpdates(false);
@@ -805,17 +826,16 @@ export function useApp() {
 
   function visibleFiveStarHits(scopeDetail?: DashboardSelectionDetail | null): FiveStarRecord[] {
     if (!scopeDetail) return [];
-    if (scopeDetail.summary.pool_kind === "fork_lottery") return scopeDetail.five_star_history;
-    const displayHistory = scopeDetail.five_star_display_history ?? scopeDetail.five_star_history;
-    return showLatestFiveStarItems.value
-      ? displayHistory
-      : displayHistory.filter((hit) => hit.record.item_kind === "character");
+    const wallHistory = scopeDetail.five_star_wall_history ?? scopeDetail.five_star_history;
+    if (latestFiveStarWallModeForPool(scopeDetail.summary.pool_kind) === "focused") {
+      return wallHistory.filter((hit) => hit.focused_distance != null);
+    }
+    return wallHistory;
   }
 
   function latestFiveStarForPool(summary?: { pool_kind?: PoolKind; latest_5star?: DisplayRecord | null; latest_5star_any?: DisplayRecord | null } | null) {
     if (!summary) return null;
-    if (summary.pool_kind === "fork_lottery") return summary.latest_5star ?? null;
-    return showLatestFiveStarItems.value ? (summary.latest_5star_any ?? summary.latest_5star ?? null) : (summary.latest_5star ?? null);
+    return summary.latest_5star_any ?? summary.latest_5star ?? null;
   }
 
   function latestFiveStarNameForPool(summary?: { pool_kind?: PoolKind; latest_5star?: DisplayRecord | null; latest_5star_any?: DisplayRecord | null } | null) {
@@ -823,9 +843,24 @@ export function useApp() {
     return record ? formatQuantityName(record.item_name, record.count) : "-";
   }
 
-  function toggleLatestFiveStarItems() {
-    showLatestFiveStarItems.value = !showLatestFiveStarItems.value;
+  function latestFiveStarWallModeForPool(poolKind?: PoolKind | null): FiveStarWallMode {
+    return poolKind ? (latestFiveStarWallModes.value[poolKind] ?? "all") : "all";
+  }
+
+  function toggleLatestFiveStarWallMode() {
+    const mode = latestFiveStarWallMode.value === "all" ? "focused" : "all";
+    latestFiveStarWallModes.value = {
+      ...latestFiveStarWallModes.value,
+      [selectedPoolKind.value]: mode,
+    };
     saveRecordViewPrefs();
+  }
+
+  function latestFiveStarWallToggleLabel() {
+    if (selectedPoolKind.value === "fork_lottery") {
+      return latestFiveStarWallMode.value === "all" ? t("dashboard.allFiveStar") : t("dashboard.upFiveStarOnly");
+    }
+    return latestFiveStarWallMode.value === "all" ? t("dashboard.showingFiveStarItems") : t("dashboard.hidingFiveStarItems");
   }
 
   function toggleFiveWallExpanded() {
@@ -837,16 +872,16 @@ export function useApp() {
 
   function showDashboardFiveStarRecords() {
     const scope = selectedDashboardScope.value;
-    const filterCharacterOnly = scope.pool_kind !== "fork_lottery" && !showLatestFiveStarItems.value;
+    const mode = latestFiveStarWallModeForPool(scope.pool_kind);
     applyingRecordPrefs = true;
     try {
       recordPoolKind.value = scope.pool_kind;
       recordBannerIds.value = scope.kind === "banner" ? [scope.banner_id] : [];
-      itemRarities.value = scope.pool_kind === "fork_lottery" ? [] : [5];
-      hitRarities.value = scope.pool_kind === "fork_lottery" ? [5] : [];
+      itemRarities.value = mode === "all" ? [5] : [];
+      focusedRarities.value = mode === "focused" ? [5] : [];
       rateUpResults.value = [];
       rollBuckets.value = [];
-      itemKinds.value = filterCharacterOnly ? ["character"] : [];
+      itemKinds.value = [];
       forkResultMarks.value = [];
       forkPityBadges.value = [];
       dateFrom.value = "";
@@ -903,13 +938,18 @@ export function useApp() {
     return "pity-danger";
   }
 
+  function fiveWallDistance(hit: FiveStarRecord) {
+    if (latestFiveStarWallMode.value === "focused") return hit.focused_distance ?? hit.five_star_distance;
+    return hit.five_star_distance;
+  }
+
   function resetRecordFilters() {
     applyingRecordPrefs = true;
     try {
       recordPoolKind.value = "all";
       recordBannerIds.value = [];
       itemRarities.value = [];
-      hitRarities.value = [];
+      focusedRarities.value = [];
       rateUpResults.value = [];
       rollBuckets.value = [];
       itemKinds.value = [];
@@ -928,13 +968,13 @@ export function useApp() {
 
   return reactive({
     t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
-    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetsPackStatus, assetsPackCheckReport, lastAssetsPackInstall, assetUrlCache, captureStatus, captureActionBusy,
-    capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, hitRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
-    sortDirection, pageSize, pageIndex, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, showLatestFiveStarItems, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, hitRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, canPrevPage,
-    canNextPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, assetsPackSummary, showDashboardBannerRail, showLatestFiveStarItemToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, hiddenLatestFiveStarItemCount, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
+    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, stagedUpdate, assetUrlCache, captureStatus, captureActionBusy,
+    capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
+    sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
+    canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, saveSettings, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
-    runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, loadAssetsPackStatus, checkAssetsPack, downloadAssetsPack, removeAssetsPack, runTask, renderChart, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
-    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatPityRatio, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatQuantityName, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarItems, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
+    runDoctor, loadUpdaterStatus, checkForUpdates, downloadUpdate, installUpdate, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
+    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatPityRatio, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatQuantityName, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }
 

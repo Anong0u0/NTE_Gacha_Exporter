@@ -4,7 +4,7 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-use nte_update::apply_staged_update;
+use nte_update::{apply_staged_update, cleanup_update_artifacts_after_success};
 
 fn main() {
     let code = match run() {
@@ -21,6 +21,7 @@ fn run() -> Result<(), String> {
     let args = Args::parse(env::args().skip(1).collect())?;
     wait_for_pid(args.app_pid);
     apply_staged_update(&args.root, &args.version).map_err(|error| error.to_string())?;
+    let _ = cleanup_update_artifacts_after_success(&args.root);
     if args.relaunch {
         let launcher = args.root.join(launcher_exe_name());
         if launcher.is_file() {

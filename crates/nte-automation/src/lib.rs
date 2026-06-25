@@ -10,8 +10,8 @@ pub mod window;
 
 pub use error::{AutomationError, AutomationResult};
 pub use model::{
-    AutoPageOptions, AutoPageResult, AutoPageStatus, PageNumber, Point, RecordSnapshot, Rect, Size,
-    TemplateMatch,
+    AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus, PageNumber, Point,
+    RecordSnapshot, Rect, Size, TemplateMatch,
 };
 pub use pager::run_auto_page;
 pub use profile::{AutomationProfile, load_profile};

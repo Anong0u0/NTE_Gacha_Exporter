@@ -5,8 +5,8 @@ use crate::RuleResolutionIssue;
 use crate::derive_records;
 use crate::{
     BannerSummary, DashboardOverview, DashboardSelection, DashboardSelectionDetail,
-    DisplayRecord, FiveStarRecord, FiveStarResult, ForkResultMark, GuiError, ImportReport,
-    InternalRecord, ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile,
+    DisplayRecord, FiveStarRecord, FiveStarResult, GuiError, ImportReport, InternalRecord,
+    ForkResultMark, ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile,
     ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket, RateUpResult,
     RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions, RecordItemKindOption,
     RecordList, RecordRollBucketOption, RollBucket, SortDirection, TimeBucketSummary, TimeStats,
@@ -158,7 +158,7 @@ impl From<DashboardSelectionDetail> for PoolKindDetail {
         Self {
             summary: value.summary,
             five_star_history: value.five_star_history,
-            five_star_display_history: value.five_star_display_history,
+            five_star_wall_history: value.five_star_wall_history,
         }
     }
 }
@@ -170,13 +170,20 @@ fn selection_detail_from_display_records(
     label: String,
     banner_id: Option<&str>,
 ) -> DashboardSelectionDetail {
-    let pool_records = records
+    let pool_kind_records = records
         .iter()
         .filter(|record| record.pool_kind == pool_kind)
+        .collect::<Vec<_>>();
+    let pool_records = pool_kind_records
+        .iter()
+        .copied()
         .filter(|record| {
             banner_id.is_none_or(|banner_id| record.derived.banner_id.as_deref() == Some(banner_id))
         })
         .collect::<Vec<_>>();
+    let five_star_distances =
+        five_star_distances_by_record_id(&pool_records, &pool_kind_records, pool_kind, banner_id);
+
     let mut five_star_records = pool_records
         .iter()
         .copied()
@@ -185,17 +192,17 @@ fn selection_detail_from_display_records(
     five_star_records.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
     let five_star_history = five_star_records
         .into_iter()
-        .map(five_star_record)
+        .map(|record| five_star_record(record, five_star_distances.get(&record.record_id).copied()))
         .collect::<Vec<_>>();
-    let mut five_star_display_records = pool_records
+    let mut five_star_wall_records = pool_records
         .iter()
         .copied()
-        .filter(|record| record.rarity == Some(5))
+        .filter(|record| is_five_star_wall_record(record, pool_kind))
         .collect::<Vec<_>>();
-    five_star_display_records.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
-    let five_star_display_history = five_star_display_records
+    five_star_wall_records.sort_by(|left, right| compare_display_newest_first(left, right));
+    let five_star_wall_history = five_star_wall_records
         .into_iter()
-        .map(five_star_record)
+        .map(|record| five_star_record(record, five_star_distances.get(&record.record_id).copied()))
         .collect::<Vec<_>>();
     let pity_distances = five_star_history
         .iter()
@@ -245,8 +252,8 @@ fn selection_detail_from_display_records(
         (rate_up_sample_count > 0).then(|| up_count as f64 / rate_up_sample_count as f64);
     let fork_win_stats = fork_win_stats(pool_records.iter().copied());
     let latest_5star = five_star_history.last().map(|hit| hit.record.clone());
-    let latest_5star_any = five_star_display_history
-        .last()
+    let latest_5star_any = five_star_wall_history
+        .first()
         .map(|hit| hit.record.clone());
     let latest = latest_countable_record(&pool_records, banner_id);
     let resource = resource_counters(pool_records.iter().copied());
@@ -294,7 +301,7 @@ fn selection_detail_from_display_records(
             roll_point_cost_samples_5star: roll_point_costs.len() as u64,
         },
         five_star_history,
-        five_star_display_history,
+        five_star_wall_history,
         rarity_distribution: rarity_distribution_from_display_refs(pool_records.iter().copied()),
         hit_rarity_distribution: hit_rarity_distribution_from_display_refs(
             pool_records.iter().copied(),
@@ -307,13 +314,147 @@ fn selection_detail_from_display_records(
     }
 }
 
-fn five_star_record(record: &DisplayRecord) -> FiveStarRecord {
+#[derive(Debug, Clone, Copy)]
+struct FiveStarDistances {
+    five_star_distance: u64,
+    focused_distance: Option<u64>,
+}
+
+fn five_star_record(record: &DisplayRecord, distances: Option<FiveStarDistances>) -> FiveStarRecord {
+    let fallback_distance = record.derived.pity_5_before + 1;
     FiveStarRecord {
         record: record.clone(),
-        pity_distance: record.derived.pity_5_before + 1,
+        pity_distance: fallback_distance,
+        five_star_distance: distances
+            .map(|distances| distances.five_star_distance)
+            .unwrap_or(fallback_distance),
+        focused_distance: distances.and_then(|distances| distances.focused_distance),
         result: five_star_result(record.derived.rate_up_result),
         guarantee_before: record.derived.guarantee_5_before,
         guarantee_after: record.derived.guarantee_5_after,
+    }
+}
+
+fn five_star_distances_by_record_id(
+    records: &[&DisplayRecord],
+    pool_kind_records: &[&DisplayRecord],
+    pool_kind: PoolKind,
+    banner_id: Option<&str>,
+) -> HashMap<String, FiveStarDistances> {
+    let mut distances = HashMap::new();
+    let records_with_scoped_pull = records_with_effective_pull(records, banner_id);
+    let records_with_pool_pull = records_with_effective_pull(pool_kind_records, None);
+    let mut last_five_star_pull = None;
+    let mut current_five_star_distance = None;
+
+    for (record, effective_pull) in records_with_scoped_pull {
+        if !is_five_star_wall_record(record, pool_kind) {
+            continue;
+        }
+
+        let five_star_distance = if last_five_star_pull.is_some_and(|pull| effective_pull <= pull) {
+            current_five_star_distance.unwrap_or(0)
+        } else {
+            let distance = effective_pull - last_five_star_pull.unwrap_or(0);
+            last_five_star_pull = Some(effective_pull);
+            current_five_star_distance = Some(distance);
+            distance
+        };
+
+        distances.insert(
+            record.record_id.clone(),
+            FiveStarDistances {
+                five_star_distance,
+                focused_distance: None,
+            },
+        );
+    }
+
+    let mut last_focused_pull = None;
+    let mut current_focused_distance = None;
+
+    for (record, effective_pull) in records_with_pool_pull {
+        if !is_focused_five_star_wall_record(record) {
+            continue;
+        }
+
+        let focused_distance = if last_focused_pull.is_some_and(|pull| effective_pull <= pull) {
+            current_focused_distance.unwrap_or(0)
+        } else {
+            let distance = effective_pull - last_focused_pull.unwrap_or(0);
+            last_focused_pull = Some(effective_pull);
+            current_focused_distance = Some(distance);
+            distance
+        };
+
+        distances.insert(
+            record.record_id.clone(),
+            FiveStarDistances {
+                five_star_distance: distances
+                    .get(&record.record_id)
+                    .map(|distances| distances.five_star_distance)
+                    .unwrap_or(record.derived.pity_5_before + 1),
+                focused_distance: Some(focused_distance),
+            },
+        );
+    }
+    distances
+}
+
+fn records_with_effective_pull<'a>(
+    records: &[&'a DisplayRecord],
+    banner_id: Option<&str>,
+) -> Vec<(&'a DisplayRecord, u64)> {
+    let mut fallback_pull = 0_u64;
+    let mut current_pull = 0_u64;
+    let mut ordered = records.to_vec();
+    ordered.sort_by(|left, right| compare_display_analysis(left, right));
+    let mut records_with_effective_pull = Vec::with_capacity(ordered.len());
+    for record in ordered {
+        if record.derived.counts_as_pull {
+            fallback_pull += 1;
+            current_pull = scoped_pull_no(record, banner_id).unwrap_or(fallback_pull);
+        }
+        let effective_pull = if current_pull > 0 {
+            current_pull
+        } else {
+            scoped_pull_no(record, banner_id).unwrap_or(record.derived.pity_5_before + 1)
+        };
+        records_with_effective_pull.push((record, effective_pull.max(1)));
+    }
+    records_with_effective_pull.sort_by(|left, right| {
+        left.1
+            .cmp(&right.1)
+            .then_with(|| {
+                right
+                    .0
+                    .derived
+                    .counts_as_pull
+                    .cmp(&left.0.derived.counts_as_pull)
+            })
+            .then_with(|| compare_display_chronological(left.0, right.0))
+    });
+    records_with_effective_pull
+}
+
+fn scoped_pull_no(record: &DisplayRecord, banner_id: Option<&str>) -> Option<u64> {
+    if banner_id.is_some() {
+        record.derived.pull_no_in_banner
+    } else {
+        record.derived.pull_no_in_pool_kind
+    }
+}
+
+fn compare_display_analysis(left: &DisplayRecord, right: &DisplayRecord) -> std::cmp::Ordering {
+    crate::compare_time_asc(left.time.as_deref(), right.time.as_deref())
+        .then_with(|| right.source_order.cmp(&left.source_order))
+        .then_with(|| left.record_id.cmp(&right.record_id))
+}
+
+fn is_five_star_wall_record(record: &DisplayRecord, pool_kind: PoolKind) -> bool {
+    match pool_kind {
+        PoolKind::ForkLottery => record.derived.hit_rarity == Some(5),
+        PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => record.rarity == Some(5),
     }
 }
 

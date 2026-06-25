@@ -138,6 +138,8 @@ export type DashboardOverview = {
 export type FiveStarRecord = {
   record: DisplayRecord;
   pity_distance: number;
+  five_star_distance: number;
+  focused_distance?: number | null;
   result: RateUpResult;
   guarantee_before?: boolean | null;
   guarantee_after?: boolean | null;
@@ -146,7 +148,7 @@ export type FiveStarRecord = {
 export type PoolKindDetail = {
   summary: PoolKindSummary;
   five_star_history: FiveStarRecord[];
-  five_star_display_history: FiveStarRecord[];
+  five_star_wall_history: FiveStarRecord[];
 };
 
 export type DashboardSelection =

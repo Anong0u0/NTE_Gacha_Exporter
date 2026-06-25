@@ -87,10 +87,7 @@ fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Re
 }
 
 fn normalize_records(records: &mut [InternalRecord]) {
-    for (index, record) in records.iter_mut().enumerate() {
-        if record.source_order == u64::MAX {
-            record.source_order = index as u64;
-        }
+    for record in records.iter_mut() {
         if record
             .roll_points
             .is_some_and(|value| matches!(value, 0 | 4_294_967_295))
@@ -243,6 +240,106 @@ fn remove_profile_dir_known_files_strict(path: PathBuf) -> Result<(), GuiError> 
     Ok(())
 }
 
+impl JsonStore {
+    pub fn cleanup_generated_backups_keep_latest(&self) -> Result<(), GuiError> {
+        prune_generated_artifacts_keep_latest(&self.root.join("data/backups"), "backup-", ".zip")
+    }
+
+    pub fn cleanup_generated_raw_runs_keep_latest(&self) -> Result<(), GuiError> {
+        prune_generated_artifacts_keep_latest(&self.root.join("data/runs"), "raw-", ".jsonl")
+    }
+}
+
+fn prune_generated_artifacts_keep_latest(
+    dir: &Path,
+    prefix: &str,
+    suffix: &str,
+) -> Result<(), GuiError> {
+    let metadata = match fs::symlink_metadata(dir) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    if !metadata.is_dir() || metadata.file_type().is_symlink() || has_reparse_point(&metadata) {
+        return Ok(());
+    }
+
+    let mut candidates = Vec::new();
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        if !is_generated_artifact_file_name(file_name, prefix, suffix) {
+            continue;
+        }
+
+        let path = entry.path();
+        let metadata = fs::symlink_metadata(&path)?;
+        if !metadata.is_file() || metadata.file_type().is_symlink() || has_reparse_point(&metadata)
+        {
+            continue;
+        }
+        if !is_direct_child_file_path(dir, &path, file_name) {
+            continue;
+        }
+        candidates.push((file_name.to_string(), path));
+    }
+
+    candidates.sort_by(|left, right| right.0.cmp(&left.0));
+    for (_, path) in candidates.into_iter().skip(1) {
+        fs::remove_file(path)?;
+    }
+    Ok(())
+}
+
+fn is_generated_artifact_file_name(name: &str, prefix: &str, suffix: &str) -> bool {
+    let Some(stamp) = name
+        .strip_prefix(prefix)
+        .and_then(|value| value.strip_suffix(suffix))
+    else {
+        return false;
+    };
+    is_unique_stamp(stamp)
+}
+
+fn is_unique_stamp(stamp: &str) -> bool {
+    let mut parts = stamp.split('-');
+    let Some(seconds) = parts.next() else {
+        return false;
+    };
+    let Some(nanos) = parts.next() else {
+        return false;
+    };
+    let Some(sequence) = parts.next() else {
+        return false;
+    };
+    parts.next().is_none()
+        && !seconds.is_empty()
+        && !sequence.is_empty()
+        && nanos.len() == 9
+        && seconds.bytes().all(|byte| byte.is_ascii_digit())
+        && nanos.bytes().all(|byte| byte.is_ascii_digit())
+        && sequence.bytes().all(|byte| byte.is_ascii_digit())
+}
+
+fn is_direct_child_file_path(parent: &Path, path: &Path, file_name: &str) -> bool {
+    if file_name.is_empty() || file_name == "." || file_name == ".." {
+        return false;
+    }
+    if file_name.contains(['/', '\\', ':']) {
+        return false;
+    }
+    let mut components = Path::new(file_name).components();
+    if !matches!(components.next(), Some(std::path::Component::Normal(_)))
+        || components.next().is_some()
+    {
+        return false;
+    }
+    path.parent().is_some_and(|value| value == parent)
+}
+
 fn backup_entry_names(zip: &mut ZipArchive<fs::File>) -> Result<HashSet<String>, GuiError> {
     let mut names = HashSet::new();
     for index in 0..zip.len() {
@@ -271,6 +368,19 @@ fn now_unique_stamp() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|value| format!("{}-{:09}-{sequence}", value.as_secs(), value.subsec_nanos()))
         .unwrap_or_else(|_| format!("0-000000000-{sequence}"))
+}
+
+#[cfg(windows)]
+fn has_reparse_point(metadata: &fs::Metadata) -> bool {
+    use std::os::windows::fs::MetadataExt;
+
+    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+    metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+}
+
+#[cfg(not(windows))]
+fn has_reparse_point(_metadata: &fs::Metadata) -> bool {
+    false
 }
 
 fn default_update_channel() -> String {

@@ -1,66 +1,10 @@
 #[tauri::command]
-pub(crate) fn assets_pack_status(state: State<'_, AppState>) -> Result<AssetsPackStatus, ApiError> {
-    let root = root_from_state(&state)?;
-    Ok(status_for_root(&root))
-}
-
-#[tauri::command]
-pub(crate) fn assets_pack_check(
-    state: State<'_, AppState>,
-    channel: Option<String>,
-) -> Result<AssetsPackCheckReport, ApiError> {
-    let root = root_from_state(&state)?;
-    let status = status_for_root(&root);
-    let requested_channel = update_channel_or_settings(&state, channel)?;
-    let package = match fetch_assets_pack_package(requested_channel) {
-        Ok(package) if package_matches_current(&package) => Some(package),
-        Ok(_) => None,
-        Err(error) => return Err(error),
-    };
-    Ok(AssetsPackCheckReport {
-        current_app_version: app_version().to_string(),
-        expected_map_hash: bundled_maps_hash(),
-        channel: requested_channel,
-        installed: status.installed,
-        compatible: status.compatible,
-        package,
-    })
-}
-
-#[tauri::command]
-pub(crate) fn assets_pack_download_and_install(
-    state: State<'_, AppState>,
-    package: AssetsPackPackage,
-) -> Result<AssetsPackInstallReport, ApiError> {
-    if !package_matches_current(&package) {
-        return Err(api_error_message(
-            "assets_pack_incompatible",
-            "assets pack does not match current app version and bundled maps",
-        ));
-    }
-    let root = root_from_state(&state)?;
-    let archive_path = download_assets_pack(&root, &package)?;
-    install_assets_pack(&root, &package, &archive_path)
-}
-
-#[tauri::command]
-pub(crate) fn assets_pack_remove(state: State<'_, AppState>) -> Result<AssetsPackStatus, ApiError> {
-    let root = root_from_state(&state)?;
-    let current = current_dir(&root);
-    if current.exists() {
-        let disabled = assets_pack_root(&root).join(format!("disabled-{}", timestamp_millis()));
-        fs::rename(&current, disabled).map_err(api_error)?;
-    }
-    Ok(status_for_root(&root))
-}
-
-#[tauri::command]
 pub(crate) fn assets_resolve_refs(
     state: State<'_, AppState>,
     refs: Vec<AssetResolveRequest>,
 ) -> Result<Vec<AssetResolveResult>, ApiError> {
     let root = root_from_state(&state)?;
-    let Some(manifest) = compatible_manifest(&root) else {
+    let Some(manifest) = bundled_manifest(&root) else {
         return Ok(refs
             .into_iter()
             .map(|item| AssetResolveResult {

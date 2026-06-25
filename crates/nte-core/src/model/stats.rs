@@ -1,7 +1,6 @@
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct InternalRecord {
     pub record_id: String,
-    #[serde(default = "missing_source_order")]
     pub source_order: u64,
     pub record_type: String,
     pub time: Option<String>,
@@ -13,10 +12,6 @@ pub struct InternalRecord {
     pub roll_label_id: Option<String>,
     pub secondary_item_id: Option<String>,
     pub secondary_count: Option<i64>,
-}
-
-pub fn missing_source_order() -> u64 {
-    u64::MAX
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -145,7 +140,7 @@ pub struct PoolKindSummary {
 pub struct PoolKindDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
-    pub five_star_display_history: Vec<FiveStarRecord>,
+    pub five_star_wall_history: Vec<FiveStarRecord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -162,7 +157,7 @@ pub enum DashboardSelection {
 pub struct DashboardSelectionDetail {
     pub summary: PoolKindSummary,
     pub five_star_history: Vec<FiveStarRecord>,
-    pub five_star_display_history: Vec<FiveStarRecord>,
+    pub five_star_wall_history: Vec<FiveStarRecord>,
     pub rarity_distribution: Vec<RarityBucket>,
     pub hit_rarity_distribution: Vec<RarityBucket>,
     pub pull_rarity_distribution: Vec<PullRarityBucket>,
@@ -173,6 +168,8 @@ pub struct DashboardSelectionDetail {
 pub struct FiveStarRecord {
     pub record: DisplayRecord,
     pub pity_distance: u64,
+    pub five_star_distance: u64,
+    pub focused_distance: Option<u64>,
     pub result: FiveStarResult,
     pub guarantee_before: Option<bool>,
     pub guarantee_after: Option<bool>,

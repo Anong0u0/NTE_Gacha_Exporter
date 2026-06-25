@@ -137,6 +137,8 @@ function onFullUpdateChange(event: Event) {
                   <span>{{ app.t("capture.poolsSkipped", { count: app.captureStatus.auto_page.skipped_pools?.length ?? 0 }) }}</span>
                 </div>
                 <div v-if="app.captureStatus.raw_path" class="capture-target">{{ app.t("capture.rawPath") }} · {{ app.captureStatus.raw_path }}</div>
+                <div v-if="app.captureStatus.error?.support_path" class="capture-target">support · {{ app.captureStatus.error.support_path }}</div>
+                <div v-if="app.captureStatus.error?.support_image_path" class="capture-target">support image · {{ app.captureStatus.error.support_image_path }}</div>
                 <div v-if="app.captureStatus.target" class="capture-target">
                   {{ app.t("capture.target") }} · {{ app.captureStatus.target.pid ?? "-" }} · {{ app.captureStatus.target.interface ?? "-" }}
                 </div>

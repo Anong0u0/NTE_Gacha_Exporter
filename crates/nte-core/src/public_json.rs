@@ -78,15 +78,14 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
 
     let mut result = Vec::with_capacity(records.len());
     let mut legacy_state = LegacyIdState::default();
-    for (index, record) in records.iter().enumerate() {
-        result.push(parse_record(record, index as u64, &mut legacy_state)?);
+    for record in records {
+        result.push(parse_record(record, &mut legacy_state)?);
     }
     Ok(result)
 }
 
 fn parse_record(
     value: &Value,
-    fallback_source_order: u64,
     legacy_state: &mut LegacyIdState,
 ) -> Result<InternalRecord, GuiError> {
     value
@@ -118,7 +117,7 @@ fn parse_record(
     );
     Ok(InternalRecord {
         record_id,
-        source_order: optional_u64(value, "source_order").unwrap_or(fallback_source_order),
+        source_order: required_u64(value, "source_order")?,
         record_type,
         time: optional_text(value, "time"),
         pool_id,
@@ -147,6 +146,11 @@ fn optional_i64(value: &Value, key: &str) -> Option<i64> {
 
 fn optional_u64(value: &Value, key: &str) -> Option<u64> {
     value.get(key).and_then(Value::as_u64)
+}
+
+fn required_u64(value: &Value, key: &str) -> Result<u64, GuiError> {
+    optional_u64(value, key)
+        .ok_or_else(|| GuiError::InvalidDocument(format!("record missing u64 field: {key}")))
 }
 
 fn optional_roll_points(value: &Value, key: &str) -> Option<i64> {

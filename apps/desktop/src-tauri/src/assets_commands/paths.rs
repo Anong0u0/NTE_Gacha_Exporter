@@ -19,10 +19,6 @@ fn asset_url(pack_path: &str) -> String {
     }
 }
 
-fn assets_pack_root(root: &Path) -> PathBuf {
-    root.join("data").join("assets-pack")
-}
-
 fn current_dir(root: &Path) -> PathBuf {
-    assets_pack_root(root).join("current")
+    root.join("app").join("assets-pack").join("current")
 }

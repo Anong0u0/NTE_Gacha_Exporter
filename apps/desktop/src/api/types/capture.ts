@@ -42,7 +42,12 @@ export type CaptureStatus = {
   target?: CaptureTarget | null;
   auto_page?: AutoPageStatus | null;
   raw_path?: string | null;
-  error?: { code: string; message: string } | null;
+  error?: {
+    code: string;
+    message: string;
+    support_path?: string | null;
+    support_image_path?: string | null;
+  } | null;
   import_report?: ImportReport | null;
 };
 

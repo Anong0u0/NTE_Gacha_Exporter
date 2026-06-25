@@ -105,7 +105,7 @@ export type RecordFilter = {
   pool_kind?: PoolKind | null;
   banner_ids?: string[] | null;
   rarities?: number[] | null;
-  hit_rarities?: number[] | null;
+  focused_rarities?: number[] | null;
   rate_up_results?: RateUpResult[] | null;
   roll_buckets?: RollBucket[] | null;
   item_kinds?: ItemKind[] | null;

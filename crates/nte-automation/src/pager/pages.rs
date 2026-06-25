@@ -7,6 +7,9 @@ impl AutoPager {
             .get(required(step.page_rect.as_deref(), "pageRect")?)
             .ok_or_else(|| AutomationError::message("workflow pageRect missing from profile"))?;
         let next_button = self.point(required(step.next_button.as_deref(), "nextButton")?)?;
+        self.diagnostics.visual.pool = Some(pool.clone());
+        self.diagnostics.visual.page_rect = Some(page_rect);
+        self.diagnostics.visual.next_button = Some(next_button);
         let mut page = self.wait_for_fresh_page(page_rect, &pool)?;
         self.status(
             StatusEvent::new("page ready", "page")
@@ -230,6 +233,7 @@ impl AutoPager {
                     .technical_detail(&error.to_string()),
             );
             if !saw_previous {
+                self.record_page_number_failure("page_number_unreadable_after_click", page_rect);
                 return Err(AutomationError::message(format!(
                     "OCR unreadable after click: {error}"
                 )));
@@ -287,6 +291,7 @@ impl AutoPager {
                 page.total, page.current, page.total
             )));
         }
+        self.record_page_number_failure("fresh_page_number_unreadable", page_rect);
         Err(AutomationError::message(format!(
             "{pool}: freshly opened record page unreadable: {}",
             last_error
@@ -305,14 +310,18 @@ impl AutoPager {
         self.focus_window()?;
         let search_rect = self.matcher.search_rect(name, self.window.client_size())?;
         let image = self.capture.capture_rect(search_rect)?;
-        self.matcher.verify_in_rect(name, &image, search_rect)
+        let matched = self.matcher.verify_in_rect(name, &image, search_rect)?;
+        self.record_template_match(matched.clone());
+        Ok(matched)
     }
 
     fn find_template(&mut self, name: &str) -> AutomationResult<TemplateMatch> {
         self.focus_window()?;
         let search_rect = self.matcher.search_rect(name, self.window.client_size())?;
         let image = self.capture.capture_rect(search_rect)?;
-        self.matcher.find_in_rect(name, &image, search_rect)
+        let matched = self.matcher.find_in_rect(name, &image, search_rect)?;
+        self.record_template_match(matched.clone());
+        Ok(matched)
     }
 
     fn template_center(&self, name: &str, top_left: Point) -> AutomationResult<Point> {
@@ -335,7 +344,77 @@ impl AutoPager {
     ) -> AutomationResult<PageNumber> {
         self.focus_window()?;
         let image = self.capture.capture_rect(page_rect)?;
-        self.ocr.read_page_number_with_hint(&image, hint)
+        let (result, diagnostics) = self.ocr.read_page_number_with_hint_diagnostics(&image, hint);
+        self.diagnostics.ocr = Some(diagnostics);
+        result
+    }
+
+    fn record_template_match(&mut self, matched: TemplateMatch) {
+        const MAX_TEMPLATE_MATCHES: usize = 8;
+        self.diagnostics.visual.last_template_matches.push(matched);
+        let extra = self
+            .diagnostics
+            .visual
+            .last_template_matches
+            .len()
+            .saturating_sub(MAX_TEMPLATE_MATCHES);
+        if extra > 0 {
+            self.diagnostics
+                .visual
+                .last_template_matches
+                .drain(0..extra);
+        }
+    }
+
+    fn record_page_number_failure(&mut self, failure_kind: &str, page_rect: crate::model::Rect) {
+        self.diagnostics.failure_kind = Some(failure_kind.to_string());
+        self.diagnostics.visual.page_rect = Some(page_rect);
+        if self.diagnostics.page_context_png.is_some() {
+            return;
+        }
+        match self.capture_page_context_png(page_rect) {
+            Ok((context_rect, png)) => {
+                self.diagnostics.visual.context_rect = Some(context_rect);
+                self.diagnostics.page_context_png = Some(png);
+            }
+            Err(error) => {
+                if let Some(ocr) = self.diagnostics.ocr.as_mut() {
+                    if !ocr.error.is_empty() {
+                        ocr.error.push_str("; ");
+                    }
+                    ocr.error
+                        .push_str(&format!("page context capture failed: {error}"));
+                } else {
+                    self.diagnostics.ocr = Some(OcrReadDiagnostics {
+                        error: format!("page context capture failed: {error}"),
+                        ..OcrReadDiagnostics::default()
+                    });
+                }
+            }
+        }
+    }
+
+    fn capture_page_context_png(
+        &mut self,
+        page_rect: crate::model::Rect,
+    ) -> AutomationResult<(crate::model::Rect, Vec<u8>)> {
+        use std::io::Cursor;
+
+        use image::{DynamicImage, ImageFormat, Rgba};
+
+        self.focus_window()?;
+        let context_rect = page_context_rect(page_rect, self.window.client_size());
+        let mut image = self.capture.capture_rect(context_rect)?;
+        let overlay = crate::model::Rect {
+            x: page_rect.x - context_rect.x,
+            y: page_rect.y - context_rect.y,
+            width: page_rect.width,
+            height: page_rect.height,
+        };
+        draw_rect_outline(&mut image, overlay, Rgba([255, 0, 0, 255]), 2);
+        let mut cursor = Cursor::new(Vec::new());
+        DynamicImage::ImageRgba8(image).write_to(&mut cursor, ImageFormat::Png)?;
+        Ok((context_rect, cursor.into_inner()))
     }
 
     fn point(&self, name: &str) -> AutomationResult<Point> {
@@ -368,5 +447,46 @@ impl AutoPager {
 
     fn sleep_poll(&self) {
         thread::sleep(Duration::from_secs_f64(self.options.click_poll_interval));
+    }
+}
+
+fn page_context_rect(page_rect: crate::model::Rect, client_size: Size) -> crate::model::Rect {
+    page_rect
+        .expand(Point {
+            x: page_rect.width as i32,
+            y: (page_rect.height / 2) as i32,
+        })
+        .clamp(client_size)
+}
+
+fn draw_rect_outline(
+    image: &mut image::RgbaImage,
+    rect: crate::model::Rect,
+    color: image::Rgba<u8>,
+    thickness: u32,
+) {
+    let width = image.width() as i32;
+    let height = image.height() as i32;
+    let left = rect.x.clamp(0, width.saturating_sub(1));
+    let top = rect.y.clamp(0, height.saturating_sub(1));
+    let right = rect.right().saturating_sub(1).clamp(0, width.saturating_sub(1));
+    let bottom = rect
+        .bottom()
+        .saturating_sub(1)
+        .clamp(0, height.saturating_sub(1));
+    let thickness = thickness.max(1) as i32;
+    for offset in 0..thickness {
+        let l = (left - offset).clamp(0, width.saturating_sub(1));
+        let t = (top - offset).clamp(0, height.saturating_sub(1));
+        let r = (right + offset).clamp(0, width.saturating_sub(1));
+        let b = (bottom + offset).clamp(0, height.saturating_sub(1));
+        for x in l..=r {
+            image.put_pixel(x as u32, t as u32, color);
+            image.put_pixel(x as u32, b as u32, color);
+        }
+        for y in t..=b {
+            image.put_pixel(l as u32, y as u32, color);
+            image.put_pixel(r as u32, y as u32, color);
+        }
     }
 }

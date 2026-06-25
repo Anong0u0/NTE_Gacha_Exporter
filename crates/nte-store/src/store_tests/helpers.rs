@@ -4,11 +4,18 @@ use std::io::Write;
 
 use super::{JsonStore, StoreDefaults};
 use nte_core::{
-    DashboardSelection, ForkResultMark, ItemKind, PityBadge, PoolKind, PullRarityBucketKey,
-    RateUpResult, RecordFilter, RollBucket, SettingsPatch, SortDirection,
+    DashboardSelection, FiveStarResult, ForkResultMark, ItemKind, PityBadge, PoolKind,
+    PullRarityBucketKey, RateUpResult, RecordFilter, RollBucket, SettingsPatch, SortDirection,
 };
 
-fn public_document(records: Vec<serde_json::Value>) -> String {
+fn public_document(mut records: Vec<serde_json::Value>) -> String {
+    for (index, record) in records.iter_mut().enumerate() {
+        if let Some(object) = record.as_object_mut() {
+            object
+                .entry("source_order".to_string())
+                .or_insert_with(|| json!(index));
+        }
+    }
     json!({
         "info": {
             "schema": nte_core::PUBLIC_JSON_SCHEMA,

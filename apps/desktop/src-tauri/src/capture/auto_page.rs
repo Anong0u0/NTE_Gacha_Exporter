@@ -12,10 +12,10 @@ fn wait_for_capture_drain(
     let started = Instant::now();
     loop {
         if stop.load(Ordering::SeqCst) {
-            return Some(RuntimeError {
-                code: "capture_stopped".to_string(),
-                message: "capture stopped before packet drain completed".to_string(),
-            });
+            return Some(runtime_error(
+                "capture_stopped",
+                "capture stopped before packet drain completed",
+            ));
         }
 
         let (decoded, last_decoded_at) = page_tracker
@@ -28,12 +28,12 @@ fn wait_for_capture_drain(
         }
 
         if started.elapsed() >= CAPTURE_DRAIN_TIMEOUT {
-            return Some(RuntimeError {
-                code: "capture_incomplete".to_string(),
-                message: format!(
+            return Some(runtime_error(
+                "capture_incomplete",
+                format!(
                     "capture drain timed out: required={required:?} decoded={decoded:?}"
                 ),
-            });
+            ));
         }
 
         if let Ok(mut status) = runtime.status.lock() {
@@ -119,4 +119,3 @@ fn capture_progress_callback(
         }
     })
 }
-

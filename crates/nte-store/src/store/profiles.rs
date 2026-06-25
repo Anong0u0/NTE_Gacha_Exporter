@@ -189,9 +189,12 @@ impl JsonStore {
         source_kind: &str,
         source_path: Option<&str>,
     ) -> Result<ImportReport, GuiError> {
-        let backup = self.create_data_backup()?;
+        let backup = self.create_generated_data_backup()?;
         match self.import_public_document(profile_name, document_text, source_kind, source_path) {
-            Ok(report) => Ok(report),
+            Ok(report) => {
+                self.cleanup_generated_backups_keep_latest()?;
+                Ok(report)
+            }
             Err(error) => {
                 let _ = self.replace_data_from_backup(&backup);
                 Err(error)

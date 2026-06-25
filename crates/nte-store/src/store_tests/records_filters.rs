@@ -192,7 +192,7 @@ fn records_list_filters_by_derived_fields() {
             "zh-Hant",
             &RecordFilter {
                 banner_ids: vec!["ForkLottery_AnHunQu".to_string()],
-                hit_rarities: vec![5],
+                focused_rarities: vec![5],
                 sort_direction: Some(SortDirection::Asc),
                 ..RecordFilter::default()
             },
@@ -209,16 +209,66 @@ fn records_list_filters_by_derived_fields() {
         )
         .unwrap();
 
-    assert_eq!(banner.total, 2);
-    assert_eq!(banner.records[0].record_id, "r2");
-    assert_eq!(
-        banner.records[0].derived.rate_up_result,
-        RateUpResult::OffRate
-    );
-    assert_eq!(banner.records[1].record_id, "r3");
-    assert_eq!(banner.records[1].derived.guarantee_5_before, Some(true));
+    assert_eq!(banner.total, 1);
+    assert_eq!(banner.records[0].record_id, "r3");
+    assert_eq!(banner.records[0].derived.guarantee_5_before, Some(true));
     assert_eq!(off_rate.total, 1);
     assert_eq!(off_rate.records[0].record_id, "r2");
+}
+
+#[test]
+fn records_list_focused_five_star_filter_uses_pool_kind_wall_semantics() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record(
+            "standard-character",
+            "CardPool_NewRole",
+            "1003",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "standard-fork",
+            "CardPool_NewRole",
+            "fork_rishi",
+            "2026-01-01 10:01:00",
+        ),
+        record(
+            "limited-character",
+            "CardPool_Character",
+            "1010",
+            "2026-06-04 10:00:00",
+        ),
+        record(
+            "limited-item",
+            "CardPool_Character",
+            "Fashion_vehicle_1010_V008",
+            "2026-01-02 10:01:00",
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let list = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                focused_rarities: vec![5],
+                sort_direction: Some(SortDirection::Asc),
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(
+        list.records
+            .iter()
+            .map(|record| record.record_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["standard-character", "limited-character"]
+    );
 }
 
 #[test]
@@ -469,7 +519,7 @@ fn records_list_exposes_global_pull_no_and_filters_three_star_hits() {
             "default",
             "zh-Hant",
             &RecordFilter {
-                hit_rarities: vec![3, 5],
+                focused_rarities: vec![3, 5],
                 sort_direction: Some(SortDirection::Asc),
                 ..RecordFilter::default()
             },
@@ -689,7 +739,7 @@ fn records_list_filters_by_date_sort_and_page() {
 }
 
 #[test]
-fn records_list_keeps_source_order_inside_same_timestamp_for_time_sort() {
+fn records_list_oldest_first_is_exact_newest_first_reverse() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let mut first = record(
@@ -746,10 +796,10 @@ fn records_list_keeps_source_order_inside_same_timestamp_for_time_sort() {
             .iter()
             .map(|record| record.record_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["source-1", "source-2"]
+        vec!["source-2", "source-1"]
     );
-    assert_eq!(chronological.records[0].derived.pity_5_before, 1);
-    assert_eq!(chronological.records[1].derived.pity_5_before, 0);
+    assert_eq!(chronological.records[0].derived.pity_5_before, 0);
+    assert_eq!(chronological.records[1].derived.pity_5_before, 1);
 }
 
 #[test]

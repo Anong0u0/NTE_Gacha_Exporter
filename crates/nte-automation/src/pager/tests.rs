@@ -55,6 +55,19 @@ mod tests {
         assert_eq!(consecutive_known_record_count(&records, &known_ids), 0);
     }
 
+    #[test]
+    fn auto_page_result_serialization_excludes_png_bytes() {
+        let mut result = AutoPageResult::failed("failed", Vec::new(), Vec::new());
+        result.diagnostics.page_context_png = Some(vec![1, 2, 3, 4]);
+        result.diagnostics.failure_kind = Some("fresh_page_number_unreadable".to_string());
+
+        let text = serde_json::to_string(&result).unwrap();
+
+        assert!(text.contains("fresh_page_number_unreadable"));
+        assert!(!text.contains("page_context_png"));
+        assert!(!text.contains("[1,2,3,4]"));
+    }
+
     fn snapshot(record_id: &str, pool_id: &str, record_type: &str) -> RecordSnapshot {
         RecordSnapshot {
             record_id: record_id.to_string(),

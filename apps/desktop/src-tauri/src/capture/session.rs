@@ -105,6 +105,7 @@ fn start_rust_capture_session(
                 "pktmon-live-capture",
                 None,
                 None,
+                None,
             );
         }
     });
@@ -211,10 +212,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
     let error = if auto_result.succeeded() {
         drain_error
     } else {
-        Some(RuntimeError {
-            code: "auto_page_failed".to_string(),
-            message: auto_result.message.clone(),
-        })
+        Some(runtime_error("auto_page_failed", auto_result.message.clone()))
     };
     finish_capture_result(
         &runtime,
@@ -223,5 +221,6 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         "pktmon-auto-page-capture",
         auto_page,
         error,
+        Some(&auto_result),
     );
 }

@@ -10,18 +10,15 @@ Captures NTE packets through Windows pktmon, exports limited board, standard boa
 - Auto paging support for capture.
 - Exports data in JSON/CSV format.
 - Bundled localized output names: `de`, `en`, `es`, `fr`, `ja`, `ko`, `ru`, `zh-CN`, `zh-Hans`, and `zh-Hant`.
-- Optional assets pack for item and banner images in the desktop GUI. The app works without it.
+- Release portable packages bundle the assets pack for item and banner images in the desktop GUI.
 
 ## Quick Start
 
 1. Download the latest Windows portable package release zip from [GitHub Releases](https://github.com/Anong0u0/nte_gacha_exporter/releases). Do not download the Source code zip as the app package.
 2. Extract the whole folder.
 3. Open `nte-gacha-exporter.exe`.
-4. To show GUI images, use `Settings` -> `Assets Pack` -> `Check assets` and `Download assets`.
 
 The desktop UI stores data under portable `data/` and can export JSON/CSV. For CLI commands, when no output path is specified, exported files are written to `output/` under the extracted directory.
-
-Releases also include `nte-assets-pack-<version>-<maphash>.zip` and `nte-assets-pack-manifest.json`. Normal users do not need to manage these files manually; the desktop app downloads a compatible pack for the selected update channel.
 
 ## Requirements
 
@@ -83,9 +80,9 @@ Public JSON contains export info and `nte.list` records:
 
 ## Assets Pack
 
-The main app does not bundle image assets. The assets pack contains only images referenced by the bundled maps. It is built from a pinned [Waifus-Grace/NTE_Assets](https://github.com/Waifus-Grace/NTE_Assets) commit, and the release manifest records app version, maps hash, source commit, zip sha256, and file count.
+Release portable packages bundle the assets pack. The pack contains only images referenced by the bundled maps and is built from a pinned [Waifus-Grace/NTE_Assets](https://github.com/Waifus-Grace/NTE_Assets) commit.
 
-The installed pack lives under `data/assets-pack/current` in the portable directory. The GUI serves only `assets/*.webp` through the internal `nteasset` protocol and does not enable arbitrary filesystem reads. Removing the pack only disables the installed images; records, import/export, and updates keep working.
+The pack lives under `app/assets-pack/current` in the portable directory as an app resource, not a user-managed install. The GUI serves only `assets/*.webp` through the internal `nteasset` protocol and does not enable arbitrary filesystem reads.
 
 ## Troubleshooting
 
@@ -159,7 +156,8 @@ cargo run -p nte-gacha-exporter-cli --bin nte-gacha-exporter-cli -- assets pack 
 Windows release package:
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File packaging\build-win-release.ps1
+cargo run -p nte-gacha-exporter-cli --bin nte-gacha-exporter-cli -- assets pack build --assets-root D:\path\NTE_Assets --out dist\nte-assets-pack.zip
+powershell.exe -ExecutionPolicy Bypass -File packaging\build-win-release.ps1 -AssetsPackZip dist\nte-assets-pack.zip
 ```
 
 ## Credits

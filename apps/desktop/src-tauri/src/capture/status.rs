@@ -72,6 +72,9 @@ fn merge_completed_capture(
         })?
     };
     meta.import_report = Some(report.clone());
+    if meta.source_path.is_some() {
+        with_store(state, |store| store.cleanup_generated_raw_runs_keep_latest())?;
+    }
     status.import_report = Some(report);
     Ok(())
 }
@@ -181,4 +184,3 @@ fn try_join_finished_capture_thread(session: &CaptureRuntimeSession) -> bool {
     };
     handle.join().is_ok()
 }
-

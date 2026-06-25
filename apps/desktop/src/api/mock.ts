@@ -1,7 +1,6 @@
 import type {
   AppApi,
   AssetResolveRequest,
-  AssetsPackPackage,
   CaptureMode,
   CaptureStatus,
   DashboardSelection,
@@ -110,9 +109,9 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
   const poolKind = selection.pool_kind;
   const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
   const countableRecords = records.filter((record) => record.derived.counts_as_pull);
-  const chronologicalRecords = [...countableRecords].sort((left, right) => left.source_order - right.source_order);
+  const chronologicalRecords = [...countableRecords].sort(compareRecordsChronological);
   const fiveStarRecords = chronologicalRecords.filter((record) => record.derived.hit_rarity === 5);
-  const fiveStarItemRecords = chronologicalRecords.filter((record) => record.rarity === 5);
+  const fiveStarWallRecords = [...records].filter((record) => mockIsFiveStarWallRecord(record, poolKind)).sort(compareRecordsNewestFirst);
   const fourStarRecords = countableRecords.filter((record) => record.derived.hit_rarity === 4);
   const average4StarPity = mockAverage4StarPity(countableRecords);
   const summary: PoolKindSummary = {
@@ -120,15 +119,15 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     label: label ?? fallback.label,
     total_pulls: countableRecords.length,
     hit_count: fiveStarRecords.length,
-    five_star_item_count: fiveStarItemRecords.length,
-    up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "up").length,
-    off_rate_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "off_rate").length,
-    not_applicable_rate_up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "not_applicable").length,
-    unknown_rate_up_count: fiveStarItemRecords.filter((record) => record.derived.rate_up_result === "unknown").length,
+    five_star_item_count: countableRecords.filter((record) => record.rarity === 5).length,
+    up_count: countableRecords.filter((record) => record.rarity === 5 && record.derived.rate_up_result === "up").length,
+    off_rate_count: countableRecords.filter((record) => record.rarity === 5 && record.derived.rate_up_result === "off_rate").length,
+    not_applicable_rate_up_count: countableRecords.filter((record) => record.rarity === 5 && record.derived.rate_up_result === "not_applicable").length,
+    unknown_rate_up_count: countableRecords.filter((record) => record.rarity === 5 && record.derived.rate_up_result === "unknown").length,
     four_star_count: fourStarRecords.length,
     average_4star_pity: average4StarPity,
     latest_5star: fiveStarRecords.at(-1) ?? null,
-    latest_5star_any: fiveStarItemRecords.at(-1) ?? null,
+    latest_5star_any: fiveStarWallRecords[0] ?? null,
   };
   const rarityCounts = new Map<number, number>();
   for (const record of countableRecords) {
@@ -190,18 +189,24 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     )
     .slice(0, 20);
 
+  const fiveStarDistances = mockFiveStarDistances(records, poolKind);
+
   return {
     summary,
     five_star_history: fiveStarRecords.map((record) => ({
       record,
       pity_distance: record.derived.pity_5_before + 1,
+      five_star_distance: fiveStarDistances.get(record.record_id)?.five_star_distance ?? record.derived.pity_5_before + 1,
+      focused_distance: fiveStarDistances.get(record.record_id)?.focused_distance ?? null,
       result: record.derived.rate_up_result,
       guarantee_before: record.derived.guarantee_5_before,
       guarantee_after: record.derived.guarantee_5_after,
     })),
-    five_star_display_history: fiveStarItemRecords.map((record) => ({
+    five_star_wall_history: fiveStarWallRecords.map((record) => ({
       record,
       pity_distance: record.derived.pity_5_before + 1,
+      five_star_distance: fiveStarDistances.get(record.record_id)?.five_star_distance ?? record.derived.pity_5_before + 1,
+      focused_distance: fiveStarDistances.get(record.record_id)?.focused_distance ?? null,
       result: record.derived.rate_up_result,
       guarantee_before: record.derived.guarantee_5_before,
       guarantee_after: record.derived.guarantee_5_after,
@@ -211,6 +216,63 @@ function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionD
     pull_rarity_distribution,
     item_ranking,
   };
+}
+
+function mockFiveStarDistances(records: typeof mockRecords, poolKind: PoolKind) {
+  const distances = new Map<string, { five_star_distance: number; focused_distance: number | null }>();
+  let fallbackPull = 0;
+  let currentPull = 0;
+  let lastFiveStarPull: number | null = null;
+  let currentFiveStarDistance: number | null = null;
+  let lastFocusedPull: number | null = null;
+  let currentFocusedDistance: number | null = null;
+
+  for (const record of [...records].sort(compareRecordsChronological)) {
+    if (record.derived.counts_as_pull) {
+      fallbackPull += 1;
+      currentPull = record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? fallbackPull;
+    }
+    const effectivePull = currentPull || record.derived.pull_no_in_banner || record.derived.pull_no_in_pool_kind || record.derived.pity_5_before + 1;
+    if (!mockIsFiveStarWallRecord(record, poolKind)) continue;
+
+    const fiveStarDistance: number =
+      effectivePull === lastFiveStarPull
+        ? currentFiveStarDistance ?? 0
+        : effectivePull - (lastFiveStarPull ?? 0);
+    lastFiveStarPull = effectivePull;
+    currentFiveStarDistance = fiveStarDistance;
+
+    let focusedDistance: number | null = null;
+    if (mockIsFocusedFiveStarWallRecord(record)) {
+      focusedDistance =
+        effectivePull === lastFocusedPull
+          ? currentFocusedDistance ?? 0
+          : effectivePull - (lastFocusedPull ?? 0);
+      lastFocusedPull = effectivePull;
+      currentFocusedDistance = focusedDistance;
+    }
+
+    distances.set(record.record_id, { five_star_distance: fiveStarDistance, focused_distance: focusedDistance });
+  }
+
+  return distances;
+}
+
+function mockIsFiveStarWallRecord(record: (typeof mockRecords)[number], poolKind: PoolKind) {
+  return poolKind === "fork_lottery" ? record.derived.hit_rarity === 5 : record.rarity === 5;
+}
+
+function mockMatchesFocusedRarity(record: (typeof mockRecords)[number], rarity: number) {
+  if (rarity === 5) return mockIsFocusedFiveStarWallRecord(record);
+  if (rarity === 3 || rarity === 4) return record.derived.hit_rarity === rarity;
+  return false;
+}
+
+function mockIsFocusedFiveStarWallRecord(record: (typeof mockRecords)[number]) {
+  if (record.pool_kind === "fork_lottery") {
+    return record.derived.hit_rarity === 5 && record.derived.rate_up_result === "up";
+  }
+  return record.item_kind === "character" && record.rarity === 5;
 }
 
 function mockPullRarityBucketKey(record: (typeof mockRecords)[number], poolKind: PoolKind): PullRarityBucketKey {
@@ -269,7 +331,7 @@ function mockRecordPage(filter: RecordFilter) {
     if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
     if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
     if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
-    if (filter.hit_rarities?.length && (record.derived.hit_rarity == null || !filter.hit_rarities.includes(record.derived.hit_rarity))) return false;
+    if (filter.focused_rarities?.length && !filter.focused_rarities.some((rarity) => mockMatchesFocusedRarity(record, rarity))) return false;
     if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;
     if (filter.roll_buckets?.length && !filter.roll_buckets.includes(record.roll_bucket)) return false;
     if (filter.item_kinds?.length && !filter.item_kinds.includes(record.item_kind)) return false;
@@ -282,20 +344,42 @@ function mockRecordPage(filter: RecordFilter) {
     return true;
   });
   const direction = filter.sort_direction ?? "desc";
-  records = [...records].sort((left, right) => {
-    const leftTime = left.time ?? null;
-    const rightTime = right.time ?? null;
-    if (leftTime !== null && rightTime === null) return -1;
-    if (leftTime === null && rightTime !== null) return 1;
-    const timeOrder =
-      direction === "asc"
-        ? String(leftTime ?? "").localeCompare(String(rightTime ?? ""))
-        : String(rightTime ?? "").localeCompare(String(leftTime ?? ""));
-    return timeOrder || left.source_order - right.source_order || left.record_id.localeCompare(right.record_id);
-  });
+  records = [...records].sort(direction === "asc" ? compareRecordsOldestFirst : compareRecordsNewestFirst);
   const offset = filter.offset ?? 0;
   const limit = filter.limit ?? 50;
   return { total: records.length, records: records.slice(offset, offset + limit) };
+}
+
+function compareRecordsChronological(left: (typeof mockRecords)[number], right: (typeof mockRecords)[number]) {
+  return (
+    compareTimeAsc(left.time, right.time) ||
+    left.source_order - right.source_order ||
+    left.record_id.localeCompare(right.record_id)
+  );
+}
+
+function compareRecordsNewestFirst(left: (typeof mockRecords)[number], right: (typeof mockRecords)[number]) {
+  return (
+    compareTimeDesc(left.time, right.time) ||
+    left.source_order - right.source_order ||
+    left.record_id.localeCompare(right.record_id)
+  );
+}
+
+function compareRecordsOldestFirst(left: (typeof mockRecords)[number], right: (typeof mockRecords)[number]) {
+  return compareRecordsNewestFirst(right, left);
+}
+
+function compareTimeAsc(left?: string | null, right?: string | null) {
+  if (left != null && right == null) return -1;
+  if (left == null && right != null) return 1;
+  return String(left ?? "").localeCompare(String(right ?? ""));
+}
+
+function compareTimeDesc(left?: string | null, right?: string | null) {
+  if (left != null && right == null) return -1;
+  if (left == null && right != null) return 1;
+  return String(right ?? "").localeCompare(String(left ?? ""));
 }
 
 export const mockApi: AppApi = {
@@ -397,7 +481,7 @@ export const mockApi: AppApi = {
     return {
       summary,
       five_star_history: detail.five_star_history,
-      five_star_display_history: detail.five_star_display_history,
+      five_star_wall_history: detail.five_star_wall_history,
     };
   },
   async dashboardSelectionDetail(_profileName: string, selection: DashboardSelection) {
@@ -480,51 +564,6 @@ export const mockApi: AppApi = {
   },
   async updaterInstallStaged() {
     return undefined;
-  },
-  async assetsPackStatus() {
-    return {
-      installed: true,
-      compatible: true,
-      current_app_version: MOCK_APP_VERSION,
-      expected_map_hash: "mock-map-hash",
-      installed_app_version: MOCK_APP_VERSION,
-      installed_map_hash: "mock-map-hash",
-      source_commit: "mock-source",
-      file_count: 4,
-      install_path: "mock/data/assets-pack/current",
-    };
-  },
-  async assetsPackCheck() {
-    return {
-      current_app_version: MOCK_APP_VERSION,
-      expected_map_hash: "mock-map-hash",
-      channel: "stable",
-      installed: true,
-      compatible: true,
-      package: null,
-    };
-  },
-  async assetsPackDownloadAndInstall(packageInfo: AssetsPackPackage) {
-    return {
-      app_version: packageInfo.app_version,
-      map_hash: packageInfo.map_hash,
-      source_commit: packageInfo.source_commit,
-      file_count: packageInfo.file_count,
-      install_path: "mock/data/assets-pack/current",
-    };
-  },
-  async assetsPackRemove() {
-    return {
-      installed: false,
-      compatible: false,
-      current_app_version: MOCK_APP_VERSION,
-      expected_map_hash: "mock-map-hash",
-      installed_app_version: null,
-      installed_map_hash: null,
-      source_commit: null,
-      file_count: 0,
-      install_path: "mock/data/assets-pack/current",
-    };
   },
   async assetsResolveRefs(refs: AssetResolveRequest[]) {
     return refs.map((ref) => ({

@@ -3,8 +3,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value, json};
 
-use crate::protocol::{ParsedRow, RecordType, row_public_time};
-use nte_core::{GuiError, PUBLIC_JSON_SCHEMA, public_record_id_from_material};
+use crate::protocol::{ParsedRow, row_public_time};
+use nte_core::{GuiError, PUBLIC_JSON_SCHEMA, compare_time_asc, public_record_id_from_material};
 use nte_core::{MapData, load_map};
 
 #[derive(Debug, Clone)]
@@ -22,6 +22,7 @@ pub struct CaptureRecordBuilder {
 }
 
 struct CanonicalRow<'a> {
+    source_index: usize,
     row: &'a ParsedRow,
     banner_id: Option<String>,
     item_id: String,
@@ -43,7 +44,7 @@ impl CaptureRecordBuilder {
     }
 
     pub fn build_record(&mut self, row: &ParsedRow) -> CapturePublicRecord {
-        let canonical = canonical_row(row, &self.map);
+        let canonical = canonical_row(0, row, &self.map);
         let record_id = self.next_record_id(&canonical);
         let source_order = self.next_source_order;
         self.next_source_order += 1;
@@ -58,6 +59,9 @@ impl CaptureRecordBuilder {
 
     fn next_record_id(&mut self, row: &CanonicalRow<'_>) -> String {
         let base_id = record_id_from_material(&record_id_material(row));
+        if has_source_slot(row) {
+            return base_id;
+        }
         let occurrence = self.seen_record_ids.entry(base_id.clone()).or_default();
         let record_id = if *occurrence == 0 {
             base_id
@@ -74,10 +78,12 @@ impl CaptureRecordBuilder {
 
 pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value, GuiError> {
     let map = load_map(locale)?;
-    let canonical_rows = rows
+    let mut canonical_rows = rows
         .iter()
-        .map(|row| canonical_row(row, &map))
+        .enumerate()
+        .map(|(source_index, row)| canonical_row(source_index, row, &map))
         .collect::<Vec<_>>();
+    canonical_rows.sort_by(compare_canonical_rows_chronological);
     let record_ids = record_ids(&canonical_rows);
     let records = canonical_rows
         .iter()
@@ -103,13 +109,14 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
     }))
 }
 
-fn canonical_row<'a>(row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
+fn canonical_row<'a>(source_index: usize, row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
     let banner = row
         .pool_id
         .as_deref()
         .map(|pool_id| map.resolve_banner(pool_id, row_public_time(row).as_deref()));
     let item_id = map.canonical_item_id(&row.item_id).to_string();
     CanonicalRow {
+        source_index,
         row,
         banner_id: banner
             .filter(|banner| banner.resolution_issue.is_none())
@@ -166,7 +173,7 @@ fn record_ids(rows: &[CanonicalRow<'_>]) -> Vec<String> {
     let mut seen: BTreeMap<String, u64> = BTreeMap::new();
     let mut ids = Vec::with_capacity(rows.len());
     for (row, base_id) in rows.iter().zip(base_ids) {
-        if totals.get(&base_id) == Some(&1) {
+        if totals.get(&base_id) == Some(&1) || has_source_slot(row) {
             ids.push(base_id);
             continue;
         }
@@ -185,19 +192,32 @@ fn record_ids(rows: &[CanonicalRow<'_>]) -> Vec<String> {
 }
 
 fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
-    if row.row.record_type == RecordType::Fork {
-        if let Some(query_high) = row.row.source.query_high {
-            let group_draw_index = row.row.source.row_index + if query_high { 0 } else { 5 };
-            return vec![
-                row.row.record_type.as_str().to_string(),
-                "protocol_v2".to_string(),
-                row.row.ticks.to_string(),
-                row.row.pool_id.clone().unwrap_or_default(),
-                group_draw_index.to_string(),
-                row.item_id.clone(),
-                row.row.count.to_string(),
-            ];
+    if let Some(slot) = source_slot_material(row.row) {
+        let mut material = vec![
+            row.row.record_type.as_str().to_string(),
+            "protocol_slot_v3".to_string(),
+            row.row.ticks.to_string(),
+            row.row.pool_id.clone().unwrap_or_default(),
+        ];
+        material.extend(slot);
+        material.extend([
+            row.item_id.clone(),
+            row.row.count.to_string(),
+            row.secondary_item_id.clone().unwrap_or_default(),
+            row.row
+                .secondary_count
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+        ]);
+        if let Some(roll_points) = row.row.roll_points {
+            material.push("roll_points".to_string());
+            material.push(roll_points.to_string());
         }
+        if let Some(roll_label_id) = row.row.roll_label_id.as_ref() {
+            material.push("roll_label_id".to_string());
+            material.push(roll_label_id.clone());
+        }
+        return material;
     }
 
     let mut material = vec![
@@ -222,6 +242,47 @@ fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
         material.push(roll_label_id.clone());
     }
     material
+}
+
+fn has_source_slot(row: &CanonicalRow<'_>) -> bool {
+    source_slot_material(row.row).is_some()
+}
+
+fn compare_canonical_rows_chronological(
+    left: &CanonicalRow<'_>,
+    right: &CanonicalRow<'_>,
+) -> std::cmp::Ordering {
+    compare_time_asc(
+        row_public_time(left.row).as_deref(),
+        row_public_time(right.row).as_deref(),
+    )
+    .then_with(|| right.source_index.cmp(&left.source_index))
+    .then_with(|| record_id_material(left).cmp(&record_id_material(right)))
+}
+
+fn source_slot_material(row: &ParsedRow) -> Option<Vec<String>> {
+    let source = &row.source;
+    let stream_key = source.stream_key.as_ref()?;
+    let generation_index = source.generation_index?;
+    let segment_index = source.segment_index?;
+    let query_high = source.query_high?;
+    let mut material = vec![
+        "stream_key".to_string(),
+        stream_key.clone(),
+        "generation_index".to_string(),
+        generation_index.to_string(),
+        "segment_index".to_string(),
+        segment_index.to_string(),
+        "query_high".to_string(),
+        query_high.to_string(),
+    ];
+    if let Some(page_index) = source.page_index {
+        material.push("page_index".to_string());
+        material.push(page_index.to_string());
+    }
+    material.push("row_index".to_string());
+    material.push(source.row_index.to_string());
+    Some(material)
 }
 
 fn record_id_from_material(material: &[String]) -> String {
@@ -252,7 +313,7 @@ fn now_stamp() -> u64 {
 mod tests {
     use std::path::Path;
 
-    use crate::protocol::SourceRef;
+    use crate::protocol::{RecordType, SourceRef};
     use crate::raw;
 
     use super::*;
@@ -283,17 +344,16 @@ mod tests {
         assert_eq!(records[0]["source_order"], 0);
         assert_eq!(records[1]["source_order"], 1);
 
-        let mut builder = CaptureRecordBuilder::new("zh-Hant").unwrap();
-        let incremental_records = builder
-            .build_records(&rows.rows)
-            .into_iter()
-            .map(|record| record.value)
-            .collect::<Vec<_>>();
-        assert_eq!(incremental_records.as_slice(), records.as_slice());
+        assert!(
+            records
+                .iter()
+                .enumerate()
+                .all(|(index, record)| record["source_order"] == index as u64)
+        );
     }
 
     #[test]
-    fn fork_protocol_record_id_material_uses_group_draw_index() {
+    fn protocol_record_id_material_uses_source_slot() {
         let first_row = fork_protocol_parsed_row(true, 0);
         let second_row = fork_protocol_parsed_row(false, 0);
         let first_half = fork_protocol_canonical_row(&first_row);
@@ -303,30 +363,56 @@ mod tests {
             record_id_material(&first_half),
             vec![
                 "fork",
-                "protocol_v2",
+                "protocol_slot_v3",
                 "639175144000000000",
                 "ForkLottery_Nanali",
+                "stream_key",
+                "fork",
+                "generation_index",
+                "0",
+                "segment_index",
+                "0",
+                "query_high",
+                "true",
+                "page_index",
+                "0",
+                "row_index",
                 "0",
                 "fork_dustbin",
                 "1",
+                "",
+                "",
             ]
         );
         assert_eq!(
             record_id_material(&second_half),
             vec![
                 "fork",
-                "protocol_v2",
+                "protocol_slot_v3",
                 "639175144000000000",
                 "ForkLottery_Nanali",
-                "5",
+                "stream_key",
+                "fork",
+                "generation_index",
+                "0",
+                "segment_index",
+                "1",
+                "query_high",
+                "false",
+                "page_index",
+                "0",
+                "row_index",
+                "0",
                 "fork_dustbin",
                 "1",
+                "",
+                "",
             ]
         );
     }
 
     #[test]
-    fn fork_protocol_record_ids_do_not_depend_on_duplicate_occurrence_order() {
+    fn protocol_record_ids_do_not_depend_on_duplicate_occurrence_order() {
         let first_row = fork_protocol_parsed_row(true, 3);
         let second_row = fork_protocol_parsed_row(false, 3);
 
@@ -342,6 +428,33 @@ mod tests {
         assert_eq!(forward[0], reversed[1]);
         assert_eq!(forward[1], reversed[0]);
         assert_ne!(forward[0], forward[1]);
+    }
+
+    #[test]
+    fn protocol_record_ids_reuse_same_id_for_same_source_slot() {
+        let row = fork_protocol_parsed_row(true, 3);
+
+        let ids = record_ids(&[
+            fork_protocol_canonical_row(&row),
+            fork_protocol_canonical_row(&row),
+        ]);
+
+        assert_eq!(ids[0], ids[1]);
+    }
+
+    #[test]
+    fn capture_document_assigns_source_order_oldest_first() {
+        let newest = fork_protocol_parsed_row(true, 0);
+        let mut oldest = fork_protocol_parsed_row(false, 0);
+        oldest.time = newest.time.clone();
+        oldest.item_id = "fork_vine".to_string();
+        let document = build_capture_document(&[newest, oldest], "zh-Hant").unwrap();
+        let records = document["nte"]["list"].as_array().unwrap();
+
+        assert_eq!(records[0]["source_order"], 0);
+        assert_eq!(records[0]["item_id"], "fork_vine");
+        assert_eq!(records[1]["source_order"], 1);
+        assert_eq!(records[1]["item_id"], "fork_dustbin");
     }
 
     #[test]
@@ -388,6 +501,7 @@ mod tests {
 
     fn fork_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
         CanonicalRow {
+            source_index: 0,
             row,
             banner_id: None,
             item_id: "fork_dustbin".to_string(),
@@ -429,6 +543,7 @@ mod tests {
 
     fn monopoly_protocol_canonical_row(row: &ParsedRow) -> CanonicalRow<'_> {
         CanonicalRow {
+            source_index: 0,
             row,
             banner_id: None,
             item_id: "fork_dustbin".to_string(),

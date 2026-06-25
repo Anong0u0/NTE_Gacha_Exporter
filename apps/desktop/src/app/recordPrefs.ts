@@ -23,7 +23,7 @@ export type RecordViewPrefs = {
   recordPoolKind: PoolKindFilter;
   recordBannerIds: string[];
   itemRarities: number[];
-  hitRarities: number[];
+  focusedRarities: number[];
   rateUpResults: RateUpResult[];
   rollBuckets: RollBucket[];
   itemKinds: ItemKind[];
@@ -36,14 +36,16 @@ export type RecordViewPrefs = {
   pageSize: RecordPageSize;
   visibleRecordColumns: RecordColumnId[];
   recordAdvancedFiltersOpen: boolean;
-  showLatestFiveStarItems: boolean;
+  latestFiveStarWallModes: Record<PoolKind, FiveStarWallMode>;
 };
+
+export type FiveStarWallMode = "all" | "focused";
 
 export const defaultRecordViewPrefs: RecordViewPrefs = {
   recordPoolKind: "all",
   recordBannerIds: [],
   itemRarities: [],
-  hitRarities: [],
+  focusedRarities: [],
   rateUpResults: [],
   rollBuckets: [],
   itemKinds: [],
@@ -56,7 +58,11 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
   pageSize: 10,
   visibleRecordColumns: [...recordColumnIds],
   recordAdvancedFiltersOpen: false,
-  showLatestFiveStarItems: false,
+  latestFiveStarWallModes: {
+    monopoly_limited: "all",
+    monopoly_standard: "all",
+    fork_lottery: "focused",
+  },
 };
 
 export const rateUpResultOptions: RateUpResult[] = ["up", "off_rate", "not_applicable", "unknown"];
@@ -64,7 +70,7 @@ export const forkResultMarkOptions: ForkResultMark[] = ["win", "guaranteed", "lo
 export const forkPityBadgeOptions: PityBadge[] = ["fork_up_guarantee", "fork_5star_guarantee", "fork_4star_guarantee"];
 
 export function recordPrefsKey(profileName: string) {
-  return `nte.recordView.v6:${profileName}`;
+  return `nte.recordView.v3:${profileName}`;
 }
 
 export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
@@ -82,7 +88,7 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       recordPoolKind: recordPoolKind === "all" || kindOrder.includes(recordPoolKind as PoolKind) ? (recordPoolKind as PoolKindFilter) : defaultRecordViewPrefs.recordPoolKind,
       recordBannerIds: readStringArray(source.recordBannerIds),
       itemRarities: readNumberArray(source.itemRarities).filter(isRecordRarity),
-      hitRarities: readNumberArray(source.hitRarities).filter(isRecordRarity),
+      focusedRarities: readNumberArray(source.focusedRarities).filter(isRecordRarity),
       rateUpResults: readStringArray(source.rateUpResults).filter((result): result is RateUpResult => rateUpResultOptions.includes(result as RateUpResult)),
       rollBuckets: readStringArray(source.rollBuckets).filter((bucket): bucket is RollBucket => isRollBucket(bucket)),
       itemKinds: readStringArray(source.itemKinds).filter((itemKind): itemKind is ItemKind => isItemKind(itemKind)),
@@ -95,7 +101,7 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       pageSize: recordPageSizes.includes(pageSize as RecordPageSize) ? (pageSize as RecordPageSize) : defaultRecordViewPrefs.pageSize,
       visibleRecordColumns: readRecordColumnArray(source.visibleRecordColumns),
       recordAdvancedFiltersOpen: typeof source.recordAdvancedFiltersOpen === "boolean" ? source.recordAdvancedFiltersOpen : defaultRecordViewPrefs.recordAdvancedFiltersOpen,
-      showLatestFiveStarItems: typeof source.showLatestFiveStarItems === "boolean" ? source.showLatestFiveStarItems : defaultRecordViewPrefs.showLatestFiveStarItems,
+      latestFiveStarWallModes: readFiveStarWallModes(source.latestFiveStarWallModes),
     };
   } catch {
     return { ...defaultRecordViewPrefs };
@@ -134,4 +140,15 @@ function readRecordColumnArray(value: unknown): RecordColumnId[] {
 
 function isRecordColumnId(value: unknown): value is RecordColumnId {
   return typeof value === "string" && recordColumnIds.includes(value as RecordColumnId);
+}
+
+function readFiveStarWallModes(value: unknown): Record<PoolKind, FiveStarWallMode> {
+  const result = { ...defaultRecordViewPrefs.latestFiveStarWallModes };
+  if (typeof value !== "object" || value === null) return result;
+  const source = value as Record<string, unknown>;
+  for (const kind of kindOrder) {
+    const mode = source[kind];
+    if (mode === "all" || mode === "focused") result[kind] = mode;
+  }
+  return result;
 }

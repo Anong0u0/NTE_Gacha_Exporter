@@ -58,8 +58,7 @@ pub fn stage_update_archive(
         )));
     }
 
-    let staging = root.join(UPDATE_DIR).join("staging").join(&package.version);
-    clear_scoped_dir(&staging)?;
+    let staging = clear_staging_child(root, &package.version)?;
     let extract_root = staging.join("extract");
     let payload = staging.join("payload");
     fs::create_dir_all(&extract_root)?;
@@ -125,10 +124,17 @@ pub fn apply_staged_update(root: impl AsRef<Path>, version: &str) -> Result<(), 
     let apply_result =
         backup_current_release(root, &rollback).and_then(|()| install_payload(root, &payload));
     match apply_result {
-        Ok(()) => Ok(()),
+        Ok(()) => {
+            let _ = cleanup_update_artifacts(root);
+            Ok(())
+        }
         Err(error) => {
             let _ = restore_rollback(root, &rollback);
             Err(error)
         }
     }
+}
+
+pub fn cleanup_update_artifacts_after_success(root: impl AsRef<Path>) -> Result<(), GuiError> {
+    cleanup_update_artifacts(root)
 }

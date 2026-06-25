@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Manager, Runtime};
 
+use crate::state::AppState;
+
 const ENABLE_ENV: &str = "NTE_AGENT_SMOKE";
 const ADDR_ENV: &str = "NTE_AGENT_SMOKE_ADDR";
 const DEFAULT_ADDR: &str = "127.0.0.1:17365";
@@ -166,6 +168,10 @@ fn route_request<R: Runtime>(handle: AppHandle<R>, request: HttpRequest) -> Resu
 }
 
 fn run_action<R: Runtime>(handle: &AppHandle<R>, request: ActionRequest) -> Result<Value, String> {
+    if request.action == "import_public_json_text" {
+        return import_public_json_text(handle, request.value);
+    }
+
     let script = match request.action.as_str() {
         "snapshot" => snapshot_script(),
         "click_agent" => click_script(&request.agent_id),
@@ -173,6 +179,24 @@ fn run_action<R: Runtime>(handle: &AppHandle<R>, request: ActionRequest) -> Resu
         other => return Err(format!("unknown action: {other}")),
     };
     eval_js(handle, script, request.timeout_ms)
+}
+
+fn import_public_json_text<R: Runtime>(
+    handle: &AppHandle<R>,
+    value: Value,
+) -> Result<Value, String> {
+    let document_text = value
+        .as_str()
+        .ok_or_else(|| "import_public_json_text requires string value".to_string())?;
+    let state = handle.state::<AppState>();
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "store lock poisoned".to_string())?;
+    let report = store
+        .import_public_document("default", document_text, "agent_smoke_seed", None)
+        .map_err(|error| error.to_string())?;
+    serde_json::to_value(report).map_err(|error| error.to_string())
 }
 
 fn eval_js<R: Runtime>(

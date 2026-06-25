@@ -6,7 +6,8 @@ use std::time::{Duration, Instant};
 use crate::error::{AutomationError, AutomationResult};
 use crate::matcher::ImageTemplateMatcher;
 use crate::model::{
-    AutoPageOptions, AutoPageResult, AutoPageStatus, PageNumber, Point, RecordSnapshot,
+    AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
+    AutoPageWindowDiagnostics, OcrReadDiagnostics, PageNumber, Point, RecordSnapshot, Size,
     TemplateMatch,
 };
 use crate::ocr::{PageReadHint, WindowsOcrClient};
@@ -21,12 +22,27 @@ const INCREMENTAL_DUPLICATE_RECORD_THRESHOLD: usize = 6;
 
 pub fn run_auto_page(options: AutoPageOptions) -> AutoPageResult {
     let non_interactive = options.non_interactive;
-    match AutoPager::new(options).and_then(|mut pager| pager.run()) {
-        Ok(result) => result,
+    let mut pager = match AutoPager::new(options) {
+        Ok(pager) => pager,
         Err(error) if non_interactive => {
-            AutoPageResult::failed(error.to_string(), Vec::new(), Vec::new())
+            return AutoPageResult::failed(error.to_string(), Vec::new(), Vec::new());
         }
-        Err(error) => AutoPageResult::manual(error.to_string(), Vec::new(), Vec::new()),
+        Err(error) => return AutoPageResult::manual(error.to_string(), Vec::new(), Vec::new()),
+    };
+    match pager.run() {
+        Ok(result) => result,
+        Err(error) if non_interactive => AutoPageResult::failed_with_diagnostics(
+            error.to_string(),
+            Vec::new(),
+            Vec::new(),
+            pager.diagnostics,
+        ),
+        Err(error) => AutoPageResult::manual_with_diagnostics(
+            error.to_string(),
+            Vec::new(),
+            Vec::new(),
+            pager.diagnostics,
+        ),
     }
 }
 
@@ -39,6 +55,7 @@ struct AutoPager {
     matcher: ImageTemplateMatcher,
     tooltip: AutomationTooltip,
     started_at: Instant,
+    diagnostics: AutoPageDiagnostics,
 }
 
 struct PoolPageRun {
@@ -47,4 +64,3 @@ struct PoolPageRun {
     visited_pages: u32,
     last_page: u32,
 }
-

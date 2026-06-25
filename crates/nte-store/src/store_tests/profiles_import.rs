@@ -371,6 +371,7 @@ fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
     v2_record["pity_5_before"] = serde_json::json!(99);
     v2_record["banner_id"] = serde_json::json!("ignored_banner");
     v2_record["rarity"] = serde_json::json!(1);
+    v2_record["source_order"] = serde_json::json!(0);
     let v2_major = serde_json::json!({
         "info": {
             "schema": nte_core::PUBLIC_JSON_SCHEMA,
@@ -498,41 +499,30 @@ fn legacy_composite_record_ids_are_normalized_to_current_hash_ids() {
 }
 
 #[test]
-fn public_json_falls_back_to_list_index_for_source_order() {
+fn public_json_requires_source_order() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record(
-            "later-source",
-            "ForkLottery_AnHunQu",
-            "DiceNormal",
-            "2026-01-01 10:00:00",
-        ),
-        record(
-            "earlier-source",
-            "ForkLottery_AnHunQu",
-            "fork_dustbin",
-            "2026-01-01 10:00:00",
-        ),
-    ]);
+    let document = serde_json::json!({
+        "info": {
+            "schema": nte_core::PUBLIC_JSON_SCHEMA,
+            "schema_version": "2.0"
+        },
+        "nte": {
+            "list": [{
+                "record_id": "missing-source-order",
+                "record_type": "fork",
+                "time": "2026-01-01 10:00:00",
+                "pool_id": "ForkLottery_AnHunQu",
+                "item_id": "fork_dustbin",
+                "count": 1
+            }]
+        }
+    })
+    .to_string();
 
-    store
+    let error = store
         .import_public_document("default", &document, "json", None)
-        .unwrap();
-    let list = store
-        .list_records(
-            "default",
-            "zh-Hant",
-            &RecordFilter {
-                sort_direction: Some(SortDirection::Asc),
-                ..RecordFilter::default()
-            },
-        )
-        .unwrap();
+        .unwrap_err();
 
-    assert_eq!(list.records[0].record_id, "later-source");
-    assert_eq!(list.records[0].source_order, 0);
-    assert_eq!(list.records[1].record_id, "earlier-source");
-    assert_eq!(list.records[1].source_order, 1);
-    assert_eq!(list.records[1].derived.pull_no_in_pool_kind, Some(1));
+    assert!(error.to_string().contains("record missing u64 field: source_order"));
 }

@@ -309,6 +309,18 @@ fn count_hit_rate_up(records: &[&DisplayRecord], rarity: u8, result: RateUpResul
         .count() as u64
 }
 
+fn is_focused_five_star_wall_record(record: &DisplayRecord) -> bool {
+    match record.pool_kind {
+        PoolKind::ForkLottery => {
+            record.derived.hit_rarity == Some(5)
+                && record.derived.rate_up_result == RateUpResult::Up
+        }
+        PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => {
+            record.item_kind == ItemKind::Character && record.rarity == Some(5)
+        }
+    }
+}
+
 fn hit_pity_distance(record: &DisplayRecord, rarity: u8) -> Option<u64> {
     if !record.derived.counts_as_pull {
         return None;

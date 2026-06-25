@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [app.displayedLatestFiveStarHits.length, app.selectedPoolKind, dashboardScopeKey.value, app.showLatestFiveStarItems],
+  () => [app.displayedLatestFiveStarHits.length, app.selectedPoolKind, dashboardScopeKey.value, app.latestFiveStarWallMode],
   () => {
     void refreshFiveWallLayout();
   },
@@ -161,6 +161,10 @@ watch(
             :key="pool.pool_kind"
             :class="{ active: app.isSelectedDashboardPool(pool.pool_kind) }"
             type="button"
+            :data-pool-kind="pool.pool_kind"
+            :data-current-pity="pool.current_pity"
+            :data-hard-pity="pool.hard_pity"
+            :data-current-ten-pull-progress="pool.current_ten_pull_progress ?? ''"
             :aria-pressed="app.isSelectedDashboardPool(pool.pool_kind)"
             @click="app.selectDashboardPool(pool.pool_kind)"
           >
@@ -221,16 +225,16 @@ watch(
             </div>
             <div class="latest-five-actions">
               <button
-                v-if="app.showLatestFiveStarItemToggle"
+                v-if="app.showLatestFiveStarWallModeToggle"
                 type="button"
                 class="ghost latest-item-toggle"
-                :aria-pressed="app.showLatestFiveStarItems"
-                :title="app.showLatestFiveStarItems ? app.t('dashboard.hideFiveStarItems') : app.t('dashboard.showFiveStarItems')"
-                :aria-label="app.showLatestFiveStarItems ? app.t('dashboard.hideFiveStarItems') : app.t('dashboard.showFiveStarItems')"
-                @click="app.toggleLatestFiveStarItems"
+                :aria-pressed="app.latestFiveStarWallMode === 'all'"
+                :title="app.latestFiveStarWallToggleLabel()"
+                :aria-label="app.latestFiveStarWallToggleLabel()"
+                @click="app.toggleLatestFiveStarWallMode"
               >
-                <component :is="app.showLatestFiveStarItems ? Eye : EyeOff" :size="16" />
-                <span>{{ app.showLatestFiveStarItems ? app.t("dashboard.showingFiveStarItems") : app.t("dashboard.hidingFiveStarItems") }}</span>
+                <component :is="app.latestFiveStarWallMode === 'all' ? Eye : EyeOff" :size="16" />
+                <span>{{ app.latestFiveStarWallToggleLabel() }}</span>
               </button>
               <button
                 type="button"
@@ -250,15 +254,23 @@ watch(
                 :key="hit.record.record_id"
                 class="five-wall-item"
                 :class="[app.recordRarityClass(hit.record), { 'is-after-first-row': fiveWallOverflowsOneRow && index >= fiveWallFirstRowItemCount }]"
+                :data-record-id="hit.record.record_id"
+                :data-source-order="hit.record.source_order"
+                :data-time="hit.record.time ?? ''"
+                :data-pool-kind="hit.record.pool_kind"
+                :data-pool-id="hit.record.pool_id"
+                :data-item-id="hit.record.item_id"
+                :data-rarity="hit.record.rarity ?? ''"
+                :data-five-wall-distance="app.fiveWallDistance(hit)"
                 :title="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} · ${app.formatTime(hit.record.time)}`"
-                :aria-label="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} ${hit.pity_distance}`"
+                :aria-label="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} ${app.fiveWallDistance(hit)}`"
               >
                 <span v-if="app.hasRecordVisual(hit.record)" class="five-wall-thumb">
                   <img :src="app.itemVisualUrl(hit.record)" :alt="app.formatQuantityName(hit.record.item_name, hit.record.count)" />
                 </span>
                 <span v-else class="five-wall-thumb empty">{{ hit.record.item_name.slice(0, 1) }}</span>
                 <span v-if="hit.record.count && hit.record.count > 1" class="five-wall-quantity" aria-hidden="true">x{{ hit.record.count }}</span>
-                <span class="five-wall-pity" :class="app.fiveWallPityTone(hit.pity_distance, hit.record.pool_kind)">{{ hit.pity_distance }}</span>
+                <span class="five-wall-pity" :class="app.fiveWallPityTone(app.fiveWallDistance(hit), hit.record.pool_kind)">{{ app.fiveWallDistance(hit) }}</span>
               </div>
             </div>
             <div v-if="fiveWallOverflowsOneRow" class="five-wall-toolbar">

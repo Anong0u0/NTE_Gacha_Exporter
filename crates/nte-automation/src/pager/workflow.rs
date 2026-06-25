@@ -13,6 +13,17 @@ impl AutoPager {
             matcher: ImageTemplateMatcher::new(scaled_profile.clone()),
             profile: scaled_profile,
             started_at: Instant::now(),
+            diagnostics: AutoPageDiagnostics {
+                window: Some(AutoPageWindowDiagnostics {
+                    hwnd: window.hwnd,
+                    pid: window.pid,
+                    class_name: window.class_name.clone(),
+                    title: window.title.clone(),
+                    client_size: window.client_size(),
+                    profile_base_size: profile.base_client_size,
+                }),
+                ..AutoPageDiagnostics::default()
+            },
         };
         if let Some(reason) = pager.tooltip.unavailable_reason() {
             if reason != "disabled" {

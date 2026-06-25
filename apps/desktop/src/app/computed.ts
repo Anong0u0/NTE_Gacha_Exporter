@@ -1,6 +1,5 @@
 import { computed, type Ref } from "vue";
 import type {
-  AssetsPackStatus,
   CaptureMode,
   CaptureStatus,
   DashboardOverview,
@@ -24,7 +23,6 @@ type ComputedDeps = {
   captureMode: Ref<CaptureMode>;
   busy: Ref<boolean>;
   captureActionBusy: Ref<boolean>;
-  assetsPackStatus: Ref<AssetsPackStatus | null>;
   recordPoolKind: Ref<PoolKindFilter>;
   pageSize: Ref<number>;
   pageIndex: Ref<number>;
@@ -49,8 +47,13 @@ export function createAppComputed(deps: ComputedDeps) {
   const recordPageEnd = computed(() =>
     Math.min(deps.recordTotal.value, (deps.pageIndex.value + 1) * deps.pageSize.value),
   );
+  const recordPageCount = computed(() =>
+    deps.recordTotal.value === 0 ? 0 : Math.ceil(deps.recordTotal.value / deps.pageSize.value),
+  );
   const canPrevPage = computed(() => deps.pageIndex.value > 0);
   const canNextPage = computed(() => recordPageEnd.value < deps.recordTotal.value);
+  const canFirstPage = computed(() => canPrevPage.value);
+  const canLastPage = computed(() => canNextPage.value);
   const bannersForRecordKind = computed(() =>
     deps.filterOptions.value.banners.filter(
       (banner) => deps.recordPoolKind.value === "all" || banner.pool_kind === deps.recordPoolKind.value,
@@ -101,11 +104,6 @@ export function createAppComputed(deps: ComputedDeps) {
   const captureModeLabel = computed(() =>
     formatCaptureMode(deps.captureStatus.value?.mode ?? deps.captureMode.value, deps.t),
   );
-  const assetsPackSummary = computed(() => {
-    if (!deps.assetsPackStatus.value?.installed) return deps.t("settings.assetsStatusNotInstalled");
-    if (!deps.assetsPackStatus.value.compatible) return deps.t("settings.assetsStatusMismatch");
-    return deps.t("settings.assetsStatusInstalled", { count: deps.assetsPackStatus.value.file_count });
-  });
 
   return {
     activeProfile,
@@ -115,8 +113,11 @@ export function createAppComputed(deps: ComputedDeps) {
     selectedSummary,
     recordPageStart,
     recordPageEnd,
+    recordPageCount,
     canPrevPage,
     canNextPage,
+    canFirstPage,
+    canLastPage,
     bannersForRecordKind,
     isCaptureActive,
     isWorkflowBusy,
@@ -124,6 +125,5 @@ export function createAppComputed(deps: ComputedDeps) {
     captureSubtitle,
     autoPageStatusLine,
     captureModeLabel,
-    assetsPackSummary,
   };
 }

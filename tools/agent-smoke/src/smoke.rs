@@ -175,10 +175,229 @@ fn run_smoke_steps(
     write_json(logs.join("snapshot-initial.json"), &snapshot)?;
     assert_agent_ids(&snapshot, &["nav-dashboard", "nav-records", "nav-settings"])?;
     push_step(report, "initial_snapshot", None);
+    let seeded = seed_dashboard_five_wall_data(&options.addr)?;
+    push_step(report, "seed_dashboard_five_wall_data", Some(seeded));
+    reload_dashboard(&options.addr)?;
     capture_step(report, screenshots, "dashboard_initial", &window)?;
 
     capture_navigation_views(&options.addr, screenshots, report, &window)?;
     capture_final_snapshot(&options.addr, logs, report)
+}
+
+fn seed_dashboard_five_wall_data(addr: &str) -> Result<Value> {
+    action(
+        addr,
+        "import_public_json_text",
+        "",
+        Value::String(smoke_public_json()),
+        10000,
+    )
+}
+
+fn smoke_public_json() -> String {
+    let mut records = Vec::new();
+    for index in 1..=8 {
+        records.push(json!({
+            "record_id": format!("agent-smoke-limited-pad-{index}"),
+            "source_order": 300 + index,
+            "record_type": "monopoly",
+            "time": format!("2026-04-01 00:00:{index:02}"),
+            "pool_id": "CardPool_Character",
+            "item_id": "fork_dustbin",
+            "count": 1,
+            "roll_points": 1
+        }));
+    }
+    records.push(json!({
+        "record_id": "agent-smoke-limited-old-dice",
+        "source_order": 216,
+        "record_type": "monopoly",
+        "time": "2026-04-30 17:02:07",
+        "pool_id": "CardPool_Character",
+        "item_id": "Dicelimite",
+        "count": 1,
+        "roll_points": 6
+    }));
+    records.push(json!({
+        "record_id": "agent-smoke-limited-old-character",
+        "source_order": 209,
+        "record_type": "monopoly",
+        "time": "2026-04-30 17:02:07",
+        "pool_id": "CardPool_Character",
+        "item_id": "1010",
+        "count": 1,
+        "roll_points": 1
+    }));
+    records.push(json!({
+        "record_id": "agent-smoke-limited-late-ticket",
+        "source_order": 125,
+        "record_type": "monopoly",
+        "time": "2026-06-03 16:42:17",
+        "pool_id": "CardPool_Character",
+        "item_id": "Dice_ticket_01",
+        "count": 30,
+        "roll_points": null,
+        "roll_label_id": "BPUI_LotteryResult_chenmiandi"
+    }));
+    records.push(json!({
+        "record_id": "agent-smoke-limited-late-dice",
+        "source_order": 129,
+        "record_type": "monopoly",
+        "time": "2026-06-03 16:42:17",
+        "pool_id": "CardPool_Character",
+        "item_id": "Dicelimite",
+        "count": 1,
+        "roll_points": null,
+        "roll_label_id": "BPUI_LotteryResult_chenmiandi"
+    }));
+    for source_order in (1..=10).rev() {
+        records.push(json!({
+            "record_id": format!("agent-smoke-limited-{source_order}"),
+            "source_order": source_order,
+            "record_type": "monopoly",
+            "time": "2026-06-09 05:22:09",
+            "pool_id": "CardPool_Character",
+            "item_id": if source_order == 2 { "1004" } else { "fork_dustbin" },
+            "count": 1,
+            "roll_points": 1
+        }));
+    }
+    records.push(json!({
+        "record_id": "agent-smoke-standard-old-ticket",
+        "source_order": 402,
+        "record_type": "monopoly",
+        "time": "2026-06-09 00:00:00",
+        "pool_id": "CardPool_NewRole",
+        "item_id": "Dice_ticket_01",
+        "count": 30,
+        "roll_points": null,
+        "roll_label_id": "BPUI_LotteryResult_chenmiandi"
+    }));
+    records.push(json!({
+        "record_id": "agent-smoke-standard-guard",
+        "source_order": 400,
+        "record_type": "monopoly",
+        "time": "2026-06-10 00:00:00",
+        "pool_id": "CardPool_NewRole",
+        "item_id": "1023",
+        "count": 1,
+        "roll_points": 1
+    }));
+    records.push(json!({
+        "record_id": "agent-smoke-standard-new-ticket",
+        "source_order": 401,
+        "record_type": "monopoly",
+        "time": "2026-06-11 00:00:00",
+        "pool_id": "CardPool_NewRole",
+        "item_id": "Dice_ticket_01",
+        "count": 30,
+        "roll_points": null,
+        "roll_label_id": "BPUI_LotteryResult_chenmiandi"
+    }));
+    for source_order in (20..=29).rev() {
+        records.push(json!({
+            "record_id": format!("agent-smoke-fork-{source_order}"),
+            "source_order": source_order,
+            "record_type": "fork",
+            "time": "2026-06-03 17:15:58",
+            "pool_id": "ForkLottery_AnHunQu",
+            "item_id": if source_order == 20 {
+                "fork_Rose"
+            } else if source_order == 21 {
+                "fork_PaperPlane"
+            } else {
+                "fork_dustbin"
+            },
+            "count": 1,
+            "roll_points": 1
+        }));
+    }
+    records.push(json!({
+        "record_id": "agent-smoke-fork-loss",
+        "source_order": 1001,
+        "record_type": "fork",
+        "time": "2026-06-04 00:00:01",
+        "pool_id": "ForkLottery_AnHunQu",
+        "item_id": "fork_Arachne",
+        "count": 1,
+        "roll_points": 1
+    }));
+    for index in 1..=78 {
+        let offset = index + 1;
+        records.push(json!({
+            "record_id": format!("agent-smoke-fork-guarantee-pad-{index:02}"),
+            "source_order": 1001 + offset,
+            "record_type": "fork",
+            "time": format!("2026-06-04 00:{:02}:{:02}", offset / 60, offset % 60),
+            "pool_id": "ForkLottery_AnHunQu",
+            "item_id": "fork_dustbin",
+            "count": 1,
+            "roll_points": 1
+        }));
+    }
+    records.push(json!({
+        "record_id": "agent-smoke-fork-guaranteed",
+        "source_order": 1080,
+        "record_type": "fork",
+        "time": "2026-06-04 00:01:20",
+        "pool_id": "ForkLottery_AnHunQu",
+        "item_id": "fork_Rose",
+        "count": 1,
+        "roll_points": 1
+    }));
+
+    json!({
+        "info": {
+            "schema": "nte-gacha-export",
+            "schema_version": "2.0",
+            "export_app": "agent-smoke",
+            "export_app_version": env!("CARGO_PKG_VERSION"),
+            "export_timestamp": unix_secs(),
+            "locale": "zh-Hant",
+            "name_source": "agent-smoke",
+            "time_source": "fixed",
+            "privacy": "synthetic"
+        },
+        "nte": {
+            "list": records
+        }
+    })
+    .to_string()
+}
+
+fn reload_dashboard(addr: &str) -> Result<()> {
+    eval_js(addr, "window.location.reload(); return true;", 5000)?;
+    wait_agent(addr, "view-dashboard", Duration::from_secs(10))?;
+    wait_dashboard_five_wall_records(addr)?;
+    Ok(())
+}
+
+fn wait_dashboard_five_wall_records(addr: &str) -> Result<()> {
+    let mut last_error = None;
+    for _ in 0..40 {
+        let count = match eval_js(
+            addr,
+            r#"
+            return document.querySelectorAll(".latest-five-wall .five-wall-grid .five-wall-item").length;
+            "#,
+            5000,
+        ) {
+            Ok(value) => value.as_u64().unwrap_or(0),
+            Err(error) => {
+                last_error = Some(error);
+                0
+            }
+        };
+        if count > 0 {
+            return Ok(());
+        }
+        thread::sleep(Duration::from_millis(250));
+    }
+    if let Some(error) = last_error {
+        bail!("dashboard five wall records not visible after seed import: {error}")
+    } else {
+        bail!("dashboard five wall records not visible after seed import")
+    }
 }
 
 fn capture_failure_snapshot(addr: &str, logs: &Path) -> Result<()> {
@@ -206,6 +425,14 @@ fn capture_navigation_views(
                 "layout_dashboard_five_wall_contract",
                 Some(five_wall_contract),
             );
+            let five_wall_item_toggle = ensure_dashboard_five_star_items_visible(addr)?;
+            push_step(
+                report,
+                "dashboard_five_wall_show_items",
+                Some(five_wall_item_toggle),
+            );
+            let five_wall_data = audit_dashboard_five_wall_data(addr)?;
+            push_step(report, "dashboard_five_wall_data", Some(five_wall_data));
             let dialog = audit_status_dialog(addr)?;
             push_step(report, "layout_status_dialog", Some(dialog));
             let expanded = audit_dashboard_expanded_layout(addr)?;
@@ -470,6 +697,267 @@ fn audit_dashboard_five_wall_contract(addr: &str) -> Result<Value> {
         "#,
         5000,
     )
+}
+
+fn ensure_dashboard_five_star_items_visible(addr: &str) -> Result<Value> {
+    let result = eval_js(
+        addr,
+        r#"
+        const toggle = document.querySelector(".latest-item-toggle");
+        if (!toggle) return { skipped: true, reason: "toggle not visible" };
+        const pressedBefore = toggle.getAttribute("aria-pressed") === "true";
+        if (!pressedBefore) toggle.click();
+        return { skipped: false, pressedBefore, clicked: !pressedBefore };
+        "#,
+        5000,
+    )?;
+    thread::sleep(Duration::from_millis(250));
+    Ok(result)
+}
+
+fn audit_dashboard_five_wall_data(addr: &str) -> Result<Value> {
+    let mut audits = serde_json::Map::new();
+    let mut pool_counters = Value::Null;
+    for pool_kind in ["monopoly_limited", "monopoly_standard", "fork_lottery"] {
+        select_dashboard_pool(addr, pool_kind)?;
+        let audit = audit_selected_dashboard_five_wall_data(addr, pool_kind)?;
+        if pool_counters.is_null() {
+            pool_counters = audit.get("poolCounters").cloned().unwrap_or(Value::Null);
+        }
+        audits.insert(pool_kind.to_string(), audit);
+    }
+    Ok(json!({
+        "skipped": false,
+        "poolCounters": pool_counters,
+        "audits": audits,
+    }))
+}
+
+fn select_dashboard_pool(addr: &str, pool_kind: &str) -> Result<()> {
+    let script = format!(
+        r#"
+        const poolKind = {pool_kind_json};
+        const button = document.querySelector(`.pool-strip button[data-pool-kind="${{poolKind}}"]`);
+        if (!button) {{
+          throw new Error(`dashboard pool button missing ${{poolKind}}`);
+        }}
+        if (button.getAttribute("aria-pressed") !== "true") button.click();
+        return true;
+        "#,
+        pool_kind_json = serde_json::to_string(pool_kind)?,
+    );
+    eval_js(addr, &script, 5000)?;
+    for _ in 0..20 {
+        thread::sleep(Duration::from_millis(100));
+        let ready = eval_js(
+            addr,
+            r#"
+            const selectedPoolKind = document.querySelector(".pool-strip button[aria-pressed='true']")?.dataset.poolKind ?? null;
+            const itemPoolKinds = [...document.querySelectorAll(".latest-five-wall .five-wall-grid .five-wall-item")]
+              .map((item) => item.dataset.poolKind ?? "");
+            return { selectedPoolKind, itemPoolKinds };
+            "#,
+            5000,
+        )?;
+        let selected = ready
+            .get("selectedPoolKind")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let all_items_match = ready
+            .get("itemPoolKinds")
+            .and_then(Value::as_array)
+            .is_some_and(|items| {
+                !items.is_empty() && items.iter().all(|item| item.as_str() == Some(pool_kind))
+            });
+        if selected == pool_kind && all_items_match {
+            return Ok(());
+        }
+    }
+    bail!("dashboard pool did not become ready: {pool_kind}")
+}
+
+fn audit_selected_dashboard_five_wall_data(addr: &str, expected_pool_kind: &str) -> Result<Value> {
+    let expected_pool_kind_json = serde_json::to_string(expected_pool_kind)?;
+    let script = r#"
+        const fail = (message, detail = {}) => {
+          throw new Error(`${message} ${JSON.stringify(detail)}`);
+        };
+        const expectedPoolKind = __EXPECTED_POOL_KIND__;
+        const readSelectedPoolKind = () => document.querySelector(".pool-strip button[aria-pressed='true']")?.dataset.poolKind ?? null;
+        const readItems = () => [...document.querySelectorAll(".latest-five-wall .five-wall-grid .five-wall-item")]
+          .map((el, index) => ({
+            index,
+            recordId: el.dataset.recordId ?? "",
+            sourceOrder: Number(el.dataset.sourceOrder),
+            time: el.dataset.time || null,
+            poolKind: el.dataset.poolKind ?? "",
+            poolId: el.dataset.poolId ?? "",
+            itemId: el.dataset.itemId ?? "",
+            rarity: el.dataset.rarity ?? "",
+            fiveWallDistance: el.dataset.fiveWallDistance ?? "",
+          }));
+
+        const expectedPoolCounters = {
+          monopoly_limited: { currentPity: "1", hardPity: "90", currentTenPullProgress: "0" },
+          monopoly_standard: { currentPity: "0", hardPity: "90", currentTenPullProgress: "1" },
+          fork_lottery: { currentPity: "0", hardPity: "60", currentTenPullProgress: "0" },
+        };
+        const poolCounters = [...document.querySelectorAll(".pool-strip button[data-pool-kind]")]
+          .reduce((acc, button) => {
+            acc[button.dataset.poolKind] = {
+              currentPity: button.dataset.currentPity ?? "",
+              hardPity: button.dataset.hardPity ?? "",
+              currentTenPullProgress: button.dataset.currentTenPullProgress ?? "",
+            };
+            return acc;
+          }, {});
+        const counterMismatches = Object.entries(expectedPoolCounters)
+          .filter(([poolKind, expected]) => JSON.stringify(poolCounters[poolKind] ?? null) !== JSON.stringify(expected))
+          .map(([poolKind, expected]) => ({ poolKind, actual: poolCounters[poolKind] ?? null, expected }));
+        if (counterMismatches.length) {
+          fail("dashboard seeded pity counters mismatch", { counters: counterMismatches });
+        }
+
+        const expectedByPool = {
+          monopoly_limited: [
+            { recordId: "agent-smoke-limited-2", fiveWallDistance: "9" },
+            { recordId: "agent-smoke-limited-late-ticket", fiveWallDistance: "3" },
+            { recordId: "agent-smoke-limited-late-dice", fiveWallDistance: "2" },
+            { recordId: "agent-smoke-limited-old-character", fiveWallDistance: "10" },
+            { recordId: "agent-smoke-limited-old-dice", fiveWallDistance: "2" },
+          ],
+          monopoly_standard: [
+            { recordId: "agent-smoke-standard-new-ticket", fiveWallDistance: "2" },
+            { recordId: "agent-smoke-standard-guard", fiveWallDistance: "1" },
+            { recordId: "agent-smoke-standard-old-ticket", fiveWallDistance: "1" },
+          ],
+          fork_lottery: [
+            { recordId: "agent-smoke-fork-guaranteed", fiveWallDistance: "80" },
+            { recordId: "agent-smoke-fork-loss", fiveWallDistance: "1" },
+            { recordId: "agent-smoke-fork-20", fiveWallDistance: "10" },
+          ],
+        };
+
+        const selectedPoolKind = readSelectedPoolKind();
+        if (selectedPoolKind !== expectedPoolKind) {
+          fail("dashboard seeded pool kind mismatch", { selectedPoolKind, expected: expectedPoolKind });
+        }
+        const items = readItems();
+        if (!items.length) {
+          fail("dashboard five wall has no records", { selectedPoolKind });
+        }
+
+        const duplicateRecordIds = [...items.reduce((counts, item) => {
+          counts.set(item.recordId, (counts.get(item.recordId) ?? 0) + 1);
+          return counts;
+        }, new Map()).entries()].filter(([, count]) => count > 1);
+        if (duplicateRecordIds.length) {
+          fail("dashboard five wall has duplicate record ids", {
+            poolKind: expectedPoolKind,
+            duplicates: duplicateRecordIds.map(([recordId, count]) => ({ recordId, count })),
+          });
+        }
+
+        const badPoolItems = items.filter((item) => {
+          if (item.poolKind !== selectedPoolKind) return true;
+          if (item.poolKind === "monopoly_limited") return item.poolId !== "CardPool_Character";
+          if (item.poolKind === "monopoly_standard") return item.poolId !== "CardPool_NewRole";
+          if (item.poolKind === "fork_lottery") return !item.poolId.startsWith("ForkLottery_");
+          return true;
+        });
+        if (badPoolItems.length) {
+          fail("dashboard five wall item pool mismatch", {
+            selectedPoolKind,
+            items: badPoolItems.slice(0, 8),
+          });
+        }
+
+        const invalidSourceOrder = items.filter((item) => !Number.isSafeInteger(item.sourceOrder));
+        if (invalidSourceOrder.length) {
+          fail("dashboard five wall item source_order missing or invalid", {
+            poolKind: expectedPoolKind,
+            items: invalidSourceOrder.slice(0, 8),
+          });
+        }
+
+        const expected = [...items].sort((left, right) => {
+          if (left.time !== null && right.time === null) return -1;
+          if (left.time === null && right.time !== null) return 1;
+          const timeOrder = String(right.time ?? "").localeCompare(String(left.time ?? ""));
+          return timeOrder || left.sourceOrder - right.sourceOrder || left.recordId.localeCompare(right.recordId);
+        });
+        const mismatches = items
+          .map((item, index) => ({ index, actual: item, expected: expected[index] }))
+          .filter((entry) => entry.actual.recordId !== entry.expected.recordId);
+        if (mismatches.length) {
+          fail("dashboard five wall is not newest-first", {
+            poolKind: expectedPoolKind,
+            actual: items.slice(0, 12).map((item) => ({
+              recordId: item.recordId,
+              time: item.time,
+              sourceOrder: item.sourceOrder,
+              poolKind: item.poolKind,
+              poolId: item.poolId,
+              itemId: item.itemId,
+            })),
+            expected: expected.slice(0, 12).map((item) => ({
+              recordId: item.recordId,
+              time: item.time,
+              sourceOrder: item.sourceOrder,
+              poolKind: item.poolKind,
+              poolId: item.poolId,
+              itemId: item.itemId,
+            })),
+          });
+        }
+
+        const phantomItems = items.filter((item) => item.rarity !== "5");
+        if (phantomItems.length) {
+          fail("dashboard five wall contains non-5-star item", {
+            poolKind: expectedPoolKind,
+            items: phantomItems.slice(0, 8),
+          });
+        }
+
+        const expectedSeedItems = expectedByPool[expectedPoolKind];
+        const actualSeedItems = items.map((item) => ({
+          recordId: item.recordId,
+          fiveWallDistance: item.fiveWallDistance,
+        }));
+        if (JSON.stringify(actualSeedItems) !== JSON.stringify(expectedSeedItems)) {
+          fail("dashboard five wall seeded records mismatch", {
+            poolKind: expectedPoolKind,
+            actual: actualSeedItems,
+            expected: expectedSeedItems,
+          });
+        }
+
+        return {
+          selectedPoolKind,
+          poolCounters,
+          count: items.length,
+          first: {
+            recordId: items[0].recordId,
+            time: items[0].time,
+            sourceOrder: items[0].sourceOrder,
+            poolKind: items[0].poolKind,
+            poolId: items[0].poolId,
+            itemId: items[0].itemId,
+            fiveWallDistance: items[0].fiveWallDistance,
+          },
+          last: {
+            recordId: items[items.length - 1].recordId,
+            time: items[items.length - 1].time,
+            sourceOrder: items[items.length - 1].sourceOrder,
+            poolKind: items[items.length - 1].poolKind,
+            poolId: items[items.length - 1].poolId,
+            itemId: items[items.length - 1].itemId,
+            fiveWallDistance: items[items.length - 1].fiveWallDistance,
+          },
+        };
+        "#
+    .replace("__EXPECTED_POOL_KIND__", &expected_pool_kind_json);
+    eval_js(addr, &script, 5000)
 }
 
 fn audit_dashboard_scroll_regions(addr: &str, phase: &str) -> Result<Value> {

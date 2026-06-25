@@ -21,6 +21,16 @@ mod tests {
         }
     }
 
+    fn failed_status(session_id: &str) -> CaptureStatus {
+        let mut status = test_status(session_id, "failed", 1.0);
+        status.mode = "auto_page_full".to_string();
+        status.records_count = 1;
+        status.latest_records = vec![json!({ "record_id": "private-record" })];
+        status.raw_path = Some("data/runs/raw-private.jsonl".to_string());
+        status.error = Some(runtime_error("auto_page_failed", "cannot read page number"));
+        status
+    }
+
     fn test_session(status: CaptureStatus) -> Arc<CaptureRuntimeSession> {
         Arc::new(CaptureRuntimeSession {
             status: Mutex::new(status),
@@ -128,5 +138,65 @@ mod tests {
         assert!(!sessions.contains_key("s00"));
         assert!(!sessions.contains_key("s03"));
         assert!(sessions.contains_key("s04"));
+    }
+
+    #[test]
+    fn support_json_excludes_record_payloads_and_raw_contents() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join("data/runs")).unwrap();
+        std::fs::write(tmp.path().join("data/runs/raw-private.jsonl"), b"private raw").unwrap();
+        let status = failed_status("session/private");
+
+        let result = write_capture_support(SupportRequest {
+            root: tmp.path(),
+            status: &status,
+            source_kind: "pktmon-auto-page-capture",
+            auto_result: None,
+        });
+
+        let path = result.json_path.unwrap();
+        let text = std::fs::read_to_string(path).unwrap();
+        assert!(text.contains("nte-gacha-capture-support"));
+        assert!(text.contains("raw_path_exists"));
+        assert!(text.contains("\"raw_path_exists\": true"));
+        assert!(!text.contains("private-record"));
+        assert!(!text.contains("raw-private.jsonl"));
+        assert!(!text.contains("private raw"));
+        assert!(result.image_path.is_none());
+    }
+
+    #[test]
+    fn support_writer_saves_auto_page_context_image_when_available() {
+        let tmp = tempfile::tempdir().unwrap();
+        let status = failed_status("session-image");
+        let mut auto_result =
+            AutoPageRunResult::failed("cannot read page number", Vec::new(), Vec::new());
+        auto_result.diagnostics.page_context_png = Some(vec![137, 80, 78, 71]);
+
+        let result = write_capture_support(SupportRequest {
+            root: tmp.path(),
+            status: &status,
+            source_kind: "pktmon-auto-page-capture",
+            auto_result: Some(&auto_result),
+        });
+
+        let image_path = result.image_path.unwrap();
+        assert_eq!(std::fs::read(image_path).unwrap(), vec![137, 80, 78, 71]);
+        assert!(std::fs::read_to_string(result.json_path.unwrap())
+            .unwrap()
+            .contains("support_image_path"));
+    }
+
+    #[test]
+    fn attach_capture_support_adds_paths_to_runtime_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut status = failed_status("session-paths");
+
+        attach_capture_support(tmp.path(), &mut status, "pktmon-auto-page-capture", None);
+
+        let error = status.error.unwrap();
+        assert_eq!(error.code, "auto_page_failed");
+        assert!(error.support_path.unwrap().contains("data/support"));
+        assert!(error.support_image_path.is_none());
     }
 }

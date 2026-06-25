@@ -1,7 +1,9 @@
 use image::{Rgba, RgbaImage, imageops};
 
 use crate::error::{AutomationError, AutomationResult};
-use crate::model::PageNumber;
+use crate::model::{
+    OcrAttemptDiagnostic, OcrReadDiagnostics, PageNumber, PageReadHintDiagnostics, Size,
+};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PageReadHint {
@@ -15,6 +17,16 @@ impl PageReadHint {
         self.previous_current.is_none()
             && self.expected_current.is_none()
             && self.expected_total.is_none()
+    }
+}
+
+impl From<PageReadHint> for PageReadHintDiagnostics {
+    fn from(value: PageReadHint) -> Self {
+        Self {
+            previous_current: value.previous_current,
+            expected_current: value.expected_current,
+            expected_total: value.expected_total,
+        }
     }
 }
 
@@ -56,38 +68,107 @@ impl WindowsOcrClient {
         image: &RgbaImage,
         hint: PageReadHint,
     ) -> AutomationResult<PageNumber> {
+        self.read_page_number_with_hint_diagnostics(image, hint).0
+    }
+
+    pub fn read_page_number_with_hint_diagnostics(
+        &self,
+        image: &RgbaImage,
+        hint: PageReadHint,
+    ) -> (AutomationResult<PageNumber>, OcrReadDiagnostics) {
         let mut errors = Vec::new();
         let mut best_page = None::<PageNumber>;
-        for candidate in page_number_candidates(image) {
-            match self.read_text(&candidate).and_then(|text| {
-                if hint.is_empty() {
+        let mut attempts = Vec::new();
+        for (candidate_index, candidate) in page_number_candidates(image).into_iter().enumerate() {
+            let size = Size {
+                width: candidate.width(),
+                height: candidate.height(),
+            };
+            match self.read_text(&candidate) {
+                Ok(text) => match if hint.is_empty() {
                     parse_page_text(&text)
                 } else {
                     parse_page_text_with_hint(&text, hint)
-                }
-            }) {
-                Ok(page) if hint.is_empty() => return Ok(page),
-                Ok(page) if page_hint_rank(&page, hint) == 0 => return Ok(page),
-                Ok(page) => {
-                    let replace = best_page.as_ref().is_none_or(|best| {
-                        page_hint_rank(&page, hint) < page_hint_rank(best, hint)
-                    });
-                    if replace {
-                        best_page = Some(page);
+                } {
+                    Ok(page) if hint.is_empty() => {
+                        attempts.push(OcrAttemptDiagnostic {
+                            candidate_index,
+                            size,
+                            text: Some(text),
+                            error: None,
+                        });
+                        return (Ok(page), ocr_diagnostics(hint, attempts, ""));
                     }
+                    Ok(page) if page_hint_rank(&page, hint) == 0 => {
+                        attempts.push(OcrAttemptDiagnostic {
+                            candidate_index,
+                            size,
+                            text: Some(text),
+                            error: None,
+                        });
+                        return (Ok(page), ocr_diagnostics(hint, attempts, ""));
+                    }
+                    Ok(page) => {
+                        attempts.push(OcrAttemptDiagnostic {
+                            candidate_index,
+                            size,
+                            text: Some(text),
+                            error: None,
+                        });
+                        let replace = best_page.as_ref().is_none_or(|best| {
+                            page_hint_rank(&page, hint) < page_hint_rank(best, hint)
+                        });
+                        if replace {
+                            best_page = Some(page);
+                        }
+                    }
+                    Err(error) => {
+                        let error = error.to_string();
+                        errors.push(error.clone());
+                        attempts.push(OcrAttemptDiagnostic {
+                            candidate_index,
+                            size,
+                            text: Some(text),
+                            error: Some(error),
+                        });
+                    }
+                },
+                Err(error) => {
+                    let error = error.to_string();
+                    errors.push(error.clone());
+                    attempts.push(OcrAttemptDiagnostic {
+                        candidate_index,
+                        size,
+                        text: None,
+                        error: Some(error),
+                    });
                 }
-                Err(error) => errors.push(error.to_string()),
             }
         }
         if let Some(page) = best_page {
-            return Ok(page);
+            return (Ok(page), ocr_diagnostics(hint, attempts, ""));
         }
-        Err(AutomationError::message(format!(
-            "cannot read page number: {}",
-            errors.join("; ")
-        )))
+        let error = format!("cannot read page number: {}", errors.join("; "));
+        (
+            Err(AutomationError::message(&error)),
+            ocr_diagnostics(hint, attempts, error),
+        )
     }
+}
 
+fn ocr_diagnostics(
+    hint: PageReadHint,
+    attempts: Vec<OcrAttemptDiagnostic>,
+    error: impl Into<String>,
+) -> OcrReadDiagnostics {
+    OcrReadDiagnostics {
+        hint: hint.into(),
+        attempts,
+        error: error.into(),
+    }
+}
+
+impl WindowsOcrClient {
     #[cfg(not(windows))]
     pub fn read_text(&self, _image: &RgbaImage) -> AutomationResult<String> {
         let _ = self;

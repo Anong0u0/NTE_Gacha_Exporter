@@ -1,9 +1,6 @@
 import type { Ref } from "vue";
 import {
   api,
-  type AssetsPackCheckReport,
-  type AssetsPackInstallReport,
-  type AssetsPackStatus,
   type DoctorReport,
   type UpdateCheckReport,
   type UpdateStageReport,
@@ -16,14 +13,9 @@ type MaintenanceDeps = {
   updateStatus: Ref<UpdateStatus | null>;
   updateCheckReport: Ref<UpdateCheckReport | null>;
   stagedUpdate: Ref<UpdateStageReport | null>;
-  assetsPackStatus: Ref<AssetsPackStatus | null>;
-  assetsPackCheckReport: Ref<AssetsPackCheckReport | null>;
-  lastAssetsPackInstall: Ref<AssetsPackInstallReport | null>;
-  assetUrlCache: Ref<Record<string, string>>;
   settingsUpdateChannel: Ref<string>;
   statusText: Ref<string>;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
-  resolveVisibleAssets(): Promise<void>;
   t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
 };
 
@@ -59,46 +51,11 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
     if (version) await deps.runTask(deps.t("status.updateRestarting"), () => api.updaterInstallStaged(version, true));
   }
 
-  async function loadAssetsPackStatus() {
-    deps.assetsPackStatus.value = await api.assetsPackStatus();
-  }
-
-  async function checkAssetsPack() {
-    await deps.runTask(deps.t("status.assetsCheckCompleted"), async () => {
-      deps.assetsPackCheckReport.value = await api.assetsPackCheck(deps.settingsUpdateChannel.value);
-      await loadAssetsPackStatus();
-    });
-  }
-
-  async function downloadAssetsPack() {
-    const packageInfo = deps.assetsPackCheckReport.value?.package;
-    if (!packageInfo) return;
-    await deps.runTask(deps.t("status.assetsInstalled"), async () => {
-      deps.lastAssetsPackInstall.value = await api.assetsPackDownloadAndInstall(packageInfo);
-      deps.assetUrlCache.value = {};
-      await loadAssetsPackStatus();
-      await deps.resolveVisibleAssets();
-    });
-  }
-
-  async function removeAssetsPack() {
-    await deps.runTask(deps.t("status.assetsRemoved"), async () => {
-      deps.assetsPackStatus.value = await api.assetsPackRemove();
-      deps.assetsPackCheckReport.value = null;
-      deps.lastAssetsPackInstall.value = null;
-      deps.assetUrlCache.value = {};
-    });
-  }
-
   return {
     runDoctor,
     loadUpdaterStatus,
     checkForUpdates,
     downloadUpdate,
     installUpdate,
-    loadAssetsPackStatus,
-    checkAssetsPack,
-    downloadAssetsPack,
-    removeAssetsPack,
   };
 }

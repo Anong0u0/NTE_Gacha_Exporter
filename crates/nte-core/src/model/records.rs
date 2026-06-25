@@ -76,7 +76,7 @@ pub struct RecordFilter {
     #[serde(default)]
     pub rarities: Vec<u8>,
     #[serde(default)]
-    pub hit_rarities: Vec<u8>,
+    pub focused_rarities: Vec<u8>,
     #[serde(default)]
     pub rate_up_results: Vec<RateUpResult>,
     #[serde(default)]
@@ -156,51 +156,4 @@ pub struct AssetsPackAsset {
     pub width: u32,
     pub height: u32,
     pub sha256: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct AssetsPackStatus {
-    pub installed: bool,
-    pub compatible: bool,
-    pub current_app_version: String,
-    pub expected_map_hash: String,
-    pub installed_app_version: Option<String>,
-    pub installed_map_hash: Option<String>,
-    pub source_commit: Option<String>,
-    pub file_count: u64,
-    pub install_path: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct AssetsPackPackage {
-    pub app_version: String,
-    pub map_hash: String,
-    pub release_url: String,
-    pub asset_name: String,
-    pub download_url: String,
-    pub manifest_name: String,
-    pub manifest_url: String,
-    pub sha256: String,
-    pub size: u64,
-    pub source_commit: String,
-    pub file_count: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct AssetsPackCheckReport {
-    pub current_app_version: String,
-    pub expected_map_hash: String,
-    pub channel: UpdateChannel,
-    pub installed: bool,
-    pub compatible: bool,
-    pub package: Option<AssetsPackPackage>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct AssetsPackInstallReport {
-    pub app_version: String,
-    pub map_hash: String,
-    pub source_commit: String,
-    pub file_count: u64,
-    pub install_path: String,
 }

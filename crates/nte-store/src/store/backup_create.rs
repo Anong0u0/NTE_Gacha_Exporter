@@ -1,10 +1,16 @@
 impl JsonStore {
-pub fn create_data_backup(&self) -> Result<DataBackup, GuiError> {
+    fn create_generated_data_backup(&self) -> Result<DataBackup, GuiError> {
         let path = self
             .root
             .join("data/backups")
             .join(format!("backup-{}.zip", now_unique_stamp()));
         self.create_data_backup_at(path)
+    }
+
+    pub fn create_data_backup(&self) -> Result<DataBackup, GuiError> {
+        let backup = self.create_generated_data_backup()?;
+        self.cleanup_generated_backups_keep_latest()?;
+        Ok(backup)
     }
 
     pub fn create_data_backup_at(&self, path: impl AsRef<Path>) -> Result<DataBackup, GuiError> {
@@ -36,20 +42,24 @@ pub fn create_data_backup(&self) -> Result<DataBackup, GuiError> {
         path: Option<impl AsRef<Path>>,
     ) -> Result<BackupReport, GuiError> {
         let created_at = now_stamp();
-        let backup = match path {
-            Some(path) => self.create_data_backup_at(path)?,
-            None => self.create_data_backup()?,
+        let (backup, cleanup_generated) = match path {
+            Some(path) => (self.create_data_backup_at(path)?, false),
+            None => (self.create_generated_data_backup()?, true),
         };
         let profiles = self.list_profiles()?;
         let record_count = profiles.iter().try_fold(0_u64, |count, profile| {
             Ok::<u64, GuiError>(count + self.read_records(&profile.name)?.len() as u64)
         })?;
-        Ok(BackupReport {
+        let report = BackupReport {
             path: backup.path.to_string_lossy().to_string(),
             profile_count: profiles.len() as u64,
             record_count,
             created_at,
-        })
+        };
+        if cleanup_generated {
+            self.cleanup_generated_backups_keep_latest()?;
+        }
+        Ok(report)
     }
 
     pub fn restore_data_backup(&self, backup: &DataBackup) -> Result<(), GuiError> {
@@ -62,9 +72,12 @@ pub fn create_data_backup(&self) -> Result<DataBackup, GuiError> {
     ) -> Result<RestoreReport, GuiError> {
         let source_path = path.as_ref().to_string_lossy().to_string();
         let snapshot = self.read_backup_snapshot(path.as_ref())?;
-        let rollback = self.create_data_backup()?;
+        let rollback = self.create_generated_data_backup()?;
         match self.apply_backup_snapshot(snapshot, &source_path) {
-            Ok(report) => Ok(report),
+            Ok(report) => {
+                self.cleanup_generated_backups_keep_latest()?;
+                Ok(report)
+            }
             Err(error) => {
                 let _ = self.replace_data_from_backup(&rollback);
                 Err(error)

@@ -6,7 +6,8 @@ param(
     [switch]$SkipPortableStage,
     [switch]$SkipSmoke,
     [switch]$AllowGnuRust,
-    [string]$TagName = ""
+    [string]$TagName = "",
+    [string]$AssetsPackZip = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -223,6 +224,85 @@ function Copy-DirectoryContents {
     }
 }
 
+function Expand-BundledAssetsPack {
+    param(
+        [string]$AssetsPackZip,
+        [string]$Destination
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AssetsPackZip)) {
+        throw "AssetsPackZip is required for portable stage."
+    }
+    $resolvedZip = Resolve-Path -LiteralPath $AssetsPackZip -ErrorAction SilentlyContinue
+    if ($null -eq $resolvedZip) {
+        throw "AssetsPackZip not found: $AssetsPackZip"
+    }
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    $destinationRoot = [System.IO.Path]::GetFullPath($Destination).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+    $rootPrefix = $destinationRoot + [System.IO.Path]::DirectorySeparatorChar
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($resolvedZip.Path)
+    try {
+        foreach ($entry in $zip.Entries) {
+            $entryName = $entry.FullName.Replace("\", "/")
+            if ([string]::IsNullOrWhiteSpace($entryName)) {
+                continue
+            }
+            if ($entryName.EndsWith("/")) {
+                continue
+            }
+            $segments = $entryName.Split("/")
+            if ($segments | Where-Object { [string]::IsNullOrWhiteSpace($_) -or $_ -eq "." -or $_ -eq ".." }) {
+                throw "Assets pack zip contains invalid entry path: $entryName"
+            }
+            if ($entryName -ne "manifest.json" -and -not ($entryName.StartsWith("assets/") -and $entryName.EndsWith(".webp"))) {
+                throw "Assets pack zip contains unsupported entry: $entryName"
+            }
+
+            $targetPath = [System.IO.Path]::GetFullPath((Join-Path $destinationRoot $entryName))
+            if (-not $targetPath.StartsWith($rootPrefix)) {
+                throw "Assets pack zip entry escapes destination: $entryName"
+            }
+
+            $targetParent = Split-Path -Parent $targetPath
+            New-Item -ItemType Directory -Force -Path $targetParent | Out-Null
+            $input = $entry.Open()
+            try {
+                $output = [System.IO.File]::Open($targetPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write)
+                try {
+                    $input.CopyTo($output)
+                }
+                finally {
+                    $output.Dispose()
+                }
+            }
+            finally {
+                $input.Dispose()
+            }
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+
+    $manifestPath = Join-Path $Destination "manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw "Bundled assets pack missing manifest.json after extraction."
+    }
+    $assetsDir = Join-Path $Destination "assets"
+    $assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Filter "*.webp" -File -ErrorAction SilentlyContinue).Count
+    if ($assetCount -le 0) {
+        throw "Bundled assets pack contains no webp assets."
+    }
+    Write-Ok "Bundled assets pack -> $Destination ($assetCount assets)"
+}
+
 function Get-ZipEntryName {
     param(
         [string]$SourceRoot,
@@ -333,7 +413,8 @@ function Assert-PortableStageContent {
         (Join-Path $ReleaseRoot "nte-gacha-exporter-cli.exe"),
         (Join-Path $ReleaseRoot "app\nte-gacha-exporter-desktop.exe"),
         (Join-Path $ReleaseRoot "app\nte-gacha-exporter-updater.exe"),
-        (Join-Path $ReleaseRoot "app\release.json")
+        (Join-Path $ReleaseRoot "app\release.json"),
+        (Join-Path $ReleaseRoot "app\assets-pack\current\manifest.json")
     )
     foreach ($path in $requiredPaths) {
         if (-not (Test-Path -LiteralPath $path)) {
@@ -344,6 +425,12 @@ function Assert-PortableStageContent {
     $sidecarsPath = Join-Path $ReleaseRoot "sidecars"
     if (Test-Path -LiteralPath $sidecarsPath) {
         throw "Portable stage must not contain legacy sidecars: $sidecarsPath"
+    }
+
+    $assetsDir = Join-Path $ReleaseRoot "app\assets-pack\current\assets"
+    $assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Filter "*.webp" -File -ErrorAction SilentlyContinue).Count
+    if ($assetCount -le 0) {
+        throw "Portable stage bundled assets pack contains no webp assets."
     }
 
     Get-ChildItem -LiteralPath $ReleaseRoot -File -Recurse | Where-Object {
@@ -361,7 +448,8 @@ function New-PortableStage {
         [string]$ProjectRoot,
         [string]$Version,
         [string]$TagName,
-        [bool]$IsPrerelease
+        [bool]$IsPrerelease,
+        [string]$AssetsPackZip
     )
 
     $distRoot = Join-Path $ProjectRoot "dist"
@@ -396,6 +484,7 @@ function New-PortableStage {
     Copy-Item -LiteralPath $desktopExe -Destination (Join-Path $appDir "nte-gacha-exporter-desktop.exe")
     Copy-Item -LiteralPath $updater -Destination (Join-Path $appDir "nte-gacha-exporter-updater.exe")
     New-ReleaseJson -Path (Join-Path $appDir "release.json") -Version $Version
+    Expand-BundledAssetsPack -AssetsPackZip $AssetsPackZip -Destination (Join-Path $appDir "assets-pack\current")
 
     Assert-PortableStageContent -ReleaseRoot $releaseRoot
 
@@ -515,7 +604,7 @@ if (-not $SkipTauriBuild) {
 
 $portableRoot = $null
 if (-not $SkipPortableStage) {
-    $portableRoot = New-PortableStage -ProjectRoot $projectRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease
+    $portableRoot = New-PortableStage -ProjectRoot $projectRoot -Version $desktopVersion -TagName $normalizedTagName -IsPrerelease $isPrerelease -AssetsPackZip $AssetsPackZip
 }
 
 if (-not $SkipSmoke) {

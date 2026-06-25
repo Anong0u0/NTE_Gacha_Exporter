@@ -25,7 +25,7 @@ impl LiveProgressState {
             return None;
         }
         self.records
-            .extend(delta.iter().map(|record| record.value.clone()));
+            .extend(delta.iter().map(|record| preview_record(record.value.clone())));
         Some(delta.iter().filter_map(automation_snapshot).collect())
     }
 }
@@ -37,6 +37,7 @@ fn finish_capture_result(
     source_kind: &str,
     auto_page: Option<Value>,
     auto_error: Option<RuntimeError>,
+    auto_result: Option<&AutoPageRunResult>,
 ) {
     let mut final_status = runtime.status.lock().expect("capture status lock");
     let now = now_seconds();
@@ -60,22 +61,28 @@ fn finish_capture_result(
             }
             Err(error) => {
                 final_status.state = "failed".to_string();
-                final_status.error = Some(RuntimeError {
-                    code: "capture_document_failed".to_string(),
-                    message: error.to_string(),
-                });
+                final_status.error = Some(runtime_error("capture_document_failed", error.to_string()));
             }
         },
         Err(message) => {
             final_status.state = "failed".to_string();
-            final_status.error = Some(RuntimeError {
-                code: source_kind.to_string(),
-                message,
-            });
+            final_status.error = Some(runtime_error(source_kind, message));
             final_status.auto_page = auto_page;
         }
     }
     final_status.updated_at = now;
+    if final_status.state == "failed" {
+        let root = portable_root();
+        match root {
+            Ok(root) => attach_capture_support(&root, &mut final_status, source_kind, auto_result),
+            Err(error) => {
+                if let Some(runtime_error) = final_status.error.as_mut() {
+                    runtime_error.message =
+                        format!("{}; support_failed: {error}", runtime_error.message);
+                }
+            }
+        }
+    }
 }
 
 fn automation_snapshot(
@@ -90,6 +97,13 @@ fn automation_snapshot(
 
 fn latest_records(records: &[Value]) -> Vec<Value> {
     records.iter().rev().take(10).cloned().collect::<Vec<_>>()
+}
+
+fn preview_record(mut record: Value) -> Value {
+    if let Some(object) = record.as_object_mut() {
+        object.remove("source_order");
+    }
+    record
 }
 
 fn latest_records_from_capture_document(document: &Value) -> Vec<Value> {

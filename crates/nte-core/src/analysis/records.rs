@@ -56,11 +56,11 @@ fn record_page_from_display_records(
         {
             continue;
         }
-        if !filter.hit_rarities.is_empty()
+        if !filter.focused_rarities.is_empty()
             && !filter
-                .hit_rarities
+                .focused_rarities
                 .iter()
-                .any(|rarity| display.derived.hit_rarity == Some(*rarity))
+                .any(|rarity| matches_focused_rarity(display, *rarity))
         {
             continue;
         }
@@ -165,6 +165,14 @@ fn record_page_from_display_records(
     RecordList {
         total,
         records: page,
+    }
+}
+
+fn matches_focused_rarity(display: &DisplayRecord, rarity: u8) -> bool {
+    match rarity {
+        5 => is_focused_five_star_wall_record(display),
+        3 | 4 => display.derived.hit_rarity == Some(rarity),
+        _ => false,
     }
 }
 
@@ -371,9 +379,16 @@ fn display_record(
 
 fn sort_display_records(records: &mut [DisplayRecord], sort_direction: SortDirection) {
     records.sort_by(|left, right| match sort_direction {
-        SortDirection::Asc => compare_display_chronological(left, right),
+        SortDirection::Asc => compare_record_page_oldest_first(left, right),
         SortDirection::Desc => compare_display_newest_first(left, right),
     });
+}
+
+fn compare_record_page_oldest_first(
+    left: &DisplayRecord,
+    right: &DisplayRecord,
+) -> std::cmp::Ordering {
+    compare_display_newest_first(right, left)
 }
 
 fn record_label(record: &InternalRecord, map: &MapData) -> Option<String> {

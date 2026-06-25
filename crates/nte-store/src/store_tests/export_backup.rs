@@ -210,8 +210,108 @@ fn generated_run_and_backup_paths_are_unique() {
     let second = store.create_data_backup().unwrap();
 
     assert_ne!(first.path, second.path);
-    assert!(first.path.exists());
+    assert!(!first.path.exists());
     assert!(second.path.exists());
+}
+
+#[test]
+fn cleanup_generated_backups_keeps_latest_direct_file_only() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let dir = tmp.path().join("data/backups");
+    let oldest = dir.join("backup-1000000000-000000000-0.zip");
+    let middle = dir.join("backup-1000000000-000000001-0.zip");
+    let latest = dir.join("backup-1000000000-000000002-0.zip");
+    let custom = dir.join("backup-custom.zip");
+    let unknown = dir.join("notes.txt");
+    let matching_dir = dir.join("backup-1000000000-000000003-0.zip");
+    std::fs::write(&oldest, b"oldest").unwrap();
+    std::fs::write(&middle, b"middle").unwrap();
+    std::fs::write(&latest, b"latest").unwrap();
+    std::fs::write(&custom, b"custom").unwrap();
+    std::fs::write(&unknown, b"unknown").unwrap();
+    std::fs::create_dir(&matching_dir).unwrap();
+
+    store.cleanup_generated_backups_keep_latest().unwrap();
+
+    assert!(!oldest.exists());
+    assert!(!middle.exists());
+    assert!(latest.exists());
+    assert!(custom.exists());
+    assert!(unknown.exists());
+    assert!(matching_dir.exists());
+}
+
+#[test]
+fn cleanup_generated_raw_runs_keeps_latest_direct_file_only() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let dir = tmp.path().join("data/runs");
+    let oldest = dir.join("raw-1000000000-000000000-0.jsonl");
+    let latest = dir.join("raw-1000000000-000000001-0.jsonl");
+    let custom = dir.join("raw-custom.jsonl");
+    let matching_dir = dir.join("raw-1000000000-000000002-0.jsonl");
+    std::fs::write(&oldest, b"oldest").unwrap();
+    std::fs::write(&latest, b"latest").unwrap();
+    std::fs::write(&custom, b"custom").unwrap();
+    std::fs::create_dir(&matching_dir).unwrap();
+
+    store.cleanup_generated_raw_runs_keep_latest().unwrap();
+
+    assert!(!oldest.exists());
+    assert!(latest.exists());
+    assert!(custom.exists());
+    assert!(matching_dir.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn cleanup_generated_backups_skips_symlink_without_deleting_target() {
+    use std::os::unix::fs::symlink;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let dir = tmp.path().join("data/backups");
+    let outside = tmp.path().join("outside.zip");
+    let link = dir.join("backup-1000000000-000000000-0.zip");
+    let latest = dir.join("backup-1000000000-000000001-0.zip");
+    std::fs::write(&outside, b"keep").unwrap();
+    symlink(&outside, &link).unwrap();
+    std::fs::write(&latest, b"latest").unwrap();
+
+    store.cleanup_generated_backups_keep_latest().unwrap();
+
+    assert_eq!(std::fs::read(&outside).unwrap(), b"keep");
+    assert!(std::fs::symlink_metadata(&link)
+        .unwrap()
+        .file_type()
+        .is_symlink());
+    assert!(latest.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn cleanup_generated_raw_runs_skips_symlink_without_deleting_target() {
+    use std::os::unix::fs::symlink;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let dir = tmp.path().join("data/runs");
+    let outside = tmp.path().join("outside.jsonl");
+    let link = dir.join("raw-1000000000-000000000-0.jsonl");
+    let latest = dir.join("raw-1000000000-000000001-0.jsonl");
+    std::fs::write(&outside, b"keep").unwrap();
+    symlink(&outside, &link).unwrap();
+    std::fs::write(&latest, b"latest").unwrap();
+
+    store.cleanup_generated_raw_runs_keep_latest().unwrap();
+
+    assert_eq!(std::fs::read(&outside).unwrap(), b"keep");
+    assert!(std::fs::symlink_metadata(&link)
+        .unwrap()
+        .file_type()
+        .is_symlink());
+    assert!(latest.exists());
 }
 
 #[test]

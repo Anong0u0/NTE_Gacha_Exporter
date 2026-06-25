@@ -5,8 +5,8 @@ use serde_json::json;
 use sha2::Digest;
 
 use super::{
-    apply_staged_update, check_update_manifest, prepare_update_install, stage_update_archive,
-    update_status,
+    apply_staged_update, check_update_manifest, cleanup_update_artifacts_after_success,
+    prepare_update_install, stage_update_archive, update_status,
 };
 use nte_core::{UpdateChannel, UpdateManifest, UpdatePackage};
 
@@ -153,6 +153,12 @@ fn create_current_install(root: &Path, version: &str) {
         b"keep data",
     )
     .unwrap();
+}
+
+fn create_update_artifact(root: &Path, path: &str) {
+    let artifact = root.join(path);
+    std::fs::create_dir_all(&artifact).unwrap();
+    std::fs::write(artifact.join("artifact.txt"), b"artifact").unwrap();
 }
 
 #[test]
@@ -315,6 +321,9 @@ fn apply_staged_update_replaces_release_and_preserves_data() {
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().join("install");
     create_current_install(&root, "0.1.0");
+    create_update_artifact(&root, "update/downloads/0.2.0");
+    create_update_artifact(&root, "update/staging/old-version");
+    create_update_artifact(&root, "update/rollback/0.0.9-old");
     let archive = tmp.path().join("package.zip");
     write_portable_zip(&archive, "", "0.2.0");
     let package = package_for_archive(&archive, "0.2.0");
@@ -332,5 +341,59 @@ fn apply_staged_update_replaces_release_and_preserves_data() {
         b"keep data"
     );
     assert!(status.supported_layout);
-    assert!(status.rollback_version.is_some());
+    assert!(status.rollback_version.is_none());
+    assert!(!root.join("update/downloads/0.2.0").exists());
+    assert!(!root.join("update/staging/old-version").exists());
+    assert!(!root.join("update/rollback/0.0.9-old").exists());
+}
+
+#[test]
+fn cleanup_update_artifacts_removes_only_update_bucket_children() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("install");
+    create_current_install(&root, "0.2.0");
+    create_update_artifact(&root, "update/downloads/0.2.0");
+    create_update_artifact(&root, "update/staging/0.2.0");
+    create_update_artifact(&root, "update/rollback/0.1.0-old");
+
+    cleanup_update_artifacts_after_success(&root).unwrap();
+
+    assert!(!root.join("update/downloads/0.2.0").exists());
+    assert!(!root.join("update/staging/0.2.0").exists());
+    assert!(!root.join("update/rollback/0.1.0-old").exists());
+    assert!(root.join("update/downloads").is_dir());
+    assert!(root.join("update/staging").is_dir());
+    assert!(root.join("update/rollback").is_dir());
+    assert_eq!(
+        std::fs::read(root.join("data/profiles/default/records.json")).unwrap(),
+        b"keep data"
+    );
+}
+
+#[test]
+fn cleanup_update_artifacts_rejects_unsupported_root() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("install");
+    create_update_artifact(&root, "update/downloads/0.2.0");
+
+    assert!(cleanup_update_artifacts_after_success(&root).is_err());
+    assert!(root.join("update/downloads/0.2.0/artifact.txt").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn cleanup_update_artifacts_rejects_symlink_without_deleting_target() {
+    use std::os::unix::fs::symlink;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("install");
+    let outside = tmp.path().join("outside");
+    create_current_install(&root, "0.2.0");
+    std::fs::create_dir_all(&outside).unwrap();
+    std::fs::write(outside.join("keep.txt"), b"keep").unwrap();
+    std::fs::create_dir_all(root.join("update/downloads")).unwrap();
+    symlink(&outside, root.join("update/downloads/0.2.0")).unwrap();
+
+    assert!(cleanup_update_artifacts_after_success(&root).is_err());
+    assert_eq!(std::fs::read(outside.join("keep.txt")).unwrap(), b"keep");
 }

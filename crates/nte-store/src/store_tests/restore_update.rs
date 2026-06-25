@@ -169,3 +169,32 @@ fn full_update_import_creates_backup_and_restores_on_failure() {
     assert_eq!(after, before);
     assert_eq!(backups, 1);
 }
+
+#[test]
+fn full_update_import_prunes_generated_backups_after_success() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let old_backup = tmp
+        .path()
+        .join("data/backups/backup-0000000000-000000000-0.zip");
+    std::fs::write(&old_backup, b"old").unwrap();
+    let document = public_document(vec![record(
+        "r1",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    )]);
+
+    store
+        .import_public_document_with_backup("default", &document, "auto_page_full", None)
+        .unwrap();
+
+    let backups = std::fs::read_dir(tmp.path().join("data/backups"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "zip"))
+        .count();
+
+    assert!(!old_backup.exists());
+    assert_eq!(backups, 1);
+}

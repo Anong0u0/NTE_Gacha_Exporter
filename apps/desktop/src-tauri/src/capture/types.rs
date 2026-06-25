@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -8,8 +9,9 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use nte_automation::{
-    AutoPageOptions as AutomationOptions, AutoPageResult as AutoPageRunResult,
-    AutoPageStatus as AutomationStatus, RecordSnapshot as AutomationRecordSnapshot, run_auto_page,
+    AutoPageDiagnostics, AutoPageOptions as AutomationOptions,
+    AutoPageResult as AutoPageRunResult, AutoPageStatus as AutomationStatus,
+    RecordSnapshot as AutomationRecordSnapshot, run_auto_page,
 };
 use nte_capture::{
     CaptureOptions, CaptureRecordBuilder, CaptureTarget, build_capture_document, candidate_ports,
@@ -23,7 +25,7 @@ use tauri::State;
 
 use crate::admin::admin_relaunch_required;
 use crate::error::{ApiError, RuntimeError, api_error, api_error_message};
-use crate::state::{AppState, new_session_id, now_seconds, with_store};
+use crate::state::{AppState, new_session_id, now_seconds, portable_root, with_store};
 
 const CAPTURE_DRAIN_TIMEOUT: Duration = Duration::from_secs(20);
 const CAPTURE_DRAIN_POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -169,6 +171,15 @@ pub(crate) struct CaptureStatus {
     document: Option<Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     import_report: Option<ImportReport>,
+}
+
+fn runtime_error(code: impl Into<String>, message: impl Into<String>) -> RuntimeError {
+    RuntimeError {
+        code: code.into(),
+        message: message.into(),
+        support_path: None,
+        support_image_path: None,
+    }
 }
 
 impl From<nte_capture::CaptureCounters> for CaptureCounters {

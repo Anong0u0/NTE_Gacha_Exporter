@@ -2,9 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   AppApi,
   AssetResolveResult,
-  AssetsPackCheckReport,
-  AssetsPackInstallReport,
-  AssetsPackStatus,
   BackupReport,
   CaptureStatus,
   DashboardOverview,
@@ -64,11 +61,6 @@ export const tauriApi: AppApi = {
     invoke<UpdateStageReport>("updater_download_and_stage", { package: packageInfo }),
   updaterInstallStaged: (version, relaunch) =>
     invoke<void>("updater_install_staged", { version, relaunch }),
-  assetsPackStatus: () => invoke<AssetsPackStatus>("assets_pack_status"),
-  assetsPackCheck: (channel) => invoke<AssetsPackCheckReport>("assets_pack_check", { channel }),
-  assetsPackDownloadAndInstall: (packageInfo) =>
-    invoke<AssetsPackInstallReport>("assets_pack_download_and_install", { package: packageInfo }),
-  assetsPackRemove: () => invoke<AssetsPackStatus>("assets_pack_remove"),
   assetsResolveRefs: (refs) => invoke<AssetResolveResult[]>("assets_resolve_refs", { refs }),
   requestAdminCaptureStart: (profileName, locale, mode) =>
     invoke<boolean>("request_admin_capture_start", { profileName, locale, mode }),
