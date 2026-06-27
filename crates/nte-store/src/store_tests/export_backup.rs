@@ -374,6 +374,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
             ui_locale: Some("zh-Hant".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
+            skipped_update_version: Some("9.9.9".to_string()),
             capture_auto_page_enabled: Some(true),
             capture_full_update_enabled: Some(true),
         })
@@ -433,6 +434,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(settings.ui_locale, "zh-Hant");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
+    assert_eq!(settings.skipped_update_version.as_deref(), Some("9.9.9"));
     assert!(settings.capture_auto_page_enabled);
     assert!(settings.capture_full_update_enabled);
 }

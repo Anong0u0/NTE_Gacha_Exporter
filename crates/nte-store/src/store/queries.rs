@@ -129,6 +129,7 @@ impl JsonStore {
                 ui_locale: defaults.ui_locale.clone(),
                 update_channel: DEFAULT_UPDATE_CHANNEL.to_string(),
                 check_updates_on_startup: DEFAULT_CHECK_UPDATES_ON_STARTUP,
+                skipped_update_version: None,
                 capture_auto_page_enabled: true,
                 capture_full_update_enabled: false,
             })?;

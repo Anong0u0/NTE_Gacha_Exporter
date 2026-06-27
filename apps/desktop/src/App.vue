@@ -6,6 +6,7 @@ import DashboardView from "./components/DashboardView.vue";
 import RecordsView from "./components/RecordsView.vue";
 import SettingsView from "./components/SettingsView.vue";
 import TopBar from "./components/TopBar.vue";
+import UpdateDialog from "./components/UpdateDialog.vue";
 
 const app = useApp();
 provideAppContext(app);
@@ -20,5 +21,6 @@ provideAppContext(app);
       <RecordsView v-else-if="app.activeView === 'records'" />
       <SettingsView v-else />
     </main>
+    <UpdateDialog />
   </div>
 </template>

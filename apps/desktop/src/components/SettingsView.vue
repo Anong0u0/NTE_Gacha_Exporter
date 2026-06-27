@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, HardDriveUpload, RefreshCw, Stethoscope } from "lucide-vue-next";
+import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, RefreshCw, Stethoscope } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -104,7 +104,6 @@ function checkedValue(event: Event) {
             <div><span>{{ app.t("common.current") }}</span><strong>{{ app.updateStatus?.current_version ?? "-" }}</strong></div>
             <div><span>{{ app.t("common.layout") }}</span><strong>{{ app.updateStatus?.supported_layout ? app.t("settings.portable") : app.t("settings.unsupported") }}</strong></div>
             <div><span>{{ app.t("common.available") }}</span><strong>{{ app.updateCheckReport?.package?.version ?? "-" }}</strong></div>
-            <div><span>{{ app.t("common.staged") }}</span><strong>{{ app.stagedUpdate?.package.version ?? app.updateStatus?.staged_version ?? "-" }}</strong></div>
           </div>
           <div class="action-row">
             <button type="button" :disabled="app.isWorkflowBusy" @click="app.checkForUpdates(true)">
@@ -114,19 +113,11 @@ function checkedValue(event: Event) {
             <button
               class="primary"
               type="button"
-              :disabled="app.isWorkflowBusy || !app.updateCheckReport?.package"
-              @click="app.downloadUpdate"
+              :disabled="app.isWorkflowBusy || !app.canOpenDismissedUpdatePrompt"
+              @click="app.openUpdatePrompt"
             >
               <Download :size="17" />
-              <span>{{ app.t("common.download") }}</span>
-            </button>
-            <button
-              type="button"
-              :disabled="app.isWorkflowBusy || !(app.stagedUpdate?.package.version || app.updateStatus?.staged_version)"
-              @click="app.installUpdate"
-            >
-              <HardDriveUpload :size="17" />
-              <span>{{ app.t("settings.restartUpdate") }}</span>
+              <span>{{ app.t("settings.updateNow") }}</span>
             </button>
           </div>
         </section>

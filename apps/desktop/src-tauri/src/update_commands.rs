@@ -38,8 +38,14 @@ pub(crate) fn updater_check(
     channel: Option<String>,
 ) -> Result<UpdateCheckReport, ApiError> {
     let requested_channel = update_channel_or_settings(&state, channel)?;
-    let manifest = fetch_update_manifest(requested_channel)?;
-    check_update_manifest(manifest, app_version(), requested_channel).map_err(api_error)
+    let fetched = fetch_update_manifest(requested_channel)?;
+    check_update_manifest(
+        fetched.manifest,
+        app_version(),
+        requested_channel,
+        fetched.release_notes,
+    )
+    .map_err(api_error)
 }
 
 #[tauri::command]
@@ -95,11 +101,14 @@ fn update_channel_or_settings(
     })
 }
 
-fn fetch_update_manifest(channel: UpdateChannel) -> Result<UpdateManifest, ApiError> {
+fn fetch_update_manifest(channel: UpdateChannel) -> Result<FetchedUpdateManifest, ApiError> {
     if let Ok(source) = std::env::var("NTE_GACHA_EXPORTER_UPDATE_MANIFEST") {
         if !source.trim().is_empty() {
             if source.starts_with("http://") || source.starts_with("https://") {
-                return http_get_json(&source);
+                return Ok(FetchedUpdateManifest {
+                    manifest: http_get_json(&source)?,
+                    release_notes: String::new(),
+                });
             }
             let file = fs::File::open(source).map_err(api_error)?;
             let text = read_text_limited(
@@ -108,10 +117,14 @@ fn fetch_update_manifest(channel: UpdateChannel) -> Result<UpdateManifest, ApiEr
                 "update_response_too_large",
                 "update JSON file",
             )?;
-            return serde_json::from_str(&text).map_err(api_error);
+            return Ok(FetchedUpdateManifest {
+                manifest: serde_json::from_str(&text).map_err(api_error)?,
+                release_notes: String::new(),
+            });
         }
     }
     let release = select_release(channel)?;
+    let release_notes = first_release_notes_section(&release.body.unwrap_or_default());
     let manifest_url = release
         .assets
         .into_iter()
@@ -120,7 +133,10 @@ fn fetch_update_manifest(channel: UpdateChannel) -> Result<UpdateManifest, ApiEr
         .ok_or_else(|| {
             api_error_message("update_manifest_missing", "release update manifest missing")
         })?;
-    http_get_json(&manifest_url)
+    Ok(FetchedUpdateManifest {
+        manifest: http_get_json(&manifest_url)?,
+        release_notes,
+    })
 }
 
 fn select_release(channel: UpdateChannel) -> Result<GithubRelease, ApiError> {
@@ -221,6 +237,29 @@ fn read_text_limited(
     String::from_utf8(bytes).map_err(api_error)
 }
 
+fn first_release_notes_section(body: &str) -> String {
+    let mut lines = body
+        .lines()
+        .skip_while(|line| !is_release_notes_heading(line));
+    if lines.next().is_none() {
+        return body.trim().to_string();
+    }
+
+    lines
+        .take_while(|line| !is_release_notes_heading(line))
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string()
+}
+
+fn is_release_notes_heading(line: &str) -> bool {
+    let Some(rest) = line.trim_start().strip_prefix("###") else {
+        return false;
+    };
+    !rest.starts_with('#') && rest.chars().next().is_none_or(char::is_whitespace)
+}
+
 fn copy_limited(
     reader: &mut impl Read,
     writer: &mut impl Write,
@@ -249,6 +288,7 @@ fn copy_limited(
 struct GithubRelease {
     draft: bool,
     prerelease: bool,
+    body: Option<String>,
     assets: Vec<GithubAsset>,
 }
 
@@ -256,6 +296,11 @@ struct GithubRelease {
 struct GithubAsset {
     name: String,
     browser_download_url: String,
+}
+
+struct FetchedUpdateManifest {
+    manifest: UpdateManifest,
+    release_notes: String,
 }
 
 #[cfg(test)]
@@ -316,6 +361,49 @@ mod tests {
         copy_limited(&mut reader, &mut writer, 4).expect("short archive should copy");
 
         assert_eq!(writer, bytes);
+    }
+
+    #[test]
+    fn first_release_notes_section_keeps_only_first_level_three_section() {
+        let body = r#"
+### 更新日誌 v1.0.0 -> v1.1.0:
+* feat: one
+* fix: two
+
+### Download / 下載說明
+* nte-gacha-exporter.zip
+
+### Do not download / 不要下載
+* Source code
+"#;
+
+        let notes = first_release_notes_section(body);
+
+        assert_eq!(notes, "* feat: one\n* fix: two");
+    }
+
+    #[test]
+    fn first_release_notes_section_ignores_text_before_first_level_three_heading() {
+        let body = r#"
+v1.1.0
+
+### 更新日誌
+* feat: one
+
+### Download
+* package
+"#;
+
+        let notes = first_release_notes_section(body);
+
+        assert_eq!(notes, "* feat: one");
+    }
+
+    #[test]
+    fn first_release_notes_section_falls_back_to_trimmed_body_without_heading() {
+        let notes = first_release_notes_section("\nplain notes\n");
+
+        assert_eq!(notes, "plain notes");
     }
 
     fn api_error_code(error: ApiError) -> Option<String> {

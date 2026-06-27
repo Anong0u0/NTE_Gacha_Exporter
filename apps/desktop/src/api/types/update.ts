@@ -22,6 +22,7 @@ export type UpdateCheckReport = {
   current_version: string;
   channel: UpdateChannel;
   available: boolean;
+  release_notes: string;
   package?: UpdatePackage | null;
 };
 

@@ -66,6 +66,8 @@ struct DiskSettings {
     update_channel: String,
     #[serde(default = "default_check_updates_on_startup")]
     check_updates_on_startup: bool,
+    #[serde(default)]
+    skipped_update_version: Option<String>,
     #[serde(default = "default_capture_auto_page_enabled")]
     capture_auto_page_enabled: bool,
     #[serde(default)]

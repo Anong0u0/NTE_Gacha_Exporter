@@ -26,6 +26,7 @@ impl JsonStore {
             ui_locale: settings.ui_locale,
             update_channel: settings.update_channel,
             check_updates_on_startup: settings.check_updates_on_startup,
+            skipped_update_version: settings.skipped_update_version,
             capture_auto_page_enabled: settings.capture_auto_page_enabled,
             capture_full_update_enabled: settings.capture_full_update_enabled,
         })
@@ -50,6 +51,10 @@ impl JsonStore {
         }
         if let Some(check_updates_on_startup) = patch.check_updates_on_startup {
             settings.check_updates_on_startup = check_updates_on_startup;
+        }
+        if let Some(skipped_update_version) = patch.skipped_update_version {
+            settings.skipped_update_version =
+                Some(validate_update_version(&skipped_update_version)?);
         }
         if let Some(capture_auto_page_enabled) = patch.capture_auto_page_enabled {
             settings.capture_auto_page_enabled = capture_auto_page_enabled;

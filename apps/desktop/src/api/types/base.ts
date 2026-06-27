@@ -9,6 +9,7 @@ export type Settings = {
   ui_locale: string;
   update_channel: string;
   check_updates_on_startup: boolean;
+  skipped_update_version?: string | null;
   capture_auto_page_enabled: boolean;
   capture_full_update_enabled: boolean;
 };
@@ -19,6 +20,7 @@ export type SettingsPatch = {
   ui_locale?: string | null;
   update_channel?: string | null;
   check_updates_on_startup?: boolean | null;
+  skipped_update_version?: string | null;
   capture_auto_page_enabled?: boolean | null;
   capture_full_update_enabled?: boolean | null;
 };

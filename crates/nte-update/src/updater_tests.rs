@@ -167,28 +167,33 @@ fn update_manifest_accepts_newer_stable_and_filters_channel() {
         manifest("0.2.0", UpdateChannel::Stable),
         "0.1.0",
         UpdateChannel::Stable,
+        "Stable notes",
     )
     .unwrap();
     let prerelease = check_update_manifest(
         manifest("0.2.0-beta.1", UpdateChannel::Beta),
         "0.1.0",
         UpdateChannel::Stable,
+        "",
     )
     .unwrap();
     let beta = check_update_manifest(
         manifest("0.2.0-beta.1", UpdateChannel::Beta),
         "0.1.0",
         UpdateChannel::Beta,
+        "",
     )
     .unwrap();
     let older = check_update_manifest(
         manifest("0.1.0", UpdateChannel::Stable),
         "0.1.0",
         UpdateChannel::Stable,
+        "",
     )
     .unwrap();
 
     assert!(stable.available);
+    assert_eq!(stable.release_notes, "Stable notes");
     assert!(!prerelease.available);
     assert!(beta.available);
     assert!(!older.available);

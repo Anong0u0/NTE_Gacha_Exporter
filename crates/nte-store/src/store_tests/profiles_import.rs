@@ -12,6 +12,7 @@ fn store_bootstraps_default_profile_and_files() {
     assert_eq!(settings.ui_locale, "en");
     assert_eq!(settings.update_channel, "stable");
     assert!(settings.check_updates_on_startup);
+    assert_eq!(settings.skipped_update_version, None);
     assert!(settings.capture_auto_page_enabled);
     assert!(!settings.capture_full_update_enabled);
     assert_eq!(profiles.len(), 1);
@@ -97,6 +98,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
             ui_locale: Some("zh-Hant".to_string()),
             update_channel: Some("beta".to_string()),
             check_updates_on_startup: Some(true),
+            skipped_update_version: Some("1.2.3".to_string()),
             capture_auto_page_enabled: Some(true),
             capture_full_update_enabled: Some(true),
         })
@@ -107,6 +109,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
     assert_eq!(settings.ui_locale, "zh-Hant");
     assert_eq!(settings.update_channel, "beta");
     assert!(settings.check_updates_on_startup);
+    assert_eq!(settings.skipped_update_version.as_deref(), Some("1.2.3"));
     assert!(settings.capture_auto_page_enabled);
     assert!(settings.capture_full_update_enabled);
     let settings = store

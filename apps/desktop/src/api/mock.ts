@@ -19,21 +19,27 @@ let mockLocale = "zh-Hant";
 let mockUiLocale = "zh-Hant";
 let mockUpdateChannel = "stable";
 let mockCheckUpdatesOnStartup = true;
+let mockSkippedUpdateVersion: string | null = null;
 let mockCaptureAutoPageEnabled = true;
 let mockCaptureFullUpdateEnabled = false;
 
 
+function mockSettings() {
+  return {
+    active_profile: mockActiveProfileName,
+    locale: mockLocale,
+    ui_locale: mockUiLocale,
+    update_channel: mockUpdateChannel,
+    check_updates_on_startup: mockCheckUpdatesOnStartup,
+    skipped_update_version: mockSkippedUpdateVersion,
+    capture_auto_page_enabled: mockCaptureAutoPageEnabled,
+    capture_full_update_enabled: mockCaptureFullUpdateEnabled,
+  };
+}
+
 export const mockApi: AppApi = {
   async getSettings() {
-    return {
-      active_profile: mockActiveProfileName,
-      locale: mockLocale,
-      ui_locale: mockUiLocale,
-      update_channel: mockUpdateChannel,
-      check_updates_on_startup: mockCheckUpdatesOnStartup,
-      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
-      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
-    };
+    return mockSettings();
   },
   async updateSettings(patch: SettingsPatch) {
     mockActiveProfileName = patch.active_profile ?? mockActiveProfileName;
@@ -41,19 +47,12 @@ export const mockApi: AppApi = {
     mockUiLocale = patch.ui_locale ?? mockUiLocale;
     mockUpdateChannel = patch.update_channel ?? mockUpdateChannel;
     mockCheckUpdatesOnStartup = patch.check_updates_on_startup ?? mockCheckUpdatesOnStartup;
+    mockSkippedUpdateVersion = patch.skipped_update_version ?? mockSkippedUpdateVersion;
     mockCaptureAutoPageEnabled = patch.capture_auto_page_enabled ?? mockCaptureAutoPageEnabled;
     mockCaptureFullUpdateEnabled = patch.capture_full_update_enabled ?? mockCaptureFullUpdateEnabled;
     if (!mockCaptureAutoPageEnabled) mockCaptureFullUpdateEnabled = false;
     if (mockCaptureFullUpdateEnabled) mockCaptureAutoPageEnabled = true;
-    return {
-      active_profile: mockActiveProfileName,
-      locale: mockLocale,
-      ui_locale: mockUiLocale,
-      update_channel: mockUpdateChannel,
-      check_updates_on_startup: mockCheckUpdatesOnStartup,
-      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
-      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
-    };
+    return mockSettings();
   },
   async listProfiles() {
     return mockProfiles.map((profile) => ({ ...profile, active: profile.name === mockActiveProfileName }));
@@ -65,15 +64,7 @@ export const mockApi: AppApi = {
   },
   async setActiveProfile(profileName: string) {
     mockActiveProfileName = profileName;
-    return {
-      active_profile: profileName,
-      locale: mockLocale,
-      ui_locale: mockUiLocale,
-      update_channel: mockUpdateChannel,
-      check_updates_on_startup: mockCheckUpdatesOnStartup,
-      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
-      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
-    };
+    return mockSettings();
   },
   async renameProfile(oldName: string, newName: string) {
     const profile = mockProfiles.find((item) => item.name === oldName);
@@ -89,15 +80,7 @@ export const mockApi: AppApi = {
     if (mockProfiles.length <= 1) throw new Error("cannot delete the last profile");
     mockProfiles.splice(index, 1);
     if (mockActiveProfileName === profileName) mockActiveProfileName = mockProfiles[0].name;
-    return {
-      active_profile: mockActiveProfileName,
-      locale: mockLocale,
-      ui_locale: mockUiLocale,
-      update_channel: mockUpdateChannel,
-      check_updates_on_startup: mockCheckUpdatesOnStartup,
-      capture_auto_page_enabled: mockCaptureAutoPageEnabled,
-      capture_full_update_enabled: mockCaptureFullUpdateEnabled,
-    };
+    return mockSettings();
   },
   async importPublicJson(profileName: string, path: string) {
     return mockReport(profileName, "public_json", path);
@@ -193,6 +176,7 @@ export const mockApi: AppApi = {
       current_version: MOCK_APP_VERSION,
       channel: "stable",
       available: false,
+      release_notes: "",
       package: null,
     };
   },

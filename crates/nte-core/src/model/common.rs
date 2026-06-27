@@ -36,6 +36,7 @@ pub struct Settings {
     pub ui_locale: String,
     pub update_channel: String,
     pub check_updates_on_startup: bool,
+    pub skipped_update_version: Option<String>,
     pub capture_auto_page_enabled: bool,
     pub capture_full_update_enabled: bool,
 }
@@ -47,6 +48,7 @@ pub struct SettingsPatch {
     pub ui_locale: Option<String>,
     pub update_channel: Option<String>,
     pub check_updates_on_startup: Option<bool>,
+    pub skipped_update_version: Option<String>,
     pub capture_auto_page_enabled: Option<bool>,
     pub capture_full_update_enabled: Option<bool>,
 }
@@ -153,6 +155,7 @@ pub struct UpdateCheckReport {
     pub current_version: String,
     pub channel: UpdateChannel,
     pub available: bool,
+    pub release_notes: String,
     pub package: Option<UpdatePackage>,
 }
 

@@ -81,6 +81,14 @@ fn validate_update_channel(channel: &str) -> Result<String, GuiError> {
     Ok(channel.to_string())
 }
 
+fn validate_update_version(version: &str) -> Result<String, GuiError> {
+    let version = version.trim();
+    semver::Version::parse(version).map_err(|_| {
+        GuiError::InvalidDocument(format!("invalid skipped_update_version: {version}"))
+    })?;
+    Ok(version.to_string())
+}
+
 fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Result<(), GuiError> {
     for record in records {
         if !map.has_pool_id(&record.pool_id) {

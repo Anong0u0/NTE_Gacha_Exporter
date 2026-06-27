@@ -39,6 +39,9 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
         settings.ui_locale =
             normalize_ui_locale_or_default(&settings.ui_locale, DEFAULT_UI_LOCALE)?;
         validate_update_channel(&settings.update_channel)?;
+        if let Some(skipped_update_version) = settings.skipped_update_version.as_deref() {
+            validate_update_version(skipped_update_version)?;
+        }
         if settings.capture_full_update_enabled {
             settings.capture_auto_page_enabled = true;
         }
