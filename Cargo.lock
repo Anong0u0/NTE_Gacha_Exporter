@@ -2115,12 +2115,10 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "chrono",
- "hex",
  "nte-core",
  "pktmon",
  "serde",
  "serde_json",
- "sha2",
  "thiserror 2.0.18",
  "windows-sys 0.61.2",
 ]
@@ -2160,7 +2158,6 @@ dependencies = [
 name = "nte-gacha-exporter-desktop"
 version = "1.0.0"
 dependencies = [
- "nte-assets",
  "nte-automation",
  "nte-capture",
  "nte-core",
@@ -2168,14 +2165,12 @@ dependencies = [
  "nte-update",
  "serde",
  "serde_json",
- "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
  "tempfile",
  "ureq",
  "windows-sys 0.61.2",
- "zip",
 ]
 
 [[package]]

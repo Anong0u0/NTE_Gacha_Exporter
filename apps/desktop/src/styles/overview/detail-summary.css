@@ -1,0 +1,222 @@
+.selected-detail-body {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(0, 0.9fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.selected-detail-panel {
+  grid-template-rows: auto auto;
+}
+
+.detail-analysis {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.detail-analysis-head {
+  display: grid;
+  gap: 2px;
+}
+
+.detail-analysis-head strong {
+  font-size: 13px;
+}
+
+.rarity-distribution {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(118px, 0.56fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.rarity-pie {
+  height: 184px;
+  min-width: 0;
+}
+
+.rarity-share-list {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.rarity-share-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 10px minmax(26px, 1fr) minmax(60px, auto);
+  gap: 6px;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.rarity-share-row strong {
+  color: var(--text-strong);
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rarity-share-row strong span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rarity-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--border-strong);
+}
+
+.rarity-5 .rarity-dot,
+.rarity-5-up .rarity-dot,
+.rarity-5-non-up .rarity-dot,
+.rarity-5-character .rarity-dot,
+.rarity-5-item .rarity-dot {
+  background: var(--rarity-5);
+}
+
+.rarity-4 .rarity-dot,
+.rarity-4-character .rarity-dot,
+.rarity-4-hit .rarity-dot,
+.rarity-4-item .rarity-dot {
+  background: var(--rarity-4);
+}
+
+.rarity-3 .rarity-dot {
+  background: var(--rarity-3);
+}
+
+.rarity-unknown .rarity-dot {
+  background: var(--rarity-unknown);
+}
+
+.selected-summary-grid {
+  max-width: 360px;
+  margin: 10px auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.summary-metric-grid {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  padding: 8px 12px;
+}
+
+.summary-metric-grid::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 1px;
+  background: color-mix(in srgb, var(--border-soft) 72%, transparent);
+  opacity: 0.62;
+}
+
+.summary-metric-column {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+}
+
+.summary-metric-column--pity {
+  gap: 16px;
+}
+
+.summary-metric-card {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.summary-metric-header {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.summary-metric-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.summary-metric-title span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-metric-icon {
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+
+.summary-metric-value {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.summary-metric-card--rarity-5 .summary-metric-icon,
+.summary-metric-card--rarity-5 .summary-metric-value {
+  color: var(--rarity-5);
+}
+
+.summary-metric-card--rarity-4 .summary-metric-icon,
+.summary-metric-card--rarity-4 .summary-metric-value {
+  color: var(--rarity-4);
+}
+
+.summary-metric-card--currency .summary-metric-icon,
+.summary-metric-card--currency .summary-metric-value {
+  color: var(--accent);
+}
+
+.summary-metric-progress {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  margin-top: 4px;
+  background: var(--surface-muted);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.summary-metric-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.summary-metric-card--rarity-5 .summary-metric-progress span {
+  background: var(--rarity-5);
+}
+
+.summary-metric-card--rarity-4 .summary-metric-progress span {
+  background: var(--rarity-4);
+}
+

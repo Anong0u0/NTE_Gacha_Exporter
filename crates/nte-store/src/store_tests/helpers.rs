@@ -1,14 +1,8 @@
-use serde_json::json;
-
 use std::io::Write;
 
-use super::{JsonStore, StoreDefaults};
-use nte_core::{
-    DashboardSelection, FiveStarResult, ForkResultMark, ItemKind, PityBadge, PoolKind,
-    PullRarityBucketKey, RateUpResult, RecordFilter, RollBucket, SettingsPatch, SortDirection,
-};
+use serde_json::json;
 
-fn public_document(mut records: Vec<serde_json::Value>) -> String {
+pub(super) fn public_document(mut records: Vec<serde_json::Value>) -> String {
     for (index, record) in records.iter_mut().enumerate() {
         if let Some(object) = record.as_object_mut() {
             object
@@ -28,7 +22,12 @@ fn public_document(mut records: Vec<serde_json::Value>) -> String {
     .to_string()
 }
 
-fn record(record_id: &str, pool_id: &str, item_id: &str, time: &str) -> serde_json::Value {
+pub(super) fn record(
+    record_id: &str,
+    pool_id: &str,
+    item_id: &str,
+    time: &str,
+) -> serde_json::Value {
     json!({
         "record_id": record_id,
         "record_type": if pool_id.starts_with("ForkLottery_") { "fork" } else { "monopoly" },
@@ -43,7 +42,7 @@ fn record(record_id: &str, pool_id: &str, item_id: &str, time: &str) -> serde_js
     })
 }
 
-fn record_with_options(
+pub(super) fn record_with_options(
     record_id: &str,
     pool_id: &str,
     item_id: &str,
@@ -64,7 +63,7 @@ fn record_with_options(
     })
 }
 
-fn write_backup_zip(path: &std::path::Path, files: &[(&str, String)]) {
+pub(super) fn write_backup_zip(path: &std::path::Path, files: &[(&str, String)]) {
     let file = std::fs::File::create(path).unwrap();
     let mut zip = zip::ZipWriter::new(file);
     let options = zip::write::FileOptions::default();

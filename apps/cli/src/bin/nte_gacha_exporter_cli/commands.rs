@@ -40,16 +40,12 @@ fn maps_build(args: MapBuildArgs) -> CliResult<()> {
 fn assets_pack_build(args: AssetsPackBuildArgs) -> CliResult<()> {
     let assets_root =
         find_assets_root(args.assets_root.as_deref()).map_err(CliError::from_error)?;
-    let source_commit = args
-        .source_commit
-        .unwrap_or_else(|| PINNED_NTE_ASSETS_COMMIT.trim().to_string());
     let maps_dir = args.maps_dir.unwrap_or_else(default_maps_output_dir);
     let build = build_assets_pack(&AssetPackBuildOptions {
         assets_root,
         maps_dir,
         out_path: args.out,
         app_version: env!("CARGO_PKG_VERSION").to_string(),
-        source_commit,
         webp_quality: args.quality,
     })
     .map_err(CliError::from_error)?;
@@ -106,4 +102,3 @@ fn print_auto_status(status: AutoPageStatus) {
         status.technical_detail
     );
 }
-

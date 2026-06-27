@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn export_public_json_and_csv_from_store() {
     let tmp = tempfile::tempdir().unwrap();
@@ -45,7 +47,12 @@ fn export_public_json_and_csv_from_store() {
         "roll_label",
     ];
     assert_eq!(
-        first.as_object().unwrap().keys().cloned().collect::<Vec<_>>(),
+        first
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>(),
         expected_keys
     );
     assert!(
@@ -125,16 +132,19 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
     );
     assert_eq!(records[1]["roll_label"], "集點贈禮");
     for key in derived_export_keys() {
-        assert!(records[1].get(key).is_none(), "{key} should not be exported");
+        assert!(
+            records[1].get(key).is_none(),
+            "{key} should not be exported"
+        );
     }
     assert!(records[1].get("roll_points").is_none());
-    assert_eq!(
-        records[2]["roll_label_id"],
-        "BPUI_LotteryResult_chenmiandi"
-    );
+    assert_eq!(records[2]["roll_label_id"], "BPUI_LotteryResult_chenmiandi");
     assert_eq!(records[2]["roll_label"], "沉眠地");
     for key in derived_export_keys() {
-        assert!(records[2].get(key).is_none(), "{key} should not be exported");
+        assert!(
+            records[2].get(key).is_none(),
+            "{key} should not be exported"
+        );
     }
     assert!(records[2].get("roll_points").is_none());
 
@@ -282,10 +292,12 @@ fn cleanup_generated_backups_skips_symlink_without_deleting_target() {
     store.cleanup_generated_backups_keep_latest().unwrap();
 
     assert_eq!(std::fs::read(&outside).unwrap(), b"keep");
-    assert!(std::fs::symlink_metadata(&link)
-        .unwrap()
-        .file_type()
-        .is_symlink());
+    assert!(
+        std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert!(latest.exists());
 }
 
@@ -307,10 +319,12 @@ fn cleanup_generated_raw_runs_skips_symlink_without_deleting_target() {
     store.cleanup_generated_raw_runs_keep_latest().unwrap();
 
     assert_eq!(std::fs::read(&outside).unwrap(), b"keep");
-    assert!(std::fs::symlink_metadata(&link)
-        .unwrap()
-        .file_type()
-        .is_symlink());
+    assert!(
+        std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert!(latest.exists());
 }
 

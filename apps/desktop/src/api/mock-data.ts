@@ -181,6 +181,8 @@ export const mockRecords: DisplayRecord[] = [
   },
 ];
 
+export type MockRecord = (typeof mockRecords)[number];
+
 function mockBanner(
   bannerId: string,
   poolKind: PoolKind,

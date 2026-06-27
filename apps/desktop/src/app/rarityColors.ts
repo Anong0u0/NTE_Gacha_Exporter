@@ -1,4 +1,4 @@
-export const rarityColors = {
+const rarityColors = {
   5: "#C59245",
   4: "#915BB1",
   3: "#327EB6",

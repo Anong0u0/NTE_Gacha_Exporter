@@ -108,7 +108,7 @@ export type PullRarityBucketKey =
   | "three"
   | "unknown";
 
-export type PullRarityBucket = {
+type PullRarityBucket = {
   key: PullRarityBucketKey;
   rarity?: number | null;
   count: number;

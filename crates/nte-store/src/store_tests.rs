@@ -1,6 +1,15 @@
-include!("store_tests/helpers.rs");
-include!("store_tests/profiles_import.rs");
-include!("store_tests/dashboard_stats.rs");
-include!("store_tests/records_filters.rs");
-include!("store_tests/export_backup.rs");
-include!("store_tests/restore_update.rs");
+mod helpers;
+
+use super::{JsonStore, StoreDefaults};
+use helpers::*;
+use nte_core::{
+    DashboardSelection, FiveStarResult, ForkResultMark, ItemKind, PityBadge, PoolKind,
+    PullRarityBucketKey, RateUpResult, RecordFilter, RollBucket, SettingsPatch, SortDirection,
+};
+use serde_json::json;
+
+mod dashboard_stats;
+mod export_backup;
+mod profiles_import;
+mod records_filters;
+mod restore_update;

@@ -35,23 +35,24 @@ pub(crate) fn system_locale() -> Option<String> {
 
 pub(crate) fn store_defaults() -> StoreDefaults {
     let system_locale = user_system_locale();
-    let locales = available_locales();
+    let data_locales = available_locales();
+    let ui_locales = available_ui_locales();
     StoreDefaults {
-        locale: resolve_data_locale(system_locale.as_deref(), &locales),
-        ui_locale: resolve_ui_locale(system_locale.as_deref()),
+        locale: resolve_data_locale(system_locale.as_deref(), &data_locales),
+        ui_locale: resolve_ui_locale(system_locale.as_deref(), &ui_locales),
     }
 }
 
-fn resolve_ui_locale(locale: Option<&str>) -> String {
-    if is_traditional_chinese(locale) {
-        "zh-Hant".to_string()
-    } else {
-        "en".to_string()
-    }
+fn resolve_ui_locale(locale: Option<&str>, available: &[String]) -> String {
+    resolve_available_locale(locale, available)
 }
 
 fn resolve_data_locale(locale: Option<&str>, available: &[String]) -> String {
-    let candidates = data_locale_candidates(locale);
+    resolve_available_locale(locale, available)
+}
+
+fn resolve_available_locale(locale: Option<&str>, available: &[String]) -> String {
+    let candidates = locale_candidates(locale);
     for candidate in candidates {
         if available.iter().any(|item| item == &candidate) {
             return candidate;
@@ -67,7 +68,7 @@ fn resolve_data_locale(locale: Option<&str>, available: &[String]) -> String {
     }
 }
 
-fn data_locale_candidates(locale: Option<&str>) -> Vec<String> {
+fn locale_candidates(locale: Option<&str>) -> Vec<String> {
     let Some(locale) = locale.map(str::trim).filter(|value| !value.is_empty()) else {
         return vec!["en".to_string()];
     };
@@ -148,22 +149,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ui_locale_uses_traditional_chinese_or_english() {
-        assert_eq!(resolve_ui_locale(Some("zh-TW")), "zh-Hant");
-        assert_eq!(resolve_ui_locale(Some("zh-HK")), "zh-Hant");
-        assert_eq!(resolve_ui_locale(Some("zh-Hant")), "zh-Hant");
-        assert_eq!(resolve_ui_locale(Some("ja-JP")), "en");
-        assert_eq!(resolve_ui_locale(None), "en");
+    fn ui_locale_matches_available_locale_candidates() {
+        let available = locales(&["en", "zh-CN", "zh-Hant"]);
+
+        assert_eq!(resolve_ui_locale(Some("zh-TW"), &available), "zh-Hant");
+        assert_eq!(resolve_ui_locale(Some("zh_HK"), &available), "zh-Hant");
+        assert_eq!(resolve_ui_locale(Some("zh-Hant"), &available), "zh-Hant");
+        assert_eq!(resolve_ui_locale(Some("zh-SG"), &available), "zh-CN");
+        assert_eq!(resolve_ui_locale(Some("ja-JP"), &available), "en");
+        assert_eq!(resolve_ui_locale(None, &available), "en");
+    }
+
+    #[test]
+    fn ui_locale_uses_language_code_when_dictionary_exists() {
+        let available = locales(&["en", "ja", "zh-CN", "zh-Hant"]);
+
+        assert_eq!(resolve_ui_locale(Some("ja-JP"), &available), "ja");
+        assert_eq!(resolve_ui_locale(Some("fr-CA"), &available), "en");
     }
 
     #[test]
     fn data_locale_prefers_available_match_then_english() {
-        let available = ["en", "ja", "zh-Hans", "zh-Hant"]
-            .iter()
-            .map(|value| value.to_string())
-            .collect::<Vec<_>>();
+        let available = locales(&["en", "ja", "zh-Hans", "zh-Hant"]);
         assert_eq!(resolve_data_locale(Some("zh-TW"), &available), "zh-Hant");
         assert_eq!(resolve_data_locale(Some("ja-JP"), &available), "ja");
         assert_eq!(resolve_data_locale(Some("fr-CA"), &available), "en");
+    }
+
+    fn locales(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_string()).collect()
     }
 }

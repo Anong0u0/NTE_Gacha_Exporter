@@ -1,6 +1,6 @@
 import type { CaptureMode, ImportReport } from "./base";
 
-export type CaptureState = "starting" | "running" | "stopping" | "completed" | "failed";
+type CaptureState = "starting" | "running" | "stopping" | "completed" | "failed";
 
 type CaptureCounters = {
   packets_seen: number;

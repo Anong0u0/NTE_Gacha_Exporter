@@ -1,0 +1,223 @@
+.ranking-details {
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.ranking-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(12 18 16 / 46%);
+}
+
+.ranking-dialog {
+  width: min(620px, 100%);
+  max-height: min(660px, calc(100vh - 36px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface-panel);
+  box-shadow: 0 18px 54px rgb(0 0 0 / 22%);
+  overflow: hidden;
+}
+
+.ranking-dialog-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--surface-muted);
+}
+
+.ranking-dialog-head > div {
+  min-width: 0;
+}
+
+.ranking-dialog-head > div:first-child {
+  flex: 1 1 auto;
+}
+
+.ranking-dialog-head h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.ranking-rarity-toggle {
+  min-width: 0;
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-panel);
+  overflow: hidden;
+}
+
+.ranking-rarity-toggle button {
+  min-width: 42px;
+  min-height: 30px;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-panel);
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ranking-rarity-toggle button + button {
+  border-left: 1px solid var(--border-strong);
+}
+
+.ranking-rarity-toggle button.active {
+  background: var(--accent-soft);
+}
+
+.ranking-rarity-toggle .rarity-5 {
+  color: var(--rarity-5);
+}
+
+.ranking-rarity-toggle .rarity-4 {
+  color: var(--rarity-4);
+}
+
+.ranking-rarity-toggle .rarity-3 {
+  color: var(--rarity-3);
+}
+
+.ranking-share-list {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px;
+  overflow: auto;
+}
+
+.ranking-empty {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.ranking-share-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 42px 52px;
+  gap: 7px;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ranking-item-thumb {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ranking-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ranking-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-share-row.rarity-5 .ranking-name {
+  color: var(--rarity-5);
+}
+
+.ranking-share-row.rarity-4 .ranking-name {
+  color: var(--rarity-4);
+}
+
+.ranking-share-row.rarity-3 .ranking-name {
+  color: var(--rarity-3);
+}
+
+.ranking-share-row strong {
+  color: var(--text-strong);
+  text-align: right;
+}
+
+.ranking-share-row > span:nth-child(4) {
+  text-align: right;
+}
+
+.ranking-share-bar {
+  grid-column: 2 / -1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.ranking-share-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.ranking-share-row.rarity-5 .ranking-share-bar span {
+  background: var(--rarity-5);
+}
+
+.ranking-share-row.rarity-4 .ranking-share-bar span {
+  background: var(--rarity-4);
+}
+
+.ranking-share-row.rarity-3 .ranking-share-bar span {
+  background: var(--rarity-3);
+}
+
+@media (max-width: 760px) {
+  .pool-strip,
+  .selected-detail-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .latest-five-actions {
+    flex-wrap: wrap;
+  }
+
+  .rarity-distribution {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ranking-dialog-head {
+    flex-wrap: wrap;
+  }
+
+  .ranking-rarity-toggle {
+    order: 3;
+    width: 100%;
+  }
+
+  .ranking-rarity-toggle button {
+    flex: 1 1 0;
+  }
+}

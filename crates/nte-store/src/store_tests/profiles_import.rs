@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn store_bootstraps_default_profile_and_files() {
     let tmp = tempfile::tempdir().unwrap();
@@ -448,7 +450,10 @@ fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
         .unwrap();
     assert_eq!(list.records.len(), 1);
     assert_eq!(list.records[0].record_id, "r2");
-    assert_eq!(list.records[0].derived.banner_id.as_deref(), Some("monopoly_limited_Nanali"));
+    assert_eq!(
+        list.records[0].derived.banner_id.as_deref(),
+        Some("monopoly_limited_Nanali")
+    );
     assert_eq!(list.records[0].rarity, Some(3));
 }
 
@@ -456,10 +461,8 @@ fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
 fn legacy_composite_record_ids_are_normalized_to_current_hash_ids() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let expected_monopoly_id =
-        "4ac84ae07badd64a63e5632b0d3924280a2e89cbd2db689a7937017736f437ce";
-    let expected_fork_id =
-        "4d3b4dea20fba035e186eeb58a4f88250cd5fbe72eb760a6e9ba2d28f07d2a41";
+    let expected_monopoly_id = "4ac84ae07badd64a63e5632b0d3924280a2e89cbd2db689a7937017736f437ce";
+    let expected_fork_id = "4d3b4dea20fba035e186eeb58a4f88250cd5fbe72eb760a6e9ba2d28f07d2a41";
     let legacy = public_document(vec![
         json!({
             "record_id": "monopoly:639165793295740000:CardPool_Character:0:0:fork_yuren:1:fork_yuren:1",
@@ -552,5 +555,9 @@ fn public_json_requires_source_order() {
         .import_public_document("default", &document, "json", None)
         .unwrap_err();
 
-    assert!(error.to_string().contains("record missing u64 field: source_order"));
+    assert!(
+        error
+            .to_string()
+            .contains("record missing u64 field: source_order")
+    );
 }

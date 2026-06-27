@@ -14,8 +14,8 @@ use clap::{Args, CommandFactory, Parser, Subcommand};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use nte_assets::{
-    AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, PINNED_NTE_ASSETS_COMMIT, build_asset_maps,
-    build_assets_pack, find_assets_root,
+    AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, build_asset_maps, build_assets_pack,
+    find_assets_root,
 };
 use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
 use nte_capture::{
@@ -136,8 +136,6 @@ struct AssetsPackBuildArgs {
     maps_dir: Option<PathBuf>,
     #[arg(long)]
     out: PathBuf,
-    #[arg(long)]
-    source_commit: Option<String>,
     #[arg(long, default_value_t = DEFAULT_WEBP_QUALITY)]
     quality: u8,
 }
@@ -172,4 +170,3 @@ struct CaptureArgs {
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     verbose: bool,
 }
-

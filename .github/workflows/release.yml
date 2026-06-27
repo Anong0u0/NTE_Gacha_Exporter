@@ -170,11 +170,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          source_commit="$(git -C nte-assets-src rev-parse HEAD)"
           cargo run -p nte-gacha-exporter-cli --bin nte-gacha-exporter-cli -- assets pack build \
             --assets-root nte-assets-src \
-            --out dist/nte-assets-pack.zip \
-            --source-commit "$source_commit"
+            --out dist/nte-assets-pack.zip
           test -s dist/nte-assets-pack.zip
 
       - name: Upload assets pack

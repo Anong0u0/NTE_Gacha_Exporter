@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{Read, Seek, Write};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use image::{GenericImageView, imageops};
 use nte_core::{AssetsPackAsset, AssetsPackManifest, GuiError, bundled_maps_hash};
@@ -14,7 +15,6 @@ const PACK_SCHEMA: &str = "nte-gacha-exporter-assets-pack";
 const PACK_SCHEMA_VERSION: u32 = 1;
 const SOURCE_REPO: &str = "https://github.com/Waifus-Grace/NTE_Assets";
 pub const DEFAULT_WEBP_QUALITY: u8 = 82;
-pub const PINNED_NTE_ASSETS_COMMIT: &str = include_str!("../resources/NTE_ASSETS_COMMIT");
 
 #[derive(Debug, Clone)]
 pub struct AssetPackBuildOptions {
@@ -22,7 +22,6 @@ pub struct AssetPackBuildOptions {
     pub maps_dir: PathBuf,
     pub out_path: PathBuf,
     pub app_version: String,
-    pub source_commit: String,
     pub webp_quality: u8,
 }
 
@@ -59,6 +58,7 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
     if !(1..=100).contains(&options.webp_quality) {
         return Err(invalid_pack("webp quality must be between 1 and 100"));
     }
+    let source_commit = source_commit_from_git_head(&options.assets_root)?;
 
     let refs = collect_asset_ref_uses(&options.maps_dir)?;
     let missing = refs
@@ -127,7 +127,7 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
         app_version: options.app_version.clone(),
         map_hash: bundled_maps_hash(),
         source_repo: SOURCE_REPO.to_string(),
-        source_commit: options.source_commit.clone(),
+        source_commit,
         format: "webp".to_string(),
         quality: options.webp_quality,
         file_count: manifest_assets.len() as u64,
@@ -143,6 +143,43 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
         manifest,
         missing: Vec::new(),
     })
+}
+
+fn source_commit_from_git_head(assets_root: &Path) -> Result<String, GuiError> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(assets_root)
+        .arg("rev-parse")
+        .arg("HEAD")
+        .output()
+        .map_err(|error| {
+            invalid_pack(format!(
+                "failed to read NTE_Assets git HEAD at {}: {error}",
+                assets_root.display()
+            ))
+        })?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let detail = stderr.trim();
+        let suffix = if detail.is_empty() {
+            String::new()
+        } else {
+            format!(": {detail}")
+        };
+        return Err(invalid_pack(format!(
+            "failed to read NTE_Assets git HEAD at {}{suffix}",
+            assets_root.display()
+        )));
+    }
+
+    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if commit.is_empty() {
+        return Err(invalid_pack(format!(
+            "NTE_Assets git HEAD is empty at {}",
+            assets_root.display()
+        )));
+    }
+    Ok(commit)
 }
 
 pub fn normalize_asset_ref(asset_ref: &str) -> Option<String> {
@@ -480,6 +517,7 @@ mod tests {
             }"#,
         )
         .unwrap();
+        let source_commit = init_git_head(&assets_root);
 
         let out_path = temp.path().join("pack.zip");
         let build = build_assets_pack(&AssetPackBuildOptions {
@@ -487,15 +525,16 @@ mod tests {
             maps_dir,
             out_path: out_path.clone(),
             app_version: "0.1.0".to_string(),
-            source_commit: "commit".to_string(),
             webp_quality: DEFAULT_WEBP_QUALITY,
         })
         .unwrap();
 
         assert_eq!(build.manifest.file_count, 6);
+        assert_eq!(build.manifest.source_commit, source_commit);
         let mut zip = zip::ZipArchive::new(fs::File::open(out_path).unwrap()).unwrap();
         let manifest = read_zip_manifest(&mut zip).unwrap();
         assert_eq!(manifest.assets.len(), 6);
+        assert_eq!(manifest.source_commit, source_commit);
         let icon = manifest
             .assets
             .iter()
@@ -544,5 +583,38 @@ mod tests {
         assert!(zip.by_name(&icon.pack_path).is_ok());
         assert!(zip.by_name(&image.pack_path).is_ok());
         assert!(zip.by_name(&card.pack_path).is_ok());
+    }
+
+    fn init_git_head(root: &Path) -> String {
+        run_git(root, &["init"]);
+        run_git(root, &["config", "user.email", "nte-test@example.invalid"]);
+        run_git(root, &["config", "user.name", "NTE Test"]);
+        run_git(root, &["commit", "--allow-empty", "-m", "test assets"]);
+        git_stdout(root, &["rev-parse", "HEAD"])
+    }
+
+    fn run_git(root: &Path, args: &[&str]) {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    fn git_stdout(root: &Path, args: &[&str]) -> String {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8_lossy(&output.stdout).trim().to_string()
     }
 }

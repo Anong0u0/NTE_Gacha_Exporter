@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn restore_backup_rejects_invalid_pool_and_keeps_existing_data() {
     let tmp = tempfile::tempdir().unwrap();

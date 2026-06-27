@@ -220,7 +220,10 @@ fn request(
             .send_string(&body.to_string()),
         _ => bail!("unsupported request shape: {method} {path}"),
     }
-    .map_err(|error| anyhow!("{error}"))?;
+    .map_err(|error| match error {
+        ureq::Error::Status(code, response) => status_error(&url, code, response),
+        error => anyhow!("{error}"),
+    })?;
     let text = response
         .into_string()
         .map_err(|error| anyhow!("invalid API response body: {error}"))?;
@@ -234,6 +237,29 @@ fn request(
                 .error
                 .unwrap_or_else(|| "agent API failed".to_string())
         )
+    }
+}
+
+fn status_error(url: &str, code: u16, response: ureq::Response) -> anyhow::Error {
+    let text = response
+        .into_string()
+        .unwrap_or_else(|error| format!("invalid API response body: {error}"));
+    if let Ok(envelope) = serde_json::from_str::<ApiResponse>(&text) {
+        if let Some(error) = envelope.error {
+            return anyhow!("{url}: status code {code}: {error}");
+        }
+    }
+    anyhow!("{url}: status code {code}; body={}", truncate_body(&text))
+}
+
+fn truncate_body(value: &str) -> String {
+    const LIMIT: usize = 1000;
+    let mut chars = value.chars();
+    let truncated = chars.by_ref().take(LIMIT).collect::<String>();
+    if chars.next().is_some() {
+        format!("{truncated}...")
+    } else {
+        truncated
     }
 }
 
