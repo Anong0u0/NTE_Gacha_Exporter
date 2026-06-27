@@ -21,11 +21,12 @@ use nte_core::ImportReport;
 use nte_store::load_locale_or_settings;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use tauri::State;
+use tauri::{AppHandle, State, Wry};
 
 use crate::admin::admin_relaunch_required;
 use crate::error::{ApiError, RuntimeError, api_error, api_error_message};
 use crate::state::{AppState, new_session_id, now_seconds, portable_root, with_store};
+use crate::window_commands::wake_main_window;
 
 const CAPTURE_DRAIN_TIMEOUT: Duration = Duration::from_secs(20);
 const CAPTURE_DRAIN_POLL_INTERVAL: Duration = Duration::from_millis(100);

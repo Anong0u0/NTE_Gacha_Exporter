@@ -1,4 +1,5 @@
 fn start_rust_capture_session(
+    app: AppHandle<Wry>,
     state: &State<'_, AppState>,
     locale: &str,
     mode: CaptureMode,
@@ -84,6 +85,7 @@ fn start_rust_capture_session(
                 known_record_keys,
                 snapshots,
                 page_tracker,
+                app,
             });
         } else {
             let result = capture_live(
@@ -129,6 +131,7 @@ struct AutoPageCaptureThread {
     known_record_keys: Vec<String>,
     snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
     page_tracker: Arc<Mutex<CapturePageTracker>>,
+    app: AppHandle<Wry>,
 }
 
 fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
@@ -144,6 +147,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         known_record_keys,
         snapshots,
         page_tracker,
+        app,
     } = context;
     let capture_stop = Arc::clone(&stop);
     let capture_handle = std::thread::spawn(move || {
@@ -202,6 +206,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         .succeeded()
         .then(|| wait_for_capture_drain(&runtime, &page_tracker, &auto_result, &stop))
         .flatten();
+    let stopped_by_user = stop.load(Ordering::SeqCst);
     stop.store(true, Ordering::SeqCst);
 
     let capture_result = capture_handle
@@ -223,4 +228,12 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         error,
         Some(&auto_result),
     );
+    finish_auto_page_terminal(pid, stopped_by_user, &app);
+}
+
+fn finish_auto_page_terminal(pid: u32, stopped_by_user: bool, app: &AppHandle<Wry>) {
+    if !stopped_by_user {
+        let _ = nte_automation::restore_game_home(pid);
+    }
+    wake_main_window(app);
 }

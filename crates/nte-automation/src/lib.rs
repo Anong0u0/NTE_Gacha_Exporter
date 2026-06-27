@@ -1,4 +1,5 @@
 pub mod error;
+pub mod home;
 pub mod matcher;
 pub mod model;
 pub mod ocr;
@@ -9,6 +10,7 @@ pub mod tooltip;
 pub mod window;
 
 pub use error::{AutomationError, AutomationResult};
+pub use home::restore_game_home;
 pub use model::{
     AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus, PageNumber, Point,
     RecordSnapshot, Rect, Size, TemplateMatch,

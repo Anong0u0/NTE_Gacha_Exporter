@@ -1,5 +1,6 @@
 #[tauri::command]
 pub(crate) fn capture_start(
+    app: AppHandle<Wry>,
     state: State<'_, AppState>,
     profile_name: String,
     locale: Option<String>,
@@ -30,8 +31,14 @@ pub(crate) fn capture_start(
     } else {
         Vec::new()
     };
-    let mut status =
-        start_rust_capture_session(&state, &locale, mode, output_raw.clone(), known_record_keys)?;
+    let mut status = start_rust_capture_session(
+        app,
+        &state,
+        &locale,
+        mode,
+        output_raw.clone(),
+        known_record_keys,
+    )?;
     status.import_report = None;
     let source_path = status.raw_path.clone().or(output_raw);
     state
