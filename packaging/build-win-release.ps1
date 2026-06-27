@@ -33,11 +33,21 @@ Write-Step "Native Windows release environment"
 Write-Host "Repo: $projectRoot"
 Write-Ok "version -> $desktopVersion"
 Write-Ok "tag -> $normalizedTagName"
-$requiredCommands = @("bun", "bunx", "node", "cargo", "rustc")
+$requiredCommands = @()
+$needsBun = $ChecksOnly -or (-not $SkipInstall) -or (-not $SkipTauriBuild)
+$needsRust = $ChecksOnly -or (-not $SkipTauriBuild)
+if ($needsBun) {
+    $requiredCommands += @("bun", "bunx", "node")
+}
+if ($needsRust) {
+    $requiredCommands += @("cargo", "rustc")
+}
 foreach ($name in $requiredCommands) {
     Assert-Command -Name $name
 }
-Assert-RustHost
+if ($needsRust) {
+    Assert-RustHost
+}
 
 if ($ChecksOnly) {
     Write-Ok "ChecksOnly complete. Native Windows release toolchain looks usable."
@@ -49,8 +59,8 @@ if (-not $SkipInstall) {
 }
 
 if (-not $SkipTauriBuild) {
-    $tauriBuildArgs = @("run", "tauri", "build")
-    $bunxTauriBuildArgs = @("@tauri-apps/cli", "build")
+    $tauriBuildArgs = @("run", "tauri", "build", "--no-bundle")
+    $bunxTauriBuildArgs = @("@tauri-apps/cli", "build", "--no-bundle")
 
     $localTauriCandidates = @(
         (Join-Path $desktopRoot "node_modules\.bin\tauri.cmd"),

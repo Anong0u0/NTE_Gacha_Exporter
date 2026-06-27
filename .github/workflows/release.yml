@@ -80,11 +80,107 @@ jobs:
         working-directory: apps/desktop
         run: bun run build
 
-  build-windows:
-    name: Build Windows
+  build-desktop-windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Desktop install
+        working-directory: apps/desktop
+        run: bun install --frozen-lockfile
+
+      - name: Build desktop app
+        working-directory: apps/desktop
+        run: bun run tauri build --no-bundle
+
+      - name: Upload desktop app
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-desktop-app
+          path: target/release/nte-gacha-exporter-desktop.exe
+          if-no-files-found: error
+
+  build-cli-windows:
+    name: Build Windows CLI
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build portable tools
+        run: cargo build --release -p nte-gacha-exporter-cli
+
+      - name: Upload portable tools
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-cli-tools
+          path: |
+            target/release/nte-gacha-exporter.exe
+            target/release/nte-gacha-exporter-cli.exe
+            target/release/nte-gacha-exporter-updater.exe
+          if-no-files-found: error
+
+  build-assets-pack:
+    name: Build Assets Pack
     runs-on: windows-latest
     needs:
-      - checks
+      - build-cli-windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
+
+      - name: Download portable tools
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-cli-tools
+          path: tools/release
+
+      - name: Checkout latest NTE_Assets
+        shell: pwsh
+        run: |
+          git clone --filter=blob:none --sparse https://github.com/Waifus-Grace/NTE_Assets.git nte-assets-src
+          git -C nte-assets-src sparse-checkout set DataTable Localization UI UI_Icon
+
+      - name: Build assets pack
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          .\tools\release\nte-gacha-exporter-cli.exe assets pack build --assets-root nte-assets-src --maps-dir crates/nte-assets/resources/maps --out dist\nte-assets-pack.zip
+          $assetsPack = Get-Item -LiteralPath "dist\nte-assets-pack.zip" -ErrorAction SilentlyContinue
+          if ($null -eq $assetsPack -or $assetsPack.Length -le 0) {
+              throw "Assets pack missing: dist\nte-assets-pack.zip"
+          }
+
+      - name: Upload assets pack
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundled-assets-pack
+          path: dist/nte-assets-pack.zip
+          if-no-files-found: error
+
+  package-windows:
+    name: Package Windows
+    runs-on: windows-latest
+    needs:
+      - build-desktop-windows
+      - build-cli-windows
       - build-assets-pack
     outputs:
       version: ${{ steps.package.outputs.version }}
@@ -118,11 +214,17 @@ jobs:
 
           "tagName=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Download desktop app
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-desktop-app
+          path: target/release
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Download portable tools
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-cli-tools
+          path: target/release
 
       - name: Download bundled assets pack
         uses: actions/download-artifact@v8
@@ -130,10 +232,10 @@ jobs:
           name: bundled-assets-pack
           path: dist
 
-      - name: Build, smoke, and stage portable package
+      - name: Stage, smoke, and package portable build
         id: package
         shell: pwsh
-        run: .\packaging\build-win-release.ps1 -TagName "${{ steps.resolve.outputs.tagName }}" -AssetsPackZip "dist\nte-assets-pack.zip"
+        run: .\packaging\build-win-release.ps1 -SkipInstall -SkipTauriBuild -TagName "${{ steps.resolve.outputs.tagName }}" -AssetsPackZip "dist\nte-assets-pack.zip"
 
       - name: Upload release assets
         uses: actions/upload-artifact@v7
@@ -144,48 +246,12 @@ jobs:
             ${{ steps.package.outputs.manifestPath }}
           if-no-files-found: error
 
-  build-assets-pack:
-    name: Build Assets Pack
-    runs-on: ubuntu-latest
-    needs: checks
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Checkout latest NTE_Assets
-        shell: bash
-        run: |
-          set -euo pipefail
-          git clone --filter=blob:none --sparse https://github.com/Waifus-Grace/NTE_Assets.git nte-assets-src
-          git -C nte-assets-src sparse-checkout set DataTable Localization UI UI_Icon
-
-      - name: Build assets pack
-        id: package
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          cargo run -p nte-gacha-exporter-cli --bin nte-gacha-exporter-cli -- assets pack build \
-            --assets-root nte-assets-src \
-            --out dist/nte-assets-pack.zip
-          test -s dist/nte-assets-pack.zip
-
-      - name: Upload assets pack
-        uses: actions/upload-artifact@v7
-        with:
-          name: bundled-assets-pack
-          path: dist/nte-assets-pack.zip
-          if-no-files-found: error
-
   release:
     name: Publish Release
     runs-on: ubuntu-latest
-    needs: build-windows
+    needs:
+      - checks
+      - package-windows
     if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'release') }}
     permissions:
       contents: write
@@ -193,7 +259,7 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@v6
         with:
-          ref: ${{ needs.build-windows.outputs.tagName }}
+          ref: ${{ needs.package-windows.outputs.tagName }}
           fetch-depth: 0
 
       - name: Download release assets
@@ -206,9 +272,9 @@ jobs:
         id: notes
         shell: bash
         env:
-          TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
-          ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
-          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+          TAG_NAME: ${{ needs.package-windows.outputs.tagName }}
+          ASSET_NAME: ${{ needs.package-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.package-windows.outputs.manifestName }}
         run: |
           set -euo pipefail
 
@@ -233,16 +299,20 @@ jobs:
             fi
             echo
             echo "### Download / 下載說明"
-            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME}) Windows portable desktop package. 解壓後執行 \`nte-gacha-exporter.exe\`。"
-            echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) Updater manifest for the desktop app."
-            echo "* Do not download Source code zip as the application package. 不要把 Source code zip 當作應用程式下載。"
+            echo "* [${ASSET_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${ASSET_NAME})"
+            echo "  * Download, extract it, then run \`nte-gacha-exporter.exe\`."
+            echo "  * 下載，解壓縮後執行 \`nte-gacha-exporter.exe\`。"
+            echo
+            echo "### Do not download / 不要下載"
+            echo "* [${MANIFEST_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${MANIFEST_NAME}) For updater only. 僅供更新器使用。"
+            echo '* `Source code zip/tar.gz` Not the app. 不是應用程式。'
           } > release-notes.md
 
       - name: Resolve release flags
         id: flags
         shell: bash
         env:
-          AUTO_PRERELEASE: ${{ needs.build-windows.outputs.prerelease }}
+          AUTO_PRERELEASE: ${{ needs.package-windows.outputs.prerelease }}
           FORCE_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.prerelease || 'false' }}
         run: |
           set -euo pipefail
@@ -258,9 +328,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ needs.build-windows.outputs.tagName }}
-          ASSET_NAME: ${{ needs.build-windows.outputs.assetName }}
-          MANIFEST_NAME: ${{ needs.build-windows.outputs.manifestName }}
+          TAG_NAME: ${{ needs.package-windows.outputs.tagName }}
+          ASSET_NAME: ${{ needs.package-windows.outputs.assetName }}
+          MANIFEST_NAME: ${{ needs.package-windows.outputs.manifestName }}
           PRERELEASE_FLAG: ${{ steps.flags.outputs.prereleaseFlag }}
         run: |
           set -euo pipefail
@@ -271,8 +341,8 @@ jobs:
           fi
 
           gh release create "$TAG_NAME" \
-            "release-assets/${ASSET_NAME}#Windows portable package" \
-            "release-assets/${MANIFEST_NAME}#Desktop updater manifest" \
+            "release-assets/${ASSET_NAME}" \
+            "release-assets/${MANIFEST_NAME}" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG_NAME" \
             --notes-file release-notes.md \
