@@ -7,6 +7,7 @@ mod tests {
         assert_eq!(
             record_pool(&RecordSnapshot {
                 record_id: "a".to_string(),
+                record_key: "a".to_string(),
                 pool_id: "CardPool_Character".to_string(),
                 record_type: "monopoly".to_string(),
             }),
@@ -15,6 +16,7 @@ mod tests {
         assert_eq!(
             record_pool(&RecordSnapshot {
                 record_id: "b".to_string(),
+                record_key: "b".to_string(),
                 pool_id: "CardPool_NewRole".to_string(),
                 record_type: "monopoly".to_string(),
             }),
@@ -23,6 +25,7 @@ mod tests {
         assert_eq!(
             record_pool(&RecordSnapshot {
                 record_id: "c".to_string(),
+                record_key: "c".to_string(),
                 pool_id: "ForkLottery_AnHunQu".to_string(),
                 record_type: "fork".to_string(),
             }),
@@ -37,11 +40,9 @@ mod tests {
             snapshot("old-1", "CardPool_Character", "monopoly"),
             snapshot("old-2", "CardPool_Character", "monopoly"),
         ];
-        let known_ids = ["old-1".to_string(), "old-2".to_string()]
-            .into_iter()
-            .collect::<HashSet<_>>();
+        let known_counts = record_key_counts(&["old-1".to_string(), "old-2".to_string()]);
 
-        assert_eq!(consecutive_known_record_count(&records, &known_ids), 2);
+        assert_eq!(consecutive_known_record_count(&records, &known_counts), 2);
     }
 
     #[test]
@@ -50,9 +51,22 @@ mod tests {
             snapshot("old-1", "CardPool_Character", "monopoly"),
             snapshot("new", "CardPool_Character", "monopoly"),
         ];
-        let known_ids = ["old-1".to_string()].into_iter().collect::<HashSet<_>>();
+        let known_counts = record_key_counts(&["old-1".to_string()]);
 
-        assert_eq!(consecutive_known_record_count(&records, &known_ids), 0);
+        assert_eq!(consecutive_known_record_count(&records, &known_counts), 0);
+    }
+
+    #[test]
+    fn consecutive_known_record_count_respects_duplicate_key_counts() {
+        let records = vec![
+            snapshot_with_key("id-a", "same", "CardPool_Character", "monopoly"),
+            snapshot_with_key("id-b", "same", "CardPool_Character", "monopoly"),
+        ];
+        let one_known = record_key_counts(&["same".to_string()]);
+        let two_known = record_key_counts(&["same".to_string(), "same".to_string()]);
+
+        assert_eq!(consecutive_known_record_count(&records, &one_known), 1);
+        assert_eq!(consecutive_known_record_count(&records, &two_known), 2);
     }
 
     #[test]
@@ -69,8 +83,18 @@ mod tests {
     }
 
     fn snapshot(record_id: &str, pool_id: &str, record_type: &str) -> RecordSnapshot {
+        snapshot_with_key(record_id, record_id, pool_id, record_type)
+    }
+
+    fn snapshot_with_key(
+        record_id: &str,
+        record_key: &str,
+        pool_id: &str,
+        record_type: &str,
+    ) -> RecordSnapshot {
         RecordSnapshot {
             record_id: record_id.to_string(),
+            record_key: record_key.to_string(),
             pool_id: pool_id.to_string(),
             record_type: record_type.to_string(),
         }

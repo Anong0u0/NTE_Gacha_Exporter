@@ -117,18 +117,22 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
             if self.profile_dir(&target_name).exists() {
                 profiles_merged += 1;
                 let old_records = self.read_records(&target_name)?;
-                let mut seen_ids = old_records
-                    .iter()
-                    .map(|record| record.record_id.clone())
-                    .collect::<HashSet<_>>();
+                let old_counts = semantic_counts(&old_records);
+                let mut incoming_counts = BTreeMap::<String, u64>::new();
                 let mut merged = old_records;
                 for record in &snapshot_profile.records {
-                    if seen_ids.insert(record.record_id.clone()) {
-                        records_inserted += 1;
-                        merged.push(record.clone());
-                    } else {
+                    let key = record_semantic_key(record);
+                    let occurrence = incoming_counts.entry(key.clone()).or_default();
+                    let old_count = old_counts.get(&key).copied().unwrap_or_default();
+                    if *occurrence < old_count {
                         records_skipped += 1;
+                    } else {
+                        let mut record = record.clone();
+                        record.record_id = stable_record_id_from_key(&key, *occurrence);
+                        records_inserted += 1;
+                        merged.push(record);
                     }
+                    *occurrence += 1;
                 }
                 sort_records(&mut merged);
                 self.write_records(&target_name, &merged)?;

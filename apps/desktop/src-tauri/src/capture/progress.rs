@@ -90,6 +90,7 @@ fn automation_snapshot(
 ) -> Option<AutomationRecordSnapshot> {
     Some(AutomationRecordSnapshot {
         record_id: record.record_id.clone(),
+        record_key: record.record_key.clone(),
         record_type: record.record_type.clone(),
         pool_id: record.pool_id.clone()?,
     })

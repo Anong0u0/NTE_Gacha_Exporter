@@ -78,13 +78,31 @@ fn sleep_until(deadline: Instant) {
 
 fn consecutive_known_record_count(
     records: &[RecordSnapshot],
-    known_ids: &HashSet<String>,
+    known_counts: &BTreeMap<String, u64>,
 ) -> usize {
+    let mut remaining = known_counts.clone();
     records
         .iter()
         .rev()
-        .take_while(|record| known_ids.contains(record.record_id.as_str()))
+        .take_while(|record| {
+            let Some(count) = remaining.get_mut(record.record_key.as_str()) else {
+                return false;
+            };
+            if *count == 0 {
+                return false;
+            }
+            *count -= 1;
+            true
+        })
         .count()
+}
+
+fn record_key_counts(keys: &[String]) -> BTreeMap<String, u64> {
+    let mut counts = BTreeMap::new();
+    for key in keys {
+        *counts.entry(key.clone()).or_default() += 1;
+    }
+    counts
 }
 
 fn status_text(status: &AutoPageStatus) -> String {

@@ -169,10 +169,10 @@ fn records_list_filters_by_derived_fields() {
         .unwrap();
 
     assert_eq!(banner.total, 1);
-    assert_eq!(banner.records[0].record_id, "r3");
+    assert_eq!(banner.records[0].item_id, "fork_Rose");
     assert_eq!(banner.records[0].derived.guarantee_5_before, Some(true));
     assert_eq!(off_rate.total, 1);
-    assert_eq!(off_rate.records[0].record_id, "r2");
+    assert_eq!(off_rate.records[0].item_id, "fork_Arachne");
 }
 
 #[test]
@@ -224,9 +224,9 @@ fn records_list_focused_five_star_filter_uses_pool_kind_wall_semantics() {
     assert_eq!(
         list.records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.item_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["standard-character", "limited-character"]
+        vec!["1003", "1010"]
     );
 }
 
@@ -285,9 +285,9 @@ fn records_list_filters_by_fork_result_marks() {
     assert_eq!(
         wins.records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.fork_result_mark)
             .collect::<Vec<_>>(),
-        vec!["win", "guaranteed"]
+        vec![Some(ForkResultMark::Win), Some(ForkResultMark::Guaranteed)]
     );
     assert_eq!(wins.records[0].derived.fork_up_pity_before, Some(1));
     assert_eq!(wins.records[1].derived.fork_up_pity_before, Some(79));
@@ -296,5 +296,8 @@ fn records_list_filters_by_fork_result_marks() {
         Some(PityBadge::ForkUpGuarantee)
     );
     assert_eq!(losses.total, 1);
-    assert_eq!(losses.records[0].record_id, "lose");
+    assert_eq!(
+        losses.records[0].fork_result_mark,
+        Some(ForkResultMark::Lose)
+    );
 }

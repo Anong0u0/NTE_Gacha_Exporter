@@ -25,13 +25,13 @@ pub(crate) fn capture_start(
         };
         Ok(raw_path)
     })?;
-    let known_record_ids = if mode == CaptureMode::AutoPageIncremental {
-        with_store(&state, |store| store.profile_record_ids(&profile_name))?
+    let known_record_keys = if mode == CaptureMode::AutoPageIncremental {
+        with_store(&state, |store| store.profile_record_keys(&profile_name))?
     } else {
         Vec::new()
     };
     let mut status =
-        start_rust_capture_session(&state, &locale, mode, output_raw.clone(), known_record_ids)?;
+        start_rust_capture_session(&state, &locale, mode, output_raw.clone(), known_record_keys)?;
     status.import_report = None;
     let source_path = status.raw_path.clone().or(output_raw);
     state

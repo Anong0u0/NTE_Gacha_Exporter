@@ -3,7 +3,7 @@ fn start_rust_capture_session(
     locale: &str,
     mode: CaptureMode,
     output_raw: Option<String>,
-    known_record_ids: Vec<String>,
+    known_record_keys: Vec<String>,
 ) -> Result<CaptureStatus, ApiError> {
     let pid = find_process_pid("HTGame.exe")
         .map_err(api_error)?
@@ -81,7 +81,7 @@ fn start_rust_capture_session(
                 stop: stop_for_thread,
                 callback,
                 mode,
-                known_record_ids,
+                known_record_keys,
                 snapshots,
                 page_tracker,
             });
@@ -126,7 +126,7 @@ struct AutoPageCaptureThread {
     stop: Arc<AtomicBool>,
     callback: Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static>,
     mode: CaptureMode,
-    known_record_ids: Vec<String>,
+    known_record_keys: Vec<String>,
     snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
     page_tracker: Arc<Mutex<CapturePageTracker>>,
 }
@@ -141,7 +141,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         stop,
         callback,
         mode,
-        known_record_ids,
+        known_record_keys,
         snapshots,
         page_tracker,
     } = context;
@@ -193,7 +193,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
     let mut options = AutomationOptions::new(pid, Arc::clone(&stop));
     options.full_update = mode.full_update();
     options.non_interactive = true;
-    options.known_record_ids = known_record_ids;
+    options.known_record_keys = known_record_keys;
     options.record_snapshot = Some(snapshot_callback);
     options.decoded_page_count = Some(decoded_page_count);
     options.on_status = Some(auto_status_callback);

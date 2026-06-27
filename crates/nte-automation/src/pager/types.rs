@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::sync::atomic::Ordering;
 use std::thread;
 use std::time::{Duration, Instant};

@@ -60,20 +60,14 @@ fn records_list_filters_by_fork_pity_badges() {
         up_and_four
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.derived.pity_badge.clone())
             .collect::<Vec<_>>(),
-        vec!["up-guaranteed", "four-guaranteed"]
-    );
-    assert_eq!(
-        up_and_four.records[0].derived.pity_badge.clone(),
-        Some(PityBadge::ForkUpGuarantee)
-    );
-    assert_eq!(
-        up_and_four.records[1].derived.pity_badge.clone(),
-        Some(PityBadge::ForkFourStarGuarantee)
+        vec![
+            Some(PityBadge::ForkUpGuarantee),
+            Some(PityBadge::ForkFourStarGuarantee),
+        ]
     );
     assert_eq!(five.total, 1);
-    assert_eq!(five.records[0].record_id, "five-guaranteed");
     assert_eq!(
         five.records[0].derived.pity_badge.clone(),
         Some(PityBadge::ForkFiveStarGuarantee)
@@ -121,9 +115,12 @@ fn records_list_accepts_frontend_fork_pity_badge_filter_values() {
     assert_eq!(
         list.records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.derived.pity_badge.clone())
             .collect::<Vec<_>>(),
-        vec!["five-guaranteed", "four-guaranteed"]
+        vec![
+            Some(PityBadge::ForkFiveStarGuarantee),
+            Some(PityBadge::ForkFourStarGuarantee),
+        ]
     );
 }
 
@@ -188,12 +185,15 @@ fn records_list_exposes_global_pull_no_and_filters_three_star_hits() {
             .collect::<Vec<_>>(),
         vec![Some(1), None, Some(2)]
     );
-    assert_eq!(chronological.records[1].record_id, "gift");
+    assert_eq!(
+        chronological.records[1].roll_label_id.as_deref(),
+        Some("BPUI_LotteryResult_jidianzengli")
+    );
     assert!(!chronological.records[1].derived.counts_as_pull);
     assert_eq!(three_star.total, 2);
-    assert_eq!(three_star.records[0].record_id, "three");
+    assert_eq!(three_star.records[0].item_id, "fork_dustbin");
     assert_eq!(three_star.records[0].derived.hit_rarity, Some(3));
-    assert_eq!(three_star.records[1].record_id, "five");
+    assert_eq!(three_star.records[1].item_id, "fork_Rose");
     assert_eq!(three_star.records[1].derived.hit_rarity, Some(5));
 }
 

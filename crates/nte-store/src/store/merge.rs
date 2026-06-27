@@ -8,21 +8,24 @@ fn merge_records(
     ) -> Result<ImportReport, GuiError> {
         let old_records = self.read_records(profile_name)?;
         let old_last_run = self.read_last_run(profile_name)?;
-        let mut seen_ids: HashSet<String> = old_records
-            .iter()
-            .map(|record| record.record_id.clone())
-            .collect();
+        let old_counts = semantic_counts(&old_records);
+        let mut incoming_counts = BTreeMap::<String, u64>::new();
         let mut merged = old_records.clone();
         let mut inserted = 0_u64;
         let mut skipped = 0_u64;
 
-        for record in incoming.drain(..) {
-            if seen_ids.insert(record.record_id.clone()) {
+        for mut record in incoming.drain(..) {
+            let key = record_semantic_key(&record);
+            let occurrence = incoming_counts.entry(key.clone()).or_default();
+            let old_count = old_counts.get(&key).copied().unwrap_or_default();
+            if *occurrence < old_count {
+                skipped += 1;
+            } else {
+                record.record_id = stable_record_id_from_key(&key, *occurrence);
                 inserted += 1;
                 merged.push(record);
-            } else {
-                skipped += 1;
             }
+            *occurrence += 1;
         }
         sort_records(&mut merged);
 
@@ -77,4 +80,12 @@ fn merge_records(
         }
         Ok(())
     }
+}
+
+fn semantic_counts(records: &[InternalRecord]) -> BTreeMap<String, u64> {
+    let mut counts = BTreeMap::new();
+    for record in records {
+        *counts.entry(record_semantic_key(record)).or_default() += 1;
+    }
+    counts
 }

@@ -65,22 +65,17 @@ impl AutoPager {
 
     fn should_skip_pool(&mut self, pool: &str, step: &str, page: &PageNumber) -> bool {
         if self.options.full_update
-            || self.options.known_record_ids.is_empty()
+            || self.options.known_record_keys.is_empty()
             || self.options.record_snapshot.is_none()
         {
             return false;
         }
-        let known_ids = self
-            .options
-            .known_record_ids
-            .iter()
-            .cloned()
-            .collect::<HashSet<_>>();
+        let known_counts = record_key_counts(&self.options.known_record_keys);
         let deadline =
             Instant::now() + Duration::from_secs_f64(self.options.duplicate_check_timeout);
         while Instant::now() <= deadline {
             let pool_records = self.pool_records(pool);
-            let duplicate_count = consecutive_known_record_count(&pool_records, &known_ids);
+            let duplicate_count = consecutive_known_record_count(&pool_records, &known_counts);
             if duplicate_count >= INCREMENTAL_DUPLICATE_RECORD_THRESHOLD {
                 self.status(
                     StatusEvent::new("known records found; skipping pool", "pool_skipped")
@@ -93,7 +88,7 @@ impl AutoPager {
             }
             if pool_records
                 .last()
-                .is_some_and(|record| !known_ids.contains(record.record_id.as_str()))
+                .is_some_and(|record| !known_counts.contains_key(record.record_key.as_str()))
             {
                 return false;
             }

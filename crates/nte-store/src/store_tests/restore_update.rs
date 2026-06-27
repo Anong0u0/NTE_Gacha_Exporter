@@ -4,18 +4,15 @@ use super::*;
 fn restore_backup_rejects_invalid_pool_and_keeps_existing_data() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
+    let keep = record(
+        "keep",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    );
+    let expected_keep_id = expected_record_id(&keep);
     store
-        .import_public_document(
-            "default",
-            &public_document(vec![record(
-                "keep",
-                "CardPool_Character",
-                "fork_dustbin",
-                "2026-01-01 10:00:00",
-            )]),
-            "json",
-            None,
-        )
+        .import_public_document("default", &public_document(vec![keep]), "json", None)
         .unwrap();
     let before_records =
         std::fs::read_to_string(tmp.path().join("data/profiles/default/records.json")).unwrap();
@@ -67,7 +64,7 @@ fn restore_backup_rejects_invalid_pool_and_keeps_existing_data() {
     assert_eq!(after_records, before_records);
     assert_eq!(
         store.profile_record_ids("default").unwrap(),
-        vec!["keep".to_string()]
+        vec![expected_keep_id]
     );
 }
 
@@ -105,7 +102,11 @@ fn restore_backup_maps_active_profile_to_existing_profile_casing() {
     assert_eq!(target.settings().unwrap().active_profile, "Extra");
     assert_eq!(
         target.profile_record_ids("Extra").unwrap(),
-        vec!["r1".to_string()]
+        vec![expected_record_id_for(
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00"
+        )]
     );
 }
 

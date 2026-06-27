@@ -66,14 +66,14 @@ fn dashboard_five_star_wall_history_is_newest_first_without_pull_number_sort() {
         detail
             .five_star_wall_history
             .iter()
-            .map(|hit| hit.record.record_id.as_str())
+            .map(|hit| (hit.record.item_id.as_str(), hit.record.time.as_deref()))
             .collect::<Vec<_>>(),
         vec![
-            "late-ticket",
-            "same-time-character",
-            "same-time-sleep-ticket",
-            "old-dice",
-            "old-character"
+            ("Dice_ticket_01", Some("2026-06-03 16:42:17")),
+            ("1010", Some("2026-05-15 12:00:00")),
+            ("Dice_ticket_01", Some("2026-05-15 12:00:00")),
+            ("Dicelimite", Some("2026-04-30 17:02:07")),
+            ("1010", Some("2026-04-30 17:02:07")),
         ]
     );
     assert_eq!(
@@ -95,7 +95,10 @@ fn dashboard_five_star_wall_history_is_newest_first_without_pull_number_sort() {
     let same_time_sleep = detail
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "same-time-sleep-ticket")
+        .find(|hit| {
+            hit.record.item_id == "Dice_ticket_01"
+                && hit.record.time.as_deref() == Some("2026-05-15 12:00:00")
+        })
         .unwrap();
     assert_eq!(same_time_sleep.record.roll_label.as_deref(), Some("沉眠地"));
     assert!(!same_time_sleep.record.derived.counts_as_pull);
@@ -104,8 +107,8 @@ fn dashboard_five_star_wall_history_is_newest_first_without_pull_number_sort() {
             .summary
             .latest_5star_any
             .as_ref()
-            .map(|record| record.record_id.as_str()),
-        Some("late-ticket")
+            .map(|record| (record.item_id.as_str(), record.time.as_deref())),
+        Some(("Dice_ticket_01", Some("2026-06-03 16:42:17")))
     );
 }
 
@@ -178,18 +181,18 @@ fn dashboard_five_wall_distance_uses_effective_pull_intervals() {
             .iter()
             .map(|hit| {
                 (
-                    hit.record.record_id.as_str(),
+                    hit.record.item_id.as_str(),
                     hit.five_star_distance,
                     hit.focused_distance,
                 )
             })
             .collect::<Vec<_>>(),
         vec![
-            ("dice-2", 1, None),
-            ("ticket-2", 1, None),
-            ("character", 1, Some(2)),
-            ("dice-1", 1, None),
-            ("ticket-1", 1, None),
+            ("Dicelimite", 1, None),
+            ("Dice_ticket_01", 1, None),
+            ("1010", 1, Some(2)),
+            ("Dicelimite", 1, None),
+            ("Dice_ticket_01", 1, None),
         ]
     );
     assert_eq!(detail.summary.current_pity, 1);

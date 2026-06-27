@@ -194,7 +194,7 @@ fn standard_pool_uses_item_quality_for_display_rarity() {
     assert_eq!(detail.five_star_history.len(), 1);
     assert_eq!(
         detail.five_star_history[0].record.record_id,
-        "standard-character"
+        expected_record_id_for("CardPool_NewRole", "1003", "2026-06-02 00:00:00")
     );
     assert!(
         detail

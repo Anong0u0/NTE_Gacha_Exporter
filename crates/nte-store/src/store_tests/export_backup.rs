@@ -4,12 +4,14 @@ use super::*;
 fn export_public_json_and_csv_from_store() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![record(
+    let input = record(
         "c1",
         "CardPool_Character",
         "Fashion_vehicle_1010_V008",
         "2026-05-13 05:59:00",
-    )]);
+    );
+    let expected_id = expected_record_id(&input);
+    let document = public_document(vec![input]);
     store
         .import_public_document("default", &document, "json", None)
         .unwrap();
@@ -25,7 +27,7 @@ fn export_public_json_and_csv_from_store() {
         serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
     let first = &exported_json["nte"]["list"][0];
     assert_eq!(exported_json["info"]["schema_version"], "2.0");
-    assert_eq!(first["record_id"], "c1");
+    assert_eq!(first["record_id"], expected_id);
     assert_eq!(first["source_order"], 0);
     assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
     assert_eq!(first["pool_name"], "王牌一代目");
@@ -104,6 +106,7 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
         Some(4_294_967_295),
     );
     sleep["source_order"] = serde_json::json!(0);
+    let expected_ids = expected_record_ids(&[normal.clone(), gift.clone(), sleep.clone()]);
     let document = public_document(vec![normal, gift, sleep]);
     store
         .import_public_document("default", &document, "json", None)
@@ -124,7 +127,7 @@ fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() 
             .iter()
             .map(|record| record["record_id"].as_str().unwrap())
             .collect::<Vec<_>>(),
-        vec!["normal", "gift", "sleep"]
+        expected_ids
     );
     assert_eq!(
         records[1]["roll_label_id"],
@@ -375,29 +378,31 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
             capture_full_update_enabled: Some(true),
         })
         .unwrap();
-    let default_doc = public_document(vec![
-        record(
-            "same",
-            "CardPool_Character",
-            "fork_dustbin",
-            "2026-01-01 10:00:00",
-        ),
-        record(
-            "new",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            "2026-01-01 10:01:00",
-        ),
-    ]);
+    let same = record(
+        "same",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    );
+    let new = record(
+        "new",
+        "CardPool_Character",
+        "Fashion_vehicle_1010_V008",
+        "2026-01-01 10:01:00",
+    );
+    let expected_default_ids = expected_record_ids(&[same.clone(), new.clone()]);
+    let default_doc = public_document(vec![same.clone(), new]);
     source
         .import_public_document("default", &default_doc, "json", None)
         .unwrap();
-    let extra_doc = public_document(vec![record(
+    let extra = record(
         "extra",
         "ForkLottery_AnHunQu",
         "fork_Rose",
         "2026-01-02 10:00:00",
-    )]);
+    );
+    let expected_extra_id = expected_record_id(&extra);
+    let extra_doc = public_document(vec![extra]);
     source
         .import_public_document("Extra", &extra_doc, "json", None)
         .unwrap();
@@ -406,17 +411,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
 
     let target = JsonStore::open(tmp.path().join("target")).unwrap();
     target
-        .import_public_document(
-            "default",
-            &public_document(vec![record(
-                "same",
-                "CardPool_Character",
-                "fork_dustbin",
-                "2026-01-01 10:00:00",
-            )]),
-            "json",
-            None,
-        )
+        .import_public_document("default", &public_document(vec![same]), "json", None)
         .unwrap();
 
     let report = target.restore_data_backup_report(&backup_path).unwrap();
@@ -431,8 +426,8 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(report.records_inserted, 2);
     assert_eq!(report.records_skipped, 1);
     assert!(report.settings_restored);
-    assert_eq!(default_ids, vec!["same".to_string(), "new".to_string()]);
-    assert_eq!(extra_ids, vec!["extra".to_string()]);
+    assert_eq!(default_ids, expected_default_ids);
+    assert_eq!(extra_ids, vec![expected_extra_id]);
     assert_eq!(settings.active_profile, "Extra");
     assert_eq!(settings.locale, "en");
     assert_eq!(settings.ui_locale, "zh-Hant");

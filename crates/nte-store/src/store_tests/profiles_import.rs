@@ -288,20 +288,20 @@ fn profile_delete_rejects_last_profile_and_unknown_files() {
 fn duplicate_import_is_skipped_and_internal_records_omit_display_fields() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record(
-            "r1",
-            "CardPool_Character",
-            "fork_dustbin",
-            "2026-01-01 10:00:00",
-        ),
-        record(
-            "r2",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            "2026-01-01 10:01:00",
-        ),
-    ]);
+    let r1 = record(
+        "r1",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    );
+    let r2 = record(
+        "r2",
+        "CardPool_Character",
+        "Fashion_vehicle_1010_V008",
+        "2026-01-01 10:01:00",
+    );
+    let expected_ids = expected_record_ids(&[r1.clone(), r2.clone()]);
+    let document = public_document(vec![r1, r2]);
 
     let first = store
         .import_public_document("default", &document, "json", Some("sample.json"))
@@ -324,10 +324,106 @@ fn duplicate_import_is_skipped_and_internal_records_omit_display_fields() {
             .join("data/profiles/default/last-run.json")
             .exists()
     );
+    assert_eq!(store.profile_record_ids("default").unwrap(), expected_ids);
+}
+
+#[test]
+fn duplicate_import_uses_semantic_multiset_counts() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let duplicate = record(
+        "old-a",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    );
+    let old_document = public_document(vec![
+        duplicate.clone(),
+        record(
+            "old-b",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+    ]);
+    let incoming_document = public_document(vec![
+        record(
+            "new-a",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "new-b",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "new-c",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+    ]);
+
+    let first = store
+        .import_public_document("default", &old_document, "json", None)
+        .unwrap();
+    let second = store
+        .import_public_document("default", &incoming_document, "json", None)
+        .unwrap();
+
+    assert_eq!(first.records_inserted, 2);
+    assert_eq!(first.records_skipped, 0);
+    assert_eq!(second.records_inserted, 1);
+    assert_eq!(second.records_skipped, 2);
     assert_eq!(
         store.profile_record_ids("default").unwrap(),
-        vec!["r1".to_string(), "r2".to_string()]
+        vec![
+            expected_record_id(&duplicate),
+            expected_record_id_with_occurrence(&duplicate, 1),
+            expected_record_id_with_occurrence(&duplicate, 2),
+        ]
     );
+}
+
+#[test]
+fn agent_smoke_raw_replay_clean_profile_imports_only_four_incremental_records_when_available() {
+    let run1 = std::path::Path::new(
+        "target/agent-smoke/app-current/data/runs/raw-1781891304-042719100-1.jsonl",
+    );
+    let run2 = std::path::Path::new(
+        "target/agent-smoke/app-current/data/runs/raw-1782553392-632835900-0.jsonl",
+    );
+    if !run1.exists() || !run2.exists() {
+        eprintln!("agent-smoke raw captures unavailable; skipping local replay regression");
+        return;
+    }
+
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let run1_document = capture_document_text(run1);
+    let run2_document = capture_document_text(run2);
+
+    let first = store
+        .import_public_document("default", &run1_document, "raw_replay", Some("run1"))
+        .unwrap();
+    let second = store
+        .import_public_document("default", &run2_document, "raw_replay", Some("run2"))
+        .unwrap();
+
+    assert_eq!(first.records_inserted, 646);
+    assert_eq!(first.records_skipped, 0);
+    assert_eq!(second.records_inserted, 4);
+    assert_eq!(second.records_skipped, 266);
+    assert_eq!(store.profile_record_ids("default").unwrap().len(), 650);
+}
+
+fn capture_document_text(path: &std::path::Path) -> String {
+    let raw = nte_capture::read_raw_capture(path).unwrap();
+    let document = nte_capture::build_capture_document(&raw.rows, "zh-Hant").unwrap();
+    serde_json::to_string(&document).unwrap()
 }
 
 #[test]
@@ -449,7 +545,7 @@ fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
         .list_records("default", "zh-Hant", &RecordFilter::default())
         .unwrap();
     assert_eq!(list.records.len(), 1);
-    assert_eq!(list.records[0].record_id, "r2");
+    assert_eq!(list.records[0].record_id, expected_record_id(&v2_record));
     assert_eq!(
         list.records[0].derived.banner_id.as_deref(),
         Some("monopoly_limited_Nanali")
@@ -461,8 +557,25 @@ fn public_json_accepts_v2_only_and_rejects_other_major_versions() {
 fn legacy_composite_record_ids_are_normalized_to_current_hash_ids() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let expected_monopoly_id = "4ac84ae07badd64a63e5632b0d3924280a2e89cbd2db689a7937017736f437ce";
-    let expected_fork_id = "4d3b4dea20fba035e186eeb58a4f88250cd5fbe72eb760a6e9ba2d28f07d2a41";
+    let expected_monopoly = json!({
+        "record_id": "expected",
+        "record_type": "monopoly",
+        "time": "2026-06-09 05:22:09",
+        "pool_id": "CardPool_Character",
+        "item_id": "fork_yuren",
+        "count": 1,
+        "roll_points": 0
+    });
+    let expected_fork = json!({
+        "record_id": "expected",
+        "record_type": "fork",
+        "time": "2026-06-03 17:15:58",
+        "pool_id": "ForkLottery_AnHunQu",
+        "item_id": "fork_Rose",
+        "count": 1
+    });
+    let expected_monopoly_id = expected_record_id(&expected_monopoly);
+    let expected_fork_id = expected_record_id(&expected_fork);
     let legacy = public_document(vec![
         json!({
             "record_id": "monopoly:639165793295740000:CardPool_Character:0:0:fork_yuren:1:fork_yuren:1",
@@ -522,10 +635,7 @@ fn legacy_composite_record_ids_are_normalized_to_current_hash_ids() {
     assert_eq!(second.records_skipped, 2);
     assert_eq!(
         store.profile_record_ids("default").unwrap(),
-        vec![
-            expected_fork_id.to_string(),
-            expected_monopoly_id.to_string()
-        ]
+        vec![expected_fork_id, expected_monopoly_id]
     );
 }
 

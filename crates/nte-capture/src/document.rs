@@ -4,12 +4,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::{Map, Value, json};
 
 use crate::protocol::{ParsedRow, row_public_time};
-use nte_core::{GuiError, PUBLIC_JSON_SCHEMA, compare_time_asc, public_record_id_from_material};
+use nte_core::{
+    GuiError, PUBLIC_JSON_SCHEMA, RecordIdentityInput, compare_time_asc,
+    record_semantic_key_from_parts, stable_record_id_from_key,
+};
 use nte_core::{MapData, load_map};
 
 #[derive(Debug, Clone)]
 pub struct CapturePublicRecord {
     pub record_id: String,
+    pub record_key: String,
     pub record_type: String,
     pub pool_id: Option<String>,
     pub value: Value,
@@ -45,12 +49,14 @@ impl CaptureRecordBuilder {
 
     pub fn build_record(&mut self, row: &ParsedRow) -> CapturePublicRecord {
         let canonical = canonical_row(0, row, &self.map);
+        let record_key = record_key(&canonical);
         let record_id = self.next_record_id(&canonical);
         let source_order = self.next_source_order;
         self.next_source_order += 1;
         let value = public_record(&canonical, record_id.clone(), source_order);
         CapturePublicRecord {
             record_id,
+            record_key,
             record_type: row.record_type.as_str().to_string(),
             pool_id: row.pool_id.clone(),
             value,
@@ -58,19 +64,9 @@ impl CaptureRecordBuilder {
     }
 
     fn next_record_id(&mut self, row: &CanonicalRow<'_>) -> String {
-        let base_id = record_id_from_material(&record_id_material(row));
-        if has_source_slot(row) {
-            return base_id;
-        }
+        let base_id = record_key(row);
         let occurrence = self.seen_record_ids.entry(base_id.clone()).or_default();
-        let record_id = if *occurrence == 0 {
-            base_id
-        } else {
-            let mut material = record_id_material(row);
-            material.push("duplicate_occurrence".to_string());
-            material.push(occurrence.to_string());
-            record_id_from_material(&material)
-        };
+        let record_id = stable_record_id_from_key(&base_id, *occurrence);
         *occurrence += 1;
         record_id
     }
@@ -162,90 +158,41 @@ fn secondary_item_id(row: &CanonicalRow<'_>) -> Option<String> {
 }
 
 fn record_ids(rows: &[CanonicalRow<'_>]) -> Vec<String> {
-    let base_ids = rows
-        .iter()
-        .map(|row| record_id_from_material(&record_id_material(row)))
-        .collect::<Vec<_>>();
+    let base_ids = rows.iter().map(record_key).collect::<Vec<_>>();
     let mut totals: BTreeMap<String, u64> = BTreeMap::new();
     for id in &base_ids {
         *totals.entry(id.clone()).or_default() += 1;
     }
     let mut seen: BTreeMap<String, u64> = BTreeMap::new();
     let mut ids = Vec::with_capacity(rows.len());
-    for (row, base_id) in rows.iter().zip(base_ids) {
-        if totals.get(&base_id) == Some(&1) || has_source_slot(row) {
+    for base_id in base_ids {
+        if totals.get(&base_id) == Some(&1) {
             ids.push(base_id);
             continue;
         }
         let occurrence = seen.entry(base_id.clone()).or_default();
-        if *occurrence == 0 {
-            ids.push(base_id);
-        } else {
-            let mut material = record_id_material(row);
-            material.push("duplicate_occurrence".to_string());
-            material.push(occurrence.to_string());
-            ids.push(record_id_from_material(&material));
-        }
+        ids.push(stable_record_id_from_key(&base_id, *occurrence));
         *occurrence += 1;
     }
     ids
 }
 
-fn record_id_material(row: &CanonicalRow<'_>) -> Vec<String> {
-    if let Some(slot) = source_slot_material(row.row) {
-        let mut material = vec![
-            row.row.record_type.as_str().to_string(),
-            "protocol_slot_v3".to_string(),
-            row.row.ticks.to_string(),
-            row.row.pool_id.clone().unwrap_or_default(),
-        ];
-        material.extend(slot);
-        material.extend([
-            row.item_id.clone(),
-            row.row.count.to_string(),
-            row.secondary_item_id.clone().unwrap_or_default(),
-            row.row
-                .secondary_count
-                .map(|value| value.to_string())
-                .unwrap_or_default(),
-        ]);
-        if let Some(roll_points) = row.row.roll_points {
-            material.push("roll_points".to_string());
-            material.push(roll_points.to_string());
-        }
-        if let Some(roll_label_id) = row.row.roll_label_id.as_ref() {
-            material.push("roll_label_id".to_string());
-            material.push(roll_label_id.clone());
-        }
-        return material;
-    }
-
-    let mut material = vec![
-        row.row.record_type.as_str().to_string(),
-        row.row.ticks.to_string(),
-        row.row.pool_id.clone().unwrap_or_default(),
-        row.row.source.row_index.to_string(),
-        row.row
-            .roll_points
-            .map(|value| value.to_string())
-            .unwrap_or_default(),
-        row.item_id.clone(),
-        row.row.count.to_string(),
-        row.secondary_item_id.clone().unwrap_or_default(),
-        row.row
-            .secondary_count
-            .map(|value| value.to_string())
-            .unwrap_or_default(),
-    ];
-    if let Some(roll_label_id) = row.row.roll_label_id.as_ref() {
-        material.push("roll_label_id".to_string());
-        material.push(roll_label_id.clone());
-    }
-    material
-}
-
-fn has_source_slot(row: &CanonicalRow<'_>) -> bool {
-    source_slot_material(row.row).is_some()
+fn record_key(row: &CanonicalRow<'_>) -> String {
+    let secondary_item_id = secondary_item_id(row);
+    let secondary_count = secondary_item_id
+        .as_ref()
+        .and(row.row.secondary_count.map(i64::from));
+    record_semantic_key_from_parts(RecordIdentityInput {
+        record_type: row.row.record_type.as_str(),
+        time: row_public_time(row.row).as_deref(),
+        pool_id: row.row.pool_id.as_deref().unwrap_or_default(),
+        item_id: &row.item_id,
+        count: Some(i64::from(row.row.count)),
+        roll_points: row.row.roll_points.map(i64::from),
+        roll_label_id: row.row.roll_label_id.as_deref(),
+        secondary_item_id: secondary_item_id.as_deref(),
+        secondary_count,
+    })
 }
 
 fn compare_canonical_rows_chronological(
@@ -257,36 +204,7 @@ fn compare_canonical_rows_chronological(
         row_public_time(right.row).as_deref(),
     )
     .then_with(|| right.source_index.cmp(&left.source_index))
-    .then_with(|| record_id_material(left).cmp(&record_id_material(right)))
-}
-
-fn source_slot_material(row: &ParsedRow) -> Option<Vec<String>> {
-    let source = &row.source;
-    let stream_key = source.stream_key.as_ref()?;
-    let generation_index = source.generation_index?;
-    let segment_index = source.segment_index?;
-    let query_high = source.query_high?;
-    let mut material = vec![
-        "stream_key".to_string(),
-        stream_key.clone(),
-        "generation_index".to_string(),
-        generation_index.to_string(),
-        "segment_index".to_string(),
-        segment_index.to_string(),
-        "query_high".to_string(),
-        query_high.to_string(),
-    ];
-    if let Some(page_index) = source.page_index {
-        material.push("page_index".to_string());
-        material.push(page_index.to_string());
-    }
-    material.push("row_index".to_string());
-    material.push(source.row_index.to_string());
-    Some(material)
-}
-
-fn record_id_from_material(material: &[String]) -> String {
-    public_record_id_from_material(material)
+    .then_with(|| record_key(left).cmp(&record_key(right)))
 }
 
 fn insert_string(object: &mut Map<String, Value>, key: &str, value: impl Into<String>) {
@@ -331,13 +249,13 @@ mod tests {
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["record_id"],
-            "02539eac1cdcfe813b158e11d27f81742e76fd30c05b93cf42615b5dd43f9c1f"
+            "02a89041035a12520d0abb8f7d588b5b25b3e946608362b74ac162bf0031a837"
         );
         assert_eq!(records[0]["banner_id"], "monopoly_limited_Nanali");
         assert_eq!(records[0]["rarity"], 5);
         assert_eq!(
             records[1]["record_id"],
-            "c56d8202675fe561fbfaca53f78f01eaa5184c66e48b20573841f883e8c84fbc"
+            "1634e7929a153facd563ea7e4d9920ac3fd8c02fe64b07c5823d49f0c24dee50"
         );
         assert_eq!(records[1]["banner_id"], "ForkLottery_AnHunQu");
         assert_eq!(records[1]["rarity"], 3);
@@ -353,85 +271,34 @@ mod tests {
     }
 
     #[test]
-    fn protocol_record_id_material_uses_source_slot() {
+    fn protocol_record_key_ignores_source_slot() {
         let first_row = fork_protocol_parsed_row(true, 0);
         let second_row = fork_protocol_parsed_row(false, 0);
         let first_half = fork_protocol_canonical_row(&first_row);
         let second_half = fork_protocol_canonical_row(&second_row);
 
+        assert_eq!(record_key(&first_half), record_key(&second_half));
         assert_eq!(
-            record_id_material(&first_half),
-            vec![
-                "fork",
-                "protocol_slot_v3",
-                "639175144000000000",
-                "ForkLottery_Nanali",
-                "stream_key",
-                "fork",
-                "generation_index",
-                "0",
-                "segment_index",
-                "0",
-                "query_high",
-                "true",
-                "page_index",
-                "0",
-                "row_index",
-                "0",
-                "fork_dustbin",
-                "1",
-                "",
-                "",
-            ]
-        );
-        assert_eq!(
-            record_id_material(&second_half),
-            vec![
-                "fork",
-                "protocol_slot_v3",
-                "639175144000000000",
-                "ForkLottery_Nanali",
-                "stream_key",
-                "fork",
-                "generation_index",
-                "0",
-                "segment_index",
-                "1",
-                "query_high",
-                "false",
-                "page_index",
-                "0",
-                "row_index",
-                "0",
-                "fork_dustbin",
-                "1",
-                "",
-                "",
-            ]
+            record_ids(&[fork_protocol_canonical_row(&first_row)]),
+            record_ids(&[fork_protocol_canonical_row(&second_row)])
         );
     }
 
     #[test]
-    fn protocol_record_ids_do_not_depend_on_duplicate_occurrence_order() {
+    fn protocol_duplicate_record_ids_use_semantic_occurrence() {
         let first_row = fork_protocol_parsed_row(true, 3);
         let second_row = fork_protocol_parsed_row(false, 3);
 
-        let forward = record_ids(&[
+        let ids = record_ids(&[
             fork_protocol_canonical_row(&first_row),
             fork_protocol_canonical_row(&second_row),
-        ]);
-        let reversed = record_ids(&[
-            fork_protocol_canonical_row(&second_row),
-            fork_protocol_canonical_row(&first_row),
         ]);
 
-        assert_eq!(forward[0], reversed[1]);
-        assert_eq!(forward[1], reversed[0]);
-        assert_ne!(forward[0], forward[1]);
+        assert_ne!(ids[0], ids[1]);
     }
 
     #[test]
-    fn protocol_record_ids_reuse_same_id_for_same_source_slot() {
+    fn protocol_record_ids_do_not_reuse_same_id_for_same_semantic_duplicate() {
         let row = fork_protocol_parsed_row(true, 3);
 
         let ids = record_ids(&[
@@ -439,7 +306,7 @@ mod tests {
             fork_protocol_canonical_row(&row),
         ]);
 
-        assert_eq!(ids[0], ids[1]);
+        assert_ne!(ids[0], ids[1]);
     }
 
     #[test]
@@ -458,17 +325,14 @@ mod tests {
     }
 
     #[test]
-    fn monopoly_record_id_material_includes_non_numeric_roll_label() {
+    fn monopoly_record_key_includes_non_numeric_roll_label() {
         let without_label_row = monopoly_protocol_parsed_row(None, None);
         let with_label_row =
             monopoly_protocol_parsed_row(None, Some("BPUI_LotteryResult_jidianzengli".to_string()));
         let without_label = monopoly_protocol_canonical_row(&without_label_row);
         let with_label = monopoly_protocol_canonical_row(&with_label_row);
 
-        assert_ne!(
-            record_id_material(&without_label),
-            record_id_material(&with_label)
-        );
+        assert_ne!(record_key(&without_label), record_key(&with_label));
     }
 
     fn fork_protocol_parsed_row(query_high: bool, row_index: u32) -> ParsedRow {

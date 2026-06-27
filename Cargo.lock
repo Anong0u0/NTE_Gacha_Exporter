@@ -2178,6 +2178,7 @@ name = "nte-store"
 version = "1.0.0"
 dependencies = [
  "atomic-write-file",
+ "nte-capture",
  "nte-core",
  "serde",
  "serde_json",

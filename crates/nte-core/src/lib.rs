@@ -2,6 +2,7 @@ mod analysis;
 mod derived;
 mod export;
 mod i18n;
+mod identity;
 mod maps;
 mod model;
 mod order;
@@ -15,6 +16,10 @@ pub use analysis::{
 pub use derived::derive_records;
 pub use export::{export_csv, export_public_json};
 pub use i18n::{available_ui_locales, is_ui_locale};
+pub use identity::{
+    RecordIdentityInput, assign_stable_record_ids, record_semantic_key,
+    record_semantic_key_from_parts, stable_record_id_from_key,
+};
 pub use maps::{
     MapBanner, MapData, MapGachaRule, MapItem, MapPool, MapSourceEvidence, PoolTitleWindow,
     available_locales, bundled_maps_hash, load_map,

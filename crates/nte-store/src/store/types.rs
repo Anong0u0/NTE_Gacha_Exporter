@@ -21,6 +21,7 @@ use nte_core::{
     profile_analysis_view, record_filter_options,
 };
 use nte_core::{export_csv, export_public_json};
+use nte_core::{record_semantic_key, stable_record_id_from_key};
 
 const DEFAULT_PROFILE: &str = "default";
 const DEFAULT_LOCALE: &str = "en";

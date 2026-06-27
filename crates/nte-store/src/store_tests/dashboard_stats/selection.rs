@@ -132,17 +132,17 @@ fn banner_scope_keeps_focused_wall_distance_from_pool_kind_history() {
     let xun_up = pool
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "xun-up")
+        .find(|hit| hit.record.item_id == "1052")
         .unwrap();
     let pool_anhunqu_up = pool
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "anhunqu-up")
+        .find(|hit| hit.record.item_id == "1004")
         .unwrap();
     let banner_anhunqu_up = banner
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "anhunqu-up")
+        .find(|hit| hit.record.item_id == "1004")
         .unwrap();
 
     assert_eq!(xun_up.focused_distance, Some(9));
@@ -195,7 +195,7 @@ fn limited_focused_wall_includes_non_up_character_and_all_wall_resets_on_items()
             .iter()
             .map(|hit| {
                 (
-                    hit.record.record_id.as_str(),
+                    hit.record.item_id.as_str(),
                     hit.five_star_distance,
                     hit.focused_distance,
                     hit.result.clone(),
@@ -203,9 +203,14 @@ fn limited_focused_wall_includes_non_up_character_and_all_wall_resets_on_items()
             })
             .collect::<Vec<_>>(),
         vec![
-            ("limited-up-character", 1, Some(1), FiveStarResult::Up),
-            ("limited-off-character", 1, Some(2), FiveStarResult::OffRate,),
-            ("limited-item", 1, None, FiveStarResult::NotApplicable),
+            ("1004", 1, Some(1), FiveStarResult::Up),
+            ("1010", 1, Some(2), FiveStarResult::OffRate,),
+            (
+                "Fashion_vehicle_1010_V008",
+                1,
+                None,
+                FiveStarResult::NotApplicable,
+            ),
         ]
     );
 }
@@ -265,7 +270,7 @@ fn profile_analysis_view_matches_detail_options_and_record_page_contracts() {
     assert_eq!(view.record_filter_options, options);
     assert_eq!(view.record_page, page);
     assert_eq!(view.record_page.total, 1);
-    assert_eq!(view.record_page.records[0].record_id, "win");
+    assert_eq!(view.record_page.records[0].item_id, "fork_Rose");
     assert_eq!(
         view.record_page.records[0].fork_result_mark,
         Some(ForkResultMark::Win)
@@ -276,7 +281,7 @@ fn profile_analysis_view_matches_detail_options_and_record_page_contracts() {
         view.selected_detail
             .five_star_history
             .iter()
-            .any(|hit| hit.record.record_id == "lose"
+            .any(|hit| hit.record.item_id == "fork_Arachne"
                 && hit.record.fork_result_mark == Some(ForkResultMark::Lose))
     );
 }

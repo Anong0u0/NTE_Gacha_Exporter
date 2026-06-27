@@ -101,25 +101,34 @@ fn records_list_filters_by_roll_buckets_and_item_kinds() {
         roll_filtered
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| (record.item_id.as_str(), record.roll_bucket))
             .collect::<Vec<_>>(),
-        vec!["six", "gift", "other-roll"]
+        vec![
+            ("fork_Rose", RollBucket::Six),
+            ("fork_dustbin", RollBucket::Gift),
+            ("fork_dustbin", RollBucket::NotApplicable),
+        ]
     );
     assert_eq!(
         item_filtered
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.item_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["one", "appearance"]
+        vec!["1010", "Fashion_Glide_1010"]
     );
     assert_eq!(
         rarity_filtered
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.item_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["six", "one", "appearance", "vehicle"]
+        vec![
+            "fork_Rose",
+            "1010",
+            "Fashion_Glide_1010",
+            "Fashion_vehicle_1010_V008",
+        ]
     );
 }
 
@@ -219,17 +228,17 @@ fn records_list_oldest_first_is_exact_newest_first_reverse() {
         newest_first
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.source_order)
             .collect::<Vec<_>>(),
-        vec!["source-2", "source-1"]
+        vec![2, 1]
     );
     assert_eq!(
         chronological
             .records
             .iter()
-            .map(|record| record.record_id.as_str())
+            .map(|record| record.source_order)
             .collect::<Vec<_>>(),
-        vec!["source-1", "source-2"]
+        vec![1, 2]
     );
     assert_eq!(chronological.records[0].derived.pity_5_before, 0);
     assert_eq!(chronological.records[1].derived.pity_5_before, 1);

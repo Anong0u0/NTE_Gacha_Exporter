@@ -16,4 +16,5 @@ serde_json.workspace = true
 zip = { workspace = true, default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
+nte-capture = { path = "../nte-capture" }
 tempfile.workspace = true

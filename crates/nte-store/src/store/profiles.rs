@@ -212,6 +212,16 @@ impl JsonStore {
             .collect())
     }
 
+    pub fn profile_record_keys(&self, profile_name: &str) -> Result<Vec<String>, GuiError> {
+        let profile_name = validate_profile_name(profile_name)?;
+        self.read_profile(&profile_name)?;
+        Ok(self
+            .read_records(&profile_name)?
+            .iter()
+            .map(record_semantic_key)
+            .collect())
+    }
+
     pub fn default_run_raw_path(&self) -> PathBuf {
         self.root
             .join("data/runs")

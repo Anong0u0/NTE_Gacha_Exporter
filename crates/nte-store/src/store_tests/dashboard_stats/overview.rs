@@ -89,7 +89,14 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
             .latest_5star_any
             .as_ref()
             .map(|record| record.record_id.as_str()),
-        Some("c2")
+        Some(
+            expected_record_id_for(
+                "CardPool_Character",
+                "Fashion_vehicle_1010_V008",
+                "2026-01-01 10:01:00"
+            )
+            .as_str()
+        )
     );
     assert_eq!(limited.average_roll_points_to_5star, None);
     assert_eq!(limited.roll_point_cost_samples_5star, 0);
@@ -121,7 +128,12 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
             .record
             .record_id
             .as_str(),
-        "c2"
+        expected_record_id_for(
+            "CardPool_Character",
+            "Fashion_vehicle_1010_V008",
+            "2026-01-01 10:01:00"
+        )
+        .as_str()
     );
     assert!(
         overview
@@ -379,17 +391,17 @@ fn fork_stats_separate_twenty_five_seventy_five_wins_losses_and_forced_up() {
     let forced = detail
         .five_star_history
         .iter()
-        .find(|hit| hit.record.record_id == "r080-forced")
+        .find(|hit| hit.record.item_id == "fork_Rose")
         .unwrap();
     let forced_display = detail
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "r080-forced")
+        .find(|hit| hit.record.item_id == "fork_Rose")
         .unwrap();
     let loss_display = detail
         .five_star_wall_history
         .iter()
-        .find(|hit| hit.record.record_id == "r060-loss")
+        .find(|hit| hit.record.time.as_deref() == Some("2026-01-01 01:00:00"))
         .unwrap();
 
     assert_eq!(fork.hit_count, 3);

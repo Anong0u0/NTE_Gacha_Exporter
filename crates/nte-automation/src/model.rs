@@ -156,6 +156,7 @@ pub struct AutoPageStatus {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecordSnapshot {
     pub record_id: String,
+    pub record_key: String,
     pub pool_id: String,
     pub record_type: String,
 }
@@ -170,7 +171,7 @@ pub struct AutoPageOptions {
     pub full_update: bool,
     pub non_interactive: bool,
     pub tooltip: bool,
-    pub known_record_ids: Vec<String>,
+    pub known_record_keys: Vec<String>,
     pub record_snapshot: Option<RecordSnapshotCallback>,
     pub decoded_page_count: Option<DecodedPageCountCallback>,
     pub on_status: Option<StatusCallback>,
@@ -189,7 +190,7 @@ impl AutoPageOptions {
             full_update: false,
             non_interactive: false,
             tooltip: true,
-            known_record_ids: Vec::new(),
+            known_record_keys: Vec::new(),
             record_snapshot: None,
             decoded_page_count: None,
             on_status: None,
