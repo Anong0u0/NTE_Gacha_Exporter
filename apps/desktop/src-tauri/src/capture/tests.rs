@@ -196,7 +196,18 @@ mod tests {
 
         let error = status.error.unwrap();
         assert_eq!(error.code, "auto_page_failed");
-        assert!(error.support_path.unwrap().contains("data/support"));
+        let support_path = Path::new(error.support_path.as_deref().unwrap());
+        assert_eq!(support_path.parent().unwrap().file_name().unwrap(), "support");
+        assert_eq!(
+            support_path
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .file_name()
+                .unwrap(),
+            "data"
+        );
         assert!(error.support_image_path.is_none());
     }
 

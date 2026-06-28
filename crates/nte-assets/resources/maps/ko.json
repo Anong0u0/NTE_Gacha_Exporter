@@ -1139,7 +1139,7 @@
       "end_at": "2026-07-08 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
-        "1020"
+        "1071"
       ],
       "rate_up_4": [],
       "standard_5_pool": [
@@ -1164,7 +1164,7 @@
       },
       "start_at": "2026-06-24 05:59:00",
       "asset_refs": {
-        "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_18_s.YH_UI_bg_card_show_strip_18_s"
+        "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_46_s.YH_UI_bg_card_show_strip_46_s"
       }
     },
     "ForkLottery_Nanali": {

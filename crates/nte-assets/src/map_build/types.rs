@@ -89,7 +89,7 @@ const LIMITED_BANNER_SEEDS: &[LimitedBannerSeed] = &[
         tail: "Kaesi",
         banner_id: "monopoly_limited_Kaesi",
         end_at_tz8: "2026-07-08 05:59:00",
-        rate_up_5: &["1020"],
+        rate_up_5: &["1071"],
         version: None,
     },
 ];
