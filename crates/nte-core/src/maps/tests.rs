@@ -109,6 +109,8 @@ mod tests {
             Some(BannerResolutionIssue::OutsideKnownWindows)
         );
         let unresolved = map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"));
+        assert_eq!(unresolved.banner_id.as_deref(), Some("CardPool_Character"));
+        assert!(unresolved.asset_refs.is_empty());
         assert_eq!(unresolved.version, None);
         assert_eq!(
             map.pool_label("CardPool_Character", Some("2026-07-08 05:59:01")),
@@ -119,6 +121,23 @@ mod tests {
             Some("2026-06-03 05:59:01")
         );
         assert!(normalize_game_time(Some("2026-06-03T05:59:01+08:00")).is_none());
+    }
+
+    #[test]
+    fn resolve_banner_returns_synthetic_unknown_fork() {
+        let map = load_map("zh-Hant").expect("zh-Hant map should load");
+        let banner = map.resolve_banner("ForkLottery_KaesiNew", Some("2026-08-01 10:00:00"));
+
+        assert_eq!(
+            banner.resolution_issue,
+            Some(BannerResolutionIssue::UnknownPool)
+        );
+        assert_eq!(banner.banner_id.as_deref(), Some("ForkLottery_KaesiNew"));
+        assert_eq!(banner.pool_id.as_deref(), Some("ForkLottery_KaesiNew"));
+        assert_eq!(banner.pool_kind.as_deref(), Some("fork_lottery"));
+        assert_eq!(banner.banner_type.as_deref(), Some("fork"));
+        assert_eq!(banner.title.as_deref(), Some("KaesiNew"));
+        assert!(banner.asset_refs.is_empty());
     }
 
     #[test]

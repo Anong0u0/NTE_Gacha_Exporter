@@ -80,6 +80,38 @@ fn export_public_json_and_csv_from_store() {
 }
 
 #[test]
+fn export_synthetic_banner_omits_public_banner_id_and_blanks_csv_name() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![record(
+        "unknown-fork",
+        "ForkLottery_KaesiNew",
+        "fork_dustbin",
+        "2026-08-01 10:00:00",
+    )]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let json_path = tmp.path().join("exports/synthetic.json");
+    let csv_path = tmp.path().join("exports/synthetic.csv");
+    store
+        .export_public_json("default", "zh-Hant", &json_path)
+        .unwrap();
+    store.export_csv("default", "zh-Hant", &csv_path).unwrap();
+
+    let exported_json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
+    let first = exported_json["nte"]["list"][0].as_object().unwrap();
+    assert!(!first.contains_key("banner_id"));
+
+    let csv = std::fs::read_to_string(csv_path).unwrap();
+    let row = csv.lines().nth(1).unwrap().split(',').collect::<Vec<_>>();
+    assert_eq!(row[9], "ForkLottery_KaesiNew");
+    assert_eq!(row[10], "");
+}
+
+#[test]
 fn export_preserves_source_order_inside_same_timestamp_and_writes_roll_labels() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

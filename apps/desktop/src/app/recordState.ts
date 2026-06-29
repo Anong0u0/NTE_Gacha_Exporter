@@ -31,6 +31,7 @@ import {
 } from "./recordPrefs";
 import {
   formatForkResultMark,
+  bannerTitle,
   formatItemKind,
   formatPityBadgeValue,
   formatResult,
@@ -109,7 +110,7 @@ export function createRecordState(deps: RecordStateDeps) {
   const recordBannerOptions = computed(() =>
     currentBannersForRecordKind().map((banner) => ({
       value: banner.banner_id,
-      label: banner.title,
+      label: bannerTitle(banner, deps.t),
       meta: String(banner.count),
     })),
   );

@@ -466,24 +466,33 @@ fn unknown_pool_id_rejects_entire_import_without_partial_write() {
 }
 
 #[test]
-fn fork_pool_missing_from_maps_rejects_entire_import() {
+fn fork_pool_missing_from_maps_imports_as_synthetic_banner() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let bad = public_document(vec![record(
-        "bad",
+    let document = public_document(vec![record(
+        "synthetic-fork",
         "ForkLottery_NotInMaps",
         "fork_dustbin",
         "2026-01-01 10:00:00",
     )]);
 
-    assert!(
-        store
-            .import_public_document("default", &bad, "json", None)
-            .is_err()
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let list = store
+        .list_records("default", "zh-Hant", &RecordFilter::default())
+        .unwrap();
+    assert_eq!(list.total, 1);
+    assert_eq!(
+        list.records[0].banner.resolution_issue,
+        Some(nte_core::BannerResolutionIssue::UnknownPool)
     );
-    let stored =
-        std::fs::read_to_string(tmp.path().join("data/profiles/default/records.json")).unwrap();
-    assert!(!stored.contains("ForkLottery_NotInMaps"));
+    assert_eq!(
+        list.records[0].derived.banner_id.as_deref(),
+        Some("ForkLottery_NotInMaps")
+    );
+    assert_eq!(list.records[0].banner.title.as_deref(), Some("NotInMaps"));
 }
 
 #[test]

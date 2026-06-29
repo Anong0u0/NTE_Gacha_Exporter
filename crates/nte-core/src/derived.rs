@@ -40,11 +40,7 @@ pub fn derive_records(
             .then(|| hit_rarity_for_pity(item, pool_kind))
             .flatten();
 
-        let banner_id = if banner.resolution_issue.is_none() {
-            banner.banner_id.clone()
-        } else {
-            None
-        };
+        let banner_id = banner.banner_id.clone();
         let (global_pull_no, pull_no_in_pool_kind, pull_no_in_banner) = if counts_as_pull {
             global_pull_no += 1;
             let pool_pull_no = next_counter(&mut pull_no_by_pool_kind, pool_kind);

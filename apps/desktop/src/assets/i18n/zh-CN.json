@@ -42,6 +42,7 @@
   "common.updated": "更新",
   "common.version": "版本",
   "common.visual": "图片",
+  "banner.unmappedLimited": "未收录限定",
   "profile.create": "创建个人文件",
   "profile.createName": "新个人文件名称",
   "profile.count": "{count} 个文件",

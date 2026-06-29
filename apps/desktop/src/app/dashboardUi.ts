@@ -13,7 +13,7 @@ import type { I18nKey } from "./i18n";
 import { type FiveStarWallMode } from "./recordPrefs";
 import { rarityClass } from "./rarityColors";
 import { dashboardRaritySlices } from "./rarityBuckets";
-import { formatQuantityName } from "./viewHelpers";
+import { bannerTitle, formatQuantityName } from "./viewHelpers";
 
 type RankingRarity = (typeof rankingRarities)[number];
 type RankingRaritySelection = Record<RankingRarity, boolean>;
@@ -54,7 +54,8 @@ export function createDashboardUi(deps: DashboardUiDeps) {
   const selectedScopeLabel = computed(() => {
     const scope = deps.selectedDashboardScope.value;
     if (scope.kind === "banner") {
-      return deps.bannerSummaries.value.find((banner) => banner.banner_id === scope.banner_id)?.title;
+      const banner = deps.bannerSummaries.value.find((banner) => banner.banner_id === scope.banner_id);
+      return banner ? bannerTitle(banner, deps.t) : undefined;
     }
     return deps.selectedPoolSummary.value?.label;
   });

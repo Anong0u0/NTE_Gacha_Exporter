@@ -27,7 +27,7 @@ export type DisplayRecord = {
   derived: RecordDerived;
 };
 
-type BannerResolutionIssue =
+export type BannerResolutionIssue =
   | "unknown_pool"
   | "unknown_time"
   | "outside_known_windows"
@@ -127,6 +127,7 @@ export type RecordList = {
 type RecordBannerOption = {
   banner_id: string;
   pool_kind: PoolKind;
+  resolution_issue?: BannerResolutionIssue | null;
   title: string;
   count: number;
 };

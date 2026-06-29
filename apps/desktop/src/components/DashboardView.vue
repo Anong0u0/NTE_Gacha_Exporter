@@ -203,8 +203,8 @@ watch(
             :key="banner.banner_id"
             :class="{ active: app.isSelectedDashboardBanner(banner.banner_id), 'is-fork-banner': banner.banner_type === 'fork' || banner.pool_kind === 'fork_lottery' }"
             type="button"
-            :title="banner.title"
-            :aria-label="banner.title"
+            :title="app.bannerTitle(banner)"
+            :aria-label="app.bannerTitle(banner)"
             :aria-pressed="app.isSelectedDashboardBanner(banner.banner_id)"
             @click="app.selectDashboardBanner(banner)"
           >
@@ -212,7 +212,7 @@ watch(
               <img :src="app.bannerVisualUrl(banner)" alt="" />
             </span>
             <span v-else class="rail-thumb empty">
-              <span>{{ banner.title }}</span>
+              <span>{{ app.bannerTitle(banner) }}</span>
             </span>
           </button>
         </section>

@@ -40,6 +40,8 @@ pub struct BannerSummary {
     pub pool_id: String,
     pub pool_kind: PoolKind,
     pub banner_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution_issue: Option<BannerResolutionIssue>,
     pub title: String,
     pub version: Option<String>,
     pub start_at: Option<String>,

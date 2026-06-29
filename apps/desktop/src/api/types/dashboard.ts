@@ -1,5 +1,5 @@
 import type { AssetRefs, ImportReport, PoolKind, Profile } from "./base";
-import type { DisplayRecord, RateUpResult, RecordFilterOptions, RecordList } from "./records";
+import type { BannerResolutionIssue, DisplayRecord, RateUpResult, RecordFilterOptions, RecordList } from "./records";
 
 export type PoolKindSummary = {
   pool_kind: PoolKind;
@@ -44,6 +44,7 @@ export type BannerSummary = {
   pool_id: string;
   pool_kind: PoolKind;
   banner_type?: string | null;
+  resolution_issue?: BannerResolutionIssue | null;
   title: string;
   version?: string | null;
   start_at?: string | null;

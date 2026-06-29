@@ -145,16 +145,18 @@ impl MapData {
 
     pub fn resolve_banner(&self, pool_id: &str, time: Option<&str>) -> ResolvedBanner {
         let Some(pool) = self.pools.get(pool_id) else {
-            return unresolved(
+            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool is not in localization map: {pool_id}"))
+                .unwrap_or_else(|| unresolved(
                 BannerResolutionIssue::UnknownPool,
                 format!("pool is not in localization map: {pool_id}"),
-            );
+            ));
         };
         let Some(banner_ids) = pool.banner_ids.as_ref() else {
-            return unresolved(
+            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool has no linked banners: {pool_id}"))
+                .unwrap_or_else(|| unresolved(
                 BannerResolutionIssue::UnknownPool,
                 format!("pool has no linked banners: {pool_id}"),
-            );
+            ));
         };
 
         let candidates = banner_ids
@@ -163,15 +165,16 @@ impl MapData {
             .filter(|banner| banner.pool_id == pool_id)
             .collect::<Vec<_>>();
         if candidates.is_empty() {
-            return unresolved(
+            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool has no usable linked banners: {pool_id}"))
+                .unwrap_or_else(|| unresolved(
                 BannerResolutionIssue::UnknownPool,
                 format!("pool has no usable linked banners: {pool_id}"),
-            );
+            ));
         }
 
         match pool_id {
             "CardPool_NewRole" => single_banner(candidates, "standard", "standard"),
-            "CardPool_Character" => resolve_limited_banner(candidates, time),
+            "CardPool_Character" => resolve_limited_banner(pool_id, candidates, time),
             value if value.starts_with("ForkLottery_") => {
                 let matching_pool = candidates
                     .iter()
@@ -179,9 +182,9 @@ impl MapData {
                     .filter(|banner| banner.banner_id == pool_id)
                     .collect::<Vec<_>>();
                 if matching_pool.is_empty() {
-                    single_banner(candidates, "fork", "fork")
+                    single_banner(candidates, "fork", "fork").or_synthetic(pool_id)
                 } else {
-                    single_banner(matching_pool, "fork", "fork")
+                    single_banner(matching_pool, "fork", "fork").or_synthetic(pool_id)
                 }
             }
             _ => unresolved(

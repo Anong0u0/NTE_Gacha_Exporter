@@ -39,6 +39,7 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
                     pool_id: first.pool_id.clone(),
                     pool_kind: first.pool_kind,
                     banner_type: first.banner.banner_type.clone(),
+                    resolution_issue: first.banner.resolution_issue,
                     title: first
                         .banner
                         .title

@@ -182,6 +182,8 @@ export const mockRecords: DisplayRecord[] = [
 ];
 
 export type MockRecord = (typeof mockRecords)[number];
+type MockScenario = "default" | "unknown-banners";
+const MOCK_SCENARIO_KEY = "nte.mockScenario";
 
 function mockBanner(
   bannerId: string,
@@ -269,6 +271,161 @@ function mockDerived(
   };
 }
 
+function mockSyntheticBanner(
+  bannerId: string,
+  poolId: string,
+  poolKind: PoolKind,
+  bannerType: "limited" | "fork",
+  title: string | null,
+  resolutionIssue: NonNullable<ResolvedBanner["resolution_issue"]>,
+): ResolvedBanner {
+  return {
+    resolution_issue: resolutionIssue,
+    reason: "mock synthetic banner",
+    banner_id: bannerId,
+    pool_id: poolId,
+    pool_kind: poolKind,
+    banner_type: bannerType,
+    title,
+    rate_up_5: [],
+    rate_up_4: [],
+    standard_5_pool: [],
+    standard_4_pool: [],
+    rule_id: null,
+    asset_refs: {},
+  };
+}
+
+const mockUnknownLimitedRecord: DisplayRecord = {
+  record_id: "mock-unknown-limited",
+  source_order: 6,
+  record_type: "monopoly",
+  time: "2026-08-01 10:00:00",
+  pool_kind: "monopoly_limited",
+  pool_id: "CardPool_Character",
+  pool_label: "Limited Board",
+  banner: mockSyntheticBanner("CardPool_Character", "CardPool_Character", "monopoly_limited", "limited", null, "outside_known_windows"),
+  item_id: "unknown_limited_item",
+  item_name: "unknown_limited_item",
+  item_asset_refs: {},
+  item_kind: "unknown",
+  rarity: null,
+  count: 1,
+  roll_points: 1,
+  roll_label: "1",
+  roll_bucket: "1",
+  fork_result_mark: null,
+  secondary_item_asset_refs: {},
+  derived: mockDerived("mock-unknown-limited", {
+    bannerId: "CardPool_Character",
+    poolKind: "monopoly_limited",
+    pullNoInPoolKind: 148,
+    pullNoInBanner: 1,
+    pity5Before: 75,
+    pity5After: 76,
+    tenPullProgressBefore: 7,
+    tenPullProgressAfter: 8,
+    hitRarity: null,
+    rateUpResult: "unknown",
+    guarantee5Before: false,
+    guarantee5After: false,
+    ruleId: "fallback_monopoly_limited",
+  }),
+};
+
+const mockUnknownForkRecord: DisplayRecord = {
+  record_id: "mock-unknown-fork",
+  source_order: 5,
+  record_type: "fork",
+  time: "2026-08-01 10:01:00",
+  pool_kind: "fork_lottery",
+  pool_id: "ForkLottery_KaesiNew",
+  pool_label: "ForkLottery_KaesiNew",
+  banner: mockSyntheticBanner("ForkLottery_KaesiNew", "ForkLottery_KaesiNew", "fork_lottery", "fork", "KaesiNew", "unknown_pool"),
+  item_id: "unknown_fork_item",
+  item_name: "unknown_fork_item",
+  item_asset_refs: {},
+  item_kind: "fork",
+  rarity: null,
+  count: 1,
+  roll_points: 1,
+  roll_label: "1",
+  roll_bucket: "not_applicable",
+  fork_result_mark: null,
+  secondary_item_asset_refs: {},
+  derived: mockDerived("mock-unknown-fork", {
+    bannerId: "ForkLottery_KaesiNew",
+    poolKind: "fork_lottery",
+    pullNoInPoolKind: 37,
+    pullNoInBanner: 1,
+    pity5Before: 12,
+    pity5After: 13,
+    tenPullProgressBefore: 0,
+    tenPullProgressAfter: 1,
+    hitRarity: null,
+    rateUpResult: "unknown",
+    guarantee5Before: false,
+    guarantee5After: false,
+    ruleId: "fallback_fork_lottery",
+  }),
+};
+
+function mockScenario(): MockScenario {
+  if (typeof window === "undefined") return "default";
+  return window.localStorage.getItem(MOCK_SCENARIO_KEY) === "unknown-banners" ? "unknown-banners" : "default";
+}
+
+export function mockRecordsForScenario(scenario: MockScenario = mockScenario()) {
+  return scenario === "unknown-banners" ? [mockUnknownForkRecord, mockUnknownLimitedRecord, ...mockRecords] : mockRecords;
+}
+
+function mockSyntheticBannerSummary(record: DisplayRecord, title: string): BannerSummary {
+  return {
+    banner_id: record.derived.banner_id ?? "",
+    pool_id: record.pool_id,
+    pool_kind: record.pool_kind,
+    banner_type: record.banner.banner_type,
+    resolution_issue: record.banner.resolution_issue,
+    title,
+    version: null,
+    start_at: null,
+    end_at: null,
+    asset_refs: record.banner.asset_refs,
+    total_pulls: 1,
+    roll_points_total: record.roll_points ?? 0,
+    known_roll_point_records: record.roll_points == null ? 0 : 1,
+    missing_roll_point_records: record.roll_points == null ? 1 : 0,
+    five_star_count: 0,
+    four_star_count: 0,
+    current_5star_pity: record.derived.pity_5_after,
+    average_5star_pity: null,
+    rate_up_5_count: 0,
+    off_rate_5_count: 0,
+    not_applicable_rate_up_5_count: 0,
+    unknown_rate_up_5_count: 0,
+    fork_win_count: 0,
+    fork_loss_count: 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: null,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 0,
+    average_roll_points_to_5star: null,
+    roll_point_cost_samples_5star: 0,
+    latest_hit: null,
+  };
+}
+
+const mockUnknownBanners: BannerSummary[] = [
+  mockSyntheticBannerSummary(mockUnknownForkRecord, "KaesiNew"),
+  mockSyntheticBannerSummary(mockUnknownLimitedRecord, "CardPool_Character"),
+];
+
+export function mockBannersForScenario(scenario: MockScenario = mockScenario()) {
+  return scenario === "unknown-banners" ? [...mockUnknownBanners, ...mockBanners] : mockBanners;
+}
+
 export const mockFilterOptions: RecordFilterOptions = {
   banners: [
     { banner_id: "limited_mock", pool_kind: "monopoly_limited", title: "Limited Board", count: 146 },
@@ -294,6 +451,45 @@ export const mockFilterOptions: RecordFilterOptions = {
     { item_kind: "unknown", count: 0 },
   ] satisfies { item_kind: ItemKind; count: number }[],
 };
+
+const mockUnknownFilterBanners: RecordFilterOptions["banners"] = [
+  { banner_id: "ForkLottery_KaesiNew", pool_kind: "fork_lottery", resolution_issue: "unknown_pool", title: "KaesiNew", count: 1 },
+  { banner_id: "CardPool_Character", pool_kind: "monopoly_limited", resolution_issue: "outside_known_windows", title: "CardPool_Character", count: 1 },
+];
+
+export function mockFilterOptionsForScenario(scenario: MockScenario = mockScenario()): RecordFilterOptions {
+  return scenario === "unknown-banners"
+    ? {
+        ...mockFilterOptions,
+        banners: [...mockUnknownFilterBanners, ...mockFilterOptions.banners],
+      }
+    : mockFilterOptions;
+}
+
+export function mockSummaryForScenario(scenario: MockScenario = mockScenario()) {
+  if (scenario !== "unknown-banners") return mockSummary;
+  return mockSummary.map((summary) => {
+    if (summary.pool_kind === "monopoly_limited") {
+      return {
+        ...summary,
+        total_pulls: summary.total_pulls + 1,
+        roll_points_total: summary.roll_points_total + 1,
+        known_roll_point_records: summary.known_roll_point_records + 1,
+        unknown_rate_up_count: summary.unknown_rate_up_count + 1,
+      };
+    }
+    if (summary.pool_kind === "fork_lottery") {
+      return {
+        ...summary,
+        total_pulls: summary.total_pulls + 1,
+        roll_points_total: summary.roll_points_total + 1,
+        known_roll_point_records: summary.known_roll_point_records + 1,
+        unknown_rate_up_count: summary.unknown_rate_up_count + 1,
+      };
+    }
+    return summary;
+  });
+}
 
 export const mockCaptureSessions = new Map<
   string,

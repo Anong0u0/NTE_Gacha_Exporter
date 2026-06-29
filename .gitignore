@@ -5,6 +5,8 @@ build/
 dist/
 target/
 apps/desktop/src-tauri/gen/
+apps/desktop/test-results/
+apps/desktop/playwright-report/
 *.spec
 *.log
 *.tmp

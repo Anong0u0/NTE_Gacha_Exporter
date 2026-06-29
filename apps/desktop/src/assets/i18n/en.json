@@ -42,6 +42,7 @@
   "common.updated": "Updated",
   "common.version": "Version",
   "common.visual": "Visual",
+  "banner.unmappedLimited": "Unmapped limited",
   "profile.create": "Create profile",
   "profile.createName": "New profile name",
   "profile.count": "{count} profiles",

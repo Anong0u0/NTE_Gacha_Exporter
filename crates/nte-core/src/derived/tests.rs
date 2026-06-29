@@ -443,7 +443,7 @@ fn limited_boundaries_have_independent_banner_pull_numbers() {
 }
 
 #[test]
-fn outside_known_limited_window_keeps_pool_kind_state_without_banner() {
+fn outside_known_limited_window_uses_synthetic_banner() {
     let map = load_map("zh-Hant").expect("map should load");
     let records = vec![record(
         "outside",
@@ -454,10 +454,27 @@ fn outside_known_limited_window_keeps_pool_kind_state_without_banner() {
 
     let derived = derive_records(&records, &map).expect("records should derive");
 
-    assert_eq!(derived[0].banner_id, None);
-    assert_eq!(derived[0].pull_no_in_banner, None);
+    assert_eq!(derived[0].banner_id.as_deref(), Some("CardPool_Character"));
+    assert_eq!(derived[0].pull_no_in_banner, Some(1));
     assert_eq!(derived[0].pull_no_in_pool_kind, Some(1));
     assert_eq!(derived[0].pity_5_after, 1);
+}
+
+#[test]
+fn unknown_time_limited_window_uses_synthetic_banner() {
+    let map = load_map("zh-Hant").expect("map should load");
+    let mut record = record(
+        "unknown-time",
+        "CardPool_Character",
+        "fork_dustbin",
+        "not a time",
+    );
+    record.time = None;
+    let derived = derive_records(&[record], &map).expect("records should derive");
+
+    assert_eq!(derived[0].banner_id.as_deref(), Some("CardPool_Character"));
+    assert_eq!(derived[0].pull_no_in_banner, Some(1));
+    assert_eq!(derived[0].rate_up_result, RateUpResult::Unknown);
 }
 
 #[test]

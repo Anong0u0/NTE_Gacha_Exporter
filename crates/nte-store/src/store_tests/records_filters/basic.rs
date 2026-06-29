@@ -113,7 +113,11 @@ fn records_list_resolves_limited_banner_boundaries() {
         list.records[2].banner.resolution_issue,
         Some(nte_core::BannerResolutionIssue::OutsideKnownWindows)
     );
-    assert_eq!(list.records[2].derived.banner_id, None);
+    assert_eq!(
+        list.records[2].derived.banner_id.as_deref(),
+        Some("CardPool_Character")
+    );
+    assert_eq!(list.records[2].derived.pull_no_in_banner, Some(1));
     assert_eq!(list.records[2].pool_label, "限定棋盤");
 }
 

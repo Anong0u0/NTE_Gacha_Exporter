@@ -91,11 +91,15 @@ fn validate_update_version(version: &str) -> Result<String, GuiError> {
 
 fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Result<(), GuiError> {
     for record in records {
-        if !map.has_pool_id(&record.pool_id) {
+        if !map.has_pool_id(&record.pool_id) && !allows_unmapped_pool_id(&record.pool_id) {
             return Err(GuiError::UnknownPoolId(record.pool_id.clone()));
         }
     }
     Ok(())
+}
+
+fn allows_unmapped_pool_id(pool_id: &str) -> bool {
+    pool_id == "CardPool_Character" || pool_id.starts_with("ForkLottery_")
 }
 
 fn normalize_records(records: &mut [InternalRecord]) {

@@ -28,14 +28,43 @@ fn normalize_game_time(value: Option<&str>) -> Option<String> {
     Some(text)
 }
 
-fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> ResolvedBanner {
+trait SyntheticBannerFallback {
+    fn or_synthetic(self, pool_id: &str) -> Self;
+}
+
+impl SyntheticBannerFallback for ResolvedBanner {
+    fn or_synthetic(self, pool_id: &str) -> Self {
+        if self.resolution_issue == Some(BannerResolutionIssue::Ambiguous) {
+            return self;
+        }
+        if let Some(issue) = self.resolution_issue {
+            let reason = self.reason.clone().unwrap_or_else(|| "banner is unresolved".to_string());
+            synthetic_unresolved(pool_id, issue, reason).unwrap_or(self)
+        } else {
+            self
+        }
+    }
+}
+
+fn resolve_limited_banner(
+    pool_id: &str,
+    candidates: Vec<&MapBanner>,
+    time: Option<&str>,
+) -> ResolvedBanner {
     let record_time = match normalize_game_time(time) {
         Some(value) => value,
         None => {
-            return unresolved(
+            return synthetic_unresolved(
+                pool_id,
                 BannerResolutionIssue::UnknownTime,
                 "limited banner resolution requires valid record time",
-            );
+            )
+            .unwrap_or_else(|| {
+                unresolved(
+                    BannerResolutionIssue::UnknownTime,
+                    "limited banner resolution requires valid record time",
+                )
+            });
         }
     };
     let mut windows = candidates
@@ -54,10 +83,17 @@ fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> Re
     windows.sort_by(|left, right| left.1.cmp(&right.1));
 
     if windows.is_empty() {
-        return unresolved(
+        return synthetic_unresolved(
+            pool_id,
             BannerResolutionIssue::UnknownPool,
             "pool has no linked limited banners",
-        );
+        )
+        .unwrap_or_else(|| {
+            unresolved(
+                BannerResolutionIssue::UnknownPool,
+                "pool has no linked limited banners",
+            )
+        });
     }
 
     let mut matches = Vec::new();
@@ -78,10 +114,17 @@ fn resolve_limited_banner(candidates: Vec<&MapBanner>, time: Option<&str>) -> Re
 
     match matches.len() {
         1 => resolved(matches[0]),
-        0 => unresolved(
+        0 => synthetic_unresolved(
+            pool_id,
             BannerResolutionIssue::OutsideKnownWindows,
             "record time is outside known limited banner windows",
-        ),
+        )
+        .unwrap_or_else(|| {
+            unresolved(
+                BannerResolutionIssue::OutsideKnownWindows,
+                "record time is outside known limited banner windows",
+            )
+        }),
         _ => unresolved(
             BannerResolutionIssue::Ambiguous,
             "multiple limited banners match record time",
@@ -131,6 +174,50 @@ fn resolved(banner: &MapBanner) -> ResolvedBanner {
         rule_id: Some(banner.rule_id.clone()),
         asset_refs: banner.asset_refs.clone(),
     }
+}
+
+fn synthetic_unresolved(
+    pool_id: &str,
+    issue: BannerResolutionIssue,
+    reason: impl Into<String>,
+) -> Option<ResolvedBanner> {
+    let (banner_id, pool_kind, banner_type, title) = if pool_id == "CardPool_Character" {
+        (
+            "CardPool_Character".to_string(),
+            "monopoly_limited".to_string(),
+            "limited".to_string(),
+            None,
+        )
+    } else if let Some(title) = pool_id.strip_prefix("ForkLottery_") {
+        (
+            pool_id.to_string(),
+            "fork_lottery".to_string(),
+            "fork".to_string(),
+            Some(title.to_string()),
+        )
+    } else {
+        return None;
+    };
+
+    Some(ResolvedBanner {
+        resolution_issue: Some(issue),
+        reason: Some(reason.into()),
+        banner_id: Some(banner_id),
+        pool_id: Some(pool_id.to_string()),
+        pool_kind: Some(pool_kind),
+        banner_type: Some(banner_type),
+        title,
+        version: None,
+        start_at: None,
+        end_at: None,
+        timezone: None,
+        rate_up_5: Vec::new(),
+        rate_up_4: Vec::new(),
+        standard_5_pool: Vec::new(),
+        standard_4_pool: Vec::new(),
+        rule_id: None,
+        asset_refs: BTreeMap::new(),
+    })
 }
 
 fn unresolved(issue: BannerResolutionIssue, reason: impl Into<String>) -> ResolvedBanner {

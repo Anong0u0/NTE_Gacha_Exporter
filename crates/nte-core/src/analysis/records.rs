@@ -211,6 +211,7 @@ fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> Reco
                     option: RecordBannerOption {
                         banner_id: banner_id.clone(),
                         pool_kind: record.pool_kind,
+                        resolution_issue: record.banner.resolution_issue,
                         title: record
                             .banner
                             .title

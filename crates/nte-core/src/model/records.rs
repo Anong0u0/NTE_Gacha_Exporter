@@ -112,6 +112,8 @@ pub struct RecordFilterOptions {
 pub struct RecordBannerOption {
     pub banner_id: String,
     pub pool_kind: PoolKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution_issue: Option<BannerResolutionIssue>,
     pub title: String,
     pub count: u64,
 }

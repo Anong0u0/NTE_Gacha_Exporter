@@ -1,7 +1,15 @@
-import type { BannerSummary, DisplayRecord, ForkResultMark, ItemKind, PityBadge, RollBucket } from "../api";
+import type { DisplayRecord, ForkResultMark, ItemKind, PityBadge, RollBucket } from "../api";
 import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
+type BannerLike = {
+  banner_id?: string | null;
+  pool_kind?: string | null;
+  banner_type?: string | null;
+  resolution_issue?: string | null;
+  title?: string | null;
+  version?: string | null;
+};
 
 export function percent(value?: number | null) {
   if (value === null || value === undefined) return "-";
@@ -63,14 +71,39 @@ export function formatItemKind(value: ItemKind, t: Translator) {
   return "";
 }
 
-export function bannerTitle(banner: BannerSummary | DisplayRecord["banner"] | null | undefined, t: Translator) {
-  return banner?.title || banner?.banner_id || `${t("common.unknown")} ${t("common.banner").toLowerCase()}`;
+export function bannerTitle(banner: BannerLike | null | undefined, t: Translator) {
+  if (isSyntheticLimitedBanner(banner)) return t("banner.unmappedLimited");
+  const title = banner?.title?.trim();
+  const bannerId = banner?.banner_id?.trim();
+  const fallback = `${t("common.unknown")} ${t("common.banner").toLowerCase()}`;
+  if (isForkBanner(banner)) return stripForkPrefix(title || bannerId || fallback);
+  return title || bannerId || fallback;
 }
 
-export function bannerMeta(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+export function bannerMeta(banner?: BannerLike | null) {
   const parts = [banner?.version].filter(Boolean);
   if (parts.length) return parts.join(" · ");
-  return banner && "resolution_issue" in banner ? (banner.resolution_issue ?? "") : "";
+  return "";
+}
+
+function isSyntheticLimitedBanner(banner?: BannerLike | null) {
+  return Boolean(
+    banner?.resolution_issue &&
+      banner.banner_id === "CardPool_Character" &&
+      banner.pool_kind === "monopoly_limited",
+  );
+}
+
+function isForkBanner(banner?: BannerLike | null) {
+  return Boolean(
+    banner?.banner_type === "fork" ||
+      banner?.pool_kind === "fork_lottery" ||
+      banner?.banner_id?.startsWith("ForkLottery_"),
+  );
+}
+
+function stripForkPrefix(value: string) {
+  return value.startsWith("ForkLottery_") ? value.slice("ForkLottery_".length) : value;
 }
 
 export function formatBannerWindow(start: string | null | undefined, end: string | null | undefined, t: Translator) {

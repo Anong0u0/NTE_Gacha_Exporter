@@ -105,7 +105,9 @@ fn public_record(display: &DisplayRecord) -> Value {
     }
     object.insert("pool_id".to_string(), json!(display.pool_id));
     object.insert("pool_name".to_string(), json!(display.pool_label));
-    if let Some(banner_id) = display.derived.banner_id.as_ref() {
+    if display.banner.resolution_issue.is_none()
+        && let Some(banner_id) = display.derived.banner_id.as_ref()
+    {
         object.insert("banner_id".to_string(), json!(banner_id));
     }
     object.insert("item_id".to_string(), json!(display.item_id));
@@ -186,7 +188,11 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
             .map(|value| value.to_string())
             .unwrap_or_default(),
         banner_id: record.derived.banner_id.clone().unwrap_or_default(),
-        banner_name: record.banner.title.clone().unwrap_or_default(),
+        banner_name: if record.banner.resolution_issue.is_some() {
+            String::new()
+        } else {
+            record.banner.title.clone().unwrap_or_default()
+        },
         pull_no: record
             .derived
             .pull_no_in_banner

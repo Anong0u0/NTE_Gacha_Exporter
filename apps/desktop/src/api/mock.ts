@@ -11,7 +11,13 @@ import type {
   UpdatePackage,
 } from "./types";
 import { mockOverview, mockRecordPage, mockReport, mockSelectionDetail } from "./mock/analysis";
-import { mockCaptureSessions, mockFilterOptions, mockProfile, mockRecords, mockSummary } from "./mock-data";
+import {
+  mockCaptureSessions,
+  mockFilterOptionsForScenario,
+  mockProfile,
+  mockRecordsForScenario,
+  mockSummaryForScenario,
+} from "./mock-data";
 
 const MOCK_APP_VERSION = __NTE_APP_VERSION__;
 const mockProfiles = [{ ...mockProfile }];
@@ -93,7 +99,7 @@ export const mockApi: AppApi = {
     return {
       overview: await mockOverview(),
       selected_detail: mockSelectionDetail(selection),
-      record_filter_options: mockFilterOptions,
+      record_filter_options: mockFilterOptionsForScenario(),
       record_page: mockRecordPage(recordFilter),
     };
   },
@@ -101,7 +107,7 @@ export const mockApi: AppApi = {
     return mockOverview();
   },
   async poolKindDetail(_profileName: string, poolKind: PoolKind) {
-    const summary = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
+    const summary = mockSummaryForScenario().find((item) => item.pool_kind === poolKind) ?? mockSummaryForScenario()[0];
     const detail = mockSelectionDetail({ kind: "pool_kind", pool_kind: poolKind });
     return {
       summary,
@@ -122,7 +128,7 @@ export const mockApi: AppApi = {
     return mockRecordPage(filter);
   },
   async recordFilterOptions() {
-    return mockFilterOptions;
+    return mockFilterOptionsForScenario();
   },
   async exportPublicJson() {
     return undefined;
@@ -134,7 +140,7 @@ export const mockApi: AppApi = {
     return {
       path: path ?? "data/backups/backup-mock.zip",
       profile_count: 1,
-      record_count: mockRecords.length,
+      record_count: mockRecordsForScenario().length,
       created_at: String(Date.now()),
     };
   },
@@ -144,7 +150,7 @@ export const mockApi: AppApi = {
       profiles_seen: 1,
       profiles_created: 0,
       profiles_merged: 1,
-      records_seen: mockRecords.length,
+      records_seen: mockRecordsForScenario().length,
       records_inserted: 1,
       records_skipped: 1,
       settings_restored: true,
@@ -231,13 +237,14 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
   const profileName = session?.profileName ?? "default";
   const mode = session?.mode ?? "live_only";
-  const recordsCount = completed ? mockRecords.length : Math.min(2, Math.max(0, session?.polls ?? 0));
+  const records = mockRecordsForScenario();
+  const recordsCount = completed ? records.length : Math.min(2, Math.max(0, session?.polls ?? 0));
   return {
     session_id: sessionId,
     state: completed ? "completed" : session?.polls ? "running" : "starting",
     mode,
     records_count: recordsCount,
-    latest_records: mockRecords.slice(0, recordsCount),
+    latest_records: records.slice(0, recordsCount),
     counters: {
       packets_seen: completed ? 24 : 8,
       decoded_packets: completed ? 3 : 1,

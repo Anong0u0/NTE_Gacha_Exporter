@@ -8,21 +8,24 @@ import type {
   RecordFilter,
 } from "../types";
 import {
-  mockBanners,
+  mockBannersForScenario,
   mockProfile,
-  mockRecords,
-  mockSummary,
+  mockRecordsForScenario,
+  mockSummaryForScenario,
   mockTimeStats,
   type MockRecord,
 } from "../mock-data";
 
 export async function mockOverview() {
+  const records = mockRecordsForScenario();
+  const summary = mockSummaryForScenario();
+  const banners = mockBannersForScenario();
   return {
     profile: mockProfile,
     last_run: mockReport("default", "raw_jsonl", "sample.raw.jsonl"),
-    total_records: 182,
+    total_records: records.length,
     pool_kinds: [
-      ...mockSummary,
+      ...summary,
       {
         pool_kind: "monopoly_standard" as const,
         label: "Standard Board",
@@ -61,7 +64,7 @@ export async function mockOverview() {
         roll_point_cost_samples_5star: 0,
       },
     ],
-    banners: mockBanners,
+    banners,
     time_stats: mockTimeStats,
     rarity_distribution: [
       { rarity: 5, count: 3, percent: 0.016 },
@@ -70,27 +73,30 @@ export async function mockOverview() {
     ],
     item_ranking: [
       { item_id: "common_2", item_name: "Training Log", item_asset_refs: {}, rarity: 3, reward_count: 1, count: 44 },
-      { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: mockRecords[1].item_asset_refs, rarity: 5, reward_count: 1, count: 2 },
+      { item_id: "rare_1", item_name: "Sigrid", item_asset_refs: records.find((record) => record.item_id === "rare_1")?.item_asset_refs ?? {}, rarity: 5, reward_count: 1, count: 2 },
     ],
   };
 }
 
 export function mockSelectionDetail(selection: DashboardSelection): DashboardSelectionDetail {
-  const records = mockRecords.filter((record) =>
+  const allRecords = mockRecordsForScenario();
+  const poolSummaries = mockSummaryForScenario();
+  const banners = mockBannersForScenario();
+  const records = allRecords.filter((record) =>
     selection.kind === "pool_kind"
       ? record.pool_kind === selection.pool_kind
       : record.pool_kind === selection.pool_kind && record.derived.banner_id === selection.banner_id,
   );
   const baseSummary =
     selection.kind === "pool_kind"
-      ? mockSummary.find((item) => item.pool_kind === selection.pool_kind)
-      : mockBanners.find((banner) => banner.banner_id === selection.banner_id);
+      ? poolSummaries.find((item) => item.pool_kind === selection.pool_kind)
+      : banners.find((banner) => banner.banner_id === selection.banner_id);
   const label =
     selection.kind === "pool_kind"
       ? (baseSummary as PoolKindSummary | undefined)?.label
-      : mockBanners.find((banner) => banner.banner_id === selection.banner_id)?.title;
+      : banners.find((banner) => banner.banner_id === selection.banner_id)?.title;
   const poolKind = selection.pool_kind;
-  const fallback = mockSummary.find((item) => item.pool_kind === poolKind) ?? mockSummary[0];
+  const fallback = poolSummaries.find((item) => item.pool_kind === poolKind) ?? poolSummaries[0];
   const countableRecords = records.filter((record) => record.derived.counts_as_pull);
   const chronologicalRecords = [...countableRecords].sort(compareRecordsChronological);
   const fiveStarRecords = chronologicalRecords.filter((record) => record.derived.hit_rarity === 5);
@@ -309,7 +315,7 @@ function mockAverage4StarPity(records: MockRecord[]) {
 
 export function mockRecordPage(filter: RecordFilter) {
   const search = filter.search?.toLowerCase().trim();
-  let records = mockRecords.filter((record) => {
+  let records = mockRecordsForScenario().filter((record) => {
     if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
     if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
     if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
@@ -364,12 +370,13 @@ function compareTimeDesc(left?: string | null, right?: string | null) {
   return String(right ?? "").localeCompare(String(left ?? ""));
 }
 export function mockReport(profileName: string, sourceKind: string, sourcePath: string): ImportReport {
+  const recordCount = mockRecordsForScenario().length;
   return {
     profile_name: profileName,
     source_kind: sourceKind,
     source_path: sourcePath,
-    records_seen: mockRecords.length,
-    records_inserted: mockRecords.length,
+    records_seen: recordCount,
+    records_inserted: recordCount,
     records_skipped: 0,
     completed_at: String(Date.now()),
   };
