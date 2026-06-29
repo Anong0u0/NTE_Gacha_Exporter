@@ -331,6 +331,90 @@ fn item_ranking_returns_all_ranked_items() {
 }
 
 #[test]
+fn banner_lists_sort_by_latest_item_time_desc() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut xun_latest_gift = record(
+        "xun-latest-gift",
+        "ForkLottery_Xun",
+        "fork_dustbin",
+        "2026-01-04 10:00:00",
+    );
+    xun_latest_gift["roll_label_id"] = serde_json::json!("BPUI_LotteryResult_jidianzengli");
+    xun_latest_gift["roll_points"] = serde_json::Value::Null;
+    let document = public_document(vec![
+        record(
+            "anhunqu",
+            "ForkLottery_AnHunQu",
+            "fork_Rose",
+            "2026-01-02 10:00:00",
+        ),
+        record(
+            "kaesi",
+            "ForkLottery_Kaesi",
+            "fork_GoldWool",
+            "2026-01-03 10:00:00",
+        ),
+        record(
+            "xun-old",
+            "ForkLottery_Xun",
+            "fork_Time",
+            "2026-01-01 10:00:00",
+        ),
+        xun_latest_gift,
+        record_with_options(
+            "nanali-missing-time",
+            "ForkLottery_Nanali",
+            "fork_TigerTally",
+            None,
+            Some(1),
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
+    let options = store.record_filter_options("default", "zh-Hant").unwrap();
+
+    assert_eq!(
+        overview
+            .banners
+            .iter()
+            .map(|banner| banner.banner_id.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "ForkLottery_Xun",
+            "ForkLottery_Kaesi",
+            "ForkLottery_AnHunQu",
+            "ForkLottery_Nanali",
+        ]
+    );
+    assert_eq!(
+        options
+            .banners
+            .iter()
+            .map(|banner| banner.banner_id.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "ForkLottery_Xun",
+            "ForkLottery_Kaesi",
+            "ForkLottery_AnHunQu",
+            "ForkLottery_Nanali",
+        ]
+    );
+    assert_eq!(
+        overview
+            .banners
+            .iter()
+            .find(|banner| banner.banner_id == "ForkLottery_Xun")
+            .unwrap()
+            .total_pulls,
+        1
+    );
+}
+
+#[test]
 fn fork_stats_separate_twenty_five_seventy_five_wins_losses_and_forced_up() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

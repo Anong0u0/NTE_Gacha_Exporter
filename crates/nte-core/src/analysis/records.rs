@@ -185,7 +185,12 @@ pub fn record_filter_options(
 }
 
 fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> RecordFilterOptions {
-    let mut banners: HashMap<String, RecordBannerOption> = HashMap::new();
+    struct BannerOptionAccumulator {
+        option: RecordBannerOption,
+        latest_item_time: Option<String>,
+    }
+
+    let mut banners: BTreeMap<String, BannerOptionAccumulator> = BTreeMap::new();
     let mut roll_buckets: HashMap<RollBucket, u64> = HashMap::new();
     let mut item_kinds: HashMap<ItemKind, u64> = HashMap::new();
 
@@ -195,27 +200,39 @@ fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> Reco
         if let Some(banner_id) = record.derived.banner_id.as_ref() {
             banners
                 .entry(banner_id.clone())
-                .and_modify(|option| option.count += 1)
-                .or_insert_with(|| RecordBannerOption {
-                    banner_id: banner_id.clone(),
-                    pool_kind: record.pool_kind,
-                    title: record
-                        .banner
-                        .title
-                        .clone()
-                        .unwrap_or_else(|| banner_id.clone()),
-                    count: 1,
+                .and_modify(|accumulator| {
+                    accumulator.option.count += 1;
+                    if accumulator.latest_item_time.as_deref() < record.time.as_deref() {
+                        accumulator.latest_item_time = record.time.clone();
+                    }
+                })
+                .or_insert_with(|| BannerOptionAccumulator {
+                    latest_item_time: record.time.clone(),
+                    option: RecordBannerOption {
+                        banner_id: banner_id.clone(),
+                        pool_kind: record.pool_kind,
+                        title: record
+                            .banner
+                            .title
+                            .clone()
+                            .unwrap_or_else(|| banner_id.clone()),
+                        count: 1,
+                    },
                 });
         }
     }
 
     let mut banners = banners.into_values().collect::<Vec<_>>();
     banners.sort_by(|left, right| {
-        left.pool_kind
-            .cmp(&right.pool_kind)
-            .then_with(|| left.title.cmp(&right.title))
-            .then_with(|| left.banner_id.cmp(&right.banner_id))
+        compare_latest_item_time_desc(
+            left.latest_item_time.as_deref(),
+            right.latest_item_time.as_deref(),
+        )
     });
+    let banners = banners
+        .into_iter()
+        .map(|accumulator| accumulator.option)
+        .collect();
 
     RecordFilterOptions {
         banners,

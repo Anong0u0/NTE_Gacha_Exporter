@@ -1,3 +1,8 @@
+struct BannerSummarySortRow {
+    summary: BannerSummary,
+    latest_item_time: Option<String>,
+}
+
 fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
     let mut grouped: BTreeMap<String, Vec<&DisplayRecord>> = BTreeMap::new();
     for record in records {
@@ -11,6 +16,7 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
         .filter_map(|(banner_id, banner_records)| {
             let first = banner_records.first().copied()?;
             let latest = latest_countable_record(&banner_records, Some(&banner_id));
+            let latest_item_time = latest_item_time(&banner_records);
             let resource = resource_counters(banner_records.iter().copied());
             let five_star_pity = banner_records
                 .iter()
@@ -26,72 +32,92 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
                 .max_by(|left, right| compare_scoped_analysis(left, right, Some(&banner_id)))
                 .cloned();
 
-            Some(BannerSummary {
-                banner_id: banner_id.clone(),
-                pool_id: first.pool_id.clone(),
-                pool_kind: first.pool_kind,
-                banner_type: first.banner.banner_type.clone(),
-                title: first
-                    .banner
-                    .title
-                    .clone()
-                    .unwrap_or_else(|| banner_id.clone()),
-                version: first.derived.banner_version.clone(),
-                start_at: first.banner.start_at.clone(),
-                end_at: first.banner.end_at.clone(),
-                asset_refs: first.banner.asset_refs.clone(),
-                total_pulls: count_pulls(&banner_records),
-                roll_points_total: resource.total,
-                known_roll_point_records: resource.known,
-                missing_roll_point_records: resource.missing,
-                five_star_count: count_hits(&banner_records, 5),
-                four_star_count: count_hits(&banner_records, 4),
-                current_5star_pity: latest
-                    .map(current_5star_pity_after_record)
-                    .unwrap_or_default(),
-                average_5star_pity: average_u64(&five_star_pity),
-                rate_up_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::Up),
-                off_rate_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::OffRate),
-                not_applicable_rate_up_5_count: count_item_rate_up(
-                    &banner_records,
-                    5,
-                    RateUpResult::NotApplicable,
-                ),
-                unknown_rate_up_5_count: count_item_rate_up(
-                    &banner_records,
-                    5,
-                    RateUpResult::Unknown,
-                ),
-                fork_win_count: fork_win_stats.win_count,
-                fork_loss_count: fork_win_stats.loss_count,
-                fork_forced_up_count: fork_win_stats.forced_up_count,
-                fork_observed_25_75_win_rate: fork_win_stats.observed_win_rate(),
-                rate_up_4_count: count_hit_rate_up(&banner_records, 4, RateUpResult::Up),
-                off_rate_4_count: count_hit_rate_up(&banner_records, 4, RateUpResult::OffRate),
-                not_applicable_rate_up_4_count: count_hit_rate_up(
-                    &banner_records,
-                    4,
-                    RateUpResult::NotApplicable,
-                ),
-                unknown_rate_up_4_count: count_hit_rate_up(
-                    &banner_records,
-                    4,
-                    RateUpResult::Unknown,
-                ),
-                average_roll_points_to_5star: average_i64(&roll_point_costs),
-                roll_point_cost_samples_5star: roll_point_costs.len() as u64,
-                latest_hit,
+            Some(BannerSummarySortRow {
+                latest_item_time,
+                summary: BannerSummary {
+                    banner_id: banner_id.clone(),
+                    pool_id: first.pool_id.clone(),
+                    pool_kind: first.pool_kind,
+                    banner_type: first.banner.banner_type.clone(),
+                    title: first
+                        .banner
+                        .title
+                        .clone()
+                        .unwrap_or_else(|| banner_id.clone()),
+                    version: first.derived.banner_version.clone(),
+                    start_at: first.banner.start_at.clone(),
+                    end_at: first.banner.end_at.clone(),
+                    asset_refs: first.banner.asset_refs.clone(),
+                    total_pulls: count_pulls(&banner_records),
+                    roll_points_total: resource.total,
+                    known_roll_point_records: resource.known,
+                    missing_roll_point_records: resource.missing,
+                    five_star_count: count_hits(&banner_records, 5),
+                    four_star_count: count_hits(&banner_records, 4),
+                    current_5star_pity: latest
+                        .map(current_5star_pity_after_record)
+                        .unwrap_or_default(),
+                    average_5star_pity: average_u64(&five_star_pity),
+                    rate_up_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::Up),
+                    off_rate_5_count: count_item_rate_up(&banner_records, 5, RateUpResult::OffRate),
+                    not_applicable_rate_up_5_count: count_item_rate_up(
+                        &banner_records,
+                        5,
+                        RateUpResult::NotApplicable,
+                    ),
+                    unknown_rate_up_5_count: count_item_rate_up(
+                        &banner_records,
+                        5,
+                        RateUpResult::Unknown,
+                    ),
+                    fork_win_count: fork_win_stats.win_count,
+                    fork_loss_count: fork_win_stats.loss_count,
+                    fork_forced_up_count: fork_win_stats.forced_up_count,
+                    fork_observed_25_75_win_rate: fork_win_stats.observed_win_rate(),
+                    rate_up_4_count: count_hit_rate_up(&banner_records, 4, RateUpResult::Up),
+                    off_rate_4_count: count_hit_rate_up(&banner_records, 4, RateUpResult::OffRate),
+                    not_applicable_rate_up_4_count: count_hit_rate_up(
+                        &banner_records,
+                        4,
+                        RateUpResult::NotApplicable,
+                    ),
+                    unknown_rate_up_4_count: count_hit_rate_up(
+                        &banner_records,
+                        4,
+                        RateUpResult::Unknown,
+                    ),
+                    average_roll_points_to_5star: average_i64(&roll_point_costs),
+                    roll_point_cost_samples_5star: roll_point_costs.len() as u64,
+                    latest_hit,
+                },
             })
         })
         .collect::<Vec<_>>();
 
     summaries.sort_by(|left, right| {
-        left.pool_kind
-            .cmp(&right.pool_kind)
-            .then_with(|| left.title.cmp(&right.title))
-            .then_with(|| left.banner_id.cmp(&right.banner_id))
+        compare_latest_item_time_desc(
+            left.latest_item_time.as_deref(),
+            right.latest_item_time.as_deref(),
+        )
     });
-    summaries
+    summaries.into_iter().map(|row| row.summary).collect()
+}
+
+fn latest_item_time(records: &[&DisplayRecord]) -> Option<String> {
+    records
+        .iter()
+        .filter_map(|record| record.time.as_deref())
+        .max()
+        .map(str::to_string)
+}
+
+fn compare_latest_item_time_desc(left: Option<&str>, right: Option<&str>) -> std::cmp::Ordering {
+    match (left, right) {
+        (Some(left), Some(right)) => right.cmp(left),
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => std::cmp::Ordering::Equal,
+    }
 }
 
 fn time_stats(records: &[DisplayRecord]) -> TimeStats {
