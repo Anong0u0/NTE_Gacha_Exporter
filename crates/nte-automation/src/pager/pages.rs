@@ -220,7 +220,8 @@ impl AutoPager {
         let previous = request.previous;
         for attempt in 1..=2 {
             let clicked_at = Instant::now();
-            window::foreground_click(&self.window, request.point)?;
+            let click = window::foreground_click(&self.window, request.point)?;
+            self.record_click(click);
             match self.wait_for_page(
                 request.page_rect,
                 request.pool,
@@ -414,7 +415,8 @@ impl AutoPager {
     }
 
     fn click(&mut self, point: Point, settle: Option<f64>) -> AutomationResult<()> {
-        window::foreground_click(&self.window, point)?;
+        let click = window::foreground_click(&self.window, point)?;
+        self.record_click(click);
         thread::sleep(Duration::from_secs_f64(settle.unwrap_or(0.1)));
         Ok(())
     }
@@ -479,37 +481,53 @@ impl AutoPager {
         }
     }
 
-    fn record_page_number_failure(&mut self, failure_kind: &str, page_rect: crate::model::Rect) {
-        self.diagnostics.failure_kind = Some(failure_kind.to_string());
-        self.diagnostics.visual.page_rect = Some(page_rect);
-        if self.diagnostics.page_context_png.is_some() {
+    fn record_click(&mut self, click: MouseClickDiagnostics) {
+        self.diagnostics.input.mouse_buttons_swapped = Some(click.mouse_buttons_swapped);
+        self.diagnostics.input.last_click = Some(click);
+    }
+
+    fn record_template_failure(&mut self, name: &str) {
+        self.diagnostics.failure_kind = Some("template_not_found".to_string());
+        if self.diagnostics.context_png.is_some() {
             return;
         }
-        match self.capture_page_context_png(page_rect) {
-            Ok((context_rect, png)) => {
-                self.diagnostics.visual.context_rect = Some(context_rect);
-                self.diagnostics.page_context_png = Some(png);
+        match self.matcher.search_rect(name, self.window.client_size()) {
+            Ok(search_rect) => {
+                self.diagnostics.visual.template_search_rect = Some(search_rect);
+                self.record_context_failure(search_rect);
             }
             Err(error) => {
-                if let Some(ocr) = self.diagnostics.ocr.as_mut() {
-                    if !ocr.error.is_empty() {
-                        ocr.error.push_str("; ");
-                    }
-                    ocr.error
-                        .push_str(&format!("page context capture failed: {error}"));
-                } else {
-                    self.diagnostics.ocr = Some(OcrReadDiagnostics {
-                        error: format!("page context capture failed: {error}"),
-                        ..OcrReadDiagnostics::default()
-                    });
-                }
+                self.diagnostics.visual.context_error =
+                    Some(format!("template search rect unavailable: {error}"));
             }
         }
     }
 
-    fn capture_page_context_png(
+    fn record_page_number_failure(&mut self, failure_kind: &str, page_rect: crate::model::Rect) {
+        self.diagnostics.failure_kind = Some(failure_kind.to_string());
+        self.diagnostics.visual.page_rect = Some(page_rect);
+        self.record_context_failure(page_rect);
+    }
+
+    fn record_context_failure(&mut self, highlight_rect: crate::model::Rect) {
+        if self.diagnostics.context_png.is_some() {
+            return;
+        }
+        match self.capture_context_png(highlight_rect) {
+            Ok((context_rect, png)) => {
+                self.diagnostics.visual.context_rect = Some(context_rect);
+                self.diagnostics.context_png = Some(png);
+            }
+            Err(error) => {
+                self.diagnostics.visual.context_error =
+                    Some(format!("context capture failed: {error}"));
+            }
+        }
+    }
+
+    fn capture_context_png(
         &mut self,
-        page_rect: crate::model::Rect,
+        highlight_rect: crate::model::Rect,
     ) -> AutomationResult<(crate::model::Rect, Vec<u8>)> {
         use std::io::Cursor;
 
@@ -520,15 +538,15 @@ impl AutoPager {
         let cursor_position = window::current_cursor_client_position(&self.window).ok();
         self.diagnostics.visual.cursor_client_position = cursor_position;
         let cursor_for_context = cursor_position.filter(|point| point_in_size(*point, client_size));
-        let context_rect = page_context_rect(page_rect, client_size, cursor_for_context);
+        let context_rect = page_context_rect(highlight_rect, client_size, cursor_for_context);
         let mut image = self.capture.capture_rect(context_rect)?;
         self.diagnostics.visual.cursor_in_context =
             cursor_position.map(|point| rect_contains_point(context_rect, point));
         let overlay = crate::model::Rect {
-            x: page_rect.x - context_rect.x,
-            y: page_rect.y - context_rect.y,
-            width: page_rect.width,
-            height: page_rect.height,
+            x: highlight_rect.x - context_rect.x,
+            y: highlight_rect.y - context_rect.y,
+            width: highlight_rect.width,
+            height: highlight_rect.height,
         };
         draw_rect_outline(&mut image, overlay, Rgba([255, 0, 0, 255]), 2);
         if let Some(cursor) = cursor_position.filter(|point| rect_contains_point(context_rect, *point)) {

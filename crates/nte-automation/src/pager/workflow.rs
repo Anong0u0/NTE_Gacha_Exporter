@@ -147,6 +147,7 @@ impl AutoPager {
         let detail = last_error
             .map(|error| format!(": {error}"))
             .unwrap_or_default();
+        self.record_template_failure(name);
         Err(AutomationError::message(format!(
             "screen template not found after wait: {name}{detail}"
         )))

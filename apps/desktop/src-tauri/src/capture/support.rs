@@ -1,12 +1,13 @@
 
 const SUPPORT_SCHEMA: &str = "nte-gacha-capture-support";
-const SUPPORT_SCHEMA_VERSION: u32 = 1;
+const SUPPORT_SCHEMA_VERSION: u32 = 2;
 const CAPTURE_SUPPORT_RETENTION_LIMIT: usize = 3;
 const SUPPORT_DATA_DIR: &str = "data";
 const SUPPORT_DIR: &str = "support";
 const SUPPORT_PREFIX: &str = "capture-";
 const SUPPORT_JSON_SUFFIX: &str = ".json";
-const SUPPORT_IMAGE_SUFFIX: &str = "-page-number.png";
+const SUPPORT_IMAGE_SUFFIX: &str = "-context.png";
+const LEGACY_SUPPORT_IMAGE_SUFFIX: &str = "-page-number.png";
 
 #[derive(Debug, Clone, Default)]
 struct SupportWriteResult {
@@ -98,9 +99,9 @@ fn write_support_image(
     write_error: &mut Option<String>,
 ) -> Option<PathBuf> {
     let bytes = auto_result
-        .and_then(|result| result.diagnostics.page_context_png.as_ref())
+        .and_then(|result| result.diagnostics.context_png.as_ref())
         .filter(|bytes| !bytes.is_empty())?;
-    let path = support_dir.join(format!("{base}-page-number.png"));
+    let path = support_dir.join(format!("{base}{SUPPORT_IMAGE_SUFFIX}"));
     if let Err(error) = fs::write(&path, bytes) {
         *write_error = Some(format!("write support image failed: {error}"));
         return None;
@@ -185,6 +186,9 @@ fn rotate_capture_support_files(
         remove_regular_file_if_exists(
             &support_dir.join(format!("{}{}", anchor.base, SUPPORT_IMAGE_SUFFIX)),
         )?;
+        remove_regular_file_if_exists(
+            &support_dir.join(format!("{}{}", anchor.base, LEGACY_SUPPORT_IMAGE_SUFFIX)),
+        )?;
     }
     remove_orphan_support_images(&support_dir, &keep_bases)
 }
@@ -258,7 +262,9 @@ fn support_json_base(file_name: &std::ffi::OsStr) -> Option<String> {
 
 fn support_image_base(file_name: &std::ffi::OsStr) -> Option<String> {
     let name = file_name.to_str()?;
-    let base = name.strip_suffix(SUPPORT_IMAGE_SUFFIX)?;
+    let base = name
+        .strip_suffix(SUPPORT_IMAGE_SUFFIX)
+        .or_else(|| name.strip_suffix(LEGACY_SUPPORT_IMAGE_SUFFIX))?;
     support_base_valid(base).then(|| base.to_string())
 }
 
@@ -335,6 +341,7 @@ fn auto_page_diagnostics(diagnostics: &AutoPageDiagnostics) -> Value {
         "failure_kind": diagnostics.failure_kind,
         "window": diagnostics.window,
         "visual": diagnostics.visual,
+        "input": diagnostics.input,
         "ocr": diagnostics.ocr,
     })
 }

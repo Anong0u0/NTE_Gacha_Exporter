@@ -157,6 +157,7 @@ mod tests {
         let path = result.json_path.unwrap();
         let text = std::fs::read_to_string(path).unwrap();
         assert!(text.contains("nte-gacha-capture-support"));
+        assert!(text.contains("\"schema_version\": 2"));
         assert!(text.contains("raw_path_exists"));
         assert!(text.contains("\"raw_path_exists\": true"));
         assert!(!text.contains("private-record"));
@@ -171,7 +172,13 @@ mod tests {
         let status = failed_status("session-image");
         let mut auto_result =
             AutoPageRunResult::failed("cannot read page number", Vec::new(), Vec::new());
-        auto_result.diagnostics.page_context_png = Some(vec![137, 80, 78, 71]);
+        auto_result.diagnostics.context_png = Some(vec![137, 80, 78, 71]);
+        auto_result.diagnostics.input.mouse_buttons_swapped = Some(true);
+        auto_result.diagnostics.input.last_click = Some(nte_automation::MouseClickDiagnostics {
+            point: nte_automation::Point { x: 450, y: 1000 },
+            physical_button: nte_automation::MouseButton::Right,
+            mouse_buttons_swapped: true,
+        });
 
         let result = write_capture_support(SupportRequest {
             root: tmp.path(),
@@ -181,10 +188,15 @@ mod tests {
         });
 
         let image_path = result.image_path.unwrap();
-        assert_eq!(std::fs::read(image_path).unwrap(), vec![137, 80, 78, 71]);
-        assert!(std::fs::read_to_string(result.json_path.unwrap())
-            .unwrap()
-            .contains("support_image_path"));
+        assert_eq!(
+            std::fs::read(&image_path).unwrap(),
+            vec![137, 80, 78, 71]
+        );
+        assert!(image_path.ends_with("capture-session-image-context.png"));
+        let text = std::fs::read_to_string(result.json_path.unwrap()).unwrap();
+        assert!(text.contains("support_image_path"));
+        assert!(text.contains("\"input\""));
+        assert!(text.contains("\"physical_button\": \"right\""));
     }
 
     #[test]
@@ -236,15 +248,17 @@ mod tests {
         let support_dir = tmp.path().join("data/support");
         std::fs::create_dir_all(&support_dir).unwrap();
         write_support_bundle(&support_dir, "capture-current");
-        std::fs::write(support_dir.join("capture-orphan-page-number.png"), b"orphan").unwrap();
+        std::fs::write(support_dir.join("capture-orphan-context.png"), b"orphan").unwrap();
+        std::fs::write(support_dir.join("capture-legacy-page-number.png"), b"legacy").unwrap();
         std::fs::write(support_dir.join("notes.txt"), b"keep").unwrap();
         std::fs::create_dir(support_dir.join("capture-dir.json")).unwrap();
 
         rotate_capture_support_files(tmp.path(), 3, Some("capture-current")).unwrap();
 
         assert_support_bundle_exists(&support_dir, "capture-current");
+        assert!(!support_dir.join("capture-orphan-context.png").exists());
         assert!(!support_dir
-            .join("capture-orphan-page-number.png")
+            .join("capture-legacy-page-number.png")
             .exists());
         assert_eq!(std::fs::read(support_dir.join("notes.txt")).unwrap(), b"keep");
         assert!(support_dir.join("capture-dir.json").is_dir());
@@ -444,11 +458,7 @@ mod tests {
 
     fn write_support_bundle(support_dir: &Path, base: &str) {
         std::fs::write(support_dir.join(format!("{base}.json")), b"json").unwrap();
-        std::fs::write(
-            support_dir.join(format!("{base}-page-number.png")),
-            b"png",
-        )
-        .unwrap();
+        std::fs::write(support_dir.join(format!("{base}-context.png")), b"png").unwrap();
     }
 
     fn automation_record(
@@ -521,16 +531,12 @@ mod tests {
 
     fn assert_support_bundle_exists(support_dir: &Path, base: &str) {
         assert!(support_dir.join(format!("{base}.json")).is_file());
-        assert!(support_dir
-            .join(format!("{base}-page-number.png"))
-            .is_file());
+        assert!(support_dir.join(format!("{base}-context.png")).is_file());
     }
 
     fn assert_support_bundle_missing(support_dir: &Path, base: &str) {
         assert!(!support_dir.join(format!("{base}.json")).exists());
-        assert!(!support_dir
-            .join(format!("{base}-page-number.png"))
-            .exists());
+        assert!(!support_dir.join(format!("{base}-context.png")).exists());
     }
 
     #[cfg(unix)]

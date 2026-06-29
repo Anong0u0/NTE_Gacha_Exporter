@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::error::{AutomationError, AutomationResult};
-use crate::model::{Point, Size};
+use crate::model::{MouseButton, MouseClickDiagnostics, Point, Size};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClientRect {
@@ -179,27 +179,60 @@ pub fn force_foreground(window: &GameWindow) -> AutomationResult<()> {
     )))
 }
 
+pub fn primary_mouse_button(mouse_buttons_swapped: bool) -> MouseButton {
+    if mouse_buttons_swapped {
+        MouseButton::Right
+    } else {
+        MouseButton::Left
+    }
+}
+
 #[cfg(not(windows))]
-pub fn foreground_click(_window: &GameWindow, _point: Point) -> AutomationResult<()> {
-    require_windows()
+pub fn foreground_click(
+    _window: &GameWindow,
+    _point: Point,
+) -> AutomationResult<MouseClickDiagnostics> {
+    require_windows()?;
+    unreachable!()
 }
 
 #[cfg(windows)]
-pub fn foreground_click(window: &GameWindow, point: Point) -> AutomationResult<()> {
+pub fn foreground_click(
+    window: &GameWindow,
+    point: Point,
+) -> AutomationResult<MouseClickDiagnostics> {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, mouse_event,
+        MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
+        mouse_event,
     };
 
     force_foreground(window)?;
     let screen_point = client_to_screen(window.hwnd, point)?;
+    let mouse_buttons_swapped = mouse_buttons_swapped();
+    let physical_button = primary_mouse_button(mouse_buttons_swapped);
+    let (button_down, button_up) = match physical_button {
+        MouseButton::Left => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP),
+        MouseButton::Right => (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
+    };
     unsafe {
         move_cursor(screen_point)?;
         thread::sleep(Duration::from_millis(25));
-        mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+        mouse_event(button_down, 0, 0, 0, 0);
         thread::sleep(Duration::from_millis(35));
-        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+        mouse_event(button_up, 0, 0, 0, 0);
     }
-    Ok(())
+    Ok(MouseClickDiagnostics {
+        point,
+        physical_button,
+        mouse_buttons_swapped,
+    })
+}
+
+#[cfg(windows)]
+fn mouse_buttons_swapped() -> bool {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
+
+    unsafe { GetSystemMetrics(SM_SWAPBUTTON) != 0 }
 }
 
 #[cfg(windows)]
@@ -413,5 +446,16 @@ fn try_force_foreground(hwnd: windows_sys::Win32::Foundation::HWND) {
             keybd_event(VK_MENU as u8, 0, KEYEVENTF_KEYUP, 0);
             SetForegroundWindow(hwnd);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn primary_mouse_button_follows_swap_setting() {
+        assert_eq!(primary_mouse_button(false), MouseButton::Left);
+        assert_eq!(primary_mouse_button(true), MouseButton::Right);
     }
 }

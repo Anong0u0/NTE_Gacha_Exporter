@@ -90,6 +90,26 @@ pub struct TemplateMatch {
     pub candidate_count: u64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MouseButton {
+    Left,
+    Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MouseClickDiagnostics {
+    pub point: Point,
+    pub physical_button: MouseButton,
+    pub mouse_buttons_swapped: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AutoPageInputDiagnostics {
+    pub mouse_buttons_swapped: Option<bool>,
+    pub last_click: Option<MouseClickDiagnostics>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PageReadHintDiagnostics {
     pub previous_current: Option<u32>,
@@ -126,7 +146,9 @@ pub struct AutoPageWindowDiagnostics {
 pub struct AutoPageVisualDiagnostics {
     pub pool: Option<String>,
     pub page_rect: Option<Rect>,
+    pub template_search_rect: Option<Rect>,
     pub context_rect: Option<Rect>,
+    pub context_error: Option<String>,
     pub cursor_client_position: Option<Point>,
     pub cursor_in_context: Option<bool>,
     pub next_button: Option<Point>,
@@ -138,9 +160,10 @@ pub struct AutoPageDiagnostics {
     pub failure_kind: Option<String>,
     pub window: Option<AutoPageWindowDiagnostics>,
     pub visual: AutoPageVisualDiagnostics,
+    pub input: AutoPageInputDiagnostics,
     pub ocr: Option<OcrReadDiagnostics>,
     #[serde(skip)]
-    pub page_context_png: Option<Vec<u8>>,
+    pub context_png: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

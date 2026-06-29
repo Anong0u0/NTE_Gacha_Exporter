@@ -8,7 +8,7 @@ use crate::matcher::ImageTemplateMatcher;
 use crate::model::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
-    AutoPageWindowDiagnostics, OcrReadDiagnostics, PageNumber, Point, RecordSnapshot, Size,
+    AutoPageWindowDiagnostics, MouseClickDiagnostics, PageNumber, Point, RecordSnapshot, Size,
     TemplateMatch,
 };
 use crate::ocr::{PageReadHint, WindowsOcrClient};
