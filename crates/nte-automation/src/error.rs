@@ -10,9 +10,6 @@ pub enum AutomationError {
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
-    #[cfg(windows)]
-    #[error("windows error: {0}")]
-    Windows(#[from] windows::core::Error),
 }
 
 pub type AutomationResult<T> = Result<T, AutomationError>;

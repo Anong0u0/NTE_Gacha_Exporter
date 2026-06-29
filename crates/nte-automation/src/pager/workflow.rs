@@ -9,7 +9,7 @@ impl AutoPager {
             options,
             window: window.clone(),
             capture: WindowCaptureClient::new(window.hwnd),
-            ocr: WindowsOcrClient::new("en-US"),
+            page_reader: PageNumberReader::default(),
             matcher: ImageTemplateMatcher::new(scaled_profile.clone()),
             profile: scaled_profile,
             started_at: Instant::now(),

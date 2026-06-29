@@ -343,13 +343,13 @@ impl AutoPager {
         }
         if let Some(error) = last_error {
             self.status(
-                StatusEvent::new("OCR waiting ended", "diagnostic")
+                StatusEvent::new("page number waiting ended", "diagnostic")
                     .technical_detail(&error.to_string()),
             );
             if !saw_previous {
                 self.record_page_number_failure("page_number_unreadable_after_click", page_rect);
                 return Err(AutomationError::message(format!(
-                    "OCR unreadable after click: {error}"
+                    "page number unreadable after click: {error}"
                 )));
             }
         }
@@ -459,7 +459,9 @@ impl AutoPager {
     ) -> AutomationResult<PageNumber> {
         self.focus_window()?;
         let image = self.capture.capture_rect(page_rect)?;
-        let (result, diagnostics) = self.ocr.read_page_number_with_hint_diagnostics(&image, hint);
+        let (result, diagnostics) = self
+            .page_reader
+            .read_page_number_with_hint_diagnostics(&image, hint);
         self.diagnostics.ocr = Some(diagnostics);
         result
     }

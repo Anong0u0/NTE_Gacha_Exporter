@@ -122,6 +122,10 @@ pub struct OcrAttemptDiagnostic {
     pub candidate_index: usize,
     pub size: Size,
     pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub score: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub glyph_count: Option<usize>,
     pub error: Option<String>,
 }
 

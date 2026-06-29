@@ -2084,7 +2084,7 @@ dependencies = [
 
 [[package]]
 name = "nte-assets"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "image",
  "nte-core",
@@ -2098,19 +2098,18 @@ dependencies = [
 
 [[package]]
 name = "nte-automation"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "image",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
- "windows 0.61.3",
  "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "nte-capture"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2125,7 +2124,7 @@ dependencies = [
 
 [[package]]
 name = "nte-core"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "atomic-write-file",
  "serde",
@@ -2137,7 +2136,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-cli"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "chrono",
  "clap",
@@ -2156,7 +2155,7 @@ dependencies = [
 
 [[package]]
 name = "nte-gacha-exporter-desktop"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "nte-automation",
  "nte-capture",
@@ -2175,7 +2174,7 @@ dependencies = [
 
 [[package]]
 name = "nte-store"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "atomic-write-file",
  "nte-capture",
@@ -2189,7 +2188,7 @@ dependencies = [
 
 [[package]]
 name = "nte-update"
-version = "1.1.4"
+version = "1.1.5-rc1"
 dependencies = [
  "nte-core",
  "semver",

@@ -15,14 +15,6 @@ serde_json.workspace = true
 thiserror.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = [
-    "Foundation",
-    "Globalization",
-    "Graphics_Imaging",
-    "Media_Ocr",
-    "Storage",
-    "Storage_Streams",
-] }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_Graphics_Gdi",

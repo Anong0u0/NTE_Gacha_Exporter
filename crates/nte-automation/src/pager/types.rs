@@ -11,7 +11,7 @@ use crate::model::{
     AutoPageWindowDiagnostics, MouseClickDiagnostics, PageNumber, Point, RecordSnapshot, Size,
     TemplateMatch,
 };
-use crate::ocr::{PageReadHint, WindowsOcrClient};
+use crate::ocr::{PageNumberReader, PageReadHint};
 use crate::profile::{AutomationProfile, WorkflowStep, load_profile};
 use crate::screenshot::WindowCaptureClient;
 use crate::tooltip::AutomationTooltip;
@@ -50,7 +50,7 @@ struct AutoPager {
     window: GameWindow,
     profile: AutomationProfile,
     capture: WindowCaptureClient,
-    ocr: WindowsOcrClient,
+    page_reader: PageNumberReader,
     matcher: ImageTemplateMatcher,
     tooltip: AutomationTooltip,
     started_at: Instant,
