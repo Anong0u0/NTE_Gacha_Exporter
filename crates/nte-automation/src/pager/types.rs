@@ -6,7 +6,8 @@ use std::time::{Duration, Instant};
 use crate::error::{AutomationError, AutomationResult};
 use crate::matcher::ImageTemplateMatcher;
 use crate::model::{
-    AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
+    AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
+    AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
     AutoPageWindowDiagnostics, OcrReadDiagnostics, PageNumber, Point, RecordSnapshot, Size,
     TemplateMatch,
 };
@@ -16,9 +17,7 @@ use crate::screenshot::WindowCaptureClient;
 use crate::tooltip::AutomationTooltip;
 use crate::window::{self, GameWindow};
 
-const PAGE_RECORD_MIN_WAIT: Duration = Duration::from_millis(300);
 const FRESH_PAGE_STABLE_WAIT: Duration = Duration::from_millis(600);
-const INCREMENTAL_DUPLICATE_RECORD_THRESHOLD: usize = 6;
 
 pub fn run_auto_page(options: AutoPageOptions) -> AutoPageResult {
     let non_interactive = options.non_interactive;
@@ -63,4 +62,25 @@ struct PoolPageRun {
     skipped: bool,
     visited_pages: u32,
     last_page: u32,
+}
+
+struct PageClickRequest<'a> {
+    page_rect: crate::model::Rect,
+    point: Point,
+    pool: &'a str,
+    step: &'a str,
+    previous: PageNumber,
+    expected_page: u32,
+    visited_pages: u32,
+}
+
+enum PageClickOutcome {
+    Changed(PageNumber),
+    SkipPool(PageNumber),
+}
+
+enum PageWaitOutcome {
+    Changed(PageNumber),
+    SkipPool,
+    Unchanged,
 }

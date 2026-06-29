@@ -121,6 +121,13 @@ function onFullUpdateChange(event: Event) {
             </div>
             <div class="status-dialog-body">
               <p class="status-dialog-message" :class="{ error: app.errorText }">{{ app.errorText || app.statusText || app.captureSubtitle }}</p>
+              <div v-if="app.canRetryAutoPageSlower" class="status-dialog-actions">
+                <p>{{ app.t("capture.slowRetryPrompt") }}</p>
+                <button type="button" class="primary" :disabled="app.captureActionBusy" @click="app.retryAutoPageSlower">
+                  <RefreshCw :size="17" />
+                  <span>{{ app.t("capture.slowRetry", { ms: app.nextPageRecordMinWaitMs }) }}</span>
+                </button>
+              </div>
               <p v-if="app.captureSubtitle" class="status-dialog-subtitle">{{ app.captureSubtitle }}</p>
               <div v-if="app.captureStatus" class="capture-summary">
                 <div class="capture-stats">

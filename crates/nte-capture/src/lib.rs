@@ -9,5 +9,5 @@ pub use live::{
     CaptureCounters, CaptureOptions, CaptureProgress, CaptureResult, CaptureTarget, capture_live,
 };
 pub use net::{CaptureDoctorReport, candidate_ports, capture_doctor, find_process_pid, is_admin};
-pub use protocol::{ParseWarning, ParsedRow};
+pub use protocol::{ParseWarning, ParsedRow, RecordType, SourceRef};
 pub use raw::read_raw_capture;

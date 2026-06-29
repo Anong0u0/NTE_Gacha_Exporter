@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, atomic::AtomicBool};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -163,7 +164,30 @@ pub struct RecordSnapshot {
 
 pub type StatusCallback = Arc<dyn Fn(AutoPageStatus) + Send + Sync + 'static>;
 pub type RecordSnapshotCallback = Arc<dyn Fn() -> Vec<RecordSnapshot> + Send + Sync + 'static>;
-pub type DecodedPageCountCallback = Arc<dyn Fn(&str) -> usize + Send + Sync + 'static>;
+pub type AutoPageControlCallback =
+    Arc<dyn Fn(AutoPageControlContext) -> AutoPageControlDecision + Send + Sync + 'static>;
+pub const AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD: usize = 6;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AutoPageControlContext {
+    pub pool: String,
+    pub step: String,
+    pub current_page: u32,
+    pub total_pages: u32,
+    pub visited_pages: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AutoPageControlDecision {
+    Continue,
+    WaitCapture {
+        decoded_pages: usize,
+        max_visited_pages: u32,
+    },
+    SkipPool {
+        duplicate_records: usize,
+    },
+}
 
 pub struct AutoPageOptions {
     pub pid: u32,
@@ -173,12 +197,12 @@ pub struct AutoPageOptions {
     pub tooltip: bool,
     pub known_record_keys: Vec<String>,
     pub record_snapshot: Option<RecordSnapshotCallback>,
-    pub decoded_page_count: Option<DecodedPageCountCallback>,
+    pub control: Option<AutoPageControlCallback>,
     pub on_status: Option<StatusCallback>,
     pub click_timeout: f64,
     pub click_poll_interval: f64,
+    pub page_record_min_wait: Duration,
     pub duplicate_check_timeout: f64,
-    pub max_capture_page_lag: usize,
     pub template_timeout: f64,
 }
 
@@ -192,14 +216,35 @@ impl AutoPageOptions {
             tooltip: true,
             known_record_keys: Vec::new(),
             record_snapshot: None,
-            decoded_page_count: None,
+            control: None,
             on_status: None,
-            click_timeout: 5.0,
+            click_timeout: 4.0,
             click_poll_interval: 0.2,
+            page_record_min_wait: Duration::from_millis(300),
             duplicate_check_timeout: 1.5,
-            max_capture_page_lag: 8,
             template_timeout: 5.0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    };
+    use std::time::Duration;
+
+    use super::AutoPageOptions;
+
+    #[test]
+    fn auto_page_options_defaults_use_current_page_pacing() {
+        let options = AutoPageOptions::new(42, Arc::new(AtomicBool::new(false)));
+
+        assert_eq!(options.click_timeout, 4.0);
+        assert_eq!(options.click_poll_interval, 0.2);
+        assert_eq!(options.page_record_min_wait, Duration::from_millis(300));
+        assert!(!options.stop.load(Ordering::SeqCst));
     }
 }
 

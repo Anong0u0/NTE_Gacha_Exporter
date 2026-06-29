@@ -1,7 +1,12 @@
-import type { ComputedRef, Ref } from "vue";
+import { computed, ref, type ComputedRef, type Ref } from "vue";
 
-import { api, type CaptureMode, type CaptureStatus, type ImportReport, type PendingAdminCapture } from "../api";
+import { api, type CaptureMode, type CaptureStartOptions, type CaptureStatus, type ImportReport, type PendingAdminCapture } from "../api";
 import type { I18nKey } from "./i18n";
+
+const CAPTURE_WINDOW_STALLED_CODE = "auto_page_capture_window_stalled";
+const DEFAULT_PAGE_RECORD_MIN_WAIT_MS = 300;
+const PAGE_RECORD_RETRY_STEP_MS = 200;
+const MAX_PAGE_RECORD_MIN_WAIT_MS = 1500;
 
 type CaptureActionsDeps = {
   activeProfileName: Ref<string>;
@@ -26,6 +31,18 @@ type CaptureActionsDeps = {
 
 export function createCaptureActions(deps: CaptureActionsDeps) {
   let capturePollTimer: ReturnType<typeof setInterval> | null = null;
+  const pageRecordMinWaitMs = ref(DEFAULT_PAGE_RECORD_MIN_WAIT_MS);
+
+  const canRetryAutoPageSlower = computed(() =>
+    deps.captureStatus.value?.state === "failed"
+      && deps.captureStatus.value.error?.code === CAPTURE_WINDOW_STALLED_CODE
+      && !deps.captureActionBusy.value
+      && Boolean(deps.activeProfileName.value),
+  );
+
+  const nextPageRecordMinWaitMs = computed(() =>
+    Math.min(MAX_PAGE_RECORD_MIN_WAIT_MS, pageRecordMinWaitMs.value + PAGE_RECORD_RETRY_STEP_MS),
+  );
 
   async function startPendingAdminCapture() {
     const pending = await api.takePendingAdminCapture();
@@ -34,23 +51,25 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     deps.setActiveProfileName(pending.profile_name);
     deps.locale.value = pending.locale;
     deps.captureMode.value = pending.mode;
-    await startLiveCapture({ skipAdminRequest: true, pending });
+    pageRecordMinWaitMs.value = pending.options?.page_record_min_wait_ms ?? pageRecordMinWaitMs.value;
+    await startLiveCapture({ skipAdminRequest: true, pending, captureOptions: pending.options });
     return true;
   }
 
-  async function startLiveCapture(options: { skipAdminRequest?: boolean; pending?: PendingAdminCapture } = {}) {
+  async function startLiveCapture(options: { skipAdminRequest?: boolean; pending?: PendingAdminCapture; captureOptions?: CaptureStartOptions } = {}) {
     if ((deps.isWorkflowBusy.value && !options.skipAdminRequest) || !deps.activeProfileName.value) return;
     deps.captureActionBusy.value = true;
     deps.errorText.value = "";
     try {
+      const captureOptions = options.captureOptions ?? captureOptionsForMode(deps.captureMode.value);
       if (!options.skipAdminRequest) {
-        const relaunching = await api.requestAdminCaptureStart(deps.activeProfileName.value, deps.locale.value, deps.captureMode.value);
+        const relaunching = await api.requestAdminCaptureStart(deps.activeProfileName.value, deps.locale.value, deps.captureMode.value, captureOptions);
         if (relaunching) {
           deps.statusText.value = deps.t("status.waitingAdmin");
           return;
         }
       }
-      await applyCaptureStatus(await api.captureStart(deps.activeProfileName.value, deps.locale.value, deps.captureMode.value));
+      await applyCaptureStatus(await api.captureStart(deps.activeProfileName.value, deps.locale.value, deps.captureMode.value, captureOptions));
       deps.statusText.value = options.pending
         ? deps.t("capture.modeResumed", { mode: deps.formatCaptureMode(deps.captureMode.value) })
         : deps.t("status.captureStarted", { mode: deps.formatCaptureMode(deps.captureMode.value) });
@@ -67,6 +86,19 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
   async function startFullCapture() {
     deps.captureMode.value = "auto_page_full";
     await startLiveCapture();
+  }
+
+  async function retryAutoPageSlower() {
+    if (!canRetryAutoPageSlower.value) return;
+    const retryMode = retryCaptureMode();
+    if (!isAutoPageMode(retryMode)) return;
+    pageRecordMinWaitMs.value = nextPageRecordMinWaitMs.value;
+    deps.captureMode.value = retryMode;
+    await startLiveCapture({
+      captureOptions: {
+        page_record_min_wait_ms: pageRecordMinWaitMs.value,
+      },
+    });
   }
 
   async function stopLiveCapture() {
@@ -131,10 +163,28 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     capturePollTimer = null;
   }
 
+  function captureOptionsForMode(mode: CaptureMode): CaptureStartOptions | undefined {
+    return isAutoPageMode(mode)
+      ? { page_record_min_wait_ms: pageRecordMinWaitMs.value }
+      : undefined;
+  }
+
+  function retryCaptureMode(): CaptureMode {
+    const mode = deps.captureStatus.value?.mode ?? deps.captureMode.value;
+    return isAutoPageMode(mode) ? mode : deps.captureMode.value;
+  }
+
+  function isAutoPageMode(mode: CaptureMode) {
+    return mode === "auto_page_incremental" || mode === "auto_page_full";
+  }
+
   return {
+    canRetryAutoPageSlower,
+    nextPageRecordMinWaitMs,
     startPendingAdminCapture,
     startLiveCapture,
     startFullCapture,
+    retryAutoPageSlower,
     stopLiveCapture,
     pollCaptureStatus,
     applyCaptureStatus,

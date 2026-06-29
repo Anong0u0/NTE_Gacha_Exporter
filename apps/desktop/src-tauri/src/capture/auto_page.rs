@@ -1,10 +1,13 @@
 fn wait_for_capture_drain(
     runtime: &Arc<CaptureRuntimeSession>,
-    page_tracker: &Arc<Mutex<CapturePageTracker>>,
+    coordinator: &Arc<AutoPageCoordinator>,
     auto_result: &AutoPageRunResult,
     stop: &Arc<AtomicBool>,
 ) -> Option<RuntimeError> {
-    let required = auto_result.visited_pages_by_pool.clone();
+    let mut required = auto_result.visited_pages_by_pool.clone();
+    for pool in &auto_result.skipped_pools {
+        required.remove(pool);
+    }
     if required.is_empty() {
         return None;
     }
@@ -18,10 +21,8 @@ fn wait_for_capture_drain(
             ));
         }
 
-        let (decoded, last_decoded_at) = page_tracker
-            .lock()
-            .map(|tracker| (tracker.counts(), tracker.last_decoded_at))
-            .unwrap_or_default();
+        let decoded = coordinator.counts();
+        let last_decoded_at = coordinator.last_decoded_at();
         let missing = missing_capture_pages(&required, &decoded);
         if missing.is_empty() {
             return None;
@@ -72,38 +73,20 @@ fn missing_capture_pages(
 fn capture_progress_callback(
     runtime: Arc<CaptureRuntimeSession>,
     locale: String,
-    snapshots: Option<Arc<Mutex<Vec<AutomationRecordSnapshot>>>>,
-    page_tracker: Option<Arc<Mutex<CapturePageTracker>>>,
+    coordinator: Option<Arc<AutoPageCoordinator>>,
 ) -> Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static> {
     let progress_state = Arc::new(Mutex::new(LiveProgressState::new(&locale)));
     Arc::new(move |progress: nte_capture::CaptureProgress| {
-        if let Some(page_tracker) = &page_tracker {
-            if let Ok(mut tracker) = page_tracker.lock() {
-                tracker.add_progress(&progress);
-            }
-        }
-        let (records_count, latest, snapshot_delta) = progress_state
+        let update = progress_state
             .lock()
-            .map(|mut state| {
-                let snapshot_delta = state.apply(&progress);
-                let records_count = if state.records.is_empty() {
-                    progress.row_count as u64
-                } else {
-                    state.records.len() as u64
-                };
-                (
-                    records_count,
-                    latest_records(&state.records),
-                    snapshot_delta,
-                )
-            })
-            .unwrap_or_else(|_| (progress.row_count as u64, Vec::new(), None));
-        if let Some(snapshot_delta) = snapshot_delta {
-            if let Some(snapshots) = &snapshots {
-                if let Ok(mut snapshot_records) = snapshots.lock() {
-                    snapshot_records.extend(snapshot_delta);
-                }
-            }
+            .map(|mut state| state.apply(&progress))
+            .unwrap_or_else(|_| LiveProgressUpdate {
+                records_count: progress.row_count as u64,
+                latest: Vec::new(),
+                automation_snapshot: None,
+            });
+        if let Some(coordinator) = &coordinator {
+            coordinator.add_progress(&progress, update.automation_snapshot.as_deref());
         }
         if let Ok(mut status) = runtime.status.lock() {
             status.state = if status.state == "stopping" {
@@ -111,8 +94,8 @@ fn capture_progress_callback(
             } else {
                 "running".to_string()
             };
-            status.records_count = records_count;
-            status.latest_records = latest;
+            status.records_count = update.records_count;
+            status.latest_records = update.latest;
             status.counters = CaptureCounters::from(progress.counters);
             status.target = serde_json::to_value(progress.target).ok();
             status.updated_at = now_seconds();

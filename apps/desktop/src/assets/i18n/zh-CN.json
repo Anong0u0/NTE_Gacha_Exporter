@@ -94,6 +94,8 @@
   "capture.poolsSkipped": "{count} 卡池略过",
   "capture.recordsSeen": "已读取 {count} 笔纪录",
   "capture.running": "撷取运行中",
+  "capture.slowRetry": "降低速度重试（{ms}ms）",
+  "capture.slowRetryPrompt": "可能网络延迟，是否降低翻页速度重试？",
   "capture.statusDetails": "撷取状态",
   "capture.starting": "开始中",
   "capture.stateCompleted": "完成",

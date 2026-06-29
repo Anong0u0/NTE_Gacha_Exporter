@@ -51,8 +51,13 @@ export type CaptureStatus = {
   import_report?: ImportReport | null;
 };
 
+export type CaptureStartOptions = {
+  page_record_min_wait_ms?: number;
+};
+
 export type PendingAdminCapture = {
   profile_name: string;
   locale: string;
   mode: CaptureMode;
+  options?: CaptureStartOptions;
 };

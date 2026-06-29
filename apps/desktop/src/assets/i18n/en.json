@@ -94,6 +94,8 @@
   "capture.poolsSkipped": "{count} pools skipped",
   "capture.recordsSeen": "{count} records seen",
   "capture.running": "Capture running",
+  "capture.slowRetry": "Retry slower ({ms}ms)",
+  "capture.slowRetryPrompt": "Network delay may have stalled capture. Retry with slower page turns?",
   "capture.statusDetails": "Capture status",
   "capture.starting": "Starting",
   "capture.stateCompleted": "Completed",

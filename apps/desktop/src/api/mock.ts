@@ -2,6 +2,7 @@ import type {
   AppApi,
   AssetResolveRequest,
   CaptureMode,
+  CaptureStartOptions,
   CaptureStatus,
   DashboardSelection,
   PoolKind,
@@ -202,7 +203,7 @@ export const mockApi: AppApi = {
   async takePendingAdminCapture() {
     return null;
   },
-  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only") {
+  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only", _options?: CaptureStartOptions) {
     const sessionId = `mock-capture-${Date.now()}`;
     mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode });
     return mockCaptureStatus(sessionId);

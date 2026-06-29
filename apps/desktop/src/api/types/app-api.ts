@@ -1,5 +1,5 @@
 import type { BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
-import type { CaptureStatus, PendingAdminCapture } from "./capture";
+import type { CaptureStartOptions, CaptureStatus, PendingAdminCapture } from "./capture";
 import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail, ProfileAnalysisView } from "./dashboard";
 import type { AssetResolveRequest, AssetResolveResult } from "./assets-pack";
 import type { RecordFilter, RecordFilterOptions, RecordList } from "./records";
@@ -36,9 +36,9 @@ export type AppApi = {
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;
   updaterInstallStaged(version: string, relaunch?: boolean): Promise<void>;
   assetsResolveRefs(refs: AssetResolveRequest[]): Promise<AssetResolveResult[]>;
-  requestAdminCaptureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<boolean>;
+  requestAdminCaptureStart(profileName: string, locale?: string, mode?: CaptureMode, options?: CaptureStartOptions): Promise<boolean>;
   takePendingAdminCapture(): Promise<PendingAdminCapture | null>;
-  captureStart(profileName: string, locale?: string, mode?: CaptureMode): Promise<CaptureStatus>;
+  captureStart(profileName: string, locale?: string, mode?: CaptureMode, options?: CaptureStartOptions): Promise<CaptureStatus>;
   captureStatus(sessionId: string): Promise<CaptureStatus>;
   captureStop(sessionId: string): Promise<CaptureStatus>;
 };

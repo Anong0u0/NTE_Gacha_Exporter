@@ -5,6 +5,7 @@ fn start_rust_capture_session(
     mode: CaptureMode,
     output_raw: Option<String>,
     known_record_keys: Vec<String>,
+    start_options: CaptureStartOptions,
 ) -> Result<CaptureStatus, ApiError> {
     let pid = find_process_pid("HTGame.exe")
         .map_err(api_error)?
@@ -59,15 +60,15 @@ fn start_rust_capture_session(
 
     let raw_out = output_raw.map(PathBuf::from);
     let locale_for_thread = locale.to_string();
-    let snapshots = Arc::new(Mutex::new(Vec::<AutomationRecordSnapshot>::new()));
-    let progress_snapshots = mode.auto_page().then(|| Arc::clone(&snapshots));
-    let page_tracker = Arc::new(Mutex::new(CapturePageTracker::default()));
-    let progress_page_tracker = mode.auto_page().then(|| Arc::clone(&page_tracker));
+    let coordinator = Arc::new(AutoPageCoordinator::new(
+        mode.full_update(),
+        &known_record_keys,
+    ));
+    let progress_coordinator = mode.auto_page().then(|| Arc::clone(&coordinator));
     let callback = capture_progress_callback(
         Arc::clone(&runtime),
         locale.to_string(),
-        progress_snapshots,
-        progress_page_tracker,
+        progress_coordinator,
     );
     let runtime_for_thread = Arc::clone(&runtime);
     let stop_for_thread = Arc::clone(&stop);
@@ -82,9 +83,8 @@ fn start_rust_capture_session(
                 stop: stop_for_thread,
                 callback,
                 mode,
-                known_record_keys,
-                snapshots,
-                page_tracker,
+                start_options,
+                coordinator,
                 app,
             });
         } else {
@@ -128,9 +128,8 @@ struct AutoPageCaptureThread {
     stop: Arc<AtomicBool>,
     callback: Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static>,
     mode: CaptureMode,
-    known_record_keys: Vec<String>,
-    snapshots: Arc<Mutex<Vec<AutomationRecordSnapshot>>>,
-    page_tracker: Arc<Mutex<CapturePageTracker>>,
+    start_options: CaptureStartOptions,
+    coordinator: Arc<AutoPageCoordinator>,
     app: AppHandle<Wry>,
 }
 
@@ -144,9 +143,8 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         stop,
         callback,
         mode,
-        known_record_keys,
-        snapshots,
-        page_tracker,
+        start_options,
+        coordinator,
         app,
     } = context;
     let capture_stop = Arc::clone(&stop);
@@ -176,35 +174,20 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
             capture_status.updated_at = now_seconds();
         }
     });
-    let snapshot_callback = {
-        let snapshots = Arc::clone(&snapshots);
-        Arc::new(move || {
-            snapshots
-                .lock()
-                .map(|records| records.clone())
-                .unwrap_or_default()
-        })
-    };
-    let decoded_page_count = {
-        let page_tracker = Arc::clone(&page_tracker);
-        Arc::new(move |pool: &str| {
-            page_tracker
-                .lock()
-                .map(|tracker| tracker.count(pool))
-                .unwrap_or_default()
-        })
+    let control = {
+        let coordinator = Arc::clone(&coordinator);
+        Arc::new(move |context: AutoPageControlContext| coordinator.decision(context))
     };
     let mut options = AutomationOptions::new(pid, Arc::clone(&stop));
     options.full_update = mode.full_update();
     options.non_interactive = true;
-    options.known_record_keys = known_record_keys;
-    options.record_snapshot = Some(snapshot_callback);
-    options.decoded_page_count = Some(decoded_page_count);
+    apply_capture_start_options(&mut options, &start_options);
+    options.control = Some(control);
     options.on_status = Some(auto_status_callback);
     let auto_result = run_auto_page(options);
     let drain_error = auto_result
         .succeeded()
-        .then(|| wait_for_capture_drain(&runtime, &page_tracker, &auto_result, &stop))
+        .then(|| wait_for_capture_drain(&runtime, &coordinator, &auto_result, &stop))
         .flatten();
     let stopped_by_user = stop.load(Ordering::SeqCst);
     stop.store(true, Ordering::SeqCst);
@@ -217,7 +200,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
     let error = if auto_result.succeeded() {
         drain_error
     } else {
-        Some(runtime_error("auto_page_failed", auto_result.message.clone()))
+        Some(auto_page_runtime_error(&auto_result.message))
     };
     finish_capture_result(
         &runtime,
@@ -236,4 +219,22 @@ fn finish_auto_page_terminal(pid: u32, stopped_by_user: bool, app: &AppHandle<Wr
         let _ = nte_automation::restore_game_home(pid);
     }
     wake_main_window(app);
+}
+
+fn auto_page_runtime_error(message: &str) -> RuntimeError {
+    let code = if message.starts_with("capture window stalled:") {
+        AUTO_PAGE_CAPTURE_WINDOW_STALLED_CODE
+    } else {
+        AUTO_PAGE_FAILED_CODE
+    };
+    runtime_error(code, message)
+}
+
+fn apply_capture_start_options(options: &mut AutomationOptions, start_options: &CaptureStartOptions) {
+    if let Some(page_record_min_wait_ms) = start_options.page_record_min_wait_ms {
+        options.page_record_min_wait = Duration::from_millis(page_record_min_wait_ms.clamp(
+            AUTO_PAGE_PAGE_RECORD_MIN_WAIT_MS,
+            AUTO_PAGE_MAX_PAGE_RECORD_MIN_WAIT_MS,
+        ));
+    }
 }

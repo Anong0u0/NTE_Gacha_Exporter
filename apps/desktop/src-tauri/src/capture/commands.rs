@@ -5,6 +5,7 @@ pub(crate) fn capture_start(
     profile_name: String,
     locale: Option<String>,
     mode: Option<CaptureMode>,
+    options: Option<CaptureStartOptions>,
 ) -> Result<CaptureStatus, ApiError> {
     let mode = mode.unwrap_or(CaptureMode::LiveOnly);
     if admin_relaunch_required()? {
@@ -38,6 +39,7 @@ pub(crate) fn capture_start(
         mode,
         output_raw.clone(),
         known_record_keys,
+        options.unwrap_or_default(),
     )?;
     status.import_report = None;
     let source_path = status.raw_path.clone().or(output_raw);

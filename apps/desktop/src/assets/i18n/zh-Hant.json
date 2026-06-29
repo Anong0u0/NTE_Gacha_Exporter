@@ -94,6 +94,8 @@
   "capture.poolsSkipped": "{count} 卡池略過",
   "capture.recordsSeen": "已讀取 {count} 筆紀錄",
   "capture.running": "擷取執行中",
+  "capture.slowRetry": "降低速度重試（{ms}ms）",
+  "capture.slowRetryPrompt": "可能網路延遲，是否降低翻頁速度重試？",
   "capture.statusDetails": "擷取狀態",
   "capture.starting": "開始中",
   "capture.stateCompleted": "完成",

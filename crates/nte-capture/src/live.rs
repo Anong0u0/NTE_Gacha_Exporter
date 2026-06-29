@@ -63,6 +63,7 @@ pub struct CaptureProgress {
     pub target: CaptureTarget,
     pub counters: CaptureCounters,
     pub new_rows: Vec<ParsedRow>,
+    pub rows_snapshot: Vec<ParsedRow>,
     pub row_count: usize,
     pub warning_count: usize,
 }
@@ -113,7 +114,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
     let mut last_packet: Option<RecentPacket> = None;
     let mut rows_snapshot: Vec<ParsedRow> = Vec::new();
     let mut last_progress_seen = 0_u64;
-    emit_progress(&options, &target, &counters, &[], 0, 0);
+    emit_progress(&options, &target, &counters, &[], &[], 0, 0);
 
     while !stop.load(Ordering::SeqCst) {
         let mut capture = pktmon::Capture::new()?;
@@ -170,6 +171,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                                 &target,
                                 &counters,
                                 &[],
+                                &rows_snapshot,
                                 rows_snapshot.len(),
                                 warnings.len(),
                             );
@@ -204,6 +206,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                                 &target,
                                 &counters,
                                 &[],
+                                &rows_snapshot,
                                 rows_snapshot.len(),
                                 warnings.len(),
                             );
@@ -221,6 +224,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                         &target,
                         &counters,
                         &update.new_rows,
+                        &rows_snapshot,
                         rows_snapshot.len(),
                         warnings.len(),
                     );
@@ -267,6 +271,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
         &target,
         &counters,
         &[],
+        &rows,
         rows.len(),
         warnings.len(),
     );
@@ -307,6 +312,7 @@ fn emit_progress(
     target: &CaptureTarget,
     counters: &CaptureCounters,
     new_rows: &[ParsedRow],
+    rows_snapshot: &[ParsedRow],
     row_count: usize,
     warning_count: usize,
 ) {
@@ -317,6 +323,7 @@ fn emit_progress(
         target: target.clone(),
         counters: counters.clone(),
         new_rows: new_rows.to_vec(),
+        rows_snapshot: rows_snapshot.to_vec(),
         row_count,
         warning_count,
     });

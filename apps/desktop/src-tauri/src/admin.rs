@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::capture::CaptureMode;
+use crate::capture::{CaptureMode, CaptureStartOptions};
 use crate::error::{ApiError, api_error, api_error_message};
 use crate::state::{AppState, with_store};
 
@@ -15,6 +15,8 @@ pub(crate) struct PendingAdminCapture {
     pub(crate) profile_name: String,
     pub(crate) locale: String,
     pub(crate) mode: CaptureMode,
+    #[serde(default)]
+    pub(crate) options: CaptureStartOptions,
 }
 
 #[tauri::command]
@@ -23,6 +25,7 @@ pub(crate) fn request_admin_capture_start(
     profile_name: String,
     locale: Option<String>,
     mode: Option<CaptureMode>,
+    options: Option<CaptureStartOptions>,
 ) -> Result<bool, ApiError> {
     let mode = mode.unwrap_or(CaptureMode::LiveOnly);
     if !admin_relaunch_required()? {
@@ -37,6 +40,7 @@ pub(crate) fn request_admin_capture_start(
         profile_name,
         locale,
         mode,
+        options: options.unwrap_or_default(),
     };
     let path = write_admin_capture_payload(&payload)?;
     relaunch_admin_with_capture_payload(&path)?;

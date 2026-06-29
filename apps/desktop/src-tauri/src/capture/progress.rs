@@ -1,4 +1,5 @@
 struct LiveProgressState {
+    locale: String,
     builder: Option<CaptureRecordBuilder>,
     records: Vec<Value>,
 }
@@ -6,28 +7,55 @@ struct LiveProgressState {
 impl LiveProgressState {
     fn new(locale: &str) -> Self {
         Self {
+            locale: locale.to_string(),
             builder: CaptureRecordBuilder::new(locale).ok(),
             records: Vec::new(),
         }
     }
 
-    fn apply(
-        &mut self,
+    fn apply(&mut self, progress: &nte_capture::CaptureProgress) -> LiveProgressUpdate {
+        if let Some(builder) = self.builder.as_mut() {
+            let delta = progress
+                .new_rows
+                .iter()
+                .map(|row| builder.build_record(row))
+                .collect::<Vec<_>>();
+            self.records
+                .extend(delta.iter().map(|record| preview_record(record.value.clone())));
+        }
+        LiveProgressUpdate {
+            records_count: if self.records.is_empty() {
+                progress.row_count as u64
+            } else {
+                self.records.len() as u64
+            },
+            latest: latest_records(&self.records),
+            automation_snapshot: self.automation_snapshot(progress),
+        }
+    }
+
+    fn automation_snapshot(
+        &self,
         progress: &nte_capture::CaptureProgress,
     ) -> Option<Vec<AutomationRecordSnapshot>> {
-        let builder = self.builder.as_mut()?;
-        let delta = progress
-            .new_rows
-            .iter()
-            .map(|row| builder.build_record(row))
-            .collect::<Vec<_>>();
-        if delta.is_empty() {
+        if !progress.rows_snapshot.is_empty() || progress.row_count == 0 {
+            let mut builder = CaptureRecordBuilder::new(&self.locale).ok()?;
+            let records = builder.build_records(&progress.rows_snapshot);
+            return Some(records.iter().filter_map(automation_snapshot).collect());
+        }
+        if progress.new_rows.is_empty() {
             return None;
         }
-        self.records
-            .extend(delta.iter().map(|record| preview_record(record.value.clone())));
-        Some(delta.iter().filter_map(automation_snapshot).collect())
+        let mut builder = CaptureRecordBuilder::new(&self.locale).ok()?;
+        let records = builder.build_records(&progress.new_rows);
+        Some(records.iter().filter_map(automation_snapshot).collect())
     }
+}
+
+struct LiveProgressUpdate {
+    records_count: u64,
+    latest: Vec<Value>,
+    automation_snapshot: Option<Vec<AutomationRecordSnapshot>>,
 }
 
 fn finish_capture_result(

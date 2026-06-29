@@ -18,7 +18,9 @@ impl AutoPager {
                 .page(page.current, page.total),
         );
         let mut visited_pages = 1_u32;
-        if self.should_skip_pool(&pool, &step.status, &page) {
+        if self.should_skip_pool(&pool, &step.status, &page)
+            || self.apply_capture_control(&pool, &step.status, &page, visited_pages)?
+        {
             return Ok(PoolPageRun {
                 pool,
                 skipped: true,
@@ -37,16 +39,45 @@ impl AutoPager {
                     .pool(&pool)
                     .page(expected, page.total),
             );
-            page = self.click_page_button(page_rect, next_button, page, expected)?;
-            visited_pages = page.current;
-            self.wait_for_capture_lag(&pool, visited_pages, page.total)?;
-            if self.should_skip_pool(&pool, &step.status, &page) {
+            if self.apply_capture_control(&pool, &step.status, &page, expected)? {
                 return Ok(PoolPageRun {
                     pool,
                     skipped: true,
                     visited_pages,
                     last_page: page.current,
                 });
+            }
+            match self.click_page_button(PageClickRequest {
+                page_rect,
+                point: next_button,
+                pool: &pool,
+                step: &step.status,
+                previous: page,
+                expected_page: expected,
+                visited_pages,
+            })? {
+                PageClickOutcome::Changed(next_page) => {
+                    page = next_page;
+                    visited_pages = page.current;
+                    if self.should_skip_pool(&pool, &step.status, &page)
+                        || self.apply_capture_control(&pool, &step.status, &page, visited_pages)?
+                    {
+                        return Ok(PoolPageRun {
+                            pool,
+                            skipped: true,
+                            visited_pages,
+                            last_page: page.current,
+                        });
+                    }
+                }
+                PageClickOutcome::SkipPool(last_page) => {
+                    return Ok(PoolPageRun {
+                        pool,
+                        skipped: true,
+                        visited_pages,
+                        last_page: last_page.current,
+                    });
+                }
             }
         }
         self.status(
@@ -76,7 +107,7 @@ impl AutoPager {
         while Instant::now() <= deadline {
             let pool_records = self.pool_records(pool);
             let duplicate_count = consecutive_known_record_count(&pool_records, &known_counts);
-            if duplicate_count >= INCREMENTAL_DUPLICATE_RECORD_THRESHOLD {
+            if duplicate_count >= AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD {
                 self.status(
                     StatusEvent::new("known records found; skipping pool", "pool_skipped")
                         .step(step)
@@ -107,21 +138,103 @@ impl AutoPager {
             .collect()
     }
 
+    fn apply_capture_control(
+        &mut self,
+        pool: &str,
+        step: &str,
+        page: &PageNumber,
+        visited_pages: u32,
+    ) -> AutomationResult<bool> {
+        let mut wait_started = None::<Instant>;
+        let mut last_wait_state = None::<(usize, u32)>;
+        loop {
+            match self.capture_control_decision(pool, step, page, visited_pages) {
+                AutoPageControlDecision::Continue => return Ok(false),
+                AutoPageControlDecision::SkipPool { duplicate_records } => {
+                    self.status(
+                        StatusEvent::new("known records found; skipping pool", "pool_skipped")
+                            .step(step)
+                            .pool(pool)
+                            .page(page.current, page.total)
+                            .technical_detail(&format!("duplicate_records={duplicate_records}")),
+                    );
+                    return Ok(true);
+                }
+                AutoPageControlDecision::WaitCapture {
+                    decoded_pages,
+                    max_visited_pages,
+                } => {
+                    if self.should_stop() {
+                        return Err(AutomationError::message("auto page stopped"));
+                    }
+                    let wait_state = (decoded_pages, max_visited_pages);
+                    if last_wait_state != Some(wait_state) {
+                        last_wait_state = Some(wait_state);
+                        wait_started = Some(Instant::now());
+                    }
+                    if wait_started
+                        .is_some_and(|started| started.elapsed().as_secs_f64() >= self.options.click_timeout)
+                    {
+                        return Err(AutomationError::message(format!(
+                            "capture window stalled: pool={pool} visited_pages={visited_pages} decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
+                        )));
+                    }
+                    self.status(
+                        StatusEvent::new("capture window waiting", "diagnostic")
+                            .pool(pool)
+                            .page(page.current, page.total)
+                            .technical_detail(&format!(
+                                "decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
+                            ))
+                            .persistent(),
+                    );
+                    self.sleep_poll();
+                }
+            }
+        }
+    }
+
+    fn capture_control_decision(
+        &self,
+        pool: &str,
+        step: &str,
+        page: &PageNumber,
+        visited_pages: u32,
+    ) -> AutoPageControlDecision {
+        let Some(callback) = &self.options.control else {
+            return AutoPageControlDecision::Continue;
+        };
+        callback(AutoPageControlContext {
+            pool: pool.to_string(),
+            step: step.to_string(),
+            current_page: page.current,
+            total_pages: page.total,
+            visited_pages,
+        })
+    }
+
     fn click_page_button(
         &mut self,
-        page_rect: crate::model::Rect,
-        point: Point,
-        previous: PageNumber,
-        expected_page: u32,
-    ) -> AutomationResult<PageNumber> {
+        request: PageClickRequest<'_>,
+    ) -> AutomationResult<PageClickOutcome> {
+        let previous = request.previous;
         for attempt in 1..=2 {
             let clicked_at = Instant::now();
-            window::foreground_click(&self.window, point)?;
-            if let Some(page) =
-                self.wait_for_page(page_rect, previous.current, expected_page, previous.total)?
-            {
-                self.settle_after_page_click(clicked_at);
-                return Ok(page);
+            window::foreground_click(&self.window, request.point)?;
+            match self.wait_for_page(
+                request.page_rect,
+                request.pool,
+                request.step,
+                &previous,
+                request.expected_page,
+                request.visited_pages,
+            )? {
+                PageWaitOutcome::Changed(page) => {
+                    self.settle_after_page_click(clicked_at);
+                    return Ok(PageClickOutcome::Changed(page));
+                }
+                PageWaitOutcome::SkipPool => return Ok(PageClickOutcome::SkipPool(previous)),
+                PageWaitOutcome::Unchanged => {}
             }
             if attempt < 2 {
                 self.status(
@@ -132,56 +245,25 @@ impl AutoPager {
             }
         }
         Err(AutomationError::message(format!(
-            "page did not change after retry: expected {expected_page}, still {}",
+            "page did not change after retry: expected {}, still {}",
+            request.expected_page,
             previous.current
         )))
     }
 
     fn settle_after_page_click(&self, clicked_at: Instant) {
-        sleep_until(clicked_at + PAGE_RECORD_MIN_WAIT);
-    }
-
-    fn wait_for_capture_lag(
-        &mut self,
-        pool: &str,
-        visited_pages: u32,
-        total_pages: u32,
-    ) -> AutomationResult<()> {
-        let Some(decoded_page_count) = &self.options.decoded_page_count else {
-            return Ok(());
-        };
-        let max_lag = self.options.max_capture_page_lag;
-        if decoded_page_count(pool).saturating_add(max_lag) >= visited_pages as usize {
-            return Ok(());
-        }
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.click_timeout);
-        while Instant::now() < deadline {
-            if self.should_stop() {
-                return Err(AutomationError::message("auto page stopped"));
-            }
-            let decoded = decoded_page_count(pool);
-            if decoded.saturating_add(max_lag) >= visited_pages as usize {
-                return Ok(());
-            }
-            self.status(
-                StatusEvent::new("capture lag waiting", "diagnostic")
-                    .pool(pool)
-                    .page(visited_pages, total_pages)
-                    .technical_detail(&format!("decoded_pages={decoded} max_lag={max_lag}"))
-                    .persistent(),
-            );
-            thread::sleep(Duration::from_millis(100));
-        }
-        Ok(())
+        sleep_until(clicked_at + self.options.page_record_min_wait);
     }
 
     fn wait_for_page(
         &mut self,
         page_rect: crate::model::Rect,
-        previous_page: u32,
+        pool: &str,
+        step: &str,
+        previous: &PageNumber,
         expected_page: u32,
-        expected_total: u32,
-    ) -> AutomationResult<Option<PageNumber>> {
+        visited_pages: u32,
+    ) -> AutomationResult<PageWaitOutcome> {
         let deadline = Instant::now() + Duration::from_secs_f64(self.options.click_timeout);
         let mut last_error = None;
         let mut saw_previous = false;
@@ -191,17 +273,53 @@ impl AutoPager {
             if self.should_stop() {
                 return Err(AutomationError::message("auto page stopped"));
             }
+            match self.capture_control_decision(pool, step, previous, visited_pages) {
+                AutoPageControlDecision::Continue => {}
+                AutoPageControlDecision::SkipPool { duplicate_records } => {
+                    self.status(
+                        StatusEvent::new("known records found; skipping pool", "pool_skipped")
+                            .step(step)
+                            .pool(pool)
+                            .page(previous.current, previous.total)
+                            .technical_detail(&format!("duplicate_records={duplicate_records}")),
+                    );
+                    return Ok(PageWaitOutcome::SkipPool);
+                }
+                AutoPageControlDecision::WaitCapture {
+                    decoded_pages,
+                    max_visited_pages,
+                } => {
+                    if Instant::now() >= deadline {
+                        return Err(AutomationError::message(format!(
+                            "capture window stalled: pool={pool} visited_pages={visited_pages} decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
+                        )));
+                    }
+                    self.status(
+                        StatusEvent::new("capture window waiting", "diagnostic")
+                            .pool(pool)
+                            .page(previous.current, previous.total)
+                            .technical_detail(&format!(
+                                "decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
+                            ))
+                            .persistent(),
+                    );
+                    self.sleep_poll();
+                    continue;
+                }
+            }
             self.sleep_poll();
             match self.read_page_with_hint(
                 page_rect,
                 PageReadHint {
-                    previous_current: Some(previous_page),
+                    previous_current: Some(previous.current),
                     expected_current: Some(expected_page),
-                    expected_total: Some(expected_total),
+                    expected_total: Some(previous.total),
                 },
             ) {
-                Ok(page) if page.current == expected_page => return Ok(Some(page)),
-                Ok(page) if page.current == previous_page => saw_previous = true,
+                Ok(page) if page.current == expected_page => {
+                    return Ok(PageWaitOutcome::Changed(page));
+                }
+                Ok(page) if page.current == previous.current => saw_previous = true,
                 Ok(page) => {
                     let same_as_last = unexpected_page.as_ref().is_some_and(|last| {
                         last.current == page.current && last.total == page.total
@@ -240,7 +358,7 @@ impl AutoPager {
                 page.current, page.total
             )));
         }
-        Ok(None)
+        Ok(PageWaitOutcome::Unchanged)
     }
 
     fn wait_for_fresh_page(

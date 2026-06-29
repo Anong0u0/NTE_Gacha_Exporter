@@ -62,10 +62,10 @@ export const tauriApi: AppApi = {
   updaterInstallStaged: (version, relaunch) =>
     invoke<void>("updater_install_staged", { version, relaunch }),
   assetsResolveRefs: (refs) => invoke<AssetResolveResult[]>("assets_resolve_refs", { refs }),
-  requestAdminCaptureStart: (profileName, locale, mode) =>
-    invoke<boolean>("request_admin_capture_start", { profileName, locale, mode }),
+  requestAdminCaptureStart: (profileName, locale, mode, options) =>
+    invoke<boolean>("request_admin_capture_start", { profileName, locale, mode, options }),
   takePendingAdminCapture: () => invoke<PendingAdminCapture | null>("take_pending_admin_capture"),
-  captureStart: (profileName, locale, mode) => invoke<CaptureStatus>("capture_start", { profileName, locale, mode }),
+  captureStart: (profileName, locale, mode, options) => invoke<CaptureStatus>("capture_start", { profileName, locale, mode, options }),
   captureStatus: (sessionId) => invoke<CaptureStatus>("capture_status", { sessionId }),
   captureStop: (sessionId) => invoke<CaptureStatus>("capture_stop", { sessionId }),
 };

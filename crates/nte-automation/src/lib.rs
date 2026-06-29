@@ -12,8 +12,9 @@ pub mod window;
 pub use error::{AutomationError, AutomationResult};
 pub use home::restore_game_home;
 pub use model::{
-    AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus, PageNumber, Point,
-    RecordSnapshot, Rect, Size, TemplateMatch,
+    AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
+    AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
+    PageNumber, Point, RecordSnapshot, Rect, Size, TemplateMatch,
 };
 pub use pager::run_auto_page;
 pub use profile::{AutomationProfile, load_profile};
