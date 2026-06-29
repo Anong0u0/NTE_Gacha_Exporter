@@ -304,6 +304,33 @@ pub fn client_to_screen(hwnd: usize, point: Point) -> AutomationResult<Point> {
     })
 }
 
+#[cfg(not(windows))]
+pub fn current_cursor_client_position(_window: &GameWindow) -> AutomationResult<Point> {
+    require_windows()?;
+    unreachable!()
+}
+
+#[cfg(windows)]
+pub fn current_cursor_client_position(window: &GameWindow) -> AutomationResult<Point> {
+    use windows_sys::Win32::Foundation::POINT;
+    use windows_sys::Win32::Graphics::Gdi::ScreenToClient;
+    use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+
+    let mut native = POINT { x: 0, y: 0 };
+    unsafe {
+        if GetCursorPos(&mut native) == 0 {
+            return Err(AutomationError::message("GetCursorPos failed"));
+        }
+        if ScreenToClient(window.hwnd as _, &mut native) == 0 {
+            return Err(AutomationError::message("ScreenToClient failed"));
+        }
+    }
+    Ok(Point {
+        x: native.x,
+        y: native.y,
+    })
+}
+
 #[cfg(windows)]
 fn window_from_hwnd(hwnd: usize, pid: u32) -> AutomationResult<GameWindow> {
     use windows_sys::Win32::Foundation::RECT;

@@ -82,6 +82,129 @@ mod tests {
         assert!(!text.contains("[1,2,3,4]"));
     }
 
+    #[test]
+    fn page_context_rect_expands_to_include_cursor_with_margin() {
+        let page_rect = crate::model::Rect {
+            x: 100,
+            y: 100,
+            width: 20,
+            height: 10,
+        };
+
+        let rect = page_context_rect(
+            page_rect,
+            Size {
+                width: 500,
+                height: 400,
+            },
+            Some(Point { x: 300, y: 200 }),
+        );
+
+        assert_eq!(
+            rect,
+            crate::model::Rect {
+                x: 80,
+                y: 95,
+                width: 269,
+                height: 154,
+            }
+        );
+        assert!(rect_contains_point(rect, Point { x: 100, y: 100 }));
+        assert!(rect_contains_point(rect, Point { x: 119, y: 109 }));
+        assert!(rect_contains_point(rect, Point { x: 300, y: 200 }));
+        assert!(Point { x: 300, y: 200 }.x - rect.x >= CURSOR_CONTEXT_PADDING);
+        assert!(Point { x: 300, y: 200 }.y - rect.y >= CURSOR_CONTEXT_PADDING);
+        assert_eq!(
+            rect.right() - Point { x: 300, y: 200 }.x - 1,
+            CURSOR_CONTEXT_PADDING
+        );
+        assert_eq!(
+            rect.bottom() - Point { x: 300, y: 200 }.y - 1,
+            CURSOR_CONTEXT_PADDING
+        );
+    }
+
+    #[test]
+    fn page_context_rect_clamps_cursor_margin_at_client_edge() {
+        let page_rect = crate::model::Rect {
+            x: 100,
+            y: 100,
+            width: 20,
+            height: 10,
+        };
+
+        let rect = page_context_rect(
+            page_rect,
+            Size {
+                width: 320,
+                height: 240,
+            },
+            Some(Point { x: 319, y: 239 }),
+        );
+
+        assert_eq!(
+            rect,
+            crate::model::Rect {
+                x: 80,
+                y: 95,
+                width: 240,
+                height: 145,
+            }
+        );
+        assert!(rect_contains_point(rect, Point { x: 319, y: 239 }));
+    }
+
+    #[test]
+    fn page_context_rect_ignores_cursor_outside_client_when_filtered() {
+        let page_rect = crate::model::Rect {
+            x: 100,
+            y: 100,
+            width: 20,
+            height: 10,
+        };
+
+        let cursor = Point { x: -1, y: 120 };
+        let cursor = point_in_size(
+            cursor,
+            Size {
+                width: 320,
+                height: 240,
+            },
+        )
+        .then_some(cursor);
+        let rect = page_context_rect(
+            page_rect,
+            Size {
+                width: 320,
+                height: 240,
+            },
+            cursor,
+        );
+
+        assert_eq!(
+            rect,
+            crate::model::Rect {
+                x: 80,
+                y: 95,
+                width: 60,
+                height: 20,
+            }
+        );
+    }
+
+    #[test]
+    fn draw_cursor_marker_marks_center_and_edges_without_resizing() {
+        let mut image = image::RgbaImage::new(24, 24);
+        let color = image::Rgba([0, 220, 255, 255]);
+
+        draw_cursor_marker(&mut image, Point { x: 4, y: 4 }, color);
+
+        assert_eq!(*image.get_pixel(4, 4), color);
+        assert_eq!(*image.get_pixel(0, 4), color);
+        assert_eq!(*image.get_pixel(4, 0), color);
+        assert_eq!(image.dimensions(), (24, 24));
+    }
+
     fn snapshot(record_id: &str, pool_id: &str, record_type: &str) -> RecordSnapshot {
         snapshot_with_key(record_id, record_id, pool_id, record_type)
     }

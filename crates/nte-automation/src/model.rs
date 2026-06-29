@@ -127,6 +127,8 @@ pub struct AutoPageVisualDiagnostics {
     pub pool: Option<String>,
     pub page_rect: Option<Rect>,
     pub context_rect: Option<Rect>,
+    pub cursor_client_position: Option<Point>,
+    pub cursor_in_context: Option<bool>,
     pub next_button: Option<Point>,
     pub last_template_matches: Vec<TemplateMatch>,
 }
