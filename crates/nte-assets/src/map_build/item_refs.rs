@@ -152,6 +152,20 @@ fn add_lottery_table_refs(
     Ok(())
 }
 
+fn add_lottery_show_role_refs(
+    refs: &mut Vec<ItemRef>,
+    assets_root: &Path,
+    canonicalizer: &ItemCanonicalizer,
+) -> Result<(), GuiError> {
+    for item_id in lottery_show_roles(assets_root, &Localization::new(), canonicalizer, None)?
+        .into_values()
+        .flatten()
+    {
+        add_item_ref(refs, Some(&Value::String(item_id)), canonicalizer);
+    }
+    Ok(())
+}
+
 fn add_fork_pool_refs(
     refs: &mut Vec<ItemRef>,
     assets_root: &Path,
@@ -205,4 +219,3 @@ fn add_drop_table_refs(
     );
     Ok(())
 }
-

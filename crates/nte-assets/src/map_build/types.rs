@@ -13,12 +13,15 @@ const ASSET_FALLBACK_LOCALE: &str = "en";
 const REMOVED_MAP_LOCALES: &[&str] = &["en-JM"];
 
 const TABLES: &[(&str, &str)] = &[
-    ("inventory", "DataTable/Inventory/DT_ItemConfig.json"),
+    ("inventory", INVENTORY_TABLE),
     ("capital", "DataTable/Inventory/DT_CapitalItemConfig.json"),
     ("fork", "DataTable/Fork/DT_ForkItemData.json"),
-    ("character", "DataTable/Character/DT_Character.json"),
+    ("character", CHARACTER_TABLE),
 ];
 const ITEM_TYPE_TABLE: &str = "DataTable/Inventory/DT_ItemType.json";
+const INVENTORY_TABLE: &str = "DataTable/Inventory/DT_ItemConfig.json";
+const CHARACTER_TABLE: &str = "DataTable/Character/DT_Character.json";
+const COMBAT_AWARD_TABLE: &str = "DataTable/CombatAward/DT_CombatAwardEntranceConfig.json";
 const APPEARANCE_TABLES: &[(&str, &str)] = &[(
     "appearance",
     "DataTable/Character/Appearance/DT_AppearanceData.json",
@@ -43,6 +46,7 @@ const STANDARD_MONOPOLY_TITLE_TAIL: &str = "changzhu";
 const MONOPOLY_LIMITED_RULE_TEXT_KEY: &str = "LotteryDes_XiandingJishiguize_Des";
 const MONOPOLY_STANDARD_RULE_TEXT_KEY: &str = "LotteryDes_Changzhujishiguize_Des";
 const MONOPOLY_LOTTERY_TABLE: &str = "DataTable/Gacha/DT_LotteryDataTable_Nanali.json";
+const MONOPOLY_CELL_TABLE: &str = "DataTable/Monopoly/DT_MonopolyCellDataTable.json";
 const FORK_POOL_TABLE: &str = "DataTable/Fork/DT_ForkLotteryPoolData.json";
 
 #[derive(Debug, Clone)]
@@ -55,44 +59,13 @@ pub struct AssetMapBuild {
 }
 
 #[derive(Debug, Clone)]
-struct LimitedBannerSeed {
-    tail: &'static str,
-    banner_id: &'static str,
-    end_at_tz8: &'static str,
-    rate_up_5: &'static [&'static str],
-    version: Option<&'static str>,
+struct LimitedMonopolyBanner {
+    banner_id: String,
+    title: String,
+    start_at_tz8: Option<String>,
+    end_at_tz8: String,
+    rate_up_5: Vec<String>,
 }
-
-const LIMITED_BANNER_SEEDS: &[LimitedBannerSeed] = &[
-    LimitedBannerSeed {
-        tail: "Nanali",
-        banner_id: "monopoly_limited_Nanali",
-        end_at_tz8: "2026-05-13 05:59:00",
-        rate_up_5: &["1010"],
-        version: None,
-    },
-    LimitedBannerSeed {
-        tail: "Xun",
-        banner_id: "monopoly_limited_Xun",
-        end_at_tz8: "2026-06-03 05:59:00",
-        rate_up_5: &["1052"],
-        version: None,
-    },
-    LimitedBannerSeed {
-        tail: "AnHunQu",
-        banner_id: "monopoly_limited_AnHunQu",
-        end_at_tz8: "2026-06-24 05:59:00",
-        rate_up_5: &["1004"],
-        version: None,
-    },
-    LimitedBannerSeed {
-        tail: "Kaesi",
-        banner_id: "monopoly_limited_Kaesi",
-        end_at_tz8: "2026-07-08 05:59:00",
-        rate_up_5: &["1071"],
-        version: None,
-    },
-];
 
 #[derive(Debug, Clone)]
 struct ItemRef {

@@ -1046,10 +1046,14 @@
       "source": {
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "DataTable/Monopoly/DT_MonopolyCellDataTable.json",
+          "DataTable/Inventory/DT_ItemConfig.json",
+          "DataTable/Character/DT_Character.json",
+          "DataTable/CombatAward/DT_CombatAwardEntranceConfig.json",
           "Localization/en/game.json"
         ],
         "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
+          "Limited banner order, rate-up role, and schedule are inferred from asset tables."
         ]
       },
       "asset_refs": {
@@ -1082,10 +1086,14 @@
       "source": {
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "DataTable/Monopoly/DT_MonopolyCellDataTable.json",
+          "DataTable/Inventory/DT_ItemConfig.json",
+          "DataTable/Character/DT_Character.json",
+          "DataTable/CombatAward/DT_CombatAwardEntranceConfig.json",
           "Localization/en/game.json"
         ],
         "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
+          "Limited banner order, rate-up role, and schedule are inferred from asset tables."
         ]
       },
       "start_at": "2026-05-13 05:59:00",
@@ -1119,10 +1127,14 @@
       "source": {
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "DataTable/Monopoly/DT_MonopolyCellDataTable.json",
+          "DataTable/Inventory/DT_ItemConfig.json",
+          "DataTable/Character/DT_Character.json",
+          "DataTable/CombatAward/DT_CombatAwardEntranceConfig.json",
           "Localization/en/game.json"
         ],
         "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
+          "Limited banner order, rate-up role, and schedule are inferred from asset tables."
         ]
       },
       "start_at": "2026-06-03 05:59:00",
@@ -1156,10 +1168,14 @@
       "source": {
         "tables": [
           "DataTable/Gacha/DT_LotteryDataTable_Nanali.json",
+          "DataTable/Monopoly/DT_MonopolyCellDataTable.json",
+          "DataTable/Inventory/DT_ItemConfig.json",
+          "DataTable/Character/DT_Character.json",
+          "DataTable/CombatAward/DT_CombatAwardEntranceConfig.json",
           "Localization/en/game.json"
         ],
         "notes": [
-          "Schedule and rate-up use available lottery data and localized text."
+          "Limited banner order, rate-up role, and schedule are inferred from asset tables."
         ]
       },
       "start_at": "2026-06-24 05:59:00",

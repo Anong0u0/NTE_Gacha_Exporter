@@ -90,6 +90,56 @@ mod tests {
             map["banners"]["monopoly_limited_Nanali"]["end_at"],
             json!("2026-05-13 05:59:00")
         );
+        assert!(map["banners"]["monopoly_limited_Nanali"]["start_at"].is_null());
+        assert_eq!(
+            map["banners"]["monopoly_limited_Nanali"]["rate_up_5"],
+            json!(["1010"])
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Xun"]["start_at"],
+            json!("2026-05-13 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Xun"]["end_at"],
+            json!("2026-06-03 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Xun"]["rate_up_5"],
+            json!(["1052"])
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_AnHunQu"]["start_at"],
+            json!("2026-06-03 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_AnHunQu"]["end_at"],
+            json!("2026-06-24 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_AnHunQu"]["rate_up_5"],
+            json!(["1004"])
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Kaesi"]["start_at"],
+            json!("2026-06-24 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Kaesi"]["end_at"],
+            json!("2026-07-08 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Kaesi"]["rate_up_5"],
+            json!(["1071"])
+        );
+        assert_eq!(
+            map["pools"]["CardPool_Character"]["title_windows"],
+            json!([
+                {"end_at_tz8": "2026-05-13 05:59:00", "title": "Nanali Banner"},
+                {"end_at_tz8": "2026-06-03 05:59:00", "title": "Xun Banner"},
+                {"end_at_tz8": "2026-06-24 05:59:00", "title": "久夢初醒時"},
+                {"end_at_tz8": "2026-07-08 05:59:00", "title": "Kaesi Banner"}
+            ])
+        );
         assert_eq!(
             map["gacha_rules"]["fork_lottery_s"]["hard_pity_5"],
             json!(60)
@@ -99,6 +149,60 @@ mod tests {
             json!(80)
         );
         assert_eq!(map["labels"]["UW_LotteryBase_BP_Hupanyanmu"], "Fork Group");
+    }
+
+    #[test]
+    fn rejects_inconsistent_limited_monopoly_order() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_minimal_assets(tmp.path());
+        write_json(
+            tmp.path()
+                .join("DataTable/Monopoly/DT_MonopolyCellDataTable.json"),
+            json!({"Rows": {
+                "1": {"PoolDropDatas": [
+                    {"Key": "Lottery_Nanali"},
+                    {"Key": "Lottery_Xun"},
+                    {"Key": "Lottery_Permanent"},
+                    {"Key": "Lottery_AnHunQu"},
+                    {"Key": "Lottery_Kaesi"}
+                ]},
+                "2": {"PoolDropDatas": [
+                    {"Key": "Lottery_Nanali"},
+                    {"Key": "Lottery_AnHunQu"},
+                    {"Key": "Lottery_Permanent"},
+                    {"Key": "Lottery_Xun"},
+                    {"Key": "Lottery_Kaesi"}
+                ]}
+            }}),
+        );
+
+        let error = build_asset_map(tmp.path(), "zh-Hant").unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("inconsistent monopoly limited pool order"));
+    }
+
+    #[test]
+    fn skips_limited_banner_without_time_boundary() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_minimal_assets(tmp.path());
+        write_json(
+            tmp.path()
+                .join("DataTable/CombatAward/DT_CombatAwardEntranceConfig.json"),
+            json!({"Rows": {
+                "CombatAward_02": {"StartDateTime": schedule(2026, 4, 28, 22, 30, true)},
+                "CombatAward_03": {"StartDateTime": schedule(2026, 6, 2, 22, 30, true)}
+            }}),
+        );
+
+        let map = build_asset_map(tmp.path(), "zh-Hant").unwrap();
+
+        assert!(map["banners"]["monopoly_limited_Kaesi"].is_null());
+        assert_eq!(
+            map["banners"]["monopoly_limited_AnHunQu"]["end_at"],
+            json!("2026-06-24 05:59:00")
+        );
     }
 
     #[test]
@@ -138,6 +242,10 @@ mod tests {
                     "UW_LotteryBase_BP_Hupanyanmu": "Fork Group",
                     "Lottery_Kachimingcheng_changzhu": "Standard Title",
                     "Lottery_Kachimingcheng_nanali": "Nanali Banner",
+                    "LotteryDes_Jishishuoming_NanaliDes": "1.<Orange>\"Nanali Banner\"</> is a limited board.",
+                    "LotteryDes_Jishishuoming_XunDes": "1.<Orange>\"Xun Banner\"</> is a limited board.",
+                    "LotteryDes_Jishishuoming_AnHunQuDes": "1.<Orange>\"Waking Reverie\"</> is a limited board.",
+                    "LotteryDes_Jishishuoming_KaesiDes": "1.<Orange>\"Kaesi Banner\"</> is a limited board.",
                     "BPUI_GashaponRecord_time": "Time",
                     "BPUI_LotteryDiceRecord_qipanleixing": "Pool Type",
                     "BPUI_LotteryDiceRecord_daojumingcheng": "Item Name",
@@ -165,20 +273,49 @@ mod tests {
                     "BPUI_LotteryDiceRecord_xiandingqipan": "限定棋盤",
                     "UW_LotteryBase_BP_Hupanyanmu": "Fork Group",
                     "Lottery_Kachimingcheng_changzhu": "Standard Title",
-                    "Lottery_Kachimingcheng_nanali": "Nanali Banner"
+                    "Lottery_Kachimingcheng_nanali": "Nanali Banner",
+                    "LotteryDes_Jishishuoming_NanaliDes": "1.<Orange>「Nanali Banner」</>屬於<Orange>「限定棋盤」</>。",
+                    "LotteryDes_Jishishuoming_XunDes": "1.<Orange>「Xun Banner」</>屬於<Orange>「限定棋盤」</>。",
+                    "LotteryDes_Jishishuoming_AnHunQuDes": "1.<Orange>「久夢初醒時」</>屬於<Orange>「限定棋盤」</>。",
+                    "LotteryDes_Jishishuoming_KaesiDes": "1.<Orange>「Kaesi Banner」</>屬於<Orange>「限定棋盤」</>。",
+                    "ui_appearance_02": "Glider"
+                },
+                "ST_Item": {
+                    "char_1004": "Lacrimosa",
+                    "char_1010": "Nanali",
+                    "char_1052": "Xun",
+                    "char_1071": "Kaesi",
+                    "Dicelimite_lacrimosa_usedesc": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。",
+                    "fork_200": "Fork Weapon",
+                    "fork_201": "Forgotten",
+                    "glide_1010": "Nanali Glide",
+                    "vehicle_1010": "Nanali Vehicle",
+                    "vehicle_skin_1010": "Nanali Vehicle Skin"
                 }
             }),
         );
         write_json(
             root.join("DataTable/Character/DT_Character.json"),
             json!({"Rows": {
+                "1004": character_row("char_1004", "/Game/LacrimosaPortrait", Value::Null),
                 "1010": {
                     "ItemName": {"Key": "char_1010", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
                     "ItemIcon": {"AssetPathName": "/Game/Portrait"},
                     "ItemIconSmall": {"AssetPathName": "/Game/SmallIcon"},
-                    "ItemIconBig": {"AssetPathName": "/Game/Portrait"}
-                }
+                    "ItemIconBig": {"AssetPathName": "/Game/Portrait"},
+                    "ElementData": {"ShowTime": schedule(1, 1, 1, 0, 0, true)}
+                },
+                "1052": character_row(
+                    "char_1052",
+                    "/Game/XunPortrait",
+                    schedule(2026, 5, 12, 22, 30, true)
+                ),
+                "1071": character_row(
+                    "char_1071",
+                    "/Game/KaesiPortrait",
+                    schedule(2026, 6, 23, 22, 30, true)
+                )
             }}),
         );
         write_json(
@@ -200,6 +337,19 @@ mod tests {
         write_json(
             root.join("DataTable/Inventory/DT_ItemConfig.json"),
             json!({"Rows": {
+                "1010_LotteryShow_nanali": lottery_show_row("1010_LotteryShow_nanali", "Nanali（1.8700%）"),
+                "1052_LotteryShow_xun": lottery_show_row("1052_LotteryShow_xun", "Xun（1.8700%）"),
+                "1004_LotteryShow_lacrimosa": lottery_show_row("1004_LotteryShow_lacrimosa", "Lacrimosa（1.8700%）"),
+                "1071_LotteryShow_kaesi": lottery_show_row("1071_LotteryShow_kaesi", "Kaesi（1.8700%）"),
+                "Dicelimite_lacrimosa": {
+                    "ItemName": {"Key": "dice_lacrimosa", "TableId": "ST_Item"},
+                    "UseContext": {
+                        "Key": "Dicelimite_lacrimosa_usedesc",
+                        "TableId": "ST_Item",
+                        "SourceString": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。"
+                    },
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                },
                 "Fashion_vehicle_1010_V008": {
                     "ItemName": {"Key": "vehicle_1010", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
@@ -211,27 +361,23 @@ mod tests {
             }}),
         );
         write_json(
-            root.join("Localization/zh-Hant/game.json"),
+            root.join("DataTable/Monopoly/DT_MonopolyCellDataTable.json"),
             json!({
-                "ST_Common": {
-                    "item_type_3": "Character",
-                    "item_type_5": "Arc"
-                },
-                "ST_Item": {
-                    "char_1010": "Nanali",
-                    "fork_200": "Fork Weapon",
-                    "fork_201": "Forgotten",
-                    "glide_1010": "Nanali Glide",
-                    "vehicle_1010": "Nanali Vehicle",
-                    "vehicle_skin_1010": "Nanali Vehicle Skin"
-                },
-                "ST_Ui": {
-                    "BPUI_LotteryDiceRecord_biaozhunqipan": "標準棋盤",
-                    "BPUI_LotteryDiceRecord_xiandingqipan": "限定棋盤",
-                    "UW_LotteryBase_BP_Hupanyanmu": "Fork Group",
-                    "Lottery_Kachimingcheng_changzhu": "Standard Title",
-                    "Lottery_Kachimingcheng_nanali": "Nanali Banner",
-                    "ui_appearance_02": "Glider"
+                "Rows": {
+                    "1": {"PoolDropDatas": [
+                        {"Key": "Lottery_Nanali"},
+                        {"Key": "Lottery_Xun"},
+                        {"Key": "Lottery_Permanent"},
+                        {"Key": "Lottery_AnHunQu"},
+                        {"Key": "Lottery_Kaesi"}
+                    ]},
+                    "2": {"PoolDropDatas": [
+                        {"Key": "Lottery_Nanali"},
+                        {"Key": "Lottery_Xun"},
+                        {"Key": "Lottery_Permanent"},
+                        {"Key": "Lottery_AnHunQu"},
+                        {"Key": "Lottery_Kaesi"}
+                    ]}
                 }
             }),
         );
@@ -335,6 +481,58 @@ mod tests {
                 }
             }}),
         );
+        write_json(
+            root.join("DataTable/CombatAward/DT_CombatAwardEntranceConfig.json"),
+            json!({"Rows": {
+                "CombatAward_02": {"StartDateTime": schedule(2026, 4, 28, 22, 30, true)},
+                "CombatAward_03": {"StartDateTime": schedule(2026, 6, 2, 22, 30, true)},
+                "CombatAward_04": {"StartDateTime": schedule(2026, 7, 7, 22, 30, true)}
+            }}),
+        );
+    }
+
+    fn character_row(name_key: &str, portrait: &str, show_time: Value) -> Value {
+        json!({
+            "ItemName": {"Key": name_key, "TableId": "ST_Item"},
+            "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+            "ItemIcon": {"AssetPathName": portrait},
+            "ItemIconSmall": {"AssetPathName": portrait},
+            "ItemIconBig": {"AssetPathName": portrait},
+            "ElementData": {"ShowTime": show_time}
+        })
+    }
+
+    fn lottery_show_row(name_key: &str, source: &str) -> Value {
+        json!({
+            "ItemName": {
+                "Key": name_key,
+                "TableId": "ST_Ui",
+                "SourceString": source
+            },
+            "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+        })
+    }
+
+    fn schedule(year: u64, month: u64, day: u64, hour: u64, minute: u64, utc: bool) -> Value {
+        json!({
+            "MainlandTime": {
+                "Year": year,
+                "Month": month,
+                "Day": day,
+                "Hour": hour,
+                "minute": minute,
+                "Second": 0
+            },
+            "OverseaTime": {
+                "Year": year,
+                "Month": month,
+                "Day": day,
+                "Hour": hour,
+                "minute": minute,
+                "Second": 0
+            },
+            "OverseaUseUTCTime": utc
+        })
     }
 
     fn write_json(path: PathBuf, value: Value) {

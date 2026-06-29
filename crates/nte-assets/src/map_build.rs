@@ -5,6 +5,7 @@ include!("map_build/item_names.rs");
 include!("map_build/item_refs.rs");
 include!("map_build/items.rs");
 include!("map_build/pools.rs");
+include!("map_build/limited_monopoly.rs");
 include!("map_build/item_meta.rs");
 include!("map_build/rules.rs");
 include!("map_build/banners.rs");

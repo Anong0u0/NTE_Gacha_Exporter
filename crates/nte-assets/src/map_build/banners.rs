@@ -73,25 +73,28 @@ fn standard_banner(
     Some(banner)
 }
 
-fn limited_banners(
-    locale: &str,
-    localization: &Localization,
-    canonicalizer: &ItemCanonicalizer,
-    known_item_ids: &BTreeSet<String>,
-    normalized_items: &JsonObject,
-    standard_5_pool: &[String],
-    standard_4_pool: &[String],
-) -> JsonObject {
+struct LimitedBannerBuildContext<'a> {
+    assets_root: &'a Path,
+    locale: &'a str,
+    localization: &'a Localization,
+    canonicalizer: &'a ItemCanonicalizer,
+    known_item_ids: &'a BTreeSet<String>,
+    normalized_items: &'a JsonObject,
+    standard_5_pool: &'a [String],
+    standard_4_pool: &'a [String],
+}
+
+fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, GuiError> {
     let mut banners = JsonObject::new();
-    let mut previous_end: Option<String> = None;
-    for banner in LIMITED_BANNER_SEEDS {
-        let Some(title) = localized_monopoly_pool_title(localization, banner.tail) else {
-            previous_end = Some(banner.end_at_tz8.to_string());
-            continue;
-        };
-        let rate_up_5 = item_ref_list(banner.rate_up_5, canonicalizer, known_item_ids);
+    for banner in limited_monopoly_banners(
+        ctx.assets_root,
+        ctx.localization,
+        ctx.canonicalizer,
+        Some(ctx.known_item_ids),
+    )? {
+        let rate_up_5 = banner.rate_up_5;
         let mut asset_refs = JsonObject::new();
-        let portraits = featured_portraits(normalized_items, &rate_up_5);
+        let portraits = featured_portraits(ctx.normalized_items, &rate_up_5);
         if !portraits.is_empty() {
             asset_refs.insert(
                 "featured_portraits".to_string(),
@@ -99,7 +102,7 @@ fn limited_banners(
             );
         }
         if rate_up_5.len() == 1 {
-            if let Some(image) = item_asset_ref(normalized_items, &rate_up_5[0], "banner") {
+            if let Some(image) = item_asset_ref(ctx.normalized_items, &rate_up_5[0], "banner") {
                 asset_refs.insert("image".to_string(), Value::String(image));
             }
         }
@@ -107,7 +110,7 @@ fn limited_banners(
         let mut entry = JsonObject::new();
         entry.insert(
             "banner_id".to_string(),
-            Value::String(banner.banner_id.to_string()),
+            Value::String(banner.banner_id.clone()),
         );
         entry.insert(
             "pool_id".to_string(),
@@ -121,10 +124,10 @@ fn limited_banners(
             "banner_type".to_string(),
             Value::String("limited".to_string()),
         );
-        entry.insert("title".to_string(), Value::String(title));
+        entry.insert("title".to_string(), Value::String(banner.title));
         entry.insert(
             "end_at".to_string(),
-            Value::String(banner.end_at_tz8.to_string()),
+            Value::String(banner.end_at_tz8.clone()),
         );
         entry.insert(
             "timezone".to_string(),
@@ -137,11 +140,23 @@ fn limited_banners(
         entry.insert("rate_up_4".to_string(), Value::Array(Vec::new()));
         entry.insert(
             "standard_5_pool".to_string(),
-            Value::Array(standard_5_pool.iter().cloned().map(Value::String).collect()),
+            Value::Array(
+                ctx.standard_5_pool
+                    .iter()
+                    .cloned()
+                    .map(Value::String)
+                    .collect(),
+            ),
         );
         entry.insert(
             "standard_4_pool".to_string(),
-            Value::Array(standard_4_pool.iter().cloned().map(Value::String).collect()),
+            Value::Array(
+                ctx.standard_4_pool
+                    .iter()
+                    .cloned()
+                    .map(Value::String)
+                    .collect(),
+            ),
         );
         entry.insert(
             "rule_id".to_string(),
@@ -152,24 +167,24 @@ fn limited_banners(
             source_evidence(
                 &[
                     MONOPOLY_LOTTERY_TABLE.to_string(),
-                    format!("Localization/{locale}/game.json"),
+                    MONOPOLY_CELL_TABLE.to_string(),
+                    INVENTORY_TABLE.to_string(),
+                    CHARACTER_TABLE.to_string(),
+                    COMBAT_AWARD_TABLE.to_string(),
+                    format!("Localization/{}/game.json", ctx.locale),
                 ],
-                &["Schedule and rate-up use available lottery data and localized text."],
+                &["Limited banner order, rate-up role, and schedule are inferred from asset tables."],
             ),
         );
-        if let Some(version) = banner.version {
-            entry.insert("version".to_string(), Value::String(version.to_string()));
-        }
-        if let Some(start_at) = previous_end.clone() {
+        if let Some(start_at) = banner.start_at_tz8 {
             entry.insert("start_at".to_string(), Value::String(start_at));
         }
         if !asset_refs.is_empty() {
             entry.insert("asset_refs".to_string(), Value::Object(asset_refs));
         }
-        banners.insert(banner.banner_id.to_string(), Value::Object(entry));
-        previous_end = Some(banner.end_at_tz8.to_string());
+        banners.insert(banner.banner_id, Value::Object(entry));
     }
-    banners
+    Ok(banners)
 }
 
 fn fork_banners(
@@ -259,15 +274,16 @@ fn build_banners(
     ) {
         banners.insert("monopoly_standard".to_string(), Value::Object(standard));
     }
-    banners.extend(limited_banners(
+    banners.extend(limited_banners(LimitedBannerBuildContext {
+        assets_root,
         locale,
         localization,
         canonicalizer,
-        &known_item_ids,
+        known_item_ids: &known_item_ids,
         normalized_items,
-        &standard_5_pool,
-        &standard_4_pool,
-    ));
+        standard_5_pool: &standard_5_pool,
+        standard_4_pool: &standard_4_pool,
+    })?);
     banners.extend(fork_banners(
         assets_root,
         localization,

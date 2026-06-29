@@ -36,20 +36,6 @@ fn lottery_item_ids(
     Ok(item_ids)
 }
 
-fn item_ref_list(
-    item_ids: &[&str],
-    canonicalizer: &ItemCanonicalizer,
-    known_item_ids: &BTreeSet<String>,
-) -> Vec<String> {
-    let mut refs = item_ids
-        .iter()
-        .map(|item_id| canonicalizer.canonicalize(item_id))
-        .filter(|item_id| known_item_ids.contains(item_id))
-        .collect::<Vec<_>>();
-    dedupe_strings(&mut refs);
-    refs
-}
-
 fn item_asset_ref(items: &JsonObject, item_id: &str, key: &str) -> Option<String> {
     items
         .get(item_id)

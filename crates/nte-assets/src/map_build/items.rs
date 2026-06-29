@@ -5,6 +5,7 @@ fn required_item_refs(
     let mut refs = Vec::new();
     add_gacha_illustrate_refs(&mut refs, assets_root, canonicalizer)?;
     add_lottery_table_refs(&mut refs, assets_root, canonicalizer)?;
+    add_lottery_show_role_refs(&mut refs, assets_root, canonicalizer)?;
     let fork_pool_rows = add_fork_pool_refs(&mut refs, assets_root, canonicalizer)?;
     add_drop_table_refs(&mut refs, assets_root, &fork_pool_rows, canonicalizer)?;
     Ok(dedupe_item_refs(refs))
@@ -205,4 +206,3 @@ fn build_item_data(
     add_fallback_items(&mut items, &ctx);
     Ok((items, ctx))
 }
-
