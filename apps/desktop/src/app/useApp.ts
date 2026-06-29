@@ -12,7 +12,7 @@ import {
   type DashboardSelection,
   type DashboardSelectionDetail,
   type DisplayRecord,
-  type DoctorReport,
+  type DiagnosticStatus,
   type ImportReport,
   type PoolKind,
   type RecordFilterOptions,
@@ -31,6 +31,7 @@ import { createAppComputed } from "./computed";
 import { createDashboardActions } from "./dashboardActions";
 import { createDashboardUi } from "./dashboardUi";
 import { createDataOperations, type DataOperationKind } from "./dataOperations";
+import { createDiagnosticActions } from "./diagnosticActions";
 import { createTranslator, uiLocaleDisplayName } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
@@ -50,10 +51,11 @@ export function useApp() {
   const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ banners: [], roll_buckets: [], item_kinds: [] });
   const importPath = ref(""), importMode = ref<ImportMode>("raw"), exportPath = ref(""), exportMode = ref<ExportMode>("json");
   const backupPath = ref(""), restorePath = ref(""), captureMode = ref<CaptureMode>("live_only");
-  const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null), doctorReport = ref<DoctorReport | null>(null);
+  const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null);
   const lastDataOperation = ref<DataOperationKind | null>(null);
   const updateStatus = ref<UpdateStatus | null>(null), updateCheckReport = ref<UpdateCheckReport | null>(null);
   const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
+  const diagnosticPromptOpen = ref(false), diagnosticStatus = ref<DiagnosticStatus | null>(null), diagnosticActionBusy = ref(false), diagnosticPollInFlight = ref(false);
   const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
   const t = createTranslator(uiLocale);
   statusText.value = t("status.ready");
@@ -154,6 +156,7 @@ export function useApp() {
     canLastPage,
     bannersForRecordKind,
     isCaptureActive,
+    isDiagnosticActive,
     isWorkflowBusy,
     captureTitle,
     captureSubtitle,
@@ -168,8 +171,10 @@ export function useApp() {
     filterOptions,
     captureStatus,
     captureMode,
+    diagnosticStatus,
     busy,
     captureActionBusy,
+    diagnosticActionBusy,
     recordPoolKind,
     pageSize,
     pageIndex,
@@ -281,7 +286,6 @@ export function useApp() {
     resolveVisibleAssets,
   });
   const maintenance = createMaintenanceActions({
-    doctorReport,
     updateStatus,
     updateCheckReport,
     settingsUpdateChannel,
@@ -294,7 +298,6 @@ export function useApp() {
     t,
   });
   const {
-    runDoctor,
     loadUpdaterStatus,
     checkForUpdates,
     openUpdatePrompt,
@@ -377,6 +380,29 @@ export function useApp() {
   });
 
   const {
+    openDiagnosticPrompt,
+    cancelDiagnosticPrompt,
+    confirmDiagnosticPrompt,
+    startPendingAdminDiagnostic,
+    cancelDiagnostic,
+    pollDiagnosticStatus,
+    applyDiagnosticStatus,
+    ensureDiagnosticPolling,
+    clearDiagnosticPolling,
+  } = createDiagnosticActions({
+    diagnosticPromptOpen,
+    diagnosticStatus,
+    diagnosticActionBusy,
+    diagnosticPollInFlight,
+    statusText,
+    errorText,
+    isDiagnosticActive,
+    isWorkflowBusy,
+    t,
+    formatError,
+  });
+
+  const {
     pickImportFile,
     runImport,
     pickExportFile,
@@ -412,6 +438,7 @@ export function useApp() {
 
   onBeforeUnmount(() => {
     clearCapturePolling();
+    clearDiagnosticPolling();
     disposeChart();
   });
 
@@ -457,7 +484,8 @@ export function useApp() {
       await refreshAll();
       await loadUpdaterStatus();
       const startedPendingCapture = await startPendingAdminCapture();
-      if (!startedPendingCapture && settings.check_updates_on_startup) {
+      const startedPendingDiagnostic = startedPendingCapture ? false : await startPendingAdminDiagnostic();
+      if (!startedPendingCapture && !startedPendingDiagnostic && settings.check_updates_on_startup) {
         void checkForUpdates(false);
       }
     } catch (error) {
@@ -572,12 +600,12 @@ export function useApp() {
 
   return reactive({
     t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
-    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, doctorReport, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureActionBusy,
-    capturePollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
+    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureActionBusy,
+    capturePollInFlight, diagnosticPromptOpen, diagnosticStatus, diagnosticActionBusy, diagnosticPollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
     sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
-    canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
+    canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isDiagnosticActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, startPendingAdminDiagnostic, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, retryAutoPageSlower, canRetryAutoPageSlower, nextPageRecordMinWaitMs, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
-    runDoctor, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
+    openDiagnosticPrompt, cancelDiagnosticPrompt, confirmDiagnosticPrompt, cancelDiagnostic, pollDiagnosticStatus, applyDiagnosticStatus, ensureDiagnosticPolling, clearDiagnosticPolling, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
     formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatPityRatio, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatQuantityName, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
   });
 }

@@ -1,7 +1,6 @@
 import type { Ref } from "vue";
 import {
   api,
-  type DoctorReport,
   type Settings,
   type UpdateCheckReport,
   type UpdateStatus,
@@ -9,7 +8,6 @@ import {
 import type { I18nKey } from "./i18n";
 
 type MaintenanceDeps = {
-  doctorReport: Ref<DoctorReport | null>;
   updateStatus: Ref<UpdateStatus | null>;
   updateCheckReport: Ref<UpdateCheckReport | null>;
   settingsUpdateChannel: Ref<string>;
@@ -23,12 +21,6 @@ type MaintenanceDeps = {
 };
 
 export function createMaintenanceActions(deps: MaintenanceDeps) {
-  async function runDoctor() {
-    await deps.runTask(deps.t("status.doctorCompleted"), async () => {
-      deps.doctorReport.value = await api.doctorRun();
-    });
-  }
-
   async function loadUpdaterStatus() {
     deps.updateStatus.value = await api.updaterStatus();
   }
@@ -88,7 +80,6 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
   }
 
   return {
-    runDoctor,
     loadUpdaterStatus,
     checkForUpdates,
     openUpdatePrompt,

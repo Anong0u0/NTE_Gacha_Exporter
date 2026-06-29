@@ -48,7 +48,7 @@ function checkedValue(event: Event) {
               <input :checked="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" @change="app.setCheckUpdatesOnStartup(checkedValue($event))" />
               <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
-            <button type="button" data-agent-id="doctor-run" :disabled="app.isWorkflowBusy" @click="app.runDoctor">
+            <button type="button" data-agent-id="diagnostic-open" :disabled="app.isWorkflowBusy" @click="app.openDiagnosticPrompt">
               <Stethoscope :size="17" />
               <span>{{ app.t("common.doctor") }}</span>
             </button>
@@ -120,17 +120,6 @@ function checkedValue(event: Event) {
               <span>{{ app.t("settings.updateNow") }}</span>
             </button>
           </div>
-        </section>
-
-        <section v-if="app.doctorReport" class="panel settings-doctor-panel">
-          <div class="panel-head">
-            <div>
-              <span class="eyebrow">exit {{ app.doctorReport.exit_code }}</span>
-              <h2>{{ app.t("common.doctor") }}</h2>
-            </div>
-            <FileJson :size="18" />
-          </div>
-          <pre>{{ app.doctorReport.lines.join("\n") }}</pre>
         </section>
       </section>
 </template>

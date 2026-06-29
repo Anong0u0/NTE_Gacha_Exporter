@@ -692,6 +692,87 @@ button.status {
   overflow-wrap: anywhere;
 }
 
+.diagnostic-copy,
+.diagnostic-run {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.diagnostic-copy {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.diagnostic-copy p {
+  margin: 0;
+  color: var(--text-body);
+  line-height: 1.5;
+}
+
+.diagnostic-progress-head,
+.diagnostic-elapsed-row,
+.diagnostic-path {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+.diagnostic-progress-head strong,
+.diagnostic-elapsed-row strong {
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.diagnostic-progress-track > div {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+
+.diagnostic-findings,
+.diagnostic-error {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--text-body);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-error {
+  color: var(--danger);
+}
+
+.diagnostic-path {
+  justify-content: flex-start;
+  padding: 9px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.diagnostic-path span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .update-dialog-actions {
   display: flex;
   align-items: center;

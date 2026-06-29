@@ -53,8 +53,18 @@ pub fn find_process_pid(_exe: &str) -> Result<Option<u32>> {
     Ok(None)
 }
 
+#[cfg(not(windows))]
+pub fn find_process_pids(_exe: &str) -> Result<Vec<u32>> {
+    Ok(Vec::new())
+}
+
 #[cfg(windows)]
 pub fn find_process_pid(exe_name: &str) -> Result<Option<u32>> {
+    Ok(find_process_pids(exe_name)?.into_iter().next())
+}
+
+#[cfg(windows)]
+pub fn find_process_pids(exe_name: &str) -> Result<Vec<u32>> {
     use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW,
@@ -64,19 +74,18 @@ pub fn find_process_pid(exe_name: &str) -> Result<Option<u32>> {
     unsafe {
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if snapshot == INVALID_HANDLE_VALUE {
-            return Ok(None);
+            return Ok(Vec::new());
         }
         let mut entry = std::mem::zeroed::<PROCESSENTRY32W>();
         entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
-        let mut found = None;
+        let mut found = Vec::new();
         if Process32FirstW(snapshot, &mut entry) != 0 {
             loop {
                 let name = wide_z_to_string(&entry.szExeFile);
                 if name.eq_ignore_ascii_case(exe_name)
                     || name.trim_end_matches(".exe").eq_ignore_ascii_case(exe_name)
                 {
-                    found = Some(entry.th32ProcessID);
-                    break;
+                    found.push(entry.th32ProcessID);
                 }
                 if Process32NextW(snapshot, &mut entry) == 0 {
                     break;

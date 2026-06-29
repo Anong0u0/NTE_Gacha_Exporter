@@ -3,6 +3,7 @@ import { provideAppContext } from "./app/context";
 import { useApp } from "./app/useApp";
 import AppSidebar from "./components/AppSidebar.vue";
 import DashboardView from "./components/DashboardView.vue";
+import DiagnosticDialog from "./components/DiagnosticDialog.vue";
 import RecordsView from "./components/RecordsView.vue";
 import SettingsView from "./components/SettingsView.vue";
 import TopBar from "./components/TopBar.vue";
@@ -22,5 +23,6 @@ provideAppContext(app);
       <SettingsView v-else />
     </main>
     <UpdateDialog />
+    <DiagnosticDialog />
   </div>
 </template>

@@ -8,8 +8,9 @@ use nte_core::GuiError;
 use nte_store::JsonStore;
 use tauri::State;
 
-use crate::admin::PendingAdminCapture;
+use crate::admin::{PendingAdminCapture, PendingAdminDiagnostic};
 use crate::capture::{CaptureRuntimeSession, CaptureSessionMeta};
+use crate::diagnostic::DiagnosticRuntimeSession;
 use crate::error::{ApiError, api_error, api_error_message};
 
 pub(crate) struct AppState {
@@ -17,18 +18,23 @@ pub(crate) struct AppState {
     pub(crate) capture_sessions: Mutex<HashMap<String, Arc<CaptureRuntimeSession>>>,
     pub(crate) captures: Mutex<HashMap<String, CaptureSessionMeta>>,
     pub(crate) pending_admin_capture: Mutex<Option<PendingAdminCapture>>,
+    pub(crate) diagnostic_sessions: Mutex<HashMap<String, Arc<DiagnosticRuntimeSession>>>,
+    pub(crate) pending_admin_diagnostic: Mutex<Option<PendingAdminDiagnostic>>,
 }
 
 impl AppState {
     pub(crate) fn new(
         store: JsonStore,
         pending_admin_capture: Option<PendingAdminCapture>,
+        pending_admin_diagnostic: Option<PendingAdminDiagnostic>,
     ) -> Self {
         Self {
             store: Mutex::new(store),
             capture_sessions: Mutex::new(HashMap::new()),
             captures: Mutex::new(HashMap::new()),
             pending_admin_capture: Mutex::new(pending_admin_capture),
+            diagnostic_sessions: Mutex::new(HashMap::new()),
+            pending_admin_diagnostic: Mutex::new(pending_admin_diagnostic),
         }
     }
 }
@@ -72,4 +78,12 @@ pub(crate) fn new_session_id() -> String {
         .map(|value| value.as_millis())
         .unwrap_or_default();
     format!("rust-capture-{}-{stamp}", std::process::id())
+}
+
+pub(crate) fn new_named_session_id(prefix: &str) -> String {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis())
+        .unwrap_or_default();
+    format!("{prefix}-{}-{stamp}", std::process::id())
 }

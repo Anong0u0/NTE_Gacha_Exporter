@@ -349,7 +349,7 @@ fn is_timeout(error: &impl std::fmt::Display) -> bool {
 }
 
 #[cfg(windows)]
-fn bpf(ports: &[u16]) -> String {
+pub(crate) fn bpf(ports: &[u16]) -> String {
     ports
         .iter()
         .map(|port| format!("port {port}"))

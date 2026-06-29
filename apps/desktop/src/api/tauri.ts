@@ -7,6 +7,8 @@ import type {
   DashboardOverview,
   DashboardSelectionDetail,
   DoctorReport,
+  DiagnosticStatus,
+  PendingAdminDiagnostic,
   ImportReport,
   MapLocaleList,
   PendingAdminCapture,
@@ -65,7 +67,13 @@ export const tauriApi: AppApi = {
   requestAdminCaptureStart: (profileName, locale, mode, options) =>
     invoke<boolean>("request_admin_capture_start", { profileName, locale, mode, options }),
   takePendingAdminCapture: () => invoke<PendingAdminCapture | null>("take_pending_admin_capture"),
+  requestAdminDiagnosticStart: (durationSeconds) =>
+    invoke<boolean>("request_admin_diagnostic_start", { durationSeconds }),
+  takePendingAdminDiagnostic: () => invoke<PendingAdminDiagnostic | null>("take_pending_admin_diagnostic"),
   captureStart: (profileName, locale, mode, options) => invoke<CaptureStatus>("capture_start", { profileName, locale, mode, options }),
   captureStatus: (sessionId) => invoke<CaptureStatus>("capture_status", { sessionId }),
   captureStop: (sessionId) => invoke<CaptureStatus>("capture_stop", { sessionId }),
+  diagnosticStart: (durationSeconds) => invoke<DiagnosticStatus>("diagnostic_start", { durationSeconds }),
+  diagnosticStatus: (sessionId) => invoke<DiagnosticStatus>("diagnostic_status", { sessionId }),
+  diagnosticCancel: (sessionId) => invoke<DiagnosticStatus>("diagnostic_cancel", { sessionId }),
 };

@@ -29,12 +29,14 @@ nte-capture = { path = "../../../crates/nte-capture" }
 nte-core = { path = "../../../crates/nte-core" }
 nte-store = { path = "../../../crates/nte-store" }
 nte-update = { path = "../../../crates/nte-update" }
+anyhow.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 ureq.workspace = true
 windows-sys = { workspace = true, features = ["Win32_Globalization"] }
+zip.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

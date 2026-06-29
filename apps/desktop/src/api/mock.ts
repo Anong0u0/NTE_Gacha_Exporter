@@ -5,6 +5,7 @@ import type {
   CaptureStartOptions,
   CaptureStatus,
   DashboardSelection,
+  DiagnosticStatus,
   PoolKind,
   RecordFilter,
   SettingsPatch,
@@ -29,6 +30,7 @@ let mockCheckUpdatesOnStartup = true;
 let mockSkippedUpdateVersion: string | null = null;
 let mockCaptureAutoPageEnabled = true;
 let mockCaptureFullUpdateEnabled = false;
+const mockDiagnosticSessions = new Map<string, { polls: number; stopped: boolean; duration: number }>();
 
 
 function mockSettings() {
@@ -209,6 +211,12 @@ export const mockApi: AppApi = {
   async takePendingAdminCapture() {
     return null;
   },
+  async requestAdminDiagnosticStart() {
+    return false;
+  },
+  async takePendingAdminDiagnostic() {
+    return null;
+  },
   async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only", _options?: CaptureStartOptions) {
     const sessionId = `mock-capture-${Date.now()}`;
     mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode });
@@ -228,6 +236,26 @@ export const mockApi: AppApi = {
       session.polls = Math.max(session.polls, 2);
     }
     return mockCaptureStatus(sessionId);
+  },
+  async diagnosticStart(durationSeconds = 30) {
+    const sessionId = `mock-diagnostic-${Date.now()}`;
+    mockDiagnosticSessions.set(sessionId, { polls: 0, stopped: false, duration: durationSeconds });
+    return mockDiagnosticStatus(sessionId);
+  },
+  async diagnosticStatus(sessionId: string) {
+    const session = mockDiagnosticSessions.get(sessionId);
+    if (session) {
+      session.polls += 1;
+    }
+    return mockDiagnosticStatus(sessionId);
+  },
+  async diagnosticCancel(sessionId: string) {
+    const session = mockDiagnosticSessions.get(sessionId);
+    if (session) {
+      session.stopped = true;
+      session.polls = Math.max(session.polls, 2);
+    }
+    return mockDiagnosticStatus(sessionId);
   },
 };
 
@@ -274,6 +302,37 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
     raw_path: mode === "live_only" ? null : "data/runs/raw-mock.jsonl",
     error: null,
     import_report: completed ? mockReport(profileName, mode === "live_only" ? "live_capture" : mode, "") : null,
+  };
+}
+
+function mockDiagnosticStatus(sessionId: string): DiagnosticStatus {
+  const session = mockDiagnosticSessions.get(sessionId);
+  const completed = Boolean(session?.stopped || (session && session.polls >= 2));
+  const duration = session?.duration ?? 30;
+  const progress = completed ? 1 : session?.polls ? 0.45 : 0.08;
+  return {
+    session_id: sessionId,
+    state: completed ? "completed" : session?.polls ? "running" : "starting",
+    started_at: Date.now() / 1000 - progress * duration,
+    updated_at: Date.now() / 1000,
+    duration_seconds: duration,
+    elapsed_seconds: Math.round(progress * duration),
+    stage: completed ? "completed" : session?.polls ? "capturing" : "preparing",
+    progress,
+    support_zip_path: completed ? "data/support/diagnostic-mock.zip" : null,
+    error: null,
+    summary: completed
+      ? {
+          verdict: "only_idle_packets",
+          findings: ["external pktmon failed: mock browser mode"],
+          packets_seen: 1682,
+          decoded_packets: 0,
+          dropped_packets: 890,
+          duplicate_packets: 693,
+          rows_count: 0,
+          external_ok: false,
+        }
+      : null,
   };
 }
 

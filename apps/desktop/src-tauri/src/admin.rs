@@ -19,6 +19,11 @@ pub(crate) struct PendingAdminCapture {
     pub(crate) options: CaptureStartOptions,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct PendingAdminDiagnostic {
+    pub(crate) duration_seconds: u64,
+}
+
 #[tauri::command]
 pub(crate) fn request_admin_capture_start(
     state: State<'_, AppState>,
@@ -49,6 +54,22 @@ pub(crate) fn request_admin_capture_start(
 }
 
 #[tauri::command]
+pub(crate) fn request_admin_diagnostic_start(
+    duration_seconds: Option<u64>,
+) -> Result<bool, ApiError> {
+    if !admin_relaunch_required()? {
+        return Ok(false);
+    }
+    let payload = PendingAdminDiagnostic {
+        duration_seconds: duration_seconds.unwrap_or(30).clamp(5, 120),
+    };
+    let path = write_admin_diagnostic_payload(&payload)?;
+    relaunch_admin_with_diagnostic_payload(&path)?;
+    schedule_process_exit();
+    Ok(true)
+}
+
+#[tauri::command]
 pub(crate) fn take_pending_admin_capture(
     state: State<'_, AppState>,
 ) -> Result<Option<PendingAdminCapture>, ApiError> {
@@ -61,6 +82,22 @@ pub(crate) fn take_pending_admin_capture(
         .map(|mut pending| pending.take())
 }
 
+#[tauri::command]
+pub(crate) fn take_pending_admin_diagnostic(
+    state: State<'_, AppState>,
+) -> Result<Option<PendingAdminDiagnostic>, ApiError> {
+    state
+        .pending_admin_diagnostic
+        .lock()
+        .map_err(|_| {
+            api_error_message(
+                "admin_diagnostic_lock_poisoned",
+                "admin diagnostic lock poisoned",
+            )
+        })
+        .map(|mut pending| pending.take())
+}
+
 pub(crate) fn pending_admin_capture_from_args() -> Result<Option<PendingAdminCapture>, ApiError> {
     let mut args = env::args_os().skip(1);
     while let Some(arg) = args.next() {
@@ -69,6 +106,24 @@ pub(crate) fn pending_admin_capture_from_args() -> Result<Option<PendingAdminCap
                 api_error_message(
                     "admin_capture_arg_missing",
                     "--admin-capture-json requires a path",
+                )
+            })?;
+            let text = fs::read_to_string(path).map_err(api_error)?;
+            return serde_json::from_str(&text).map(Some).map_err(api_error);
+        }
+    }
+    Ok(None)
+}
+
+pub(crate) fn pending_admin_diagnostic_from_args()
+-> Result<Option<PendingAdminDiagnostic>, ApiError> {
+    let mut args = env::args_os().skip(1);
+    while let Some(arg) = args.next() {
+        if arg == "--admin-diagnostic-json" {
+            let path = args.next().ok_or_else(|| {
+                api_error_message(
+                    "admin_diagnostic_arg_missing",
+                    "--admin-diagnostic-json requires a path",
                 )
             })?;
             let text = fs::read_to_string(path).map_err(api_error)?;
@@ -96,6 +151,20 @@ fn write_admin_capture_payload(payload: &PendingAdminCapture) -> Result<PathBuf,
     Ok(path)
 }
 
+fn write_admin_diagnostic_payload(payload: &PendingAdminDiagnostic) -> Result<PathBuf, ApiError> {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(api_error)?
+        .as_millis();
+    let path = env::temp_dir().join(format!(
+        "nte-gacha-admin-diagnostic-{}-{stamp}.json",
+        std::process::id()
+    ));
+    let text = serde_json::to_string(payload).map_err(api_error)?;
+    fs::write(&path, text).map_err(api_error)?;
+    Ok(path)
+}
+
 fn schedule_process_exit() {
     std::thread::spawn(|| {
         std::thread::sleep(Duration::from_millis(750));
@@ -112,6 +181,13 @@ mod platform {
     }
 
     pub(super) fn relaunch_admin_with_capture_payload(_path: &Path) -> Result<(), ApiError> {
+        Err(api_error_message(
+            "admin_relaunch_unsupported",
+            "administrator relaunch requires Windows",
+        ))
+    }
+
+    pub(super) fn relaunch_admin_with_diagnostic_payload(_path: &Path) -> Result<(), ApiError> {
         Err(api_error_message(
             "admin_relaunch_unsupported",
             "administrator relaunch requires Windows",
@@ -147,6 +223,14 @@ mod platform {
     }
 
     pub(super) fn relaunch_admin_with_capture_payload(path: &Path) -> Result<(), ApiError> {
+        relaunch_admin_with_payload("--admin-capture-json", path)
+    }
+
+    pub(super) fn relaunch_admin_with_diagnostic_payload(path: &Path) -> Result<(), ApiError> {
+        relaunch_admin_with_payload("--admin-diagnostic-json", path)
+    }
+
+    fn relaunch_admin_with_payload(flag: &str, path: &Path) -> Result<(), ApiError> {
         let executable = env::var_os("NTE_GACHA_EXPORTER_LAUNCHER")
             .filter(|value| !value.is_empty())
             .map(PathBuf::from)
@@ -160,10 +244,7 @@ mod platform {
             .or_else(|| env::current_dir().ok());
         runas(
             &executable,
-            &[
-                "--admin-capture-json".into(),
-                path.as_os_str().to_os_string(),
-            ],
+            &[flag.into(), path.as_os_str().to_os_string()],
             working_dir.as_deref(),
         )
     }
@@ -255,4 +336,8 @@ mod platform {
 
 fn relaunch_admin_with_capture_payload(path: &Path) -> Result<(), ApiError> {
     platform::relaunch_admin_with_capture_payload(path)
+}
+
+fn relaunch_admin_with_diagnostic_payload(path: &Path) -> Result<(), ApiError> {
+    platform::relaunch_admin_with_diagnostic_payload(path)
 }

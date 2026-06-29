@@ -21,8 +21,10 @@ type ComputedDeps = {
   filterOptions: Ref<RecordFilterOptions>;
   captureStatus: Ref<CaptureStatus | null>;
   captureMode: Ref<CaptureMode>;
+  diagnosticStatus: Ref<{ state: string } | null>;
   busy: Ref<boolean>;
   captureActionBusy: Ref<boolean>;
+  diagnosticActionBusy: Ref<boolean>;
   recordPoolKind: Ref<PoolKindFilter>;
   pageSize: Ref<number>;
   pageIndex: Ref<number>;
@@ -63,7 +65,17 @@ export function createAppComputed(deps: ComputedDeps) {
     const state = deps.captureStatus.value?.state;
     return state === "starting" || state === "running" || state === "stopping";
   });
-  const isWorkflowBusy = computed(() => deps.busy.value || isCaptureActive.value || deps.captureActionBusy.value);
+  const isDiagnosticActive = computed(() => {
+    const state = deps.diagnosticStatus.value?.state;
+    return state === "starting" || state === "running" || state === "stopping";
+  });
+  const isWorkflowBusy = computed(() =>
+    deps.busy.value
+    || isCaptureActive.value
+    || deps.captureActionBusy.value
+    || isDiagnosticActive.value
+    || deps.diagnosticActionBusy.value,
+  );
   const captureTitle = computed(() => {
     if (!deps.captureStatus.value) {
       return deps.summary.value?.total_records ? deps.t("capture.mergePrompt") : deps.t("capture.importPrompt");
@@ -120,6 +132,7 @@ export function createAppComputed(deps: ComputedDeps) {
     canLastPage,
     bannersForRecordKind,
     isCaptureActive,
+    isDiagnosticActive,
     isWorkflowBusy,
     captureTitle,
     captureSubtitle,

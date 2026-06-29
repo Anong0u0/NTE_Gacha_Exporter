@@ -3,6 +3,7 @@ mod admin;
 mod agent_smoke;
 mod assets_commands;
 mod capture;
+mod diagnostic;
 mod error;
 mod state;
 mod store_commands;
@@ -13,12 +14,14 @@ mod window_commands;
 use nte_store::JsonStore;
 use tauri::Manager;
 
-use crate::admin::pending_admin_capture_from_args;
+use crate::admin::{pending_admin_capture_from_args, pending_admin_diagnostic_from_args};
 use crate::state::{AppState, portable_root};
 
 pub fn run() {
     let pending_admin_capture = pending_admin_capture_from_args()
         .unwrap_or_else(|error| panic!("failed to read pending admin capture: {error:?}"));
+    let pending_admin_diagnostic = pending_admin_diagnostic_from_args()
+        .unwrap_or_else(|error| panic!("failed to read pending admin diagnostic: {error:?}"));
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .register_uri_scheme_protocol("nteasset", |_ctx, request| {
@@ -32,7 +35,11 @@ pub fn run() {
             let _ = nte_update::cleanup_update_artifacts_after_success(&root);
             let store = JsonStore::open_with_defaults(root, system_commands::store_defaults())
                 .map_err(|err| format!("failed to open JSON store: {err}"))?;
-            app.manage(AppState::new(store, pending_admin_capture.clone()));
+            app.manage(AppState::new(
+                store,
+                pending_admin_capture.clone(),
+                pending_admin_diagnostic.clone(),
+            ));
             #[cfg(feature = "agent-smoke")]
             agent_smoke::maybe_start(app);
             Ok(())
@@ -69,10 +76,15 @@ pub fn run() {
             system_commands::system_locale,
             system_commands::doctor_run,
             admin::request_admin_capture_start,
+            admin::request_admin_diagnostic_start,
             admin::take_pending_admin_capture,
+            admin::take_pending_admin_diagnostic,
             capture::capture_start,
             capture::capture_status,
-            capture::capture_stop
+            capture::capture_stop,
+            diagnostic::diagnostic_start,
+            diagnostic::diagnostic_status,
+            diagnostic::diagnostic_cancel
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");
