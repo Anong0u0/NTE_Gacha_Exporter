@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "nte-core"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "atomic-write-file",
  "serde",
@@ -583,7 +583,7 @@ dependencies = [
 
 [[package]]
 name = "nte-store"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "atomic-write-file",
  "nte-core",
