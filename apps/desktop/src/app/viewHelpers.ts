@@ -1,4 +1,4 @@
-import type { DisplayRecord, ForkResultMark, ItemKind, PityBadge, RollBucket } from "../api";
+import type { DisplayRecord, ForkResultMark, PityBadge, RollBucket } from "../api";
 import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
@@ -58,16 +58,6 @@ export function formatRollBucket(value: RollBucket, t: Translator) {
   if (value === "sleep") return t("records.rollSleep");
   if (value === "not_applicable") return t("records.rollNotApplicable");
   if (["1", "2", "3", "4", "5", "6"].includes(value)) return value;
-  return "";
-}
-
-export function formatItemKind(value: ItemKind, t: Translator) {
-  if (value === "character") return t("records.itemKindCharacter");
-  if (value === "fork") return t("records.itemKindFork");
-  if (value === "appearance") return t("records.itemKindAppearance");
-  if (value === "inventory") return t("records.itemKindInventory");
-  if (value === "vehicle_module") return t("records.itemKindVehicleModule");
-  if (value === "unknown") return t("records.itemKindUnknown");
   return "";
 }
 

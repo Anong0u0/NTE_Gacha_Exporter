@@ -181,10 +181,16 @@ pub fn record_filter_options(
     map: &MapData,
 ) -> Result<RecordFilterOptions, GuiError> {
     let display_records = display_records(records, map)?;
-    Ok(record_filter_options_from_display_records(&display_records))
+    Ok(record_filter_options_from_display_records(
+        &display_records,
+        map,
+    ))
 }
 
-fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> RecordFilterOptions {
+fn record_filter_options_from_display_records(
+    records: &[DisplayRecord],
+    map: &MapData,
+) -> RecordFilterOptions {
     struct BannerOptionAccumulator {
         option: RecordBannerOption,
         latest_item_time: Option<String>,
@@ -248,6 +254,7 @@ fn record_filter_options_from_display_records(records: &[DisplayRecord]) -> Reco
             .iter()
             .map(|item_kind| RecordItemKindOption {
                 item_kind: *item_kind,
+                label: map.item_kind_label(*item_kind),
                 count: *item_kinds.get(item_kind).unwrap_or(&0),
             })
             .collect(),
@@ -333,7 +340,8 @@ fn item_kind_order() -> &'static [ItemKind] {
     &[
         ItemKind::Character,
         ItemKind::Fork,
-        ItemKind::Appearance,
+        ItemKind::Fashion,
+        ItemKind::Glider,
         ItemKind::Inventory,
         ItemKind::VehicleModule,
         ItemKind::Unknown,

@@ -395,8 +395,8 @@
     "Fashion_Glide_1004": {
       "name": "글라이더·토마토 듀오",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1"
@@ -405,8 +405,8 @@
     "Fashion_Glide_1010": {
       "name": "글라이더·이인자의 이인자",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide"
@@ -415,8 +415,8 @@
     "Fashion_Glide_1052": {
       "name": "글라이더·유란",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256"
@@ -425,8 +425,8 @@
     "Fashion_Glide_1071": {
       "name": "글라이더·스카이 라이더",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1071_256.Fashion_glide_1071_256"
@@ -435,8 +435,8 @@
     "Fashion_character_1004_01": {
       "name": "코스튬·금빛 교향시",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
@@ -447,8 +447,8 @@
     "Fashion_character_1010": {
       "name": "코스튬·화려한 발차기",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
@@ -459,8 +459,8 @@
     "Fashion_character_1052_01": {
       "name": "코스튬·고급 난초",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
@@ -471,8 +471,8 @@
     "Fashion_character_1071_01": {
       "name": "코스튬·화창한 하루",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
@@ -1360,6 +1360,12 @@
     "W_HTButton_Next_Page": "다음 페이지",
     "W_Vehicle_Button_Choose": "선택",
     "common_3": "뒤로가기",
+    "item_kind_character": "캐릭터",
+    "item_kind_fashion": "코스튬",
+    "item_kind_fork": "아크",
+    "item_kind_glider": "글라이더",
+    "item_kind_inventory": "아이템",
+    "item_kind_vehicle_module": "튜닝 부품",
     "ui_appearance_02": "글라이더",
     "ui_forkshop_03": "아크 연구 모집 계획",
     "ui_forkshop_07": "연구 모집 상세정보",

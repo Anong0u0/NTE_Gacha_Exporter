@@ -39,10 +39,10 @@ fn item_type_prefix(
 
 fn default_prefix(kind: &str) -> &'static str {
     match kind {
-        "appearance" => "Appearance",
+        "appearance" | "fashion" => "Fashion",
         "capital" => "Currency",
         "character" => "Character",
-        "glide" => "Glider",
+        "glide" | "glider" => "Glider",
         "inventory" => "Item",
         "fork" => "Arc",
         "vehicle" => "Vehicle",
@@ -57,6 +57,7 @@ fn localized_prefix(table_kind: &str, localization: &Localization) -> String {
         "capital" => Some(("ST_Common", "item_type_4")),
         "fork" => Some(("ST_Common", "item_type_5")),
         "character" => Some(("ST_Common", "item_type_3")),
+        "fashion" => Some(("ST_Common", "item_type_8")),
         "vehicle_module" => Some(("ST_Common", "item_type_10")),
         _ => None,
     };
@@ -283,4 +284,3 @@ impl ItemCanonicalizer {
             .unwrap_or_else(|| item_id.to_string())
     }
 }
-

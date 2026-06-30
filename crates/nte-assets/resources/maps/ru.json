@@ -395,8 +395,8 @@
     "Fashion_Glide_1004": {
       "name": "Планер·Томатный дуэт",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1"
@@ -405,8 +405,8 @@
     "Fashion_Glide_1010": {
       "name": "Планер·Заместитель младшего босса",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide"
@@ -415,8 +415,8 @@
     "Fashion_Glide_1052": {
       "name": "Планер·Орхидеевый бриз",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256"
@@ -425,8 +425,8 @@
     "Fashion_Glide_1071": {
       "name": "Планер·Небесный всадник",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1071_256.Fashion_glide_1071_256"
@@ -435,8 +435,8 @@
     "Fashion_character_1004_01": {
       "name": "Костюм·Позолоченная рапсодия",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
@@ -447,8 +447,8 @@
     "Fashion_character_1010": {
       "name": "Костюм·Удар Феникса",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
@@ -459,8 +459,8 @@
     "Fashion_character_1052_01": {
       "name": "Костюм·Бесценная орхидея",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
@@ -471,8 +471,8 @@
     "Fashion_character_1071_01": {
       "name": "Костюм·Чистое небо",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
@@ -1360,6 +1360,12 @@
     "W_HTButton_Next_Page": "Далее",
     "W_Vehicle_Button_Choose": "Выбрать",
     "common_3": "Назад",
+    "item_kind_character": "Персонаж",
+    "item_kind_fashion": "Костюм",
+    "item_kind_fork": "Дуга",
+    "item_kind_glider": "Планер",
+    "item_kind_inventory": "Предмет",
+    "item_kind_vehicle_module": "Детали модификации",
     "ui_appearance_02": "Планер",
     "ui_forkshop_03": "План исследования дуги",
     "ui_forkshop_07": "Подробности",

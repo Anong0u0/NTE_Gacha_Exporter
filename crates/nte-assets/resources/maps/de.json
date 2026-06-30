@@ -395,8 +395,8 @@
     "Fashion_Glide_1004": {
       "name": "Gleiter·Tomaten-Duo",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1"
@@ -405,8 +405,8 @@
     "Fashion_Glide_1010": {
       "name": "Gleiter·Unterboss der Unterbosse",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide"
@@ -415,8 +415,8 @@
     "Fashion_Glide_1052": {
       "name": "Gleiter·Orchideenbrise",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256"
@@ -425,8 +425,8 @@
     "Fashion_Glide_1071": {
       "name": "Gleiter·Himmelsreiter",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1071_256.Fashion_glide_1071_256"
@@ -435,8 +435,8 @@
     "Fashion_character_1004_01": {
       "name": "Outfit·Vergoldete Rhapsodie",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
@@ -447,8 +447,8 @@
     "Fashion_character_1010": {
       "name": "Outfit·Phönix-Kick",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
@@ -459,8 +459,8 @@
     "Fashion_character_1052_01": {
       "name": "Outfit·Unbezahlbare Orchidee",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
@@ -471,8 +471,8 @@
     "Fashion_character_1071_01": {
       "name": "Outfit·Klarer Himmel",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
@@ -1360,6 +1360,12 @@
     "W_HTButton_Next_Page": "Weiter",
     "W_Vehicle_Button_Choose": "Auswählen",
     "common_3": "Zurück",
+    "item_kind_character": "Charakter",
+    "item_kind_fashion": "Outfit",
+    "item_kind_fork": "Arkus",
+    "item_kind_glider": "Gleiter",
+    "item_kind_inventory": "Gegenstand",
+    "item_kind_vehicle_module": "Mod-Teile",
     "ui_appearance_02": "Gleiter",
     "ui_forkshop_03": "Arkus-Forschungsprogramm",
     "ui_forkshop_07": "Details",

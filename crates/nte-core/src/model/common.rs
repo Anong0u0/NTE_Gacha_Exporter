@@ -234,7 +234,8 @@ pub enum RollBucket {
 pub enum ItemKind {
     Character,
     Fork,
-    Appearance,
+    Fashion,
+    Glider,
     Inventory,
     VehicleModule,
     Unknown,
@@ -285,6 +286,20 @@ impl PoolKind {
             Self::MonopolyLimited => "monopoly_limited",
             Self::MonopolyStandard => "monopoly_standard",
             Self::ForkLottery => "fork_lottery",
+        }
+    }
+}
+
+impl ItemKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Character => "character",
+            Self::Fork => "fork",
+            Self::Fashion => "fashion",
+            Self::Glider => "glider",
+            Self::Inventory => "inventory",
+            Self::VehicleModule => "vehicle_module",
+            Self::Unknown => "unknown",
         }
     }
 }

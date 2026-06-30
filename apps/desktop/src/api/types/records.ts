@@ -43,7 +43,7 @@ export type RateUpResult = "up" | "off_rate" | "not_applicable" | "unknown";
 export type PityBadge = "fork_up_guarantee" | "fork_5star_guarantee" | "fork_4star_guarantee";
 export type ForkResultMark = "win" | "guaranteed" | "lose";
 export type RollBucket = "gift" | "sleep" | "1" | "2" | "3" | "4" | "5" | "6" | "not_applicable";
-export type ItemKind = "character" | "fork" | "appearance" | "inventory" | "vehicle_module" | "unknown";
+export type ItemKind = "character" | "fork" | "fashion" | "glider" | "inventory" | "vehicle_module" | "unknown";
 
 export type ResolvedBanner = {
   resolution_issue?: BannerResolutionIssue | null;
@@ -139,6 +139,7 @@ type RecordRollBucketOption = {
 
 type RecordItemKindOption = {
   item_kind: ItemKind;
+  label: string;
   count: number;
 };
 

@@ -41,10 +41,16 @@ fn records_list_filters_by_roll_buckets_and_item_kinds() {
         sleep,
         other,
         record(
-            "appearance",
+            "glider",
             "CardPool_Character",
             "Fashion_Glide_1010",
             "2026-06-01 10:05:00",
+        ),
+        record(
+            "fashion",
+            "CardPool_Character",
+            "Fashion_character_1010",
+            "2026-06-01 10:05:30",
         ),
         record(
             "vehicle",
@@ -79,7 +85,7 @@ fn records_list_filters_by_roll_buckets_and_item_kinds() {
             "default",
             "zh-Hant",
             &RecordFilter {
-                item_kinds: vec![ItemKind::Character, ItemKind::Appearance],
+                item_kinds: vec![ItemKind::Character, ItemKind::Fashion, ItemKind::Glider],
                 sort_direction: Some(SortDirection::Asc),
                 ..RecordFilter::default()
             },
@@ -115,7 +121,7 @@ fn records_list_filters_by_roll_buckets_and_item_kinds() {
             .iter()
             .map(|record| record.item_id.as_str())
             .collect::<Vec<_>>(),
-        vec!["1010", "Fashion_Glide_1010"]
+        vec!["1010", "Fashion_Glide_1010", "Fashion_character_1010"]
     );
     assert_eq!(
         rarity_filtered
@@ -127,6 +133,7 @@ fn records_list_filters_by_roll_buckets_and_item_kinds() {
             "fork_Rose",
             "1010",
             "Fashion_Glide_1010",
+            "Fashion_character_1010",
             "Fashion_vehicle_1010_V008",
         ]
     );
@@ -290,6 +297,8 @@ fn record_filter_options_count_banners_roll_buckets_and_item_kinds() {
         options
             .item_kinds
             .iter()
-            .any(|item_kind| item_kind.item_kind == ItemKind::Fork && item_kind.count == 3)
+            .any(|item_kind| item_kind.item_kind == ItemKind::Fork
+                && item_kind.label == "弧盤"
+                && item_kind.count == 3)
     );
 }

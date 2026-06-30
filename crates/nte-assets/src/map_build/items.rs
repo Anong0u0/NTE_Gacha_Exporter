@@ -81,7 +81,11 @@ fn add_table_items(
                 continue;
             };
             let prefix = if kind == "inventory" {
-                inventory_prefix(row, &ctx.localization, &ctx.item_type_prefixes)
+                if is_character_fashion(&item_id) {
+                    localized_prefix("fashion", &ctx.localization)
+                } else {
+                    inventory_prefix(row, &ctx.localization, &ctx.item_type_prefixes)
+                }
             } else {
                 localized_prefix(kind, &ctx.localization)
             };

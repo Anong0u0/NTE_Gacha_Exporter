@@ -90,6 +90,12 @@ fn csv_headers(localization: &Localization, locale: &str) -> JsonObject {
 
 fn build_labels(localization: &Localization) -> BTreeMap<String, String> {
     let label_keys = [
+        ("item_kind_character", "ST_Common", "item_type_3"),
+        ("item_kind_fork", "ST_Common", "item_type_5"),
+        ("item_kind_fashion", "ST_Common", "item_type_8"),
+        ("item_kind_glider", "ST_Ui", "ui_appearance_02"),
+        ("item_kind_inventory", "ST_Common", "item_type_2"),
+        ("item_kind_vehicle_module", "ST_Common", "item_type_10"),
         ("Abyss_GamepadKeys_1", "ST_Ui", "Abyss_GamepadKeys_1"),
         ("AbyssClone_Award_02", "ST_Ui", "AbyssClone_Award_02"),
         (
@@ -169,4 +175,3 @@ fn build_labels(localization: &Localization) -> BTreeMap<String, String> {
         })
         .collect()
 }
-

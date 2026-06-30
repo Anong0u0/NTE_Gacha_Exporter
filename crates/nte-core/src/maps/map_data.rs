@@ -48,6 +48,22 @@ impl MapData {
             .unwrap_or(ItemKind::Unknown)
     }
 
+    pub fn item_kind_label(&self, item_kind: ItemKind) -> String {
+        let label_id = match item_kind {
+            ItemKind::Character => "item_kind_character",
+            ItemKind::Fork => "item_kind_fork",
+            ItemKind::Fashion => "item_kind_fashion",
+            ItemKind::Glider => "item_kind_glider",
+            ItemKind::Inventory => "item_kind_inventory",
+            ItemKind::VehicleModule => "item_kind_vehicle_module",
+            ItemKind::Unknown => "item_kind_unknown",
+        };
+        self.labels
+            .get(label_id)
+            .cloned()
+            .unwrap_or_else(|| item_kind.as_str().to_string())
+    }
+
     pub fn label(&self, label_id: &str) -> String {
         self.labels
             .get(label_id)
@@ -220,7 +236,8 @@ fn item_kind_from_taxonomy(
     match normalized {
         Some("character") => ItemKind::Character,
         Some("fork") => ItemKind::Fork,
-        Some("appearance") => ItemKind::Appearance,
+        Some("fashion") => ItemKind::Fashion,
+        Some("glider") => ItemKind::Glider,
         Some("inventory") => ItemKind::Inventory,
         Some("vehicle_module") => ItemKind::VehicleModule,
         _ => ItemKind::Unknown,

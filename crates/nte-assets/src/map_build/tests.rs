@@ -19,6 +19,7 @@ mod tests {
             json!([
                 "1010",
                 "201",
+                "Fashion_character_1010",
                 "Fashion_Glide_1010",
                 "Fashion_vehicle_1010_V008",
                 "Fashion_vehicleSkin_1010_V001"
@@ -54,9 +55,17 @@ mod tests {
         let glide_refs = map["items"]["Fashion_Glide_1010"]["asset_refs"]
             .as_object()
             .unwrap();
+        assert_eq!(map["items"]["Fashion_Glide_1010"]["name"], "滑翔翼·Nanali Glide");
+        assert_eq!(map["items"]["Fashion_Glide_1010"]["category"], "glider");
+        assert_eq!(map["items"]["Fashion_Glide_1010"]["domain_type"], "glider");
         assert_eq!(glide_refs.get("icon"), Some(&json!("/Game/GlideIcon")));
         assert!(!glide_refs.contains_key("portrait"));
         assert!(!glide_refs.contains_key("banner"));
+        assert_eq!(map["items"]["Fashion_character_1010"]["name"], "時裝·Nanali Fashion");
+        assert_eq!(map["items"]["Fashion_character_1010"]["category"], "fashion");
+        assert_eq!(map["items"]["Fashion_character_1010"]["domain_type"], "fashion");
+        assert_eq!(map["labels"]["item_kind_fashion"], "時裝");
+        assert_eq!(map["labels"]["item_kind_glider"], "滑翔翼");
         let vehicle_refs = map["items"]["Fashion_vehicle_1010_V008"]["asset_refs"]
             .as_object()
             .unwrap();
@@ -254,7 +263,7 @@ mod tests {
                     "item_type_3": "Character",
                     "item_type_5": "Arc",
                     "item_type_10": "Mod Parts",
-                    "item_type_8": "Appearance"
+                    "item_type_8": "Fashion"
                 },
                 "ST_Ui": {
                     "BPUI_LotteryDiceRecord_biaozhunqipan": "Standard",
@@ -285,7 +294,7 @@ mod tests {
                 "ST_Common": {
                     "item_type_3": "Character",
                     "item_type_5": "Arc",
-                    "item_type_8": "Appearance",
+                    "item_type_8": "時裝",
                     "item_type_10": "Mod Parts"
                 },
                 "ST_Ui": {
@@ -298,7 +307,7 @@ mod tests {
                     "LotteryDes_Jishishuoming_XunDes": "1.<Orange>「Xun Banner」</>屬於<Orange>「限定棋盤」</>。",
                     "LotteryDes_Jishishuoming_AnHunQuDes": "1.<Orange>「久夢初醒時」</>屬於<Orange>「限定棋盤」</>。",
                     "LotteryDes_Jishishuoming_KaesiDes": "1.<Orange>「Kaesi Banner」</>屬於<Orange>「限定棋盤」</>。",
-                    "ui_appearance_02": "Glider"
+                    "ui_appearance_02": "滑翔翼"
                 },
                 "ST_Item": {
                     "char_1004": "Lacrimosa",
@@ -308,6 +317,7 @@ mod tests {
                     "Dicelimite_lacrimosa_usedesc": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。",
                     "fork_200": "Fork Weapon",
                     "fork_201": "Forgotten",
+                    "fashion_1010": "Nanali Fashion",
                     "glide_1010": "Nanali Glide",
                     "vehicle_1010": "Nanali Vehicle",
                     "vehicle_skin_1010": "Nanali Vehicle Skin"
@@ -374,6 +384,10 @@ mod tests {
                     "ItemName": {"Key": "vehicle_1010", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
                 },
+                "Fashion_character_1010": {
+                    "ItemName": {"Key": "fashion_1010", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                },
                 "Fashion_vehicleSkin_1010_V001": {
                     "ItemName": {"Key": "vehicle_skin_1010", "TableId": "ST_Item"},
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
@@ -419,6 +433,7 @@ mod tests {
                     "SSRItems": [
                         {"ItemID": "1010"},
                         {"ItemID": "201"},
+                        {"ItemID": "Fashion_character_1010"},
                         {"ItemID": "Fashion_Glide_1010"},
                         {"ItemID": "Fashion_vehicle_1010_V008"},
                         {"ItemID": "Fashion_vehicleSkin_1010_V001"}

@@ -46,8 +46,33 @@ fn is_vehicle_fashion(item_id: &str) -> bool {
     item_id.starts_with("Fashion_vehicle")
 }
 
+fn is_character_fashion(item_id: &str) -> bool {
+    item_id.starts_with("Fashion_character")
+}
+
 fn is_glide_fashion(item_id: &str) -> bool {
     item_id.starts_with("Fashion_Glide") || item_id.starts_with("Fashion_glide")
+}
+
+fn is_glide_appearance(item_id: &str, row: &JsonObject) -> bool {
+    is_glide_fashion(item_id)
+        || row.get("AppearanceType").and_then(value_to_text).as_deref()
+            == Some("EAppearanceType::Glide")
+}
+
+fn item_taxonomy_category<'a>(item_id: &str, row: &JsonObject, category: &'a str) -> &'a str {
+    if is_character_fashion(item_id) {
+        return "fashion";
+    }
+    if category == "appearance" {
+        if is_glide_appearance(item_id, row) {
+            "glider"
+        } else {
+            "fashion"
+        }
+    } else {
+        category
+    }
 }
 
 fn prune_item_asset_refs(
@@ -94,12 +119,16 @@ fn rarity_from_quality(value: Option<&Value>) -> Option<u64> {
     }
 }
 
-fn row_item_meta(row: &JsonObject, category: &str) -> JsonObject {
+fn row_item_meta(item_id: &str, row: &JsonObject, category: &str) -> JsonObject {
     let mut meta = JsonObject::new();
-    meta.insert("category".to_string(), Value::String(category.to_string()));
+    let taxonomy_category = item_taxonomy_category(item_id, row, category);
     meta.insert(
         "domain_type".to_string(),
-        Value::String(category.to_string()),
+        Value::String(taxonomy_category.to_string()),
+    );
+    meta.insert(
+        "category".to_string(),
+        Value::String(taxonomy_category.to_string()),
     );
     if let Some(rarity) = rarity_from_quality(row.get("ItemQuality").or_else(|| row.get("Quality")))
     {
@@ -263,7 +292,7 @@ fn build_item_meta_rows(
                 continue;
             };
             if known_ids.contains(&item_id) {
-                merge_item_meta(&mut meta, item_id, row_item_meta(row, category));
+                merge_item_meta(&mut meta, item_id.clone(), row_item_meta(&item_id, row, category));
             }
         }
     }

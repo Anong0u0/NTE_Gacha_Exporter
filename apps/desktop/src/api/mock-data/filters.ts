@@ -18,13 +18,14 @@ const mockFilterOptions: RecordFilterOptions = {
     { bucket: "not_applicable", count: 3 },
   ] satisfies { bucket: RollBucket; count: number }[],
   item_kinds: [
-    { item_kind: "character", count: 1 },
-    { item_kind: "fork", count: 1 },
-    { item_kind: "appearance", count: 0 },
-    { item_kind: "inventory", count: 1 },
-    { item_kind: "vehicle_module", count: 0 },
-    { item_kind: "unknown", count: 0 },
-  ] satisfies { item_kind: ItemKind; count: number }[],
+    { item_kind: "character", label: "Character", count: 1 },
+    { item_kind: "fork", label: "Arc", count: 1 },
+    { item_kind: "fashion", label: "Fashion", count: 0 },
+    { item_kind: "glider", label: "Glider", count: 0 },
+    { item_kind: "inventory", label: "Item", count: 1 },
+    { item_kind: "vehicle_module", label: "Mod Parts", count: 0 },
+    { item_kind: "unknown", label: "unknown", count: 0 },
+  ] satisfies { item_kind: ItemKind; label: string; count: number }[],
 };
 
 const mockUnknownFilterBanners: RecordFilterOptions["banners"] = [

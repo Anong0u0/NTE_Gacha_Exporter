@@ -127,6 +127,7 @@ pub struct RecordRollBucketOption {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordItemKindOption {
     pub item_kind: ItemKind,
+    pub label: String,
     pub count: u64,
 }
 

@@ -129,7 +129,7 @@ function isRollBucket(value: string): value is RollBucket {
 }
 
 function isItemKind(value: string): value is ItemKind {
-  return value === "character" || value === "fork" || value === "appearance" || value === "inventory" || value === "vehicle_module" || value === "unknown";
+  return value === "character" || value === "fork" || value === "fashion" || value === "glider" || value === "inventory" || value === "vehicle_module" || value === "unknown";
 }
 
 function readRecordColumnArray(value: unknown): RecordColumnId[] {

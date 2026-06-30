@@ -395,8 +395,8 @@
     "Fashion_Glide_1004": {
       "name": "グライダー·ハッピートマト",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI/Gacha/Lottery_Img/YH_UI_256_anhunqu1.YH_UI_256_anhunqu1"
@@ -405,8 +405,8 @@
     "Fashion_Glide_1010": {
       "name": "グライダー·相棒の相棒",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide.Fashion_Glide"
@@ -415,8 +415,8 @@
     "Fashion_Glide_1052": {
       "name": "グライダー·幽蘭",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256"
@@ -425,8 +425,8 @@
     "Fashion_Glide_1071": {
       "name": "グライダー·ダークチェイサー",
       "rarity": 4,
-      "category": "appearance",
-      "domain_type": "appearance",
+      "category": "glider",
+      "domain_type": "glider",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1071_256.Fashion_glide_1071_256"
@@ -435,8 +435,8 @@
     "Fashion_character_1004_01": {
       "name": "コスチューム·デビルズ・ビート",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
@@ -447,8 +447,8 @@
     "Fashion_character_1010": {
       "name": "コスチューム·華麗なるキック",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
@@ -459,8 +459,8 @@
     "Fashion_character_1052_01": {
       "name": "コスチューム·万金の蘭",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
@@ -471,8 +471,8 @@
     "Fashion_character_1071_01": {
       "name": "コスチューム·サニーデイズ",
       "rarity": 5,
-      "category": "inventory",
-      "domain_type": "inventory",
+      "category": "fashion",
+      "domain_type": "fashion",
       "color": "#000000",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
@@ -1360,6 +1360,12 @@
     "W_HTButton_Next_Page": "次のページ",
     "W_Vehicle_Button_Choose": "選択",
     "common_3": "戻る",
+    "item_kind_character": "キャラ",
+    "item_kind_fashion": "コスチューム",
+    "item_kind_fork": "弧盤",
+    "item_kind_glider": "グライダー",
+    "item_kind_inventory": "アイテム",
+    "item_kind_vehicle_module": "改造パーツ",
     "ui_appearance_02": "グライダー",
     "ui_forkshop_03": "弧盤研究プロジェクト",
     "ui_forkshop_07": "研究募集詳細",

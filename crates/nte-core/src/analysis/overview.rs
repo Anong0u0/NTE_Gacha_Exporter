@@ -145,7 +145,7 @@ impl<'a> AnalysisSnapshot<'a> {
     }
 
     fn record_filter_options(&self) -> RecordFilterOptions {
-        record_filter_options_from_display_records(&self.records)
+        record_filter_options_from_display_records(&self.records, self.map)
     }
 
     fn record_page(&self, filter: &RecordFilter) -> RecordList {

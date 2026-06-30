@@ -32,7 +32,6 @@ import {
 import {
   formatForkResultMark,
   bannerTitle,
-  formatItemKind,
   formatPityBadgeValue,
   formatResult,
   formatRollBucket,
@@ -142,7 +141,7 @@ export function createRecordState(deps: RecordStateDeps) {
   const itemKindOptions = computed(() =>
     deps.filterOptions.value.item_kinds.map((itemKind) => ({
       value: itemKind.item_kind,
-      label: formatItemKind(itemKind.item_kind, deps.t),
+      label: itemKind.label || itemKind.item_kind,
       meta: String(itemKind.count),
     })),
   );
