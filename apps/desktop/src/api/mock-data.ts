@@ -1,4 +1,4 @@
-export { mockProfile } from "./mock-data/common";
+export { mockProfile, mockScenario } from "./mock-data/common";
 export { mockRecordsForScenario, type MockRecord } from "./mock-data/records";
 export { mockBannersForScenario } from "./mock-data/banners";
 export { mockFilterOptionsForScenario } from "./mock-data/filters";

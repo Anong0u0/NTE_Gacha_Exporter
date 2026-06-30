@@ -21,6 +21,10 @@ function checkedValue(event: Event) {
               <span class="eyebrow">{{ app.t("settings.runtime") }}</span>
               <h2>{{ app.t("common.settings") }}</h2>
             </div>
+            <button type="button" data-agent-id="diagnostic-open" :disabled="app.isWorkflowBusy" @click="app.openDiagnosticPrompt">
+              <Stethoscope :size="17" />
+              <span>{{ app.t("common.doctor") }}</span>
+            </button>
           </div>
           <div class="form-grid runtime-grid">
             <label class="field">
@@ -42,16 +46,6 @@ function checkedValue(event: Event) {
                 <option value="beta">{{ app.t("update.beta") }}</option>
               </select>
             </label>
-          </div>
-          <div class="settings-actions">
-            <label class="check-field">
-              <input :checked="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" @change="app.setCheckUpdatesOnStartup(checkedValue($event))" />
-              <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
-            </label>
-            <button type="button" data-agent-id="diagnostic-open" :disabled="app.isWorkflowBusy" @click="app.openDiagnosticPrompt">
-              <Stethoscope :size="17" />
-              <span>{{ app.t("common.doctor") }}</span>
-            </button>
           </div>
         </section>
 
@@ -119,6 +113,10 @@ function checkedValue(event: Event) {
               <Download :size="17" />
               <span>{{ app.t("settings.updateNow") }}</span>
             </button>
+            <label class="check-field">
+              <input :checked="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" @change="app.setCheckUpdatesOnStartup(checkedValue($event))" />
+              <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
+            </label>
           </div>
         </section>
       </section>

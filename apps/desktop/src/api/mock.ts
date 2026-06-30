@@ -16,6 +16,7 @@ import {
   mockCaptureSessions,
   mockFilterOptionsForScenario,
   mockProfile,
+  mockScenario,
   mockRecordsForScenario,
   mockSummaryForScenario,
 } from "./mock-data";
@@ -217,9 +218,9 @@ export const mockApi: AppApi = {
   async takePendingAdminDiagnostic() {
     return null;
   },
-  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only", _options?: CaptureStartOptions) {
+  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only", options?: CaptureStartOptions) {
     const sessionId = `mock-capture-${Date.now()}`;
-    mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode });
+    mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode, options });
     return mockCaptureStatus(sessionId);
   },
   async captureStatus(sessionId: string) {
@@ -262,6 +263,9 @@ export const mockApi: AppApi = {
 
 function mockCaptureStatus(sessionId: string): CaptureStatus {
   const session = mockCaptureSessions.get(sessionId);
+  if (session && shouldMockCaptureStalled(session)) {
+    return mockCaptureStalledStatus(sessionId, session);
+  }
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
   const profileName = session?.profileName ?? "default";
   const mode = session?.mode ?? "live_only";
@@ -303,6 +307,55 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
     raw_path: rawPath,
     error: null,
     import_report: completed ? mockReport(profileName, mockCaptureSourceKind(mode), rawPath) : null,
+  };
+}
+
+function shouldMockCaptureStalled(session: { mode: CaptureMode; options?: CaptureStartOptions }) {
+  return mockScenario() === "capture-stalled"
+    && session.mode !== "live_only"
+    && (session.options?.page_record_min_wait_ms ?? 300) < 500;
+}
+
+function mockCaptureStalledStatus(
+  sessionId: string,
+  session: { mode: CaptureMode },
+): CaptureStatus {
+  return {
+    session_id: sessionId,
+    state: "failed",
+    mode: session.mode,
+    records_count: 0,
+    latest_records: [],
+    counters: {
+      packets_seen: 8,
+      decoded_packets: 1,
+      dropped_packets: 0,
+    },
+    started_at: Date.now() / 1000 - 6,
+    updated_at: Date.now() / 1000,
+    target: {
+      pid: "1234",
+      interface: "mock0",
+      ports: [30230],
+      bpf: "port 30230",
+    },
+    auto_page: {
+      state: "failed",
+      message: "capture window waiting",
+      kind: "diagnostic",
+      pool: "limited",
+      current_page: 2,
+      total_pages: 3,
+      completed_pools: [],
+      skipped_pools: [],
+    },
+    raw_path: "data/runs/raw-mock.jsonl",
+    error: {
+      code: "auto_page_capture_window_stalled",
+      message: "capture window stalled: pool=limited visited_pages=8 decoded_pages=1 max_visited_pages=7",
+      support_path: "mock/support/capture-stalled.zip",
+    },
+    import_report: null,
   };
 }
 

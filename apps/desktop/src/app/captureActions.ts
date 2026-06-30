@@ -13,6 +13,7 @@ type CaptureActionsDeps = {
   locale: Ref<string>;
   captureMode: Ref<CaptureMode>;
   captureStatus: Ref<CaptureStatus | null>;
+  captureStalledDialogOpen: Ref<boolean>;
   captureActionBusy: Ref<boolean>;
   capturePollInFlight: Ref<boolean>;
   lastReport: Ref<ImportReport | null>;
@@ -59,6 +60,7 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
   async function startLiveCapture(options: { skipAdminRequest?: boolean; pending?: PendingAdminCapture; captureOptions?: CaptureStartOptions } = {}) {
     if ((deps.isWorkflowBusy.value && !options.skipAdminRequest) || !deps.activeProfileName.value) return;
     deps.captureActionBusy.value = true;
+    deps.captureStalledDialogOpen.value = false;
     deps.errorText.value = "";
     try {
       const captureOptions = options.captureOptions ?? captureOptionsForMode(deps.captureMode.value);
@@ -92,6 +94,7 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     if (!canRetryAutoPageSlower.value) return;
     const retryMode = retryCaptureMode();
     if (!isAutoPageMode(retryMode)) return;
+    deps.captureStalledDialogOpen.value = false;
     pageRecordMinWaitMs.value = nextPageRecordMinWaitMs.value;
     deps.captureMode.value = retryMode;
     await startLiveCapture({
@@ -137,6 +140,7 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     deps.captureStatus.value = status;
     if (status.state === "completed") {
       clearCapturePolling();
+      deps.captureStalledDialogOpen.value = false;
       if (status.import_report) {
         deps.lastReport.value = status.import_report;
       }
@@ -145,7 +149,9 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     } else if (status.state === "failed") {
       clearCapturePolling();
       deps.errorText.value = status.error ? `${status.error.code}: ${status.error.message}` : deps.t("status.captureFailed");
+      deps.captureStalledDialogOpen.value = status.error?.code === CAPTURE_WINDOW_STALLED_CODE;
     } else {
+      deps.captureStalledDialogOpen.value = false;
       deps.statusText.value = deps.formatCaptureState(status.state);
     }
   }

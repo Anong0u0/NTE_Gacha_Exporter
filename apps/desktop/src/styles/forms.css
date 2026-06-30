@@ -89,18 +89,6 @@
   margin-bottom: 8px;
 }
 
-.settings-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-start;
-  min-width: 0;
-}
-
-.settings-actions button {
-  min-width: 0;
-}
-
 .check-field {
   min-width: 0;
   min-height: 32px;

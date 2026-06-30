@@ -129,7 +129,7 @@ fn maps_build_writes_locale_map() {
         String::from_utf8_lossy(&output.stderr)
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("zh-Hant: items=1 pools=2 labels=3"));
+    assert!(stdout.contains("zh-Hant: items=1 pools=2 labels=4"));
     let map: Value =
         serde_json::from_str(&std::fs::read_to_string(out_dir.join("zh-Hant.json")).unwrap())
             .unwrap();

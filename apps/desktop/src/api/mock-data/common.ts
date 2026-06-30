@@ -29,7 +29,7 @@ export const mockItemAssetRefs: Record<string, AssetRefs> = {
   },
 };
 
-export type MockScenario = "default" | "unknown-banners";
+export type MockScenario = "default" | "unknown-banners" | "capture-stalled";
 const MOCK_SCENARIO_KEY = "nte.mockScenario";
 
 export function mockBanner(
@@ -145,5 +145,6 @@ export function mockSyntheticBanner(
 
 export function mockScenario(): MockScenario {
   if (typeof window === "undefined") return "default";
-  return window.localStorage.getItem(MOCK_SCENARIO_KEY) === "unknown-banners" ? "unknown-banners" : "default";
+  const value = window.localStorage.getItem(MOCK_SCENARIO_KEY);
+  return value === "unknown-banners" || value === "capture-stalled" ? value : "default";
 }

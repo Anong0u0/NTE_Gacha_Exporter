@@ -1,4 +1,4 @@
-import type { CaptureMode, PoolKindSummary, TimeStats } from "../types";
+import type { CaptureMode, CaptureStartOptions, PoolKindSummary, TimeStats } from "../types";
 import { mockScenario, type MockScenario } from "./common";
 import { mockRecords } from "./records";
 
@@ -29,7 +29,7 @@ export function mockSummaryForScenario(scenario: MockScenario = mockScenario()) 
 
 export const mockCaptureSessions = new Map<
   string,
-  { profileName: string; polls: number; stopped: boolean; mode: CaptureMode }
+  { profileName: string; polls: number; stopped: boolean; mode: CaptureMode; options?: CaptureStartOptions }
 >();
 
 const mockSummary: PoolKindSummary[] = [
