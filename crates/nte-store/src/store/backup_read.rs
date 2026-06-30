@@ -73,8 +73,10 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
                     "duplicate profile name: {canonical_name}"
                 )));
             }
-            let records: DiskRecords = read_zip_json(&mut zip, &records_path)?;
-            validate_records_against_map(&records.records, &load_map(&settings.locale)?)?;
+            let mut records: DiskRecords = read_zip_json(&mut zip, &records_path)?;
+            let map = load_map(&settings.locale)?;
+            validate_records_against_map(&records.records, &map)?;
+            canonicalize_records_against_map(&mut records.records, &map);
             let last_run_path = format!("profiles/{name}/last-run.json");
             let last_run = if files.contains(&last_run_path) {
                 Some(read_zip_json::<DiskLastRun>(&mut zip, &last_run_path)?.report)
@@ -111,6 +113,7 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
         let mut records_skipped = 0_u64;
         let completed_at = now_stamp();
         let mut target_names = BTreeMap::new();
+        let map = load_map(&snapshot.settings.locale)?;
 
         for (snapshot_name, snapshot_profile) in &snapshot.profiles {
             records_seen += snapshot_profile.records.len() as u64;
@@ -119,11 +122,14 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
             target_names.insert(snapshot_name.clone(), target_name.clone());
             if self.profile_dir(&target_name).exists() {
                 profiles_merged += 1;
-                let old_records = self.read_records(&target_name)?;
+                let mut old_records = self.read_records(&target_name)?;
+                canonicalize_records_against_map(&mut old_records, &map);
+                let mut incoming_records = snapshot_profile.records.clone();
+                canonicalize_records_against_map(&mut incoming_records, &map);
                 let old_counts = semantic_counts(&old_records);
                 let mut incoming_counts = BTreeMap::<String, u64>::new();
                 let mut merged = old_records;
-                for record in &snapshot_profile.records {
+                for record in &incoming_records {
                     let key = record_semantic_key(record);
                     let occurrence = incoming_counts.entry(key.clone()).or_default();
                     let old_count = old_counts.get(&key).copied().unwrap_or_default();

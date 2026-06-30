@@ -102,6 +102,17 @@ fn allows_unmapped_pool_id(pool_id: &str) -> bool {
     pool_id == "CardPool_Character" || pool_id.starts_with("ForkLottery_")
 }
 
+fn canonicalize_records_against_map(records: &mut [InternalRecord], map: &MapData) {
+    for record in records.iter_mut() {
+        record.item_id = map.canonical_item_id(&record.item_id).to_string();
+        record.secondary_item_id = record
+            .secondary_item_id
+            .as_deref()
+            .map(|item_id| map.canonical_item_id(item_id).to_string());
+    }
+    assign_stable_record_ids(records);
+}
+
 fn normalize_records(records: &mut [InternalRecord]) {
     for record in records.iter_mut() {
         if record

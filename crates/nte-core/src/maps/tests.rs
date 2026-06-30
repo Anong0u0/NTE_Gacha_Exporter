@@ -59,6 +59,36 @@ mod tests {
     }
 
     #[test]
+    fn canonical_item_id_uses_unique_case_folded_item_key() {
+        let map = load_map("zh-Hant").expect("zh-Hant map should load");
+
+        assert_eq!(
+            map.canonical_item_id("fork_Wushoutieyu"),
+            "fork_wushoutieyu"
+        );
+        assert_eq!(map.item_name("fork_Wushoutieyu"), "弧盤·焰魂狂飆");
+        assert_eq!(map.item_rarity("fork_Wushoutieyu"), Some(5));
+        assert_eq!(map.canonical_item_id("fork_Rose"), "fork_Rose");
+        assert_eq!(map.canonical_item_id("UnknownItem"), "UnknownItem");
+    }
+
+    #[test]
+    fn bundled_maps_have_no_case_folded_item_id_collisions() {
+        for locale in available_locales() {
+            let map = load_map(&locale).expect("bundled map should load");
+            let mut folded = std::collections::BTreeMap::new();
+            for item_id in map.items.keys() {
+                let key = item_id.to_ascii_lowercase();
+                assert_eq!(
+                    folded.insert(key, item_id),
+                    None,
+                    "{locale}: case-folded duplicate item_id: {item_id}"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn resolve_banner_handles_standard_fork_and_limited_boundaries() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 

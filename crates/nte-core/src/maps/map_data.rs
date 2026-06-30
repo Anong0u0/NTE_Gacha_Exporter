@@ -1,9 +1,21 @@
 impl MapData {
     pub fn canonical_item_id<'a>(&'a self, item_id: &'a str) -> &'a str {
-        self.item_aliases
-            .get(item_id)
-            .map(String::as_str)
-            .unwrap_or(item_id)
+        if let Some(alias) = self.item_aliases.get(item_id) {
+            return alias;
+        }
+        if self.items.contains_key(item_id) {
+            return item_id;
+        }
+        self.unique_case_folded_item_id(item_id).unwrap_or(item_id)
+    }
+
+    fn unique_case_folded_item_id<'a>(&'a self, item_id: &str) -> Option<&'a str> {
+        let mut matches = self
+            .items
+            .keys()
+            .filter(|candidate| candidate.eq_ignore_ascii_case(item_id));
+        let first = matches.next()?;
+        matches.next().is_none().then_some(first.as_str())
     }
 
     pub fn item<'a>(&'a self, item_id: &'a str) -> Option<(&'a str, &'a MapItem)> {

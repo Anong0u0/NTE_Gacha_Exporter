@@ -325,6 +325,20 @@ mod tests {
     }
 
     #[test]
+    fn capture_document_canonicalizes_case_folded_fork_item_ids() {
+        let mut row = fork_protocol_parsed_row(true, 0);
+        row.pool_id = Some("ForkLottery_Nanali".to_string());
+        row.item_id = "fork_Wushoutieyu".to_string();
+        row.time = Some("2026-05-10T18:15:39.000000".to_string());
+
+        let document = build_capture_document(&[row], "zh-Hant").unwrap();
+        let records = document["nte"]["list"].as_array().unwrap();
+
+        assert_eq!(records[0]["item_id"], "fork_wushoutieyu");
+        assert_eq!(records[0]["rarity"], 5);
+    }
+
+    #[test]
     fn monopoly_record_key_includes_non_numeric_roll_label() {
         let without_label_row = monopoly_protocol_parsed_row(None, None);
         let with_label_row =

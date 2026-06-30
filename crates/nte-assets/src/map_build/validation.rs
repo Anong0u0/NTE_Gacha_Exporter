@@ -11,6 +11,7 @@ fn validate_map_source(map: &Value, source: &str) -> Result<(), GuiError> {
     let pools = required_section(object, source, "pools")?;
     let banners = required_section(object, source, "banners")?;
     let rules = required_section(object, source, "gacha_rules")?;
+    validate_item_id_case_folds(items, source)?;
     for (item_id, item) in items {
         let item = item
             .as_object()
@@ -53,6 +54,19 @@ fn validate_map_source(map: &Value, source: &str) -> Result<(), GuiError> {
         if !rules.contains_key(rule_id) {
             return Err(invalid(format!(
                 "banner targets unknown rule: {source}:banners.{banner_id}.rule_id"
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn validate_item_id_case_folds(items: &JsonObject, source: &str) -> Result<(), GuiError> {
+    let mut folded: BTreeMap<String, &str> = BTreeMap::new();
+    for item_id in items.keys() {
+        let key = item_id.to_ascii_lowercase();
+        if let Some(existing) = folded.insert(key, item_id.as_str()) {
+            return Err(invalid(format!(
+                "case-insensitive duplicate item_id: {source}:items.{existing} and items.{item_id}"
             )));
         }
     }

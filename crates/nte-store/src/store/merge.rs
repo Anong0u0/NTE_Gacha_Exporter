@@ -5,8 +5,10 @@ fn merge_records(
         mut incoming: Vec<InternalRecord>,
         source_kind: &str,
         source_path: Option<&str>,
+        map: &MapData,
     ) -> Result<ImportReport, GuiError> {
-        let old_records = self.read_records(profile_name)?;
+        let mut old_records = self.read_records(profile_name)?;
+        canonicalize_records_against_map(&mut old_records, map);
         let old_last_run = self.read_last_run(profile_name)?;
         let old_counts = semantic_counts(&old_records);
         let mut incoming_counts = BTreeMap::<String, u64>::new();

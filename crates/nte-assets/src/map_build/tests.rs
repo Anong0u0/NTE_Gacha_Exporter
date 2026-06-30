@@ -184,6 +184,26 @@ mod tests {
     }
 
     #[test]
+    fn rejects_case_folded_duplicate_item_ids() {
+        let map = json!({
+            "schema_version": 2,
+            "items": {
+                "Foo": {"name": "Foo", "rarity": 3},
+                "foo": {"name": "foo", "rarity": 4}
+            },
+            "pools": {},
+            "banners": {},
+            "gacha_rules": {}
+        });
+
+        let error = validate_map_source(&map, "test.json").unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("case-insensitive duplicate item_id"));
+    }
+
+    #[test]
     fn skips_limited_banner_without_time_boundary() {
         let tmp = tempfile::tempdir().unwrap();
         write_minimal_assets(tmp.path());

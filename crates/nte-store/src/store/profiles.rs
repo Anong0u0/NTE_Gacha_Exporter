@@ -181,10 +181,11 @@ impl JsonStore {
     ) -> Result<ImportReport, GuiError> {
         let profile_name = validate_profile_name(profile_name)?;
         self.read_profile(&profile_name)?;
-        let incoming = parse_public_document(document_text)?;
+        let mut incoming = parse_public_document(document_text)?;
         let map = load_map(&self.read_settings()?.locale)?;
         validate_records_against_map(&incoming, &map)?;
-        self.merge_records(&profile_name, incoming, source_kind, source_path)
+        canonicalize_records_against_map(&mut incoming, &map);
+        self.merge_records(&profile_name, incoming, source_kind, source_path, &map)
     }
 
     pub fn import_public_document_with_backup(

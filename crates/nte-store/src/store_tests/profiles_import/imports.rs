@@ -103,6 +103,56 @@ fn duplicate_import_uses_semantic_multiset_counts() {
 }
 
 #[test]
+fn import_canonicalizes_case_folded_item_ids_before_duplicate_merge() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let time = "2026-05-10 18:15:39";
+    let old = record_with_options(
+        "old",
+        "ForkLottery_Nanali",
+        "fork_Wushoutieyu",
+        Some(time),
+        None,
+    );
+    let canonical = record_with_options(
+        "new",
+        "ForkLottery_Nanali",
+        "fork_wushoutieyu",
+        Some(time),
+        None,
+    );
+    let expected_id = expected_record_id(&canonical);
+
+    let first = store
+        .import_public_document("default", &public_document(vec![old]), "json", None)
+        .unwrap();
+    let second = store
+        .import_public_document(
+            "default",
+            &public_document(vec![canonical]),
+            "json",
+            None,
+        )
+        .unwrap();
+    let stored =
+        std::fs::read_to_string(tmp.path().join("data/profiles/default/records.json")).unwrap();
+    let list = store
+        .list_records("default", "zh-Hant", &RecordFilter::default())
+        .unwrap();
+
+    assert_eq!(first.records_inserted, 1);
+    assert_eq!(first.records_skipped, 0);
+    assert_eq!(second.records_inserted, 0);
+    assert_eq!(second.records_skipped, 1);
+    assert_eq!(store.profile_record_ids("default").unwrap(), vec![expected_id]);
+    assert!(stored.contains("fork_wushoutieyu"));
+    assert!(!stored.contains("fork_Wushoutieyu"));
+    assert_eq!(list.records[0].item_id, "fork_wushoutieyu");
+    assert_eq!(list.records[0].item_name, "弧盤·焰魂狂飆");
+    assert_eq!(list.records[0].rarity, Some(5));
+}
+
+#[test]
 fn agent_smoke_raw_replay_clean_profile_imports_only_four_incremental_records_when_available() {
     let run1 = std::path::Path::new(
         "target/agent-smoke/app-current/data/runs/raw-1781891304-042719100-1.jsonl",
