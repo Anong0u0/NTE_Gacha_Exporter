@@ -5,7 +5,13 @@ pub struct RawWriter {
 
 #[cfg(windows)]
 impl RawWriter {
-    pub fn open(path: &Path, pid: u32, ports: &[u16]) -> Result<Self> {
+    pub fn open(
+        path: &Path,
+        pid: u32,
+        ports: &[u16],
+        filter_mode: &str,
+        pppoe_detection: &crate::net::PppoeDetection,
+    ) -> Result<Self> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("create {}", parent.display()))?;
@@ -20,11 +26,17 @@ impl RawWriter {
             pid,
             iface: "pktmon",
             ports: ports.to_vec(),
-            bpf: ports
-                .iter()
-                .map(|port| format!("port {port}"))
-                .collect::<Vec<_>>()
-                .join(" or "),
+            bpf: if filter_mode == "port_filtered" {
+                ports
+                    .iter()
+                    .map(|port| format!("port {port}"))
+                    .collect::<Vec<_>>()
+                    .join(" or ")
+            } else {
+                "none (pppoe detected)".to_string()
+            },
+            filter_mode: filter_mode.to_string(),
+            pppoe_detection: pppoe_detection.clone(),
         })?;
         Ok(writer)
     }

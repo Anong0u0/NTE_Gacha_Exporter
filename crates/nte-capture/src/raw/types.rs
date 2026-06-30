@@ -43,6 +43,8 @@ pub struct CaptureStartRecord {
     iface: &'static str,
     ports: Vec<u16>,
     bpf: String,
+    filter_mode: String,
+    pppoe_detection: crate::net::PppoeDetection,
 }
 
 #[cfg(windows)]

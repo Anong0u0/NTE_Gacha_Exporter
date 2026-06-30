@@ -12,12 +12,28 @@ pub struct CaptureDoctorReport {
     pub exe: String,
     pub pid: Option<u32>,
     pub ports: Vec<u16>,
+    pub pppoe_detection: PppoeDetection,
     pub notes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct PppoeDetection {
+    pub detected: bool,
+    pub sources: Vec<PppoeDetectionSource>,
+    pub errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PppoeDetectionSource {
+    pub source: String,
+    pub name: Option<String>,
+    pub detail: String,
 }
 
 pub fn capture_doctor(exe: &str) -> Result<CaptureDoctorReport> {
     let pid = find_process_pid(exe)?;
     let ports = pid.map(candidate_ports).transpose()?.unwrap_or_default();
+    let pppoe_detection = detect_pppoe();
     let mut notes = Vec::new();
     if !cfg!(windows) {
         notes.push("pktmon capture requires Windows".to_string());
@@ -28,14 +44,42 @@ pub fn capture_doctor(exe: &str) -> Result<CaptureDoctorReport> {
     if pid.is_none() {
         notes.push(format!("{exe} not found"));
     }
+    if pppoe_detection.detected {
+        notes.push("PPPoE detected; pktmon capture will use no capture filters".to_string());
+    }
+    notes.extend(
+        pppoe_detection
+            .errors
+            .iter()
+            .map(|error| format!("PPPoE detection error: {error}")),
+    );
     Ok(CaptureDoctorReport {
         windows: cfg!(windows),
         admin: is_admin(),
         exe: exe.to_string(),
         pid,
         ports,
+        pppoe_detection,
         notes,
     })
+}
+
+#[cfg(not(windows))]
+pub fn detect_pppoe() -> PppoeDetection {
+    PppoeDetection::default()
+}
+
+#[cfg(windows)]
+pub fn detect_pppoe() -> PppoeDetection {
+    let mut detection = PppoeDetection::default();
+    if let Err(error) = detect_pppoe_ras(&mut detection) {
+        detection.errors.push(format!("RAS: {error}"));
+    }
+    if let Err(error) = detect_pppoe_adapters(&mut detection) {
+        detection.errors.push(format!("adapters: {error}"));
+    }
+    detection.detected = !detection.sources.is_empty();
+    detection
 }
 
 #[cfg(not(windows))]
@@ -316,6 +360,110 @@ fn query_extended_udp_table(af: u32, table_class: i32) -> Result<Vec<u8>> {
 }
 
 #[cfg(windows)]
+fn detect_pppoe_ras(detection: &mut PppoeDetection) -> Result<()> {
+    use windows_sys::Win32::NetworkManagement::Rras::{
+        ERROR_BUFFER_TOO_SMALL, RASCONNW, RasEnumConnectionsW,
+    };
+
+    unsafe {
+        let entry_size = std::mem::size_of::<RASCONNW>() as u32;
+        let mut size = entry_size;
+        let mut count = 0_u32;
+        let mut entries = vec![RASCONNW::default(); 1];
+        entries[0].dwSize = entry_size;
+
+        let mut ret = RasEnumConnectionsW(entries.as_mut_ptr(), &mut size, &mut count);
+        if ret == ERROR_BUFFER_TOO_SMALL {
+            let capacity = (size as usize)
+                .div_ceil(std::mem::size_of::<RASCONNW>())
+                .max(1);
+            entries = vec![RASCONNW::default(); capacity];
+            entries[0].dwSize = entry_size;
+            ret = RasEnumConnectionsW(entries.as_mut_ptr(), &mut size, &mut count);
+        }
+        if ret != 0 {
+            anyhow::bail!("RasEnumConnectionsW failed: {ret}");
+        }
+
+        for entry in entries.iter().take(count as usize) {
+            let device_type = wide_z_to_string(&entry.szDeviceType);
+            let device_name = wide_z_to_string(&entry.szDeviceName);
+            let entry_name = wide_z_to_string(&entry.szEntryName);
+            if is_pppoe_text(&device_type)
+                || is_pppoe_text(&device_name)
+                || is_pppoe_text(&entry_name)
+            {
+                detection.sources.push(PppoeDetectionSource {
+                    source: "ras".to_string(),
+                    name: non_empty(entry_name).or_else(|| non_empty(device_name.clone())),
+                    detail: format!("device_type={device_type}, device_name={device_name}"),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn detect_pppoe_adapters(detection: &mut PppoeDetection) -> Result<()> {
+    use windows_sys::Win32::Foundation::{ERROR_BUFFER_OVERFLOW, ERROR_SUCCESS};
+    use windows_sys::Win32::NetworkManagement::IpHelper::{
+        GAA_FLAG_INCLUDE_ALL_INTERFACES, GAA_FLAG_SKIP_ANYCAST, GAA_FLAG_SKIP_DNS_SERVER,
+        GAA_FLAG_SKIP_MULTICAST, GetAdaptersAddresses, IF_TYPE_PPP, IP_ADAPTER_ADDRESSES_LH,
+    };
+    use windows_sys::Win32::NetworkManagement::Ndis::IfOperStatusUp;
+
+    const AF_UNSPEC: u32 = 0;
+    let flags = GAA_FLAG_INCLUDE_ALL_INTERFACES
+        | GAA_FLAG_SKIP_ANYCAST
+        | GAA_FLAG_SKIP_DNS_SERVER
+        | GAA_FLAG_SKIP_MULTICAST;
+
+    unsafe {
+        let mut size = 15_000_u32;
+        let mut bytes = Vec::new();
+        let ret = loop {
+            bytes.resize(size as usize, 0);
+            let ret = GetAdaptersAddresses(
+                AF_UNSPEC,
+                flags,
+                std::ptr::null(),
+                bytes.as_mut_ptr().cast::<IP_ADAPTER_ADDRESSES_LH>(),
+                &mut size,
+            );
+            if ret == ERROR_BUFFER_OVERFLOW {
+                continue;
+            }
+            break ret;
+        };
+        if ret != ERROR_SUCCESS {
+            anyhow::bail!("GetAdaptersAddresses failed: {ret}");
+        }
+
+        let mut current = bytes.as_ptr().cast::<IP_ADAPTER_ADDRESSES_LH>();
+        while !current.is_null() {
+            let adapter = &*current;
+            let friendly = pwstr_to_string(adapter.FriendlyName);
+            let description = pwstr_to_string(adapter.Description);
+            let is_up = adapter.OperStatus == IfOperStatusUp;
+            let has_pppoe_name = is_pppoe_text(&friendly) || is_pppoe_text(&description);
+            if is_up && adapter.IfType == IF_TYPE_PPP && has_pppoe_name {
+                detection.sources.push(PppoeDetectionSource {
+                    source: "adapter".to_string(),
+                    name: non_empty(friendly.clone()).or_else(|| non_empty(description.clone())),
+                    detail: format!(
+                        "if_type={}, oper_status={}, friendly_name={}, description={}",
+                        adapter.IfType, adapter.OperStatus, friendly, description
+                    ),
+                });
+            }
+            current = adapter.Next;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
 fn read_rows<T: Copy>(bytes: &[u8]) -> Vec<T> {
     if bytes.len() < 4 {
         return Vec::new();
@@ -353,4 +501,29 @@ fn is_localhost(ip: &str) -> bool {
 fn wide_z_to_string(value: &[u16]) -> String {
     let len = value.iter().position(|ch| *ch == 0).unwrap_or(value.len());
     String::from_utf16_lossy(&value[..len])
+}
+
+#[cfg(windows)]
+fn pwstr_to_string(value: windows_sys::core::PWSTR) -> String {
+    if value.is_null() {
+        return String::new();
+    }
+    unsafe {
+        let mut len = 0_usize;
+        while *value.add(len) != 0 {
+            len += 1;
+        }
+        String::from_utf16_lossy(std::slice::from_raw_parts(value, len))
+    }
+}
+
+#[cfg(windows)]
+fn is_pppoe_text(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    lower.contains("pppoe") || lower.contains("raspppoe")
+}
+
+#[cfg(windows)]
+fn non_empty(value: String) -> Option<String> {
+    (!value.trim().is_empty()).then_some(value)
 }

@@ -16,7 +16,7 @@ use nte_automation::{
 };
 use nte_capture::{
     CaptureOptions, CaptureRecordBuilder, CaptureTarget, build_capture_document, candidate_ports,
-    capture_live, find_process_pid,
+    capture_live, detect_pppoe, find_process_pid, CaptureFilterMode,
 };
 use nte_core::ImportReport;
 use nte_store::load_locale_or_settings;

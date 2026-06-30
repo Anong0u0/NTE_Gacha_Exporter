@@ -20,15 +20,28 @@ pub fn run_diagnostic_capture(
         options.duration
     };
     let mut ports = net::limited_filter_ports(&options.ports);
+    let pppoe_detection = options.pppoe_detection.clone().unwrap_or_else(net::detect_pppoe);
+    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
+    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
+        anyhow::bail!("no candidate ports found for pid={}", options.pid);
+    }
     let mut target = CaptureTarget {
         pid: options.pid,
         exe: options.exe.clone(),
         interface: "pktmon".to_string(),
         ports: ports.clone(),
-        bpf: diagnostic_bpf(&ports),
+        bpf: bpf(filter_mode, &ports),
+        filter_mode: filter_mode.as_str().to_string(),
+        pppoe_detection: pppoe_detection.clone(),
     };
     let mut raw_writer = match options.raw_out.as_ref() {
-        Some(path) => Some(RawWriter::open(path, options.pid, &ports)?),
+        Some(path) => Some(RawWriter::open(
+            path,
+            options.pid,
+            &ports,
+            filter_mode.as_str(),
+            &pppoe_detection,
+        )?),
         None => None,
     };
     let mut dropped_writer = match options.dropped_samples_out.as_ref() {
@@ -52,19 +65,21 @@ pub fn run_diagnostic_capture(
 
     while !stop.load(Ordering::SeqCst) && started_at.elapsed() < duration {
         let mut capture = pktmon::Capture::new()?;
-        for port in &ports {
-            capture.add_filter(PktMonFilter {
-                name: format!("NTE diagnostic UDP {port}"),
-                transport_protocol: Some(TransportProtocol::UDP),
-                port: (*port).into(),
-                ..Default::default()
-            })?;
-            capture.add_filter(PktMonFilter {
-                name: format!("NTE diagnostic TCP {port}"),
-                transport_protocol: Some(TransportProtocol::TCP),
-                port: (*port).into(),
-                ..Default::default()
-            })?;
+        if filter_mode == CaptureFilterMode::PortFiltered {
+            for port in &ports {
+                capture.add_filter(PktMonFilter {
+                    name: format!("NTE diagnostic UDP {port}"),
+                    transport_protocol: Some(TransportProtocol::UDP),
+                    port: (*port).into(),
+                    ..Default::default()
+                })?;
+                capture.add_filter(PktMonFilter {
+                    name: format!("NTE diagnostic TCP {port}"),
+                    transport_protocol: Some(TransportProtocol::TCP),
+                    port: (*port).into(),
+                    ..Default::default()
+                })?;
+            }
         }
         capture.start()?;
 
@@ -83,14 +98,25 @@ pub fn run_diagnostic_capture(
                     let kind = packet_kind(&packet.payload);
                     increment(&mut summary.packet_kind_counts, packet_kind_name(kind));
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
+                    let Some(parsed_packet) = parse_packet_bytes(&bytes, kind) else {
                         counters.dropped_packets += 1;
                         increment(
                             &mut summary.dropped_packet_size_buckets,
                             size_bucket(bytes.len()),
                         );
+                        let analysis = analyze_dropped_packet(&bytes, kind);
+                        add_dropped_evidence_summary(
+                            &mut summary,
+                            &analysis,
+                            counters.packets_seen,
+                            bytes.len(),
+                        );
                         if counters.dropped_samples_written < options.max_dropped_samples as u64 {
                             if let Some(writer) = dropped_writer.as_mut() {
+                                let include_full_payload = should_include_full_dropped_sample(
+                                    &counters,
+                                    options.max_full_dropped_samples,
+                                );
                                 writer.write_sample(&DroppedPacketSample {
                                     typ: "dropped_packet_sample",
                                     schema_version: 1,
@@ -98,10 +124,16 @@ pub fn run_diagnostic_capture(
                                     capture_index: counters.packets_seen,
                                     packet_kind: packet_kind_name(kind).to_string(),
                                     size: bytes.len(),
-                                    payload_prefix_b64: payload_prefix_b64(bytes),
+                                    analysis,
+                                    payload_prefix_b64: payload_prefix_b64(&bytes),
                                     payload_truncated: bytes.len() > DROPPED_SAMPLE_PREFIX_BYTES,
+                                    payload_full_included: include_full_payload,
+                                    payload_b64: include_full_payload.then(|| payload_b64(&bytes)),
                                 })?;
                                 counters.dropped_samples_written += 1;
+                                if include_full_payload {
+                                    counters.dropped_full_samples_written += 1;
+                                }
                             }
                         }
                         continue;
@@ -130,16 +162,6 @@ pub fn run_diagnostic_capture(
                     });
 
                     add_parsed_summary(&mut summary, &parsed_packet);
-                    let record = raw_record_from_parsed_packet(
-                        &parsed_packet,
-                        counters.packets_seen,
-                        captured_at,
-                    );
-                    if let Some(writer) = raw_writer.as_mut() {
-                        writer.write_packet(&record)?;
-                        counters.raw_packets_written += 1;
-                    }
-
                     let (blocks, found_warnings) = parse_payload_blocks(
                         &parsed_packet.payload,
                         0,
@@ -149,6 +171,18 @@ pub fn run_diagnostic_capture(
                     add_block_summary(&mut summary, &blocks);
                     add_warning_summary(&mut summary, &found_warnings);
                     warnings.extend(found_warnings);
+                    if should_write_raw_packet(&parsed_packet, &ports, !blocks.is_empty(), filter_mode)
+                    {
+                        let record = raw_record_from_parsed_packet(
+                            &parsed_packet,
+                            counters.packets_seen,
+                            captured_at,
+                        );
+                        if let Some(writer) = raw_writer.as_mut() {
+                            writer.write_packet(&record)?;
+                            counters.raw_packets_written += 1;
+                        }
+                    }
                     if blocks.is_empty() {
                         maybe_emit_progress(
                             &options,
@@ -189,10 +223,12 @@ pub fn run_diagnostic_capture(
                         if latest.iter().any(|port| !ports.contains(port)) {
                             ports = latest;
                             target.ports = ports.clone();
-                            target.bpf = diagnostic_bpf(&ports);
-                            counters.filter_restarts += 1;
-                            restart_for_ports = true;
-                            break;
+                            target.bpf = bpf(filter_mode, &ports);
+                            if filter_mode == CaptureFilterMode::PortFiltered {
+                                counters.filter_restarts += 1;
+                                restart_for_ports = true;
+                                break;
+                            }
                         }
                     }
                 }

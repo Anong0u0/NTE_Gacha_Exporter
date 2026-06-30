@@ -23,7 +23,7 @@ fn classify_diagnostic(
     if target.selected_pid.is_none() {
         return classification("game_not_found", findings);
     }
-    if target.selected_ports.is_empty() {
+    if target.selected_ports.is_empty() && !target.pppoe_detection.detected {
         return classification("no_candidate_ports", findings);
     }
     if let Some(error) = &internal.error {
@@ -41,8 +41,9 @@ fn classify_diagnostic(
 fn classify_capture_result(
     counters: &DiagnosticCaptureCounters,
     summary: &DiagnosticCaptureSummary,
-    findings: Vec<String>,
+    mut findings: Vec<String>,
 ) -> DiagnosticClassification {
+    add_dropped_evidence_findings(counters, summary, &mut findings);
     if counters.packets_seen == 0 {
         return classification("no_packets_seen", findings);
     }
@@ -65,6 +66,76 @@ fn classify_capture_result(
         return classification("no_decoder_marker", findings);
     }
     classification("marker_found_no_rows", findings)
+}
+
+fn add_dropped_evidence_findings(
+    counters: &DiagnosticCaptureCounters,
+    summary: &DiagnosticCaptureSummary,
+    findings: &mut Vec<String>,
+) {
+    if let Some(count) = summary
+        .dropped_evidence
+        .encapsulation_counts
+        .get("pppoe_session")
+    {
+        findings.push(format!(
+            "dropped packets include PPPoE session frames: count={count}, ppp_protocols={}",
+            evidence_keys(&summary.dropped_evidence.ppp_protocol_counts)
+        ));
+    }
+    if let Some(count) = summary
+        .dropped_evidence
+        .encapsulation_counts
+        .get("pppoe_discovery")
+    {
+        findings.push(format!(
+            "dropped packets include PPPoE discovery frames: count={count}"
+        ));
+    }
+    let vlan_count = summary
+        .dropped_evidence
+        .encapsulation_counts
+        .get("vlan")
+        .copied()
+        .unwrap_or_default()
+        + summary
+            .dropped_evidence
+            .encapsulation_counts
+            .get("qinq")
+            .copied()
+            .unwrap_or_default();
+    if vlan_count > 0 {
+        findings.push(format!(
+            "dropped packets include VLAN encapsulation: count={vlan_count}, ethertypes={}",
+            evidence_keys(&summary.dropped_evidence.ethertype_counts)
+        ));
+    }
+    if let Some((reason, count)) = summary
+        .dropped_evidence
+        .failure_reason_counts
+        .iter()
+        .max_by_key(|(_, count)| *count)
+    {
+        findings.push(format!(
+            "top dropped packet failure reason: {reason} count={count}"
+        ));
+    }
+    if counters.dropped_full_samples_written > 0 {
+        findings.push(format!(
+            "dropped full samples included: {}",
+            counters.dropped_full_samples_written
+        ));
+    }
+}
+
+fn evidence_keys(map: &std::collections::BTreeMap<String, u64>) -> String {
+    if map.is_empty() {
+        return "none".to_string();
+    }
+    map.iter()
+        .map(|(key, count)| format!("{key}:{count}"))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn classification(verdict: &str, findings: Vec<String>) -> DiagnosticClassification {

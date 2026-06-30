@@ -8,10 +8,10 @@ use crate::net;
 use crate::protocol::{ParseWarning, ParsedRow};
 #[cfg(windows)]
 use crate::protocol::{ProtocolAssembler, parse_payload_blocks};
+#[cfg(any(windows, test))]
+use crate::raw::ParsedNetworkPacket;
 #[cfg(windows)]
-use crate::raw::{
-    PacketKind, ParsedNetworkPacket, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet,
-};
+use crate::raw::{PacketKind, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet};
 
 #[cfg(windows)]
 use std::sync::atomic::Ordering;
@@ -24,6 +24,7 @@ pub struct CaptureOptions {
     pub pid: u32,
     pub exe: String,
     pub ports: Vec<u16>,
+    pub pppoe_detection: Option<crate::net::PppoeDetection>,
     pub raw_out: Option<std::path::PathBuf>,
     pub max_packets: u64,
     pub max_decoded: u64,
@@ -39,6 +40,32 @@ pub struct CaptureTarget {
     pub interface: String,
     pub ports: Vec<u16>,
     pub bpf: String,
+    pub filter_mode: String,
+    pub pppoe_detection: crate::net::PppoeDetection,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureFilterMode {
+    PortFiltered,
+    NoFilterPppoe,
+}
+
+impl CaptureFilterMode {
+    pub fn for_pppoe_detection(detection: &crate::net::PppoeDetection) -> Self {
+        if detection.detected {
+            Self::NoFilterPppoe
+        } else {
+            Self::PortFiltered
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PortFiltered => "port_filtered",
+            Self::NoFilterPppoe => "no_filter_pppoe",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -97,15 +124,31 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
     use pktmon::filter::{PktMonFilter, TransportProtocol};
 
     let mut ports = net::limited_filter_ports(&options.ports);
+    let pppoe_detection = options
+        .pppoe_detection
+        .clone()
+        .unwrap_or_else(net::detect_pppoe);
+    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
+    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
+        anyhow::bail!("no candidate ports found for pid={}", options.pid);
+    }
     let mut target = CaptureTarget {
         pid: options.pid,
         exe: options.exe.clone(),
         interface: "pktmon".to_string(),
         ports: ports.clone(),
-        bpf: bpf(&ports),
+        bpf: bpf(filter_mode, &ports),
+        filter_mode: filter_mode.as_str().to_string(),
+        pppoe_detection: pppoe_detection.clone(),
     };
     let mut raw_writer = match options.raw_out.as_ref() {
-        Some(path) => Some(RawWriter::open(path, options.pid, &ports)?),
+        Some(path) => Some(RawWriter::open(
+            path,
+            options.pid,
+            &ports,
+            filter_mode.as_str(),
+            &pppoe_detection,
+        )?),
         None => None,
     };
     let mut assembler = ProtocolAssembler::default();
@@ -118,19 +161,21 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
 
     while !stop.load(Ordering::SeqCst) {
         let mut capture = pktmon::Capture::new()?;
-        for port in &ports {
-            capture.add_filter(PktMonFilter {
-                name: format!("NTE UDP {port}"),
-                transport_protocol: Some(TransportProtocol::UDP),
-                port: (*port).into(),
-                ..Default::default()
-            })?;
-            capture.add_filter(PktMonFilter {
-                name: format!("NTE TCP {port}"),
-                transport_protocol: Some(TransportProtocol::TCP),
-                port: (*port).into(),
-                ..Default::default()
-            })?;
+        if filter_mode == CaptureFilterMode::PortFiltered {
+            for port in &ports {
+                capture.add_filter(PktMonFilter {
+                    name: format!("NTE UDP {port}"),
+                    transport_protocol: Some(TransportProtocol::UDP),
+                    port: (*port).into(),
+                    ..Default::default()
+                })?;
+                capture.add_filter(PktMonFilter {
+                    name: format!("NTE TCP {port}"),
+                    transport_protocol: Some(TransportProtocol::TCP),
+                    port: (*port).into(),
+                    ..Default::default()
+                })?;
+            }
         }
         capture.start()?;
 
@@ -155,7 +200,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     counters.packets_seen += 1;
                     let kind = packet_kind(&packet.payload);
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
+                    let Some(parsed_packet) = parse_packet_bytes(&bytes, kind) else {
                         counters.dropped_packets += 1;
                         continue;
                     };
@@ -184,14 +229,6 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                         signature,
                         captured_at,
                     });
-                    let record = raw_record_from_parsed_packet(
-                        &parsed_packet,
-                        counters.packets_seen,
-                        captured_at,
-                    );
-                    if let Some(writer) = raw_writer.as_mut() {
-                        writer.write_packet(&record)?;
-                    }
                     let (blocks, found_warnings) = parse_payload_blocks(
                         &parsed_packet.payload,
                         0,
@@ -199,6 +236,21 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                         counters.packets_seen - 1,
                     );
                     warnings.extend(found_warnings);
+                    if should_write_raw_packet(
+                        &parsed_packet,
+                        &ports,
+                        !blocks.is_empty(),
+                        filter_mode,
+                    ) {
+                        let record = raw_record_from_parsed_packet(
+                            &parsed_packet,
+                            counters.packets_seen,
+                            captured_at,
+                        );
+                        if let Some(writer) = raw_writer.as_mut() {
+                            writer.write_packet(&record)?;
+                        }
+                    }
                     if blocks.is_empty() {
                         if counters.packets_seen.saturating_sub(last_progress_seen) >= 250 {
                             emit_progress(
@@ -238,10 +290,12 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                         if latest.iter().any(|port| !ports.contains(port)) {
                             ports = latest;
                             target.ports = ports.clone();
-                            target.bpf = bpf(&ports);
-                            counters.filter_restarts += 1;
-                            restart_for_ports = true;
-                            break;
+                            target.bpf = bpf(filter_mode, &ports);
+                            if filter_mode == CaptureFilterMode::PortFiltered {
+                                counters.filter_restarts += 1;
+                                restart_for_ports = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -349,12 +403,80 @@ fn is_timeout(error: &impl std::fmt::Display) -> bool {
 }
 
 #[cfg(windows)]
-pub(crate) fn bpf(ports: &[u16]) -> String {
-    ports
-        .iter()
-        .map(|port| format!("port {port}"))
-        .collect::<Vec<_>>()
-        .join(" or ")
+pub(crate) fn bpf(filter_mode: CaptureFilterMode, ports: &[u16]) -> String {
+    match filter_mode {
+        CaptureFilterMode::PortFiltered => ports
+            .iter()
+            .map(|port| format!("port {port}"))
+            .collect::<Vec<_>>()
+            .join(" or "),
+        CaptureFilterMode::NoFilterPppoe => "none (pppoe detected)".to_string(),
+    }
+}
+
+#[cfg(any(windows, test))]
+pub(crate) fn should_write_raw_packet(
+    packet: &ParsedNetworkPacket,
+    ports: &[u16],
+    decoded: bool,
+    filter_mode: CaptureFilterMode,
+) -> bool {
+    if filter_mode == CaptureFilterMode::PortFiltered {
+        return true;
+    }
+    decoded || packet_matches_ports(packet, ports)
+}
+
+#[cfg(any(windows, test))]
+pub(crate) fn packet_matches_ports(packet: &ParsedNetworkPacket, ports: &[u16]) -> bool {
+    packet.sport.is_some_and(|port| ports.contains(&port))
+        || packet.dport.is_some_and(|port| ports.contains(&port))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_filter_raw_guard_keeps_candidate_ports_and_decode_hits() {
+        let packet = parsed_packet(Some(64208), Some(30138));
+        assert!(should_write_raw_packet(
+            &packet,
+            &[30138],
+            false,
+            CaptureFilterMode::NoFilterPppoe
+        ));
+        assert!(should_write_raw_packet(
+            &packet,
+            &[],
+            true,
+            CaptureFilterMode::NoFilterPppoe
+        ));
+    }
+
+    #[test]
+    fn no_filter_raw_guard_drops_unmatched_non_decode_packets() {
+        let packet = parsed_packet(Some(64208), Some(30138));
+        assert!(!should_write_raw_packet(
+            &packet,
+            &[30031],
+            false,
+            CaptureFilterMode::NoFilterPppoe
+        ));
+    }
+
+    fn parsed_packet(sport: Option<u16>, dport: Option<u16>) -> ParsedNetworkPacket {
+        ParsedNetworkPacket {
+            proto: "udp".to_string(),
+            sport,
+            dport,
+            seq: None,
+            ack: None,
+            flags: None,
+            payload: b"hello".to_vec(),
+            parser: "test".to_string(),
+        }
+    }
 }
 
 #[cfg(windows)]

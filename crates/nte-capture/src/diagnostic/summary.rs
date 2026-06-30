@@ -1,6 +1,6 @@
 #[cfg(windows)]
 const DIAGNOSTIC_DUPLICATE_WINDOW_SECONDS: f64 = 0.250;
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 const DROPPED_SAMPLE_PREFIX_BYTES: usize = 512;
 
 #[cfg(windows)]
@@ -116,7 +116,7 @@ fn packet_kind(payload: &pktmon::PacketPayload) -> PacketKind {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn packet_kind_name(kind: PacketKind) -> &'static str {
     match kind {
         PacketKind::Unknown => "unknown",
@@ -128,7 +128,7 @@ fn packet_kind_name(kind: PacketKind) -> &'static str {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn increment(map: &mut BTreeMap<String, u64>, key: impl AsRef<str>) {
     *map.entry(key.as_ref().to_string()).or_default() += 1;
 }
@@ -145,19 +145,15 @@ fn size_bucket(size: usize) -> &'static str {
     }
 }
 
-#[cfg(windows)]
-fn diagnostic_bpf(ports: &[u16]) -> String {
-    ports
-        .iter()
-        .map(|port| format!("port {port}"))
-        .collect::<Vec<_>>()
-        .join(" or ")
-}
-
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 fn payload_prefix_b64(bytes: &[u8]) -> String {
     base64::engine::general_purpose::STANDARD
         .encode(bytes.get(..DROPPED_SAMPLE_PREFIX_BYTES).unwrap_or(bytes))
+}
+
+#[cfg(any(windows, test))]
+fn payload_b64(bytes: &[u8]) -> String {
+    base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 #[cfg(windows)]

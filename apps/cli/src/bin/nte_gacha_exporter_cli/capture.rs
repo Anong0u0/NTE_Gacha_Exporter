@@ -21,7 +21,9 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
             .ok_or_else(|| CliError::new(3, format!("{EXE_NAME} not found")))?,
     };
     let ports = candidate_ports(pid).map_err(CliError::from_error)?;
-    if ports.is_empty() {
+    let pppoe_detection = detect_pppoe();
+    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
+    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
         return Err(CliError::new(
             3,
             format!("no candidate ports found for pid={pid}"),
@@ -48,6 +50,7 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
         run_auto_capture(AutoCaptureContext {
             pid,
             ports,
+            pppoe_detection,
             output_raw,
             json,
             csv,
@@ -67,6 +70,7 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
                 pid,
                 exe: EXE_NAME.to_string(),
                 ports,
+                pppoe_detection: Some(pppoe_detection),
                 raw_out: output_raw.clone(),
                 max_packets: 0,
                 max_decoded: 0,
@@ -85,6 +89,7 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
 struct AutoCaptureContext {
     pid: u32,
     ports: Vec<u16>,
+    pppoe_detection: nte_capture::PppoeDetection,
     output_raw: Option<PathBuf>,
     json: PathBuf,
     csv: PathBuf,
@@ -98,6 +103,7 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
     let AutoCaptureContext {
         pid,
         ports,
+        pppoe_detection,
         output_raw,
         json,
         csv,
@@ -121,6 +127,7 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
                 pid,
                 exe: EXE_NAME.to_string(),
                 ports,
+                pppoe_detection: Some(pppoe_detection),
                 raw_out: capture_raw,
                 max_packets: 0,
                 max_decoded: 0,
@@ -157,4 +164,3 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
         Err(CliError::new(2, auto_result.message))
     }
 }
-

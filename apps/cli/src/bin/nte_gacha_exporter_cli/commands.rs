@@ -7,10 +7,15 @@ fn doctor() -> CliResult<()> {
     println!("Admin: {}", if report.admin { "ok" } else { "required" });
     println!("Process: {} {:?}", report.exe, report.pid);
     println!("Ports: {:?}", report.ports);
+    println!("PPPoE detected: {}", report.pppoe_detection.detected);
     for note in &report.notes {
         println!("{note}");
     }
-    if report.windows && report.admin && report.pid.is_some() && !report.ports.is_empty() {
+    if report.windows
+        && report.admin
+        && report.pid.is_some()
+        && (!report.ports.is_empty() || report.pppoe_detection.detected)
+    {
         Ok(())
     } else {
         Err(CliError::new(3, "capture environment is not ready"))

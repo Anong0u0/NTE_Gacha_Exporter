@@ -136,9 +136,15 @@ pub(crate) fn doctor_run(_state: State<'_, AppState>) -> Result<DoctorReport, Ap
             .unwrap_or_else(|| "not found".to_string())
     ));
     lines.push(format!("Ports: {:?}", report.ports));
+    lines.push(format!(
+        "PPPoE detected: {}",
+        report.pppoe_detection.detected
+    ));
     lines.extend(report.notes);
+    let capture_ready =
+        report.pid.is_some() && (!report.ports.is_empty() || report.pppoe_detection.detected);
     Ok(DoctorReport {
-        ok: report.windows && report.admin && report.pid.is_some() && !report.ports.is_empty(),
+        ok: report.windows && report.admin && capture_ready,
         exit_code: if report.windows && report.admin { 0 } else { 3 },
         lines,
     })

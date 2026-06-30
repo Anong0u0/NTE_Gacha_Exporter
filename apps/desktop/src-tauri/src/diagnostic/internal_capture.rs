@@ -12,7 +12,7 @@ fn run_internal_capture(
             result: None,
         };
     };
-    if target.selected_ports.is_empty() {
+    if target.selected_ports.is_empty() && !target.pppoe_detection.detected {
         return InternalDiagnosticReport {
             attempted: false,
             error: Some("internal capture skipped: no candidate ports".to_string()),
@@ -60,10 +60,12 @@ fn run_internal_capture(
             pid,
             exe: "HTGame.exe".to_string(),
             ports: target.selected_ports.clone(),
+            pppoe_detection: Some(target.pppoe_detection.clone()),
             raw_out: Some(paths.internal_raw.clone()),
             dropped_samples_out: Some(paths.dropped_samples.clone()),
             duration,
             max_dropped_samples: DROPPED_SAMPLE_LIMIT,
+            max_full_dropped_samples: 32,
             on_progress: Some(progress),
         },
         Arc::clone(&runtime.stop),
@@ -85,15 +87,18 @@ fn run_internal_capture(
 fn start_external_capture_thread(
     paths: &SupportPaths,
     ports: &[u16],
+    pppoe_detection: &PppoeDetection,
+    filter_mode: CaptureFilterMode,
     duration: Duration,
     stop: Arc<AtomicBool>,
 ) -> Option<JoinHandle<ExternalCaptureReport>> {
-    if ports.is_empty() {
+    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
         return None;
     }
     let paths = paths.clone_for_thread();
     let ports = ports.to_vec();
+    let pppoe_detection = pppoe_detection.clone();
     Some(std::thread::spawn(move || {
-        run_external_pktmon_capture(&paths, &ports, duration, stop)
+        run_external_pktmon_capture(&paths, &ports, pppoe_detection, filter_mode, duration, stop)
     }))
 }

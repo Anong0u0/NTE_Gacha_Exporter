@@ -54,13 +54,16 @@ fn build_support_bundle(
             .map(|path| path.to_string_lossy().to_string()),
         process_id: std::process::id(),
     };
-    let target = discover_target();
+    let target = discover_target(detect_pppoe());
     update_status(runtime, "running", "capturing", 0.08, None, None);
 
     let duration = Duration::from_secs(duration_seconds);
+    let filter_mode = CaptureFilterMode::for_pppoe_detection(&target.pppoe_detection);
     let external_handle = start_external_capture_thread(
         &paths,
         &target.selected_ports,
+        &target.pppoe_detection,
+        filter_mode,
         duration,
         Arc::clone(&runtime.stop),
     );
@@ -72,6 +75,8 @@ fn build_support_bundle(
                 attempted: true,
                 ok: false,
                 error: Some("external pktmon worker panicked".to_string()),
+                filter_mode: filter_mode.as_str().to_string(),
+                pppoe_detection: target.pppoe_detection.clone(),
                 etl_path: Some(paths.external_etl.to_string_lossy().to_string()),
                 pcapng_path: Some(paths.external_pcapng.to_string_lossy().to_string()),
                 stdout_log_path: Some(paths.external_stdout.to_string_lossy().to_string()),
@@ -86,6 +91,8 @@ fn build_support_bundle(
             attempted: false,
             ok: false,
             error: Some("external pktmon skipped: no selected ports".to_string()),
+            filter_mode: filter_mode.as_str().to_string(),
+            pppoe_detection: target.pppoe_detection.clone(),
             etl_path: None,
             pcapng_path: None,
             stdout_log_path: None,

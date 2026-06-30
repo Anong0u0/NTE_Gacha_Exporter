@@ -11,7 +11,9 @@ fn start_rust_capture_session(
         .map_err(api_error)?
         .ok_or_else(|| api_error_message("capture_environment", "HTGame.exe not found"))?;
     let ports = candidate_ports(pid).map_err(api_error)?;
-    if ports.is_empty() {
+    let pppoe_detection = detect_pppoe();
+    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
+    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
         return Err(api_error_message(
             "capture_environment",
             "no HTGame.exe candidate ports",
@@ -24,11 +26,16 @@ fn start_rust_capture_session(
         exe: "HTGame.exe".to_string(),
         interface: "pktmon".to_string(),
         ports: ports.clone(),
-        bpf: ports
-            .iter()
-            .map(|port| format!("port {port}"))
-            .collect::<Vec<_>>()
-            .join(" or "),
+        bpf: match filter_mode {
+            CaptureFilterMode::PortFiltered => ports
+                .iter()
+                .map(|port| format!("port {port}"))
+                .collect::<Vec<_>>()
+                .join(" or "),
+            CaptureFilterMode::NoFilterPppoe => "none (pppoe detected)".to_string(),
+        },
+        filter_mode: filter_mode.as_str().to_string(),
+        pppoe_detection: pppoe_detection.clone(),
     };
     let initial_status = CaptureStatus {
         session_id: session_id.clone(),
@@ -78,6 +85,7 @@ fn start_rust_capture_session(
                 runtime: runtime_for_thread,
                 pid,
                 ports,
+                pppoe_detection,
                 raw_out,
                 locale: locale_for_thread,
                 stop: stop_for_thread,
@@ -93,6 +101,7 @@ fn start_rust_capture_session(
                     pid,
                     exe: "HTGame.exe".to_string(),
                     ports,
+                    pppoe_detection: Some(pppoe_detection),
                     raw_out,
                     max_packets: 0,
                     max_decoded: 0,
@@ -123,6 +132,7 @@ struct AutoPageCaptureThread {
     runtime: Arc<CaptureRuntimeSession>,
     pid: u32,
     ports: Vec<u16>,
+    pppoe_detection: nte_capture::PppoeDetection,
     raw_out: Option<PathBuf>,
     locale: String,
     stop: Arc<AtomicBool>,
@@ -138,6 +148,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         runtime,
         pid,
         ports,
+        pppoe_detection,
         raw_out,
         locale,
         stop,
@@ -154,6 +165,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
                 pid,
                 exe: "HTGame.exe".to_string(),
                 ports,
+                pppoe_detection: Some(pppoe_detection),
                 raw_out,
                 max_packets: 0,
                 max_decoded: 0,

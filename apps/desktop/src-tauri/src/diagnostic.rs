@@ -11,8 +11,9 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use nte_capture::{
-    DiagnosticCaptureCounters, DiagnosticCaptureOptions, DiagnosticCaptureResult,
-    DiagnosticCaptureSummary, candidate_ports, find_process_pids, is_admin, run_diagnostic_capture,
+    CaptureFilterMode, DiagnosticCaptureCounters, DiagnosticCaptureOptions,
+    DiagnosticCaptureResult, DiagnosticCaptureSummary, PppoeDetection, candidate_ports,
+    detect_pppoe, find_process_pids, is_admin, run_diagnostic_capture,
 };
 use serde::Serialize;
 use tauri::State;

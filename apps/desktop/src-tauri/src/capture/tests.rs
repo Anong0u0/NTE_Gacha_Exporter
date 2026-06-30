@@ -529,6 +529,8 @@ mod tests {
                 interface: "test".to_string(),
                 ports: Vec::new(),
                 bpf: String::new(),
+                filter_mode: "port_filtered".to_string(),
+                pppoe_detection: nte_capture::PppoeDetection::default(),
             },
             counters: nte_capture::CaptureCounters::default(),
             new_rows: rows.clone(),

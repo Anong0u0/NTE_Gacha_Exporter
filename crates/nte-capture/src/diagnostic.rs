@@ -7,15 +7,19 @@ use anyhow::Result;
 use serde::Serialize;
 
 use crate::live::CaptureTarget;
+#[cfg(windows)]
+use crate::live::{CaptureFilterMode, bpf, should_write_raw_packet};
 use crate::protocol::ParseWarning;
 
 #[cfg(windows)]
 use crate::net;
 #[cfg(windows)]
 use crate::protocol::{ProtocolAssembler, RecordType, parse_payload_blocks};
+#[cfg(any(windows, test))]
+use crate::raw::PacketKind;
 #[cfg(windows)]
 use crate::raw::{
-    PacketKind, ParsedNetworkPacket, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet,
+    ParsedNetworkPacket, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet,
 };
 
 #[cfg(windows)]
@@ -27,17 +31,19 @@ use std::sync::atomic::Ordering;
 #[cfg(windows)]
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 use base64::Engine;
 
 pub struct DiagnosticCaptureOptions {
     pub pid: u32,
     pub exe: String,
     pub ports: Vec<u16>,
+    pub pppoe_detection: Option<crate::net::PppoeDetection>,
     pub raw_out: Option<PathBuf>,
     pub dropped_samples_out: Option<PathBuf>,
     pub duration: Duration,
     pub max_dropped_samples: usize,
+    pub max_full_dropped_samples: usize,
     pub on_progress: Option<DiagnosticCaptureProgressCallback>,
 }
 
@@ -53,6 +59,7 @@ pub struct DiagnosticCaptureCounters {
     pub filter_restarts: u64,
     pub raw_packets_written: u64,
     pub dropped_samples_written: u64,
+    pub dropped_full_samples_written: u64,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -87,6 +94,92 @@ pub struct DiagnosticCaptureSummary {
     pub small_parsed_payload_packets: u64,
     pub marker_hits: DiagnosticMarkerHits,
     pub warning_code_counts: BTreeMap<String, u64>,
+    pub dropped_evidence: DiagnosticDroppedEvidenceSummary,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct DiagnosticDroppedEvidenceSummary {
+    pub layer_chain_counts: BTreeMap<String, u64>,
+    pub failure_reason_counts: BTreeMap<String, u64>,
+    pub encapsulation_counts: BTreeMap<String, u64>,
+    pub ethertype_counts: BTreeMap<String, u64>,
+    pub ppp_protocol_counts: BTreeMap<String, u64>,
+    pub ip_protocol_counts: BTreeMap<String, u64>,
+    pub examples: Vec<DiagnosticDroppedEvidenceExample>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticDroppedEvidenceExample {
+    pub capture_index: u64,
+    pub packet_kind: String,
+    pub size: usize,
+    pub layer_chain: Vec<String>,
+    pub failure_reason: String,
+    pub offsets: DiagnosticDroppedOffsets,
+    pub ethertype: Option<String>,
+    pub ppp_protocol: Option<String>,
+    pub ip_protocol: Option<String>,
+    pub prefix_hex: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct DiagnosticDroppedOffsets {
+    pub ethertype_offset: Option<usize>,
+    pub vlan_offsets: Vec<usize>,
+    pub pppoe_offset: Option<usize>,
+    pub ppp_protocol_offset: Option<usize>,
+    pub inner_ip_offset: Option<usize>,
+    pub l4_offset: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticDroppedPacketAnalysis {
+    pub packet_kind: String,
+    pub layer_chain: Vec<String>,
+    pub failure_reason: String,
+    pub offsets: DiagnosticDroppedOffsets,
+    pub ethertype: Option<String>,
+    pub vlan_tags: Vec<DiagnosticVlanTagEvidence>,
+    pub pppoe: Option<DiagnosticPppoeEvidence>,
+    pub ppp_protocol: Option<String>,
+    pub ip: Option<DiagnosticIpEvidence>,
+    pub transport: Option<DiagnosticTransportEvidence>,
+    pub prefix_hex: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticVlanTagEvidence {
+    pub offset: usize,
+    pub tpid: String,
+    pub tci: String,
+    pub vid: u16,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticPppoeEvidence {
+    pub offset: usize,
+    pub version: u8,
+    #[serde(rename = "type")]
+    pub typ: u8,
+    pub code: u8,
+    pub session_id: String,
+    pub length: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticIpEvidence {
+    pub version: u8,
+    pub offset: usize,
+    pub header_len: usize,
+    pub protocol: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticTransportEvidence {
+    pub protocol: String,
+    pub offset: usize,
+    pub sport: Option<u16>,
+    pub dport: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -109,5 +202,6 @@ pub struct DiagnosticCaptureResult {
 
 include!("diagnostic/run.rs");
 include!("diagnostic/dedup.rs");
+include!("diagnostic/drop_analysis.rs");
 include!("diagnostic/dropped_samples.rs");
 include!("diagnostic/summary.rs");

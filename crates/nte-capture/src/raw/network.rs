@@ -59,6 +59,37 @@ fn parse_ethernet(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
     }
     match ether_type {
         0x0800 | 0x86dd => parse_ip_at(bytes, offset, "pktmon-ethernet"),
+        0x8864 => parse_pppoe_session(bytes, offset),
+        _ => None,
+    }
+}
+
+#[cfg(any(windows, test))]
+fn parse_pppoe_session(bytes: &[u8], offset: usize) -> Option<ParsedNetworkPacket> {
+    const PPPOE_HEADER_LEN: usize = 6;
+    const PPP_PROTOCOL_LEN: usize = 2;
+    const PPP_IPV4: u16 = 0x0021;
+    const PPP_IPV6: u16 = 0x0057;
+
+    if bytes.len() < offset + PPPOE_HEADER_LEN + PPP_PROTOCOL_LEN {
+        return None;
+    }
+    let code = bytes[offset + 1];
+    if code != 0 {
+        return None;
+    }
+    let pppoe_len = u16::from_be_bytes([bytes[offset + 4], bytes[offset + 5]]) as usize;
+    if pppoe_len < PPP_PROTOCOL_LEN {
+        return None;
+    }
+    let ppp_offset = offset + PPPOE_HEADER_LEN;
+    if bytes.len() < ppp_offset + pppoe_len {
+        return None;
+    }
+    let protocol = u16::from_be_bytes([bytes[ppp_offset], bytes[ppp_offset + 1]]);
+    let ip_offset = ppp_offset + PPP_PROTOCOL_LEN;
+    match protocol {
+        PPP_IPV4 | PPP_IPV6 => parse_ip_at(bytes, ip_offset, "pktmon-pppoe"),
         _ => None,
     }
 }

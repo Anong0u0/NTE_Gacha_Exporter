@@ -1,60 +1,38 @@
+const EXTERNAL_PKTMON_STAGING_DIR_FALLBACK: &str = r"C:\Windows\Temp";
+
 fn run_external_pktmon_capture(
     paths: &SupportPaths,
     ports: &[u16],
+    pppoe_detection: PppoeDetection,
+    filter_mode: CaptureFilterMode,
     duration: Duration,
     stop: Arc<AtomicBool>,
 ) -> ExternalCaptureReport {
-    let mut commands = Vec::new();
-    let mut stdout_log = Vec::new();
-    let mut stderr_log = Vec::new();
-    let mut ok = true;
-    let mut error = None;
+    let mut runner = PktmonRunner::new(paths, pppoe_detection, filter_mode);
+    let staging_dir = external_pktmon_staging_dir();
+    let staging_paths = external_staging_paths(paths, &staging_dir);
 
-    run_pktmon(
-        &["filter", "remove"],
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
-        &mut ok,
-        &mut error,
-    );
-    for port in ports {
-        run_pktmon(
-            &[
-                "filter",
-                "add",
-                &format!("NTE_DIAG_UDP_{port}"),
-                "-t",
-                "UDP",
-                "-p",
-                &port.to_string(),
-            ],
-            &mut commands,
-            &mut stdout_log,
-            &mut stderr_log,
-            &mut ok,
-            &mut error,
-        );
-        run_pktmon(
-            &[
-                "filter",
-                "add",
-                &format!("NTE_DIAG_TCP_{port}"),
-                "-t",
-                "TCP",
-                "-p",
-                &port.to_string(),
-            ],
-            &mut commands,
-            &mut stdout_log,
-            &mut stderr_log,
-            &mut ok,
-            &mut error,
-        );
+    if let Err(create_error) = fs::create_dir_all(&staging_dir) {
+        runner.write_stderr_line(format!(
+            "create external pktmon staging dir {} failed: {create_error}",
+            staging_dir.display()
+        ));
+        runner.mark_error(format!(
+            "create external pktmon staging dir failed: {create_error}"
+        ));
+        return runner.finish();
     }
-    let external_etl = paths.external_etl.to_string_lossy().to_string();
-    let external_pcapng = paths.external_pcapng.to_string_lossy().to_string();
-    run_pktmon(
+
+    runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
+    if filter_mode == CaptureFilterMode::PortFiltered {
+        for port in ports {
+            runner.add_port_filters(*port);
+        }
+    }
+
+    let external_etl = staging_paths.etl.to_string_lossy().to_string();
+    let external_pcapng = staging_paths.pcapng.to_string_lossy().to_string();
+    runner.run(
         &[
             "start",
             "--capture",
@@ -63,11 +41,7 @@ fn run_external_pktmon_capture(
             "--file-name",
             &external_etl,
         ],
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
-        &mut ok,
-        &mut error,
+        "pktmon.exe start failed",
     );
 
     let started = Instant::now();
@@ -75,165 +49,260 @@ fn run_external_pktmon_capture(
         std::thread::sleep(Duration::from_millis(250));
     }
 
-    let counters_json = run_pktmon_capture_output(
+    runner.capture_output(
         &["counters", "--json"],
         &paths.counters_json,
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
+        "pktmon.exe counters --json failed",
     );
-    ok &= counters_json;
-    if !counters_json && error.is_none() {
-        error = Some("pktmon.exe counters --json failed".to_string());
-    }
-    let counters_txt = run_pktmon_capture_output(
+    runner.capture_output(
         &["counters"],
         &paths.counters_txt,
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
+        "pktmon.exe counters failed",
     );
-    ok &= counters_txt;
-    if !counters_txt && error.is_none() {
-        error = Some("pktmon.exe counters failed".to_string());
-    }
-    run_pktmon(
-        &["stop"],
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
-        &mut ok,
-        &mut error,
-    );
-    run_pktmon(
+    runner.run(&["stop"], "pktmon.exe stop failed");
+    runner.run(
         &["pcapng", &external_etl, "-o", &external_pcapng],
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
-        &mut ok,
-        &mut error,
+        "pktmon.exe pcapng failed",
     );
-    run_pktmon(
-        &["filter", "remove"],
-        &mut commands,
-        &mut stdout_log,
-        &mut stderr_log,
-        &mut ok,
-        &mut error,
+    runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
+    runner.copy_staging_artifact(&staging_paths.etl, &paths.external_etl, "ETL");
+    runner.copy_staging_artifact(
+        &staging_paths.pcapng,
+        &paths.external_pcapng,
+        "PCAPNG",
     );
-
-    if let Err(write_error) = fs::write(&paths.external_stdout, stdout_log) {
-        ok = false;
-        error = Some(format!("write external stdout log failed: {write_error}"));
-    }
-    if let Err(write_error) = fs::write(&paths.external_stderr, stderr_log) {
-        ok = false;
-        error = Some(format!("write external stderr log failed: {write_error}"));
-    }
-    if let Err(write_error) = fs::write(
-        &paths.external_commands,
-        serde_json::to_vec_pretty(&commands).unwrap_or_default(),
-    ) {
-        ok = false;
-        error = Some(format!("write external command log failed: {write_error}"));
-    }
-
-    ExternalCaptureReport {
-        attempted: true,
-        ok,
-        error,
-        etl_path: Some(paths.external_etl.to_string_lossy().to_string()),
-        pcapng_path: Some(paths.external_pcapng.to_string_lossy().to_string()),
-        stdout_log_path: Some(paths.external_stdout.to_string_lossy().to_string()),
-        stderr_log_path: Some(paths.external_stderr.to_string_lossy().to_string()),
-        counters_json_path: Some(paths.counters_json.to_string_lossy().to_string()),
-        counters_txt_path: Some(paths.counters_txt.to_string_lossy().to_string()),
-        command_log_path: Some(paths.external_commands.to_string_lossy().to_string()),
-        commands,
-    }
+    runner.cleanup_staging_files(&staging_paths);
+    runner.finish()
 }
 
-#[allow(clippy::too_many_arguments)]
-fn run_pktmon(
-    args: &[&str],
-    commands: &mut Vec<ExternalCommandLog>,
-    stdout_log: &mut Vec<u8>,
-    stderr_log: &mut Vec<u8>,
-    ok: &mut bool,
-    error: &mut Option<String>,
-) {
-    let success = run_command("pktmon.exe", args, None, commands, stdout_log, stderr_log);
-    if !success {
-        *ok = false;
-        if error.is_none() {
-            *error = Some(format!("pktmon.exe {} failed", args.join(" ")));
+struct PktmonRunner<'a> {
+    paths: &'a SupportPaths,
+    commands: Vec<ExternalCommandLog>,
+    stdout_log: Vec<u8>,
+    stderr_log: Vec<u8>,
+    ok: bool,
+    error: Option<String>,
+    pppoe_detection: PppoeDetection,
+    filter_mode: CaptureFilterMode,
+}
+
+impl<'a> PktmonRunner<'a> {
+    fn new(
+        paths: &'a SupportPaths,
+        pppoe_detection: PppoeDetection,
+        filter_mode: CaptureFilterMode,
+    ) -> Self {
+        Self {
+            paths,
+            commands: Vec::new(),
+            stdout_log: Vec::new(),
+            stderr_log: Vec::new(),
+            ok: true,
+            error: None,
+            pppoe_detection,
+            filter_mode,
+        }
+    }
+
+    fn add_port_filters(&mut self, port: u16) {
+        let udp_name = format!("NTE_DIAG_UDP_{port}");
+        let tcp_name = format!("NTE_DIAG_TCP_{port}");
+        let port_arg = port.to_string();
+
+        self.run(
+            &["filter", "add", &udp_name, "-t", "UDP", "-p", &port_arg],
+            format!("pktmon.exe add UDP filter for port {port} failed"),
+        );
+        self.run(
+            &["filter", "add", &tcp_name, "-t", "TCP", "-p", &port_arg],
+            format!("pktmon.exe add TCP filter for port {port} failed"),
+        );
+    }
+
+    fn run(&mut self, args: &[&str], error_message: impl Into<String>) {
+        if !self.run_command(args) {
+            self.mark_error(error_message);
+        }
+    }
+
+    fn capture_output(
+        &mut self,
+        args: &[&str],
+        output_path: &Path,
+        error_message: impl Into<String>,
+    ) {
+        let execution = run_command("pktmon.exe", args);
+        let success = execution.log.success;
+        if let Err(write_error) = fs::write(output_path, &execution.stdout) {
+            self.mark_error(format!("write pktmon output failed: {write_error}"));
+        }
+        self.record_command(execution);
+        if !success {
+            self.mark_error(error_message);
+        }
+    }
+
+    fn run_command(&mut self, args: &[&str]) -> bool {
+        let execution = run_command("pktmon.exe", args);
+        let success = execution.log.success;
+        self.record_command(execution);
+        success
+    }
+
+    fn record_command(&mut self, execution: CommandExecution) {
+        let command_line = execution.log.args.join(" ");
+        let _ = writeln!(
+            self.stdout_log,
+            "\n> {} {}",
+            execution.log.program, command_line
+        );
+        self.stdout_log.extend_from_slice(&execution.stdout);
+        let _ = writeln!(
+            self.stderr_log,
+            "\n> {} {}",
+            execution.log.program, command_line
+        );
+        self.stderr_log.extend_from_slice(&execution.stderr);
+        self.commands.push(execution.log);
+    }
+
+    fn copy_staging_artifact(&mut self, staging_path: &Path, artifact_path: &Path, label: &str) {
+        if !staging_path.is_file() {
+            self.mark_error(format!("external pktmon {label} missing after capture"));
+            return;
+        }
+        if let Err(copy_error) = fs::copy(staging_path, artifact_path) {
+            self.mark_error(format!("copy external pktmon {label} failed: {copy_error}"));
+        }
+    }
+
+    fn cleanup_staging_files(&mut self, paths: &ExternalStagingPaths) {
+        let _ = fs::remove_file(&paths.etl);
+        let _ = fs::remove_file(&paths.pcapng);
+    }
+
+    fn write_stderr_line(&mut self, message: String) {
+        let _ = writeln!(self.stderr_log, "{message}");
+    }
+
+    fn mark_error(&mut self, message: impl Into<String>) {
+        self.ok = false;
+        if self.error.is_none() {
+            self.error = Some(message.into());
+        }
+    }
+
+    fn finish(mut self) -> ExternalCaptureReport {
+        if let Err(write_error) = fs::write(&self.paths.external_stdout, &self.stdout_log) {
+            self.mark_error(format!("write external stdout log failed: {write_error}"));
+        }
+        if let Err(write_error) = fs::write(&self.paths.external_stderr, &self.stderr_log) {
+            self.mark_error(format!("write external stderr log failed: {write_error}"));
+        }
+        if let Err(write_error) = fs::write(
+            &self.paths.external_commands,
+            serde_json::to_vec_pretty(&self.commands).unwrap_or_default(),
+        ) {
+            self.mark_error(format!("write external command log failed: {write_error}"));
+        }
+
+        ExternalCaptureReport {
+            attempted: true,
+            ok: self.ok,
+            error: self.error,
+            filter_mode: self.filter_mode.as_str().to_string(),
+            pppoe_detection: self.pppoe_detection,
+            etl_path: Some(self.paths.external_etl.to_string_lossy().to_string()),
+            pcapng_path: Some(self.paths.external_pcapng.to_string_lossy().to_string()),
+            stdout_log_path: Some(self.paths.external_stdout.to_string_lossy().to_string()),
+            stderr_log_path: Some(self.paths.external_stderr.to_string_lossy().to_string()),
+            counters_json_path: Some(self.paths.counters_json.to_string_lossy().to_string()),
+            counters_txt_path: Some(self.paths.counters_txt.to_string_lossy().to_string()),
+            command_log_path: Some(self.paths.external_commands.to_string_lossy().to_string()),
+            commands: self.commands,
         }
     }
 }
 
-fn run_pktmon_capture_output(
-    args: &[&str],
-    output_path: &Path,
-    commands: &mut Vec<ExternalCommandLog>,
-    stdout_log: &mut Vec<u8>,
-    stderr_log: &mut Vec<u8>,
-) -> bool {
-    run_command(
-        "pktmon.exe",
-        args,
-        Some(output_path),
-        commands,
-        stdout_log,
-        stderr_log,
+struct ExternalStagingPaths {
+    etl: PathBuf,
+    pcapng: PathBuf,
+}
+
+fn external_pktmon_staging_dir() -> PathBuf {
+    std::env::var_os("SystemRoot")
+        .map(PathBuf::from)
+        .filter(|path| !path.as_os_str().is_empty())
+        .map(|path| path.join("Temp"))
+        .unwrap_or_else(|| PathBuf::from(EXTERNAL_PKTMON_STAGING_DIR_FALLBACK))
+}
+
+fn external_staging_paths(paths: &SupportPaths, staging_dir: &Path) -> ExternalStagingPaths {
+    ExternalStagingPaths {
+        etl: external_staging_path_for(
+            staging_dir,
+            &paths.external_etl,
+            "nte-gacha-exporter.external.etl",
+        ),
+        pcapng: external_staging_path_for(
+            staging_dir,
+            &paths.external_pcapng,
+            "nte-gacha-exporter.external.pcapng",
+        ),
+    }
+}
+
+fn external_staging_path_for(staging_dir: &Path, path: &Path, fallback_name: &str) -> PathBuf {
+    staging_dir.join(
+        path.file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(fallback_name),
     )
 }
 
-fn run_command(
-    program: &str,
-    args: &[&str],
-    stdout_file: Option<&Path>,
-    commands: &mut Vec<ExternalCommandLog>,
-    stdout_log: &mut Vec<u8>,
-    stderr_log: &mut Vec<u8>,
-) -> bool {
+struct CommandExecution {
+    log: ExternalCommandLog,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+}
+
+fn run_command(program: &str, args: &[&str]) -> CommandExecution {
     let args_vec = args
         .iter()
         .map(|arg| (*arg).to_string())
         .collect::<Vec<_>>();
     match Command::new(program).args(args).output() {
         Ok(output) => {
-            let _ = writeln!(stdout_log, "\n> {program} {}", args.join(" "));
-            stdout_log.extend_from_slice(&output.stdout);
-            let _ = writeln!(stderr_log, "\n> {program} {}", args.join(" "));
-            stderr_log.extend_from_slice(&output.stderr);
-            if let Some(path) = stdout_file {
-                let _ = fs::write(path, &output.stdout);
-            }
             let success = output.status.success();
-            commands.push(ExternalCommandLog {
-                program: program.to_string(),
-                args: args_vec,
-                exit_code: output.status.code(),
-                success,
-                stdout_bytes: output.stdout.len(),
-                stderr_bytes: output.stderr.len(),
-                error: None,
-            });
-            success
+            CommandExecution {
+                log: ExternalCommandLog {
+                    program: program.to_string(),
+                    args: args_vec,
+                    exit_code: output.status.code(),
+                    success,
+                    stdout_bytes: output.stdout.len(),
+                    stderr_bytes: output.stderr.len(),
+                    error: None,
+                },
+                stdout: output.stdout,
+                stderr: output.stderr,
+            }
         }
         Err(error) => {
-            let _ = writeln!(stderr_log, "\n> {program} {}", args.join(" "));
-            let _ = writeln!(stderr_log, "{error}");
-            commands.push(ExternalCommandLog {
-                program: program.to_string(),
-                args: args_vec,
-                exit_code: None,
-                success: false,
-                stdout_bytes: 0,
-                stderr_bytes: error.to_string().len(),
-                error: Some(error.to_string()),
-            });
-            false
+            let stderr = format!("{error}\n").into_bytes();
+            CommandExecution {
+                log: ExternalCommandLog {
+                    program: program.to_string(),
+                    args: args_vec,
+                    exit_code: None,
+                    success: false,
+                    stdout_bytes: 0,
+                    stderr_bytes: stderr.len(),
+                    error: Some(error.to_string()),
+                },
+                stdout: Vec::new(),
+                stderr,
+            }
         }
     }
 }

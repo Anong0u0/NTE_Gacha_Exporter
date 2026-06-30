@@ -19,8 +19,9 @@ use nte_assets::{
 };
 use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
 use nte_capture::{
-    CaptureOptions, CaptureProgress, CaptureRecordBuilder, ParsedRow, build_capture_document,
-    candidate_ports, capture_doctor, capture_live, find_process_pid, is_admin, read_raw_capture,
+    CaptureFilterMode, CaptureOptions, CaptureProgress, CaptureRecordBuilder, ParsedRow,
+    build_capture_document, candidate_ports, capture_doctor, capture_live, detect_pppoe,
+    find_process_pid, is_admin, read_raw_capture,
 };
 use nte_core::available_locales;
 use nte_store::JsonStore;

@@ -8,8 +8,12 @@ struct DroppedPacketSample {
     capture_index: u64,
     packet_kind: String,
     size: usize,
+    analysis: DiagnosticDroppedPacketAnalysis,
     payload_prefix_b64: String,
     payload_truncated: bool,
+    payload_full_included: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    payload_b64: Option<String>,
 }
 
 #[cfg(windows)]
@@ -73,5 +77,55 @@ impl DroppedSampleWriter {
         serde_json::to_writer(&mut self.writer, value)?;
         self.writer.write_all(b"\n")?;
         Ok(())
+    }
+}
+
+#[cfg(any(windows, test))]
+fn should_include_full_dropped_sample(
+    counters: &DiagnosticCaptureCounters,
+    max_full_dropped_samples: usize,
+) -> bool {
+    counters.dropped_full_samples_written < max_full_dropped_samples as u64
+}
+
+#[cfg(test)]
+mod dropped_sample_tests {
+    use super::*;
+    use base64::Engine;
+
+    #[test]
+    fn dropped_payload_prefix_is_capped_at_512_bytes() {
+        let bytes = vec![7_u8; 600];
+
+        let encoded = payload_prefix_b64(&bytes);
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .unwrap();
+
+        assert_eq!(decoded.len(), 512);
+    }
+
+    #[test]
+    fn dropped_full_payload_is_limited_by_counter() {
+        let mut counters = DiagnosticCaptureCounters {
+            dropped_full_samples_written: 31,
+            ..Default::default()
+        };
+        assert!(should_include_full_dropped_sample(&counters, 32));
+
+        counters.dropped_full_samples_written = 32;
+        assert!(!should_include_full_dropped_sample(&counters, 32));
+    }
+
+    #[test]
+    fn dropped_full_payload_encoder_keeps_complete_bytes() {
+        let bytes = vec![3_u8; 600];
+
+        let encoded = payload_b64(&bytes);
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .unwrap();
+
+        assert_eq!(decoded, bytes);
     }
 }

@@ -1,4 +1,4 @@
-fn discover_target() -> DiagnosticTargetDiscovery {
+fn discover_target(pppoe_detection: PppoeDetection) -> DiagnosticTargetDiscovery {
     let mut warnings = Vec::new();
     let mut error = None;
     let pids = match find_process_pids("HTGame.exe") {
@@ -39,6 +39,7 @@ fn discover_target() -> DiagnosticTargetDiscovery {
         selected_ports: selected
             .map(|candidate| candidate.ports.clone())
             .unwrap_or_default(),
+        pppoe_detection,
         candidates,
         warnings,
         error,
