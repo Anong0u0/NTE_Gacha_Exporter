@@ -265,6 +265,7 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
   const profileName = session?.profileName ?? "default";
   const mode = session?.mode ?? "live_only";
+  const rawPath = "data/runs/raw-mock.jsonl";
   const records = mockRecordsForScenario();
   const recordsCount = completed ? records.length : Math.min(2, Math.max(0, session?.polls ?? 0));
   return {
@@ -299,10 +300,21 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
             completed_pools: completed ? ["limited", "standard"] : [],
             skipped_pools: mode === "auto_page_incremental" && completed ? ["fork"] : [],
           },
-    raw_path: mode === "live_only" ? null : "data/runs/raw-mock.jsonl",
+    raw_path: rawPath,
     error: null,
-    import_report: completed ? mockReport(profileName, mode === "live_only" ? "live_capture" : mode, "") : null,
+    import_report: completed ? mockReport(profileName, mockCaptureSourceKind(mode), rawPath) : null,
   };
+}
+
+function mockCaptureSourceKind(mode: CaptureMode): string {
+  switch (mode) {
+    case "live_only":
+      return "live_capture";
+    case "auto_page_incremental":
+      return "auto_page_capture";
+    case "auto_page_full":
+      return "auto_page_full";
+  }
 }
 
 function mockDiagnosticStatus(sessionId: string): DiagnosticStatus {

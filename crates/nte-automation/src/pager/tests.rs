@@ -73,13 +73,16 @@ mod tests {
     fn auto_page_result_serialization_excludes_png_bytes() {
         let mut result = AutoPageResult::failed("failed", Vec::new(), Vec::new());
         result.diagnostics.context_png = Some(vec![1, 2, 3, 4]);
+        result.diagnostics.raw_page_png = Some(vec![5, 6, 7, 8]);
         result.diagnostics.failure_kind = Some("fresh_page_number_unreadable".to_string());
 
         let text = serde_json::to_string(&result).unwrap();
 
         assert!(text.contains("fresh_page_number_unreadable"));
         assert!(!text.contains("context_png"));
+        assert!(!text.contains("raw_page_png"));
         assert!(!text.contains("[1,2,3,4]"));
+        assert!(!text.contains("[5,6,7,8]"));
     }
 
     #[test]

@@ -1,7 +1,3 @@
-import { PieChart } from "echarts/charts";
-import { TooltipComponent } from "echarts/components";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   api,
@@ -32,16 +28,17 @@ import { createDashboardActions } from "./dashboardActions";
 import { createDashboardUi } from "./dashboardUi";
 import { createDataOperations, type DataOperationKind } from "./dataOperations";
 import { createDiagnosticActions } from "./diagnosticActions";
-import { createTranslator, uiLocaleDisplayName } from "./i18n";
+import { installEcharts } from "./echarts";
+import { createAppFormatters } from "./formatters";
+import { createTranslator } from "./i18n";
 import { createMaintenanceActions } from "./maintenance";
 import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode } from "./options";
 import { createProfileActions } from "./profileActions";
 import { createRecordState } from "./recordState";
 import { createTaskRunner } from "./task";
-import { bannerMeta, bannerTitle, captureRecordMeta, captureRecordName, forkHitBadge, forkWinRate, formatBannerWindow, formatCaptureMode, formatCaptureState, formatError, formatPity, formatPityBadge, formatPoolKindPullNo, formatPullNo, formatQuantityName, formatRecordResultBadge, formatResult, formatRolls, formatTenPullProgress, formatTenPullProgressSummary, formatTime, isHitBadgeLabel, numberOrDash, percent, primaryRecordBadge } from "./viewHelpers";
 
-use([PieChart, TooltipComponent, CanvasRenderer]);
+installEcharts();
 
 export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default"), newProfileName = ref("");
@@ -70,18 +67,7 @@ export function useApp() {
       return t("kind.fork");
     },
   } as Record<PoolKind, string>;
-  const formatResultText = (value: string) => formatResult(value, t);
-  const formatRecordResultBadgeText = (value: string) => formatRecordResultBadge(value, t);
-  const bannerTitleText = (banner?: Parameters<typeof bannerTitle>[0]) => bannerTitle(banner, t);
-  const bannerMetaText = (banner?: Parameters<typeof bannerMeta>[0]) => bannerMeta(banner);
-  const formatBannerWindowText = (start?: string | null, end?: string | null) => formatBannerWindow(start, end, t);
-  const formatPityText = (record: DisplayRecord) => formatPity(record);
-  const formatTenPullProgressText = (record: DisplayRecord) => formatTenPullProgress(record);
-  const formatPityBadgeText = (record: DisplayRecord) => formatPityBadge(record, t);
-  const primaryRecordBadgeText = (record: DisplayRecord) => primaryRecordBadge(record, t);
-  const formatCaptureStateText = (value?: string | null) => formatCaptureState(value, t);
-  const formatCaptureModeText = (value?: string | null) => formatCaptureMode(value, t);
-  const uiLocaleName = (value: string) => uiLocaleDisplayName(value);
+  const formatters = createAppFormatters(t);
 
   function setChartEl(element: unknown) {
     chartEl.value = element instanceof HTMLElement ? element : null;
@@ -205,7 +191,7 @@ export function useApp() {
     pullCurrency, formatPityRatio, recordRarityClass, openRankingDialog, closeRankingDialog,
   } = dashboardUi.actions;
   const { latestFiveStarWallModeForPool } = dashboardUi.internal;
-  const runTask = createTaskRunner({ busy, statusText, errorText, formatError });
+  const runTask = createTaskRunner({ busy, statusText, errorText, formatError: formatters.formatError });
 
   function applySettings(settings: Settings) {
     setActiveProfileName(settings.active_profile);
@@ -227,7 +213,7 @@ export function useApp() {
       });
       applySettings(settings);
     } catch (error) {
-      errorText.value = formatError(error);
+      errorText.value = formatters.formatError(error);
     }
   }
 
@@ -264,7 +250,7 @@ export function useApp() {
     records,
     detail,
     errorText,
-    formatError,
+    formatError: formatters.formatError,
   });
   const {
     normalizeDashboardScope,
@@ -282,7 +268,7 @@ export function useApp() {
     detail,
     detailLoading,
     errorText,
-    formatError,
+    formatError: formatters.formatError,
     resolveVisibleAssets,
   });
   const maintenance = createMaintenanceActions({
@@ -371,9 +357,9 @@ export function useApp() {
     isCaptureActive,
     isWorkflowBusy,
     t,
-    formatError,
-    formatCaptureState: formatCaptureStateText,
-    formatCaptureMode: formatCaptureModeText,
+    formatError: formatters.formatError,
+    formatCaptureState: formatters.formatCaptureState,
+    formatCaptureMode: formatters.formatCaptureMode,
     saveRecordViewPrefs,
     setActiveProfileName,
     refreshAll,
@@ -399,7 +385,7 @@ export function useApp() {
     isDiagnosticActive,
     isWorkflowBusy,
     t,
-    formatError,
+    formatError: formatters.formatError,
   });
 
   const {
@@ -489,7 +475,7 @@ export function useApp() {
         void checkForUpdates(false);
       }
     } catch (error) {
-      errorText.value = formatError(error);
+      errorText.value = formatters.formatError(error);
     } finally {
       busy.value = false;
     }
@@ -599,14 +585,14 @@ export function useApp() {
   }
 
   return reactive({
-    t, uiLocaleName, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
+    t, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureActionBusy,
     capturePollInFlight, diagnosticPromptOpen, diagnosticStatus, diagnosticActionBusy, diagnosticPollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
     sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
     canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isDiagnosticActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, startPendingAdminDiagnostic, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, retryAutoPageSlower, canRetryAutoPageSlower, nextPageRecordMinWaitMs, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
-    openDiagnosticPrompt, cancelDiagnosticPrompt, confirmDiagnosticPrompt, cancelDiagnostic, pollDiagnosticStatus, applyDiagnosticStatus, ensureDiagnosticPolling, clearDiagnosticPolling, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, percent, numberOrDash, formatTime, formatResult: formatResultText, bannerTitle: bannerTitleText, bannerMeta: bannerMetaText,
-    formatBannerWindow: formatBannerWindowText, formatPullNo, formatPoolKindPullNo, formatPity: formatPityText, formatPityRatio, formatTenPullProgress: formatTenPullProgressText, formatTenPullProgressSummary, formatPityBadge: formatPityBadgeText, formatRolls, formatQuantityName, formatRecordResultBadge: formatRecordResultBadgeText, primaryRecordBadge: primaryRecordBadgeText, isHitBadgeLabel, forkHitBadge, forkWinRate, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog, formatCaptureState: formatCaptureStateText, formatCaptureMode: formatCaptureModeText, captureRecordName, captureRecordMeta, formatError,
+    openDiagnosticPrompt, cancelDiagnosticPrompt, confirmDiagnosticPrompt, cancelDiagnostic, pollDiagnosticStatus, applyDiagnosticStatus, ensureDiagnosticPolling, clearDiagnosticPolling, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, ...formatters,
+    formatPityRatio, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog,
   });
 }
 

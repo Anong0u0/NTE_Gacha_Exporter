@@ -7,12 +7,14 @@ const SUPPORT_DIR: &str = "support";
 const SUPPORT_PREFIX: &str = "capture-";
 const SUPPORT_JSON_SUFFIX: &str = ".json";
 const SUPPORT_IMAGE_SUFFIX: &str = "-context.png";
+const SUPPORT_RAW_PAGE_IMAGE_SUFFIX: &str = "-page-number-raw.png";
 const LEGACY_SUPPORT_IMAGE_SUFFIX: &str = "-page-number.png";
 
 #[derive(Debug, Clone, Default)]
 struct SupportWriteResult {
     json_path: Option<PathBuf>,
     image_path: Option<PathBuf>,
+    raw_page_image_path: Option<PathBuf>,
     error: Option<String>,
 }
 
@@ -50,6 +52,8 @@ fn attach_support_paths(error: &mut RuntimeError, result: SupportWriteResult) {
     }
     if let Some(path) = result.image_path {
         error.support_image_path = Some(path.to_string_lossy().to_string());
+    } else if let Some(path) = result.raw_page_image_path {
+        error.support_image_path = Some(path.to_string_lossy().to_string());
     }
     if let Some(support_error) = result.error {
         error.message = format!("{}; support_failed: {support_error}", error.message);
@@ -69,11 +73,17 @@ fn write_capture_support(request: SupportRequest<'_>) -> SupportWriteResult {
     let base = sanitize_file_stem(&format!("capture-{}", request.status.session_id));
     let json_path = support_dir.join(format!("{base}.json"));
     let mut write_error = None;
-    let image_path = write_support_image(&support_dir, &base, request.auto_result, &mut write_error);
-    let report = support_report(&request, image_path.as_ref(), write_error.as_deref());
+    let images = write_support_images(&support_dir, &base, request.auto_result, &mut write_error);
+    let report = support_report(
+        &request,
+        images.context_path.as_ref(),
+        images.raw_page_path.as_ref(),
+        write_error.as_deref(),
+    );
     if let Err(error) = write_support_json(&json_path, &report) {
         return SupportWriteResult {
-            image_path,
+            image_path: images.context_path,
+            raw_page_image_path: images.raw_page_path,
             error: Some(error.to_string()),
             ..SupportWriteResult::default()
         };
@@ -87,26 +97,57 @@ fn write_capture_support(request: SupportRequest<'_>) -> SupportWriteResult {
     }
     SupportWriteResult {
         json_path: Some(json_path),
-        image_path,
+        image_path: images.context_path,
+        raw_page_image_path: images.raw_page_path,
         error: write_error,
     }
 }
 
-fn write_support_image(
+#[derive(Debug, Clone, Default)]
+struct SupportImages {
+    context_path: Option<PathBuf>,
+    raw_page_path: Option<PathBuf>,
+}
+
+fn write_support_images(
     support_dir: &Path,
     base: &str,
     auto_result: Option<&AutoPageRunResult>,
     write_error: &mut Option<String>,
-) -> Option<PathBuf> {
-    let bytes = auto_result
+) -> SupportImages {
+    let context_path = auto_result
         .and_then(|result| result.diagnostics.context_png.as_ref())
-        .filter(|bytes| !bytes.is_empty())?;
-    let path = support_dir.join(format!("{base}{SUPPORT_IMAGE_SUFFIX}"));
-    if let Err(error) = fs::write(&path, bytes) {
-        *write_error = Some(format!("write support image failed: {error}"));
-        return None;
+        .filter(|bytes| !bytes.is_empty())
+        .and_then(|bytes| {
+            let path = support_dir.join(format!("{base}{SUPPORT_IMAGE_SUFFIX}"));
+            match fs::write(&path, bytes) {
+                Ok(()) => Some(path),
+                Err(error) => {
+                    append_support_error(write_error, format!("write support image failed: {error}"));
+                    None
+                }
+            }
+        });
+    let raw_page_path = auto_result
+        .and_then(|result| result.diagnostics.raw_page_png.as_ref())
+        .filter(|bytes| !bytes.is_empty())
+        .and_then(|bytes| {
+            let path = support_dir.join(format!("{base}{SUPPORT_RAW_PAGE_IMAGE_SUFFIX}"));
+            match fs::write(&path, bytes) {
+                Ok(()) => Some(path),
+                Err(error) => {
+                    append_support_error(
+                        write_error,
+                        format!("write raw page image failed: {error}"),
+                    );
+                    None
+                }
+            }
+        });
+    SupportImages {
+        context_path,
+        raw_page_path,
     }
-    Some(path)
 }
 
 fn write_support_json(path: &Path, report: &SupportReport) -> Result<(), std::io::Error> {
@@ -187,6 +228,9 @@ fn rotate_capture_support_files(
             &support_dir.join(format!("{}{}", anchor.base, SUPPORT_IMAGE_SUFFIX)),
         )?;
         remove_regular_file_if_exists(
+            &support_dir.join(format!("{}{}", anchor.base, SUPPORT_RAW_PAGE_IMAGE_SUFFIX)),
+        )?;
+        remove_regular_file_if_exists(
             &support_dir.join(format!("{}{}", anchor.base, LEGACY_SUPPORT_IMAGE_SUFFIX)),
         )?;
     }
@@ -264,6 +308,7 @@ fn support_image_base(file_name: &std::ffi::OsStr) -> Option<String> {
     let name = file_name.to_str()?;
     let base = name
         .strip_suffix(SUPPORT_IMAGE_SUFFIX)
+        .or_else(|| name.strip_suffix(SUPPORT_RAW_PAGE_IMAGE_SUFFIX))
         .or_else(|| name.strip_suffix(LEGACY_SUPPORT_IMAGE_SUFFIX))?;
     support_base_valid(base).then(|| base.to_string())
 }
@@ -291,6 +336,7 @@ fn append_support_error(target: &mut Option<String>, message: impl Into<String>)
 fn support_report(
     request: &SupportRequest<'_>,
     image_path: Option<&PathBuf>,
+    raw_page_image_path: Option<&PathBuf>,
     support_error: Option<&str>,
 ) -> SupportReport {
     SupportReport {
@@ -322,6 +368,8 @@ fn support_report(
         auto_page: request.auto_result.map(auto_page_summary),
         diagnostics: request.auto_result.map(|result| auto_page_diagnostics(&result.diagnostics)),
         support_image_path: image_path.map(|path| path.to_string_lossy().to_string()),
+        support_raw_page_image_path: raw_page_image_path
+            .map(|path| path.to_string_lossy().to_string()),
     }
 }
 
@@ -371,4 +419,5 @@ struct SupportReport {
     auto_page: Option<Value>,
     diagnostics: Option<Value>,
     support_image_path: Option<String>,
+    support_raw_page_image_path: Option<String>,
 }

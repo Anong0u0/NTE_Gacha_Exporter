@@ -19,14 +19,7 @@ pub(crate) fn capture_start(
         store.dashboard_overview(&profile_name, &locale)?;
         Ok(locale)
     })?;
-    let output_raw = with_store(&state, |store| {
-        let raw_path = if mode.auto_page() {
-            Some(store.default_run_raw_path().to_string_lossy().to_string())
-        } else {
-            None
-        };
-        Ok(raw_path)
-    })?;
+    let output_raw = with_store(&state, |store| Ok(Some(capture_raw_output_path(store))))?;
     let known_record_keys = if mode == CaptureMode::AutoPageIncremental {
         with_store(&state, |store| store.profile_record_keys(&profile_name))?
     } else {
@@ -89,4 +82,8 @@ pub(crate) fn capture_stop(
         }
     }
     capture_status_with_merge(&state, &session_id)
+}
+
+fn capture_raw_output_path(store: &nte_store::JsonStore) -> String {
+    store.default_run_raw_path().to_string_lossy().to_string()
 }

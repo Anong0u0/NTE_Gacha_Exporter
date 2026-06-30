@@ -1,6 +1,6 @@
 type DiagnosticState = "starting" | "running" | "stopping" | "completed" | "failed";
 
-export type DiagnosticStatusSummary = {
+type DiagnosticStatusSummary = {
   verdict: string;
   findings: string[];
   packets_seen: number;

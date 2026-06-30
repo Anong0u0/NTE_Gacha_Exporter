@@ -50,6 +50,36 @@ mod tests {
     }
 
     #[test]
+    fn capture_raw_output_path_uses_generated_run_jsonl() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = nte_store::JsonStore::open(tmp.path()).unwrap();
+
+        let paths = (0..3)
+            .map(|_| capture_raw_output_path(&store))
+            .collect::<Vec<_>>();
+
+        assert_eq!(paths.len(), 3);
+        assert!(paths.iter().all(|path| {
+            let path = Path::new(path);
+            path.parent().and_then(Path::file_name).and_then(|name| name.to_str()) == Some("runs")
+                && path
+                    .parent()
+                    .and_then(Path::parent)
+                    .and_then(Path::file_name)
+                    .and_then(|name| name.to_str())
+                    == Some("data")
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("raw-") && name.ends_with(".jsonl"))
+        }));
+        assert_eq!(
+            paths.iter().collect::<std::collections::BTreeSet<_>>().len(),
+            paths.len()
+        );
+    }
+
+    #[test]
     fn latest_records_read_capture_document_nte_list() {
         let records = (0..12)
             .map(|index| json!({ "record_id": format!("r{index}") }))
@@ -173,6 +203,7 @@ mod tests {
         let mut auto_result =
             AutoPageRunResult::failed("cannot read page number", Vec::new(), Vec::new());
         auto_result.diagnostics.context_png = Some(vec![137, 80, 78, 71]);
+        auto_result.diagnostics.raw_page_png = Some(vec![137, 80, 78, 71, 2]);
         auto_result.diagnostics.input.mouse_buttons_swapped = Some(true);
         auto_result.diagnostics.input.last_click = Some(nte_automation::MouseClickDiagnostics {
             point: nte_automation::Point { x: 450, y: 1000 },
@@ -195,8 +226,14 @@ mod tests {
         assert!(image_path.ends_with("capture-session-image-context.png"));
         let text = std::fs::read_to_string(result.json_path.unwrap()).unwrap();
         assert!(text.contains("support_image_path"));
+        assert!(text.contains("support_raw_page_image_path"));
         assert!(text.contains("\"input\""));
         assert!(text.contains("\"physical_button\": \"right\""));
+        let raw_path = image_path.with_file_name("capture-session-image-page-number-raw.png");
+        assert_eq!(
+            std::fs::read(&raw_path).unwrap(),
+            vec![137, 80, 78, 71, 2]
+        );
     }
 
     #[test]

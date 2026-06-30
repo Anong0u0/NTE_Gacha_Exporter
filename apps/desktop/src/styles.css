@@ -1,4 +1,6 @@
 @import "./styles/foundation.css";
+@import "./styles/foundation/shell.css";
+@import "./styles/foundation/dialogs.css";
 @import "./styles/overview.css";
 @import "./styles/insights.css";
 @import "./styles/records.css";

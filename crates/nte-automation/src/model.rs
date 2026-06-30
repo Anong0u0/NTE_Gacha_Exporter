@@ -121,9 +121,19 @@ pub struct PageReadHintDiagnostics {
 pub struct OcrAttemptDiagnostic {
     pub candidate_index: usize,
     pub size: Size,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pass: Option<String>,
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub score: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub second_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub second_score: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub margin: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub glyph_count: Option<usize>,
     pub error: Option<String>,
@@ -168,6 +178,8 @@ pub struct AutoPageDiagnostics {
     pub ocr: Option<OcrReadDiagnostics>,
     #[serde(skip)]
     pub context_png: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub raw_page_png: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
