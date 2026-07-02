@@ -8,7 +8,7 @@ use super::{
     apply_staged_update, check_update_manifest, cleanup_update_artifacts_after_success,
     prepare_update_install, stage_update_archive, update_status,
 };
-use nte_core::{UpdateChannel, UpdateManifest, UpdatePackage};
+use nte_core::{UpdateChangelogEntry, UpdateChannel, UpdateManifest, UpdatePackage};
 
 fn manifest(version: &str, channel: UpdateChannel) -> UpdateManifest {
     UpdateManifest {
@@ -167,36 +167,49 @@ fn update_manifest_accepts_newer_stable_and_filters_channel() {
         manifest("0.2.0", UpdateChannel::Stable),
         "0.1.0",
         UpdateChannel::Stable,
-        "Stable notes",
+        vec![UpdateChangelogEntry {
+            version: "0.2.0".to_string(),
+            release_notes: "Stable notes".to_string(),
+        }],
     )
     .unwrap();
     let prerelease = check_update_manifest(
         manifest("0.2.0-beta.1", UpdateChannel::Beta),
         "0.1.0",
         UpdateChannel::Stable,
-        "",
+        Vec::new(),
     )
     .unwrap();
     let beta = check_update_manifest(
         manifest("0.2.0-beta.1", UpdateChannel::Beta),
         "0.1.0",
         UpdateChannel::Beta,
-        "",
+        Vec::new(),
     )
     .unwrap();
     let older = check_update_manifest(
         manifest("0.1.0", UpdateChannel::Stable),
         "0.1.0",
         UpdateChannel::Stable,
-        "",
+        vec![UpdateChangelogEntry {
+            version: "0.1.0".to_string(),
+            release_notes: "Old notes".to_string(),
+        }],
     )
     .unwrap();
 
     assert!(stable.available);
-    assert_eq!(stable.release_notes, "Stable notes");
+    assert_eq!(
+        stable.changelog,
+        vec![UpdateChangelogEntry {
+            version: "0.2.0".to_string(),
+            release_notes: "Stable notes".to_string(),
+        }]
+    );
     assert!(!prerelease.available);
     assert!(beta.available);
     assert!(!older.available);
+    assert!(older.changelog.is_empty());
 }
 
 #[test]

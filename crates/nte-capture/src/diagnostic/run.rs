@@ -20,7 +20,10 @@ pub fn run_diagnostic_capture(
         options.duration
     };
     let mut ports = net::limited_filter_ports(&options.ports);
-    let pppoe_detection = options.pppoe_detection.clone().unwrap_or_else(net::detect_pppoe);
+    let pppoe_detection = options
+        .pppoe_detection
+        .clone()
+        .unwrap_or_else(net::detect_pppoe);
     let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
     if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
         anyhow::bail!("no candidate ports found for pid={}", options.pid);
@@ -98,13 +101,13 @@ pub fn run_diagnostic_capture(
                     let kind = packet_kind(&packet.payload);
                     increment(&mut summary.packet_kind_counts, packet_kind_name(kind));
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(&bytes, kind) else {
+                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
                         counters.dropped_packets += 1;
                         increment(
                             &mut summary.dropped_packet_size_buckets,
                             size_bucket(bytes.len()),
                         );
-                        let analysis = analyze_dropped_packet(&bytes, kind);
+                        let analysis = analyze_dropped_packet(bytes, kind);
                         add_dropped_evidence_summary(
                             &mut summary,
                             &analysis,
@@ -125,10 +128,10 @@ pub fn run_diagnostic_capture(
                                     packet_kind: packet_kind_name(kind).to_string(),
                                     size: bytes.len(),
                                     analysis,
-                                    payload_prefix_b64: payload_prefix_b64(&bytes),
+                                    payload_prefix_b64: payload_prefix_b64(bytes),
                                     payload_truncated: bytes.len() > DROPPED_SAMPLE_PREFIX_BYTES,
                                     payload_full_included: include_full_payload,
-                                    payload_b64: include_full_payload.then(|| payload_b64(&bytes)),
+                                    payload_b64: include_full_payload.then(|| payload_b64(bytes)),
                                 })?;
                                 counters.dropped_samples_written += 1;
                                 if include_full_payload {
@@ -171,8 +174,12 @@ pub fn run_diagnostic_capture(
                     add_block_summary(&mut summary, &blocks);
                     add_warning_summary(&mut summary, &found_warnings);
                     warnings.extend(found_warnings);
-                    if should_write_raw_packet(&parsed_packet, &ports, !blocks.is_empty(), filter_mode)
-                    {
+                    if should_write_raw_packet(
+                        &parsed_packet,
+                        &ports,
+                        !blocks.is_empty(),
+                        filter_mode,
+                    ) {
                         let record = raw_record_from_parsed_packet(
                             &parsed_packet,
                             counters.packets_seen,

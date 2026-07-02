@@ -186,7 +186,7 @@ export const mockApi: AppApi = {
       current_version: MOCK_APP_VERSION,
       channel: "stable",
       available: false,
-      release_notes: "",
+      changelog: [],
       package: null,
     };
   },

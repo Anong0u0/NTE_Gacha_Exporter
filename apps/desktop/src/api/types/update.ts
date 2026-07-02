@@ -18,11 +18,16 @@ export type UpdateStatus = {
   rollback_version?: string | null;
 };
 
+export type UpdateChangelogEntry = {
+  version: string;
+  release_notes: string;
+};
+
 export type UpdateCheckReport = {
   current_version: string;
   channel: UpdateChannel;
   available: boolean;
-  release_notes: string;
+  changelog: UpdateChangelogEntry[];
   package?: UpdatePackage | null;
 };
 

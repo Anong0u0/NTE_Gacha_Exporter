@@ -282,7 +282,6 @@ export function useApp() {
     settingsSkippedUpdateVersion,
     updatePromptOpen,
     dismissedUpdateVersion,
-    statusText,
     runTask,
     applySettings,
     t,
@@ -477,7 +476,7 @@ export function useApp() {
       const startedPendingCapture = await startPendingAdminCapture();
       const startedPendingDiagnostic = startedPendingCapture ? false : await startPendingAdminDiagnostic();
       if (!startedPendingCapture && !startedPendingDiagnostic && settings.check_updates_on_startup) {
-        void checkForUpdates(false);
+        void checkForUpdates({ silent: true });
       }
     } catch (error) {
       errorText.value = formatters.formatError(error);

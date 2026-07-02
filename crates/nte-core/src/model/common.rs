@@ -155,8 +155,14 @@ pub struct UpdateCheckReport {
     pub current_version: String,
     pub channel: UpdateChannel,
     pub available: bool,
-    pub release_notes: String,
+    pub changelog: Vec<UpdateChangelogEntry>,
     pub package: Option<UpdatePackage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct UpdateChangelogEntry {
+    pub version: String,
+    pub release_notes: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

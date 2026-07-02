@@ -100,7 +100,7 @@ function checkedValue(event: Event) {
             <div><span>{{ app.t("common.available") }}</span><strong>{{ app.updateCheckReport?.package?.version ?? "-" }}</strong></div>
           </div>
           <div class="action-row">
-            <button type="button" :disabled="app.isWorkflowBusy" @click="app.checkForUpdates(true)">
+            <button type="button" :disabled="app.isWorkflowBusy" @click="app.checkForUpdates()">
               <RefreshCw :size="17" />
               <span>{{ app.t("settings.checkUpdates") }}</span>
             </button>

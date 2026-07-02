@@ -22,9 +22,12 @@ const app = useAppContext();
           <div class="update-version-line">
             {{ app.t("update.availableSubtitle", { current: app.updateCheckReport.current_version, next: app.updateCheckReport.package.version }) }}
           </div>
-          <section class="update-notes">
+          <section v-if="app.updateCheckReport.changelog.length > 0" class="update-notes">
             <h3>{{ app.t("update.releaseNotes") }}</h3>
-            <pre>{{ app.updateCheckReport.release_notes || app.t("update.noReleaseNotes") }}</pre>
+            <div v-for="entry in app.updateCheckReport.changelog" :key="entry.version" class="update-note-entry">
+              <h4>{{ entry.version }}</h4>
+              <pre>{{ entry.release_notes }}</pre>
+            </div>
           </section>
         </div>
         <div class="update-dialog-actions">

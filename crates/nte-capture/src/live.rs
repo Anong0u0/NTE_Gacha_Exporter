@@ -200,7 +200,7 @@ pub fn capture_live(options: CaptureOptions, stop: Arc<AtomicBool>) -> Result<Ca
                     counters.packets_seen += 1;
                     let kind = packet_kind(&packet.payload);
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(&bytes, kind) else {
+                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
                         counters.dropped_packets += 1;
                         continue;
                     };
@@ -433,6 +433,14 @@ pub(crate) fn packet_matches_ports(packet: &ParsedNetworkPacket, ports: &[u16]) 
         || packet.dport.is_some_and(|port| ports.contains(&port))
 }
 
+#[cfg(windows)]
+fn now_seconds() -> f64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_secs_f64())
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -477,12 +485,4 @@ mod tests {
             parser: "test".to_string(),
         }
     }
-}
-
-#[cfg(windows)]
-fn now_seconds() -> f64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|value| value.as_secs_f64())
-        .unwrap_or_default()
 }

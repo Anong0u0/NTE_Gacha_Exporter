@@ -8,8 +8,8 @@ use sha2::{Digest, Sha256};
 use zip::ZipArchive;
 
 use nte_core::{
-    GuiError, UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage,
-    UpdateStageReport, UpdateStatus,
+    GuiError, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
+    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
 };
 
 const MANIFEST_SCHEMA: &str = "nte-gacha-exporter-update";

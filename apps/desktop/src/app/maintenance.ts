@@ -14,10 +14,13 @@ type MaintenanceDeps = {
   settingsSkippedUpdateVersion: Ref<string | null>;
   updatePromptOpen: Ref<boolean>;
   dismissedUpdateVersion: Ref<string | null>;
-  statusText: Ref<string>;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
   applySettings(settings: Settings): void;
   t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
+};
+
+type CheckForUpdatesOptions = {
+  silent?: boolean;
 };
 
 export function createMaintenanceActions(deps: MaintenanceDeps) {
@@ -39,15 +42,28 @@ export function createMaintenanceActions(deps: MaintenanceDeps) {
     if (version) deps.dismissedUpdateVersion.value = version;
   }
 
-  async function checkForUpdates(showStatus = true) {
-    await deps.runTask(showStatus ? deps.t("status.updateCheckCompleted") : deps.statusText.value, async () => {
-      deps.updateCheckReport.value = await api.updaterCheck(deps.settingsUpdateChannel.value);
-      await loadUpdaterStatus();
-      const version = availableUpdateVersion();
-      if (!version) return;
-      if (showStatus || version !== deps.settingsSkippedUpdateVersion.value) {
-        deps.updatePromptOpen.value = true;
+  async function runUpdateCheck(showSkippedVersion = true) {
+    deps.updateCheckReport.value = await api.updaterCheck(deps.settingsUpdateChannel.value);
+    await loadUpdaterStatus();
+    const version = availableUpdateVersion();
+    if (!version) return;
+    if (showSkippedVersion || version !== deps.settingsSkippedUpdateVersion.value) {
+      deps.updatePromptOpen.value = true;
+    }
+  }
+
+  async function checkForUpdates(options: CheckForUpdatesOptions = {}) {
+    if (options.silent) {
+      try {
+        await runUpdateCheck(false);
+      } catch {
+        // Startup update checks are best-effort and must not affect app loading.
       }
+      return;
+    }
+
+    await deps.runTask(deps.t("status.updateCheckCompleted"), async () => {
+      await runUpdateCheck(true);
     });
   }
 

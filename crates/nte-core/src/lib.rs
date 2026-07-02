@@ -33,8 +33,8 @@ pub use model::{
     RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
     RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport,
     RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary,
-    TimeStats, UpdateChannel, UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage,
-    UpdateStageReport, UpdateStatus,
+    TimeStats, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
+    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
 };
 pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,

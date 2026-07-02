@@ -9,6 +9,7 @@ mod state;
 mod store_commands;
 mod system_commands;
 mod update_commands;
+mod update_service;
 mod window_commands;
 
 use nte_store::JsonStore;

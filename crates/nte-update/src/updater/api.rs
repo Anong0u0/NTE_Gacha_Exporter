@@ -2,7 +2,7 @@ pub fn check_update_manifest(
     manifest: UpdateManifest,
     current_version: &str,
     requested_channel: UpdateChannel,
-    release_notes: impl Into<String>,
+    changelog: Vec<UpdateChangelogEntry>,
 ) -> Result<UpdateCheckReport, GuiError> {
     validate_manifest(&manifest)?;
     let current = parse_version(current_version)?;
@@ -12,7 +12,7 @@ pub fn check_update_manifest(
         current_version: current_version.to_string(),
         channel: requested_channel,
         available,
-        release_notes: release_notes.into(),
+        changelog: if available { changelog } else { Vec::new() },
         package: available.then(|| package_from_manifest(manifest)),
     })
 }
