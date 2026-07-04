@@ -169,6 +169,9 @@ export const mockApi: AppApi = {
   async systemLocale() {
     return "zh-TW";
   },
+  async openAboutLink() {
+    return undefined;
+  },
   async doctorRun() {
     return { ok: true, exit_code: 0, lines: ["mock doctor ok"] };
   },

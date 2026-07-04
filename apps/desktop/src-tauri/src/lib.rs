@@ -75,6 +75,7 @@ pub fn run() {
             system_commands::maps_list,
             system_commands::ui_locale_list,
             system_commands::system_locale,
+            system_commands::open_about_link,
             system_commands::doctor_run,
             admin::request_admin_capture_start,
             admin::request_admin_diagnostic_start,

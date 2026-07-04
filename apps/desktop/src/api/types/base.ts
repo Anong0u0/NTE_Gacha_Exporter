@@ -2,6 +2,7 @@ export type PoolKind = "monopoly_limited" | "monopoly_standard" | "fork_lottery"
 export type AssetRefs = Record<string, unknown>;
 export type SortDirection = "asc" | "desc";
 export type CaptureMode = "live_only" | "auto_page_incremental" | "auto_page_full";
+export type AboutLinkTarget = "github" | "discord";
 
 export type Settings = {
   active_profile: string;

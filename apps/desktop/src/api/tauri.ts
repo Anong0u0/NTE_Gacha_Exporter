@@ -56,6 +56,7 @@ export const tauriApi: AppApi = {
   mapsList: () => invoke<MapLocaleList>("maps_list"),
   uiLocaleList: () => invoke<MapLocaleList>("ui_locale_list"),
   systemLocale: () => invoke<string | null>("system_locale"),
+  openAboutLink: (target) => invoke<void>("open_about_link", { target }),
   doctorRun: () => invoke<DoctorReport>("doctor_run"),
   updaterStatus: () => invoke<UpdateStatus>("updater_status"),
   updaterCheck: (channel) => invoke<UpdateCheckReport>("updater_check", { channel }),

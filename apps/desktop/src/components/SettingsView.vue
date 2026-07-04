@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, RefreshCw, Stethoscope } from "lucide-vue-next";
+import { ArchiveRestore, DatabaseBackup, Download, FileDown, FileJson, FileUp, Github, MessagesSquare, RefreshCw, Stethoscope } from "lucide-vue-next";
 import { useAppContext } from "../app/context";
 
 const app = useAppContext();
@@ -117,6 +117,25 @@ function checkedValue(event: Event) {
               <input :checked="app.settingsCheckUpdates" type="checkbox" :disabled="app.isWorkflowBusy" @change="app.setCheckUpdatesOnStartup(checkedValue($event))" />
               <span>{{ app.t("settings.checkUpdatesStartup") }}</span>
             </label>
+          </div>
+        </section>
+
+        <section class="panel settings-about-panel" data-agent-id="settings-about-panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">{{ app.t("settings.about") }}</span>
+              <h2>NTE Gacha Exporter</h2>
+            </div>
+          </div>
+          <div class="settings-about-links">
+            <button class="settings-about-link" type="button" data-agent-id="settings-about-github" @click="app.openAboutLink('github')">
+              <Github :size="17" />
+              <span>{{ app.t("settings.github") }}</span>
+            </button>
+            <button class="settings-about-link" type="button" data-agent-id="settings-about-discord" @click="app.openAboutLink('discord')">
+              <MessagesSquare :size="17" />
+              <span>{{ app.t("settings.discordSupport") }}</span>
+            </button>
           </div>
         </section>
       </section>

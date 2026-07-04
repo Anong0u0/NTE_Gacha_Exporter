@@ -162,7 +162,7 @@
   overflow: auto;
   width: 100%;
   padding-bottom: 20px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
   align-content: start;
 }
 
@@ -186,6 +186,56 @@
   min-width: 118px;
 }
 
+.settings-about-panel {
+  align-self: stretch;
+}
+
+.settings-about-links {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.settings-about-link {
+  appearance: none;
+  max-width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-panel);
+  color: var(--text-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 0 10px;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.settings-about-link:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.settings-about-link:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  outline-offset: 1px;
+}
+
+.settings-about-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .operation-summary {
   margin-top: 9px;
   color: var(--text-muted);
@@ -194,4 +244,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .settings-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

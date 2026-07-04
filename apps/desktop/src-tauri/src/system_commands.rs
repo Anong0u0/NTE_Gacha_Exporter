@@ -4,8 +4,11 @@ use nte_store::StoreDefaults;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::error::{ApiError, api_error};
+use crate::error::{ApiError, api_error, api_error_message};
 use crate::state::AppState;
+
+const ABOUT_GITHUB_URL: &str = "https://github.com/Anong0u0/nte_gacha_exporter";
+const ABOUT_DISCORD_URL: &str = "https://discord.gg/4qm2HPtPZq";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct DoctorReport {
@@ -31,6 +34,22 @@ pub(crate) fn ui_locale_list() -> MapLocaleList {
 #[tauri::command]
 pub(crate) fn system_locale() -> Option<String> {
     user_system_locale()
+}
+
+#[tauri::command]
+pub(crate) fn open_about_link(target: String) -> Result<(), ApiError> {
+    platform::open_external_url(about_link_url(&target)?)
+}
+
+fn about_link_url(target: &str) -> Result<&'static str, ApiError> {
+    match target {
+        "github" => Ok(ABOUT_GITHUB_URL),
+        "discord" => Ok(ABOUT_DISCORD_URL),
+        _ => Err(api_error_message(
+            "invalid_about_link",
+            format!("unknown about link target: {target}"),
+        )),
+    }
 }
 
 pub(crate) fn store_defaults() -> StoreDefaults {
@@ -122,6 +141,67 @@ fn user_system_locale() -> Option<String> {
     None
 }
 
+#[cfg(windows)]
+mod platform {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr;
+
+    use super::*;
+
+    const SW_SHOWNORMAL: i32 = 1;
+
+    #[link(name = "shell32")]
+    unsafe extern "system" {
+        fn ShellExecuteW(
+            hwnd: *mut std::ffi::c_void,
+            lp_operation: *const u16,
+            lp_file: *const u16,
+            lp_parameters: *const u16,
+            lp_directory: *const u16,
+            n_show_cmd: i32,
+        ) -> isize;
+    }
+
+    pub(super) fn open_external_url(url: &str) -> Result<(), ApiError> {
+        let operation = wide("open");
+        let file = wide(url);
+        let result = unsafe {
+            ShellExecuteW(
+                ptr::null_mut(),
+                operation.as_ptr(),
+                file.as_ptr(),
+                ptr::null(),
+                ptr::null(),
+                SW_SHOWNORMAL,
+            )
+        };
+        if result <= 32 {
+            return Err(api_error_message(
+                "open_about_link_failed",
+                format!("open about link failed: ShellExecuteW={result}"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn wide(value: &str) -> Vec<u16> {
+        OsStr::new(value)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect()
+    }
+}
+
+#[cfg(not(windows))]
+mod platform {
+    use super::*;
+
+    pub(super) fn open_external_url(_url: &str) -> Result<(), ApiError> {
+        Ok(())
+    }
+}
+
 #[tauri::command]
 pub(crate) fn doctor_run(_state: State<'_, AppState>) -> Result<DoctorReport, ApiError> {
     let report = capture_doctor("HTGame.exe").map_err(api_error)?;
@@ -180,6 +260,17 @@ mod tests {
         assert_eq!(resolve_data_locale(Some("zh-TW"), &available), "zh-Hant");
         assert_eq!(resolve_data_locale(Some("ja-JP"), &available), "ja");
         assert_eq!(resolve_data_locale(Some("fr-CA"), &available), "en");
+    }
+
+    #[test]
+    fn about_link_targets_are_fixed() {
+        assert_eq!(about_link_url("github").unwrap(), ABOUT_GITHUB_URL);
+        assert_eq!(about_link_url("discord").unwrap(), ABOUT_DISCORD_URL);
+    }
+
+    #[test]
+    fn about_link_rejects_unknown_target() {
+        assert!(about_link_url("https://example.com").is_err());
     }
 
     fn locales(values: &[&str]) -> Vec<String> {

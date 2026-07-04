@@ -1,4 +1,4 @@
-import type { BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
+import type { AboutLinkTarget, BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
 import type { CaptureStartOptions, CaptureStatus, PendingAdminCapture } from "./capture";
 import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail, ProfileAnalysisView } from "./dashboard";
 import type { DiagnosticStatus, PendingAdminDiagnostic } from "./diagnostic";
@@ -31,6 +31,7 @@ export type AppApi = {
   mapsList(): Promise<MapLocaleList>;
   uiLocaleList(): Promise<MapLocaleList>;
   systemLocale(): Promise<string | null>;
+  openAboutLink(target: AboutLinkTarget): Promise<void>;
   doctorRun(): Promise<DoctorReport>;
   updaterStatus(): Promise<UpdateStatus>;
   updaterCheck(channel?: string): Promise<UpdateCheckReport>;
