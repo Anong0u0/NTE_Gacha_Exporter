@@ -15,7 +15,10 @@ chrono = { workspace = true, default-features = false, features = ["alloc"] }
 nte-core = { path = "../nte-core" }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
+ureq.workspace = true
+zip = { workspace = true, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 pktmon.workspace = true
@@ -26,5 +29,9 @@ windows-sys = { workspace = true, features = [
     "Win32_NetworkManagement_Rras",
     "Win32_Networking_WinSock",
     "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_LibraryLoader",
     "Win32_UI_Shell",
 ] }
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -6,9 +6,11 @@ use std::time::Duration;
 use anyhow::Result;
 use serde::Serialize;
 
-use crate::live::CaptureTarget;
 #[cfg(windows)]
-use crate::live::{CaptureFilterMode, bpf, should_write_raw_packet};
+use crate::live::{
+    CaptureAttemptSummary, CaptureCounters, CaptureStrategyKind, bpf, should_write_raw_packet,
+};
+use crate::live::{CaptureStrategy, CaptureTarget};
 use crate::protocol::ParseWarning;
 
 #[cfg(windows)]
@@ -39,7 +41,9 @@ pub struct DiagnosticCaptureOptions {
     pub exe: String,
     pub ports: Vec<u16>,
     pub pppoe_detection: Option<crate::net::PppoeDetection>,
+    pub strategy: Option<CaptureStrategy>,
     pub raw_out: Option<PathBuf>,
+    pub raw_append: bool,
     pub dropped_samples_out: Option<PathBuf>,
     pub duration: Duration,
     pub max_dropped_samples: usize,

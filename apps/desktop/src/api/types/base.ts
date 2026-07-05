@@ -13,6 +13,7 @@ export type Settings = {
   skipped_update_version?: string | null;
   capture_auto_page_enabled: boolean;
   capture_full_update_enabled: boolean;
+  capture_windivert_backend_enabled: boolean;
 };
 
 export type SettingsPatch = {
@@ -24,6 +25,7 @@ export type SettingsPatch = {
   skipped_update_version?: string | null;
   capture_auto_page_enabled?: boolean | null;
   capture_full_update_enabled?: boolean | null;
+  capture_windivert_backend_enabled?: boolean | null;
 };
 
 export type Profile = {

@@ -113,3 +113,12 @@ fn cleanup_artifact_files(paths: &SupportPaths) {
         let _ = fs::remove_file(path);
     }
 }
+
+fn cleanup_diagnostic_staging(paths: &SupportPaths) {
+    cleanup_artifact_files(paths);
+    let _ = fs::remove_file(&paths.zip_path);
+    let staging_dir = external_pktmon_staging_dir();
+    let staging_paths = external_staging_paths(paths, &staging_dir);
+    let _ = fs::remove_file(staging_paths.etl);
+    let _ = fs::remove_file(staging_paths.pcapng);
+}

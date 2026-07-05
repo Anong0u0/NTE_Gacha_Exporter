@@ -38,6 +38,7 @@ Use the upper-right `...` menu to adjust `Update options`:
 
 - `Auto page`: Incremental update by default. After an existing record is found, that pool is skipped.
 - `Full update`: Re-reads all pages and creates a backup before import. Data is still merged by record.
+- `WinDivert capture`: Uses WinDivert network-layer capture for VPN, proxy, or other paths pktmon cannot decode.
 
 Before using `Auto page`, keep the game on the F3 gacha home screen with the lower-left file icon and `Arc Research` entry visible.
 During execution, the tool controls the foreground game window and mouse. Avoid manual input that may interfere. Press Esc to abort when needed.
@@ -46,6 +47,7 @@ CLI Examples:
 
 ```powershell
 .\nte-gacha-exporter-cli.exe capture --output-raw --json .\output\history.json --csv .\output\history.csv
+.\nte-gacha-exporter-cli.exe capture --windivert --install-windivert --output-raw --json .\output\history.json --csv .\output\history.csv
 .\nte-gacha-exporter-cli.exe replay .\output\raw-260611-153012.jsonl --json .\output\history.json --csv .\output\history.csv
 .\nte-gacha-exporter-cli.exe doctor
 ```
@@ -87,13 +89,13 @@ JSON/CSV output uses localized field names for the selected language.
 
 ## Troubleshooting
 
-The `Doctor` button on the settings page checks Windows, administrator permission, `HTGame.exe`, and port status. When capture or `Auto page` fails, the status window may show `Raw path`, `support`, or `support image`. Include `data/support/capture-*.json` when reporting an issue. Page-number recognition issues may also include `*-page-number.png`.
+The `Doctor` button on the settings page checks Windows, administrator permission, `HTGame.exe`, ports, and PPPoE status. When capture or `Auto page` fails, the status window may show `Raw path`, `support`, or `support image`. Include `data/support/capture-*.json` when reporting an issue. Page-number recognition issues may also include `*-page-number.png`.
 
 ### Could not find the WebView2 Runtime.
 
 The app depends on the Windows system-level WebView2 Runtime. [Download](https://developer.microsoft.com/microsoft-edge/webview2/#download) and install it.
 
-### `pktmon capture requires administrator privilege`
+### `capture requires administrator privilege`
 
 Reopen the tool with administrator permission.
 
@@ -103,7 +105,7 @@ Start NTE, confirm the game is still running, then reopen `nte-gacha-exporter.ex
 
 ### No records are written
 
-Open the in-game gacha history screen so the game sends the relevant packets. If records are still missing, switch network environment or restart the game and try again.
+Open the in-game gacha history screen so the game sends the relevant packets. For VPN or proxy, enable `WinDivert capture`.
 
 ## Development
 

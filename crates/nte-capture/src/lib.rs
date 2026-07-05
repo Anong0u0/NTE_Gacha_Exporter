@@ -4,6 +4,7 @@ mod live;
 mod net;
 mod protocol;
 mod raw;
+pub mod windivert;
 
 pub use diagnostic::{
     DiagnosticCaptureCounters, DiagnosticCaptureOptions, DiagnosticCaptureProgress,
@@ -14,8 +15,9 @@ pub use diagnostic::{
 };
 pub use document::{CapturePublicRecord, CaptureRecordBuilder, build_capture_document};
 pub use live::{
-    CaptureCounters, CaptureFilterMode, CaptureOptions, CaptureProgress, CaptureResult,
-    CaptureTarget, capture_live,
+    CaptureAttemptSummary, CaptureBackend, CaptureCounters, CaptureOptions, CaptureProgress,
+    CaptureResult, CaptureStrategy, CaptureStrategyKind, CaptureStrategyReason, CaptureTarget,
+    capture_live,
 };
 pub use net::{
     CaptureDoctorReport, PppoeDetection, PppoeDetectionSource, candidate_ports, capture_doctor,

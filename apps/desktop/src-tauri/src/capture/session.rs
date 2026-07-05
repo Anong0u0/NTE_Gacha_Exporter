@@ -12,8 +12,16 @@ fn start_rust_capture_session(
         .ok_or_else(|| api_error_message("capture_environment", "HTGame.exe not found"))?;
     let ports = candidate_ports(pid).map_err(api_error)?;
     let pppoe_detection = detect_pppoe();
-    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
-    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
+    let settings = with_store(state, |store| store.settings())?;
+    let backend = capture_backend_for_start(
+        settings.capture_windivert_backend_enabled,
+        start_options.capture_backend,
+    );
+    let strategy = capture_strategy_for_start(&pppoe_detection, backend);
+    if backend == CaptureBackend::Pktmon
+        && ports.is_empty()
+        && strategy.kind == CaptureStrategyKind::PortFiltered
+    {
         return Err(api_error_message(
             "capture_environment",
             "no HTGame.exe candidate ports",
@@ -24,26 +32,22 @@ fn start_rust_capture_session(
     let target = CaptureTarget {
         pid,
         exe: "HTGame.exe".to_string(),
-        interface: "pktmon".to_string(),
+        interface: capture_interface(backend).to_string(),
         ports: ports.clone(),
-        bpf: match filter_mode {
-            CaptureFilterMode::PortFiltered => ports
-                .iter()
-                .map(|port| format!("port {port}"))
-                .collect::<Vec<_>>()
-                .join(" or "),
-            CaptureFilterMode::NoFilterPppoe => "none (pppoe detected)".to_string(),
-        },
-        filter_mode: filter_mode.as_str().to_string(),
+        bpf: capture_bpf(backend, strategy.kind, &ports),
+        capture_strategy: strategy.kind.as_str().to_string(),
+        strategy_reason: strategy.reason.as_str().to_string(),
         pppoe_detection: pppoe_detection.clone(),
+        attempts: Vec::new(),
     };
     let initial_status = CaptureStatus {
         session_id: session_id.clone(),
-        state: "starting".to_string(),
+        state: crate::lifecycle::STATE_STARTING.to_string(),
         mode: mode.as_str().to_string(),
         records_count: 0,
         latest_records: Vec::new(),
         counters: CaptureCounters::default(),
+        attempts: Vec::new(),
         started_at: now,
         updated_at: now,
         target: Some(serde_json::to_value(&target).map_err(api_error)?),
@@ -57,6 +61,7 @@ fn start_rust_capture_session(
     let runtime = Arc::new(CaptureRuntimeSession {
         status: Mutex::new(initial_status.clone()),
         stop: Arc::clone(&stop),
+        attempt_stop: Mutex::new(None),
         handle: Mutex::new(None),
     });
     state
@@ -67,18 +72,11 @@ fn start_rust_capture_session(
 
     let raw_out = output_raw.map(PathBuf::from);
     let locale_for_thread = locale.to_string();
-    let coordinator = Arc::new(AutoPageCoordinator::new(
-        mode.full_update(),
-        &known_record_keys,
-    ));
-    let progress_coordinator = mode.auto_page().then(|| Arc::clone(&coordinator));
-    let callback = capture_progress_callback(
-        Arc::clone(&runtime),
-        locale.to_string(),
-        progress_coordinator,
-    );
     let runtime_for_thread = Arc::clone(&runtime);
     let stop_for_thread = Arc::clone(&stop);
+    let callback = (!mode.auto_page()).then(|| {
+        capture_progress_callback(Arc::clone(&runtime), locale.to_string(), None)
+    });
     let handle = std::thread::spawn(move || {
         if mode.auto_page() {
             run_auto_page_capture_thread(AutoPageCaptureThread {
@@ -86,13 +84,14 @@ fn start_rust_capture_session(
                 pid,
                 ports,
                 pppoe_detection,
+                strategy,
+                backend,
                 raw_out,
                 locale: locale_for_thread,
                 stop: stop_for_thread,
-                callback,
                 mode,
                 start_options,
-                coordinator,
+                known_record_keys,
                 app,
             });
         } else {
@@ -102,21 +101,32 @@ fn start_rust_capture_session(
                     exe: "HTGame.exe".to_string(),
                     ports,
                     pppoe_detection: Some(pppoe_detection),
+                    backend,
+                    strategy: Some(strategy),
                     raw_out,
+                    raw_append: false,
+                    windivert_dir: windivert_dir_for_backend(backend),
                     max_packets: 0,
                     max_decoded: 0,
-                    on_progress: Some(callback),
+                    on_progress: callback,
                 },
                 stop_for_thread,
             );
+            let should_persist_windivert = windivert_capture_succeeded(&result, None);
+            if should_persist_windivert {
+                enable_windivert_backend_from_app(&app);
+            }
             finish_capture_result(
                 &runtime_for_thread,
-                result.map_err(|error| error.to_string()),
-                &locale_for_thread,
-                "pktmon-live-capture",
-                None,
-                None,
-                None,
+                FinishCaptureInput {
+                    result: result.map_err(|error| error.to_string()),
+                    locale: &locale_for_thread,
+                    source_kind: capture_source_kind(backend, false),
+                    auto_page: None,
+                    auto_error: None,
+                    auto_result: None,
+                    cancel_requested: false,
+                },
             );
         }
     });
@@ -133,13 +143,14 @@ struct AutoPageCaptureThread {
     pid: u32,
     ports: Vec<u16>,
     pppoe_detection: nte_capture::PppoeDetection,
+    strategy: CaptureStrategy,
+    backend: CaptureBackend,
     raw_out: Option<PathBuf>,
     locale: String,
     stop: Arc<AtomicBool>,
-    callback: Arc<dyn Fn(nte_capture::CaptureProgress) + Send + Sync + 'static>,
     mode: CaptureMode,
     start_options: CaptureStartOptions,
-    coordinator: Arc<AutoPageCoordinator>,
+    known_record_keys: Vec<String>,
     app: AppHandle<Wry>,
 }
 
@@ -149,81 +160,245 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         pid,
         ports,
         pppoe_detection,
+        strategy,
+        backend,
         raw_out,
         locale,
         stop,
-        callback,
         mode,
         start_options,
-        coordinator,
+        known_record_keys,
         app,
     } = context;
-    let capture_stop = Arc::clone(&stop);
-    let capture_handle = std::thread::spawn(move || {
-        capture_live(
-            CaptureOptions {
-                pid,
-                exe: "HTGame.exe".to_string(),
-                ports,
-                pppoe_detection: Some(pppoe_detection),
-                raw_out,
-                max_packets: 0,
-                max_decoded: 0,
-                on_progress: Some(callback),
-            },
-            capture_stop,
-        )
-        .map_err(|error| error.to_string())
-    });
+    let mut final_capture_result = Err("capture attempt did not run".to_string());
+    let mut final_auto_result = None;
+    let mut final_auto_page = None;
+    let mut final_error = None;
+    let mut attempts = Vec::new();
 
-    let auto_runtime = Arc::clone(&runtime);
-    let auto_status_callback = Arc::new(move |status: AutomationStatus| {
-        if let Ok(mut capture_status) = auto_runtime.status.lock() {
-            capture_status.auto_page = Some(auto_page_status_value(&status, "running"));
-            if capture_status.state != "stopping" {
-                capture_status.state = "running".to_string();
+    if !stop.load(Ordering::SeqCst) {
+        let attempt_stop = Arc::new(AtomicBool::new(false));
+        set_attempt_stop(&runtime, Some(Arc::clone(&attempt_stop)));
+        let coordinator = Arc::new(AutoPageCoordinator::new(
+            mode.full_update(),
+            &known_record_keys,
+        ));
+        let callback = capture_progress_callback(
+            Arc::clone(&runtime),
+            locale.clone(),
+            Some(Arc::clone(&coordinator)),
+        );
+        let capture_stop = Arc::clone(&attempt_stop);
+        let capture_ports = ports.clone();
+        let capture_detection = pppoe_detection.clone();
+        let capture_raw_out = raw_out.clone();
+        let capture_handle = std::thread::spawn(move || {
+            capture_live(
+                CaptureOptions {
+                    pid,
+                    exe: "HTGame.exe".to_string(),
+                    ports: capture_ports,
+                    pppoe_detection: Some(capture_detection),
+                    backend,
+                    strategy: Some(strategy),
+                    raw_out: capture_raw_out,
+                    raw_append: false,
+                    windivert_dir: windivert_dir_for_backend(backend),
+                    max_packets: 0,
+                    max_decoded: 0,
+                    on_progress: Some(callback),
+                },
+                capture_stop,
+            )
+            .map_err(|error| error.to_string())
+        });
+
+        let auto_runtime = Arc::clone(&runtime);
+        let auto_status_callback = Arc::new(move |status: AutomationStatus| {
+            if let Ok(mut capture_status) = auto_runtime.status.lock() {
+                capture_status.auto_page = Some(auto_page_status_value(&status, "running"));
+                if capture_status.state != crate::lifecycle::STATE_STOPPING {
+                    capture_status.state = crate::lifecycle::STATE_RUNNING.to_string();
+                }
+                capture_status.updated_at = now_seconds();
             }
-            capture_status.updated_at = now_seconds();
-        }
-    });
-    let control = {
-        let coordinator = Arc::clone(&coordinator);
-        Arc::new(move |context: AutoPageControlContext| coordinator.decision(context))
-    };
-    let mut options = AutomationOptions::new(pid, Arc::clone(&stop));
-    options.full_update = mode.full_update();
-    options.non_interactive = true;
-    apply_capture_start_options(&mut options, &start_options);
-    options.control = Some(control);
-    options.on_status = Some(auto_status_callback);
-    let auto_result = run_auto_page(options);
-    let drain_error = auto_result
-        .succeeded()
-        .then(|| wait_for_capture_drain(&runtime, &coordinator, &auto_result, &stop))
-        .flatten();
+        });
+        let control = {
+            let coordinator = Arc::clone(&coordinator);
+            Arc::new(move |context: AutoPageControlContext| coordinator.decision(context))
+        };
+        let mut options = AutomationOptions::new(pid, Arc::clone(&attempt_stop));
+        options.full_update = mode.full_update();
+        options.non_interactive = true;
+        apply_capture_start_options(&mut options, &start_options);
+        options.control = Some(control);
+        options.on_status = Some(auto_status_callback);
+        let auto_result = run_auto_page(options);
+        let drain_error = auto_result
+            .succeeded()
+            .then(|| {
+                wait_for_capture_drain(
+                    &runtime,
+                    &coordinator,
+                    &auto_result,
+                    &stop,
+                    &attempt_stop,
+                )
+            })
+            .flatten();
+        attempt_stop.store(true, Ordering::SeqCst);
+
+        let capture_result = capture_handle
+            .join()
+            .map_err(|_| "capture worker panicked".to_string())
+            .and_then(|result| result);
+        extend_attempts_from_result(&mut attempts, &capture_result);
+        final_auto_page = Some(auto_page_result_value(&auto_result));
+        final_error = if auto_result.succeeded() {
+            drain_error
+        } else {
+            Some(auto_page_runtime_error(&auto_result.message))
+        };
+        final_capture_result = apply_attempts_to_result(capture_result, &attempts);
+        final_auto_result = Some(auto_result);
+    }
+
+    set_attempt_stop(&runtime, None);
     let stopped_by_user = stop.load(Ordering::SeqCst);
     stop.store(true, Ordering::SeqCst);
-
-    let capture_result = capture_handle
-        .join()
-        .map_err(|_| "capture worker panicked".to_string())
-        .and_then(|result| result);
-    let auto_page = Some(auto_page_result_value(&auto_result));
-    let error = if auto_result.succeeded() {
-        drain_error
-    } else {
-        Some(auto_page_runtime_error(&auto_result.message))
-    };
+    if windivert_capture_succeeded(&final_capture_result, final_error.as_ref()) {
+        enable_windivert_backend_from_app(&app);
+    }
     finish_capture_result(
         &runtime,
-        capture_result,
-        &locale,
-        "pktmon-auto-page-capture",
-        auto_page,
-        error,
-        Some(&auto_result),
+        FinishCaptureInput {
+            result: final_capture_result,
+            locale: &locale,
+            source_kind: capture_source_kind(backend, true),
+            auto_page: final_auto_page,
+            auto_error: final_error,
+            auto_result: final_auto_result.as_ref(),
+            cancel_requested: stopped_by_user,
+        },
     );
     finish_auto_page_terminal(pid, stopped_by_user, &app);
+}
+
+fn capture_strategy_for_start(
+    detection: &nte_capture::PppoeDetection,
+    backend: CaptureBackend,
+) -> CaptureStrategy {
+    if backend == CaptureBackend::WinDivert {
+        CaptureStrategy::no_filter(CaptureStrategyReason::WinDivertBackend)
+    } else if detection.detected {
+        CaptureStrategy::no_filter(CaptureStrategyReason::PppoeFastPath)
+    } else {
+        CaptureStrategy::port_filtered()
+    }
+}
+
+fn capture_backend_for_start(
+    enabled: bool,
+    backend_override: Option<CaptureBackendOverride>,
+) -> CaptureBackend {
+    match backend_override {
+        Some(CaptureBackendOverride::Pktmon) => CaptureBackend::Pktmon,
+        Some(CaptureBackendOverride::WinDivert) => CaptureBackend::WinDivert,
+        None if enabled => CaptureBackend::WinDivert,
+        None => CaptureBackend::Pktmon,
+    }
+}
+
+fn windivert_dir_for_backend(backend: CaptureBackend) -> Option<PathBuf> {
+    if backend == CaptureBackend::WinDivert {
+        return portable_root()
+            .ok()
+            .map(|root| nte_capture::windivert::windivert_install_dir(&root));
+    }
+    None
+}
+
+fn enable_windivert_backend_from_app(app: &AppHandle<Wry>) {
+    let state = app.state::<AppState>();
+    let _ = with_store(&state, |store| {
+        store.update_settings(SettingsPatch {
+            capture_windivert_backend_enabled: Some(true),
+            ..SettingsPatch::default()
+        })?;
+        Ok(())
+    });
+}
+
+fn windivert_capture_succeeded(
+    result: &Result<nte_capture::CaptureResult, impl std::fmt::Display>,
+    error: Option<&RuntimeError>,
+) -> bool {
+    error.is_none()
+        && result.as_ref().is_ok_and(|result| {
+            (!result.rows.is_empty() || result.counters.decoded_packets > 0)
+                && result.target.interface == CaptureBackend::WinDivert.as_str()
+        })
+}
+
+fn capture_interface(backend: CaptureBackend) -> &'static str {
+    match backend {
+        CaptureBackend::Pktmon => "pktmon",
+        CaptureBackend::WinDivert => "windivert",
+    }
+}
+
+fn capture_source_kind(backend: CaptureBackend, auto_page: bool) -> &'static str {
+    match (backend, auto_page) {
+        (CaptureBackend::Pktmon, false) => "pktmon-live-capture",
+        (CaptureBackend::Pktmon, true) => "pktmon-auto-page-capture",
+        (CaptureBackend::WinDivert, false) => "windivert-live-capture",
+        (CaptureBackend::WinDivert, true) => "windivert-auto-page-capture",
+    }
+}
+
+fn capture_bpf(backend: CaptureBackend, strategy: CaptureStrategyKind, ports: &[u16]) -> String {
+    if backend == CaptureBackend::WinDivert {
+        return "ip".to_string();
+    }
+    match strategy {
+        CaptureStrategyKind::PortFiltered => ports
+            .iter()
+            .map(|port| format!("port {port}"))
+            .collect::<Vec<_>>()
+            .join(" or "),
+        CaptureStrategyKind::NoFilter => "none".to_string(),
+    }
+}
+
+fn set_attempt_stop(runtime: &Arc<CaptureRuntimeSession>, stop: Option<Arc<AtomicBool>>) {
+    if let Ok(mut guard) = runtime.attempt_stop.lock() {
+        *guard = stop;
+    }
+}
+
+fn extend_attempts_from_result(
+    attempts: &mut Vec<CaptureAttemptSummary>,
+    result: &Result<nte_capture::CaptureResult, String>,
+) {
+    let Ok(result) = result else {
+        return;
+    };
+    for attempt in &result.attempts {
+        let mut attempt = attempt.clone();
+        attempt.attempt_index = attempts.len() as u32;
+        attempts.push(attempt);
+    }
+}
+
+fn apply_attempts_to_result(
+    result: Result<nte_capture::CaptureResult, String>,
+    attempts: &[CaptureAttemptSummary],
+) -> Result<nte_capture::CaptureResult, String> {
+    result.map(|mut result| {
+        result.attempts = attempts.to_vec();
+        result.target.attempts = attempts.to_vec();
+        result
+    })
 }
 
 fn finish_auto_page_terminal(pid: u32, stopped_by_user: bool, app: &AppHandle<Wry>) {

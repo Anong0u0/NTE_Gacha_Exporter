@@ -4,9 +4,27 @@ pub(crate) struct DiagnosticRuntimeSession {
     handle: Mutex<Option<JoinHandle<()>>>,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) enum DiagnosticMode {
+    #[serde(rename = "pktmon")]
+    Pktmon,
+    #[serde(rename = "windivert")]
+    WinDivert,
+}
+
+impl DiagnosticMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Pktmon => "pktmon",
+            Self::WinDivert => "windivert",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct DiagnosticStatus {
     session_id: String,
+    mode: String,
     state: String,
     started_at: f64,
     updated_at: f64,
@@ -36,6 +54,7 @@ struct DiagnosticDocument {
     schema_version: u32,
     app_version: String,
     session_id: String,
+    mode: String,
     created_at: f64,
     duration_seconds: u64,
     environment: DiagnosticEnvironment,
@@ -86,7 +105,8 @@ struct ExternalCaptureReport {
     attempted: bool,
     ok: bool,
     error: Option<String>,
-    filter_mode: String,
+    capture_strategy: String,
+    strategy_reason: String,
     pppoe_detection: PppoeDetection,
     etl_path: Option<String>,
     pcapng_path: Option<String>,

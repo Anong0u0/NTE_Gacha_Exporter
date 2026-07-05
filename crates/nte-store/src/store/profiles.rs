@@ -29,6 +29,7 @@ impl JsonStore {
             skipped_update_version: settings.skipped_update_version,
             capture_auto_page_enabled: settings.capture_auto_page_enabled,
             capture_full_update_enabled: settings.capture_full_update_enabled,
+            capture_windivert_backend_enabled: settings.capture_windivert_backend_enabled,
         })
     }
 
@@ -67,6 +68,9 @@ impl JsonStore {
             if capture_full_update_enabled {
                 settings.capture_auto_page_enabled = true;
             }
+        }
+        if let Some(capture_windivert_backend_enabled) = patch.capture_windivert_backend_enabled {
+            settings.capture_windivert_backend_enabled = capture_windivert_backend_enabled;
         }
         self.write_settings(&settings)?;
         self.settings()

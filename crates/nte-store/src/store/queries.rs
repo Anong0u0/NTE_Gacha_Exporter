@@ -132,6 +132,7 @@ impl JsonStore {
                 skipped_update_version: None,
                 capture_auto_page_enabled: true,
                 capture_full_update_enabled: false,
+                capture_windivert_backend_enabled: false,
             })?;
         } else {
             let mut settings = self.read_settings()?;

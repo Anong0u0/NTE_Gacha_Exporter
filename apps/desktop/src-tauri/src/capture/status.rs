@@ -8,7 +8,7 @@ fn capture_status_with_merge(
         .lock()
         .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
         .clone();
-    if status.state != "completed" {
+    if status.state != crate::lifecycle::STATE_COMPLETED {
         cleanup_terminal_capture_session(state, session_id, &session, &status)?;
         return Ok(status);
     }
@@ -160,27 +160,13 @@ fn prune_capture_session_maps(
 }
 
 fn capture_status_is_terminal(status: &CaptureStatus) -> bool {
-    matches!(status.state.as_str(), "completed" | "failed")
+    crate::lifecycle::is_terminal_state(&status.state)
 }
 
 fn capture_handle_joined(session: &CaptureRuntimeSession) -> bool {
-    session
-        .handle
-        .lock()
-        .map(|handle| handle.is_none())
-        .unwrap_or(false)
+    crate::lifecycle::handle_joined(&session.handle)
 }
 
 fn try_join_finished_capture_thread(session: &CaptureRuntimeSession) -> bool {
-    let handle = session.handle.lock().ok().and_then(|mut guard| {
-        guard
-            .as_ref()
-            .is_some_and(std::thread::JoinHandle::is_finished)
-            .then(|| guard.take())
-            .flatten()
-    });
-    let Some(handle) = handle else {
-        return false;
-    };
-    handle.join().is_ok()
+    crate::lifecycle::try_join_finished_thread(&session.handle)
 }

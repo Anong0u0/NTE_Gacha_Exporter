@@ -5,11 +5,13 @@ mod assets_commands;
 mod capture;
 mod diagnostic;
 mod error;
+mod lifecycle;
 mod state;
 mod store_commands;
 mod system_commands;
 mod update_commands;
 mod update_service;
+mod windivert_commands;
 mod window_commands;
 
 use nte_store::JsonStore;
@@ -72,6 +74,8 @@ pub fn run() {
             update_commands::updater_download_and_stage,
             update_commands::updater_install_staged,
             assets_commands::assets_resolve_refs,
+            windivert_commands::windivert_status,
+            windivert_commands::windivert_install,
             system_commands::maps_list,
             system_commands::ui_locale_list,
             system_commands::system_locale,

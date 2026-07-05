@@ -39,6 +39,7 @@ pub struct Settings {
     pub skipped_update_version: Option<String>,
     pub capture_auto_page_enabled: bool,
     pub capture_full_update_enabled: bool,
+    pub capture_windivert_backend_enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -51,6 +52,7 @@ pub struct SettingsPatch {
     pub skipped_update_version: Option<String>,
     pub capture_auto_page_enabled: Option<bool>,
     pub capture_full_update_enabled: Option<bool>,
+    pub capture_windivert_backend_enabled: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

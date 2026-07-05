@@ -65,16 +65,18 @@ export const tauriApi: AppApi = {
   updaterInstallStaged: (version, relaunch) =>
     invoke<void>("updater_install_staged", { version, relaunch }),
   assetsResolveRefs: (refs) => invoke<AssetResolveResult[]>("assets_resolve_refs", { refs }),
+  windivertStatus: (checkLoad) => invoke("windivert_status", { checkLoad }),
+  windivertInstall: () => invoke("windivert_install"),
   requestAdminCaptureStart: (profileName, locale, mode, options) =>
     invoke<boolean>("request_admin_capture_start", { profileName, locale, mode, options }),
   takePendingAdminCapture: () => invoke<PendingAdminCapture | null>("take_pending_admin_capture"),
-  requestAdminDiagnosticStart: (durationSeconds) =>
-    invoke<boolean>("request_admin_diagnostic_start", { durationSeconds }),
+  requestAdminDiagnosticStart: (durationSeconds, mode) =>
+    invoke<boolean>("request_admin_diagnostic_start", { durationSeconds, mode }),
   takePendingAdminDiagnostic: () => invoke<PendingAdminDiagnostic | null>("take_pending_admin_diagnostic"),
   captureStart: (profileName, locale, mode, options) => invoke<CaptureStatus>("capture_start", { profileName, locale, mode, options }),
   captureStatus: (sessionId) => invoke<CaptureStatus>("capture_status", { sessionId }),
   captureStop: (sessionId) => invoke<CaptureStatus>("capture_stop", { sessionId }),
-  diagnosticStart: (durationSeconds) => invoke<DiagnosticStatus>("diagnostic_start", { durationSeconds }),
+  diagnosticStart: (durationSeconds, mode) => invoke<DiagnosticStatus>("diagnostic_start", { durationSeconds, mode }),
   diagnosticStatus: (sessionId) => invoke<DiagnosticStatus>("diagnostic_status", { sessionId }),
   diagnosticCancel: (sessionId) => invoke<DiagnosticStatus>("diagnostic_cancel", { sessionId }),
 };

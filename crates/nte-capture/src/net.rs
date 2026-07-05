@@ -36,16 +36,16 @@ pub fn capture_doctor(exe: &str) -> Result<CaptureDoctorReport> {
     let pppoe_detection = detect_pppoe();
     let mut notes = Vec::new();
     if !cfg!(windows) {
-        notes.push("pktmon capture requires Windows".to_string());
+        notes.push("capture requires Windows".to_string());
     }
     if cfg!(windows) && !is_admin() {
-        notes.push("pktmon capture requires administrator privilege".to_string());
+        notes.push("capture requires administrator privilege".to_string());
     }
     if pid.is_none() {
         notes.push(format!("{exe} not found"));
     }
     if pppoe_detection.detected {
-        notes.push("PPPoE detected; pktmon capture will use no capture filters".to_string());
+        notes.push("PPPoE detected; pktmon will capture all packets".to_string());
     }
     notes.extend(
         pppoe_detection

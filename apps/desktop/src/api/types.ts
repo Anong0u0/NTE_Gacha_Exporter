@@ -5,4 +5,5 @@ export * from "./types/records";
 export * from "./types/dashboard";
 export * from "./types/update";
 export * from "./types/assets-pack";
+export * from "./types/windivert";
 export * from "./types/app-api";

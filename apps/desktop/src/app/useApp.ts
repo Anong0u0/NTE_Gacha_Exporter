@@ -22,7 +22,7 @@ import {
 } from "../api";
 
 import { createAssetTools } from "./assets";
-import { createCaptureActions } from "./captureActions";
+import { createCaptureActions, type CaptureRecoveryState } from "./captureActions";
 import { createChartTools } from "./chart";
 import { createAppComputed } from "./computed";
 import { createDashboardActions } from "./dashboardActions";
@@ -52,7 +52,7 @@ export function useApp() {
   const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null);
   const lastDataOperation = ref<DataOperationKind | null>(null);
   const updateStatus = ref<UpdateStatus | null>(null), updateCheckReport = ref<UpdateCheckReport | null>(null);
-  const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureStalledDialogOpen = ref(false), captureActionBusy = ref(false), capturePollInFlight = ref(false);
+  const assetUrlCache = ref<Record<string, string>>({}), captureStatus = ref<CaptureStatus | null>(null), captureRecoveryState = ref<CaptureRecoveryState | null>(null), captureActionBusy = ref(false), capturePollInFlight = ref(false);
   const diagnosticPromptOpen = ref(false), diagnosticStatus = ref<DiagnosticStatus | null>(null), diagnosticActionBusy = ref(false), diagnosticPollInFlight = ref(false);
   const busy = ref(false), statusText = ref(""), errorText = ref(""), chartEl = ref<HTMLElement | null>(null);
   const t = createTranslator(uiLocale);
@@ -107,7 +107,7 @@ export function useApp() {
   const settingsUpdateChannel = ref("stable"), settingsCheckUpdates = ref(false);
   const settingsSkippedUpdateVersion = ref<string | null>(null);
   const updatePromptOpen = ref(false), dismissedUpdateVersion = ref<string | null>(null);
-  const captureAutoPageEnabled = ref(true), captureFullUpdateEnabled = ref(false);
+  const captureAutoPageEnabled = ref(true), captureFullUpdateEnabled = ref(false), captureWinDivertBackendEnabled = ref(false);
   const effectiveCaptureMode = computed<CaptureMode>(() => {
     if (!captureAutoPageEnabled.value) return "live_only";
     return captureFullUpdateEnabled.value ? "auto_page_full" : "auto_page_incremental";
@@ -203,6 +203,7 @@ export function useApp() {
     settingsSkippedUpdateVersion.value = settings.skipped_update_version ?? null;
     captureAutoPageEnabled.value = settings.capture_auto_page_enabled;
     captureFullUpdateEnabled.value = settings.capture_auto_page_enabled && settings.capture_full_update_enabled;
+    captureWinDivertBackendEnabled.value = settings.capture_windivert_backend_enabled;
     captureMode.value = effectiveCaptureMode.value;
   }
 
@@ -211,6 +212,7 @@ export function useApp() {
       const settings = await api.updateSettings({
         capture_auto_page_enabled: captureAutoPageEnabled.value,
         capture_full_update_enabled: captureFullUpdateEnabled.value,
+        capture_windivert_backend_enabled: captureWinDivertBackendEnabled.value,
       });
       applySettings(settings);
     } catch (error) {
@@ -232,13 +234,14 @@ export function useApp() {
     void saveCaptureSettings();
   }
 
+  function setCaptureWinDivertBackendEnabled(value: boolean) {
+    captureWinDivertBackendEnabled.value = value;
+    void saveCaptureSettings();
+  }
+
   async function startPreferredCapture() {
     captureMode.value = effectiveCaptureMode.value;
     await startLiveCapture();
-  }
-
-  function closeCaptureStalledDialog() {
-    captureStalledDialogOpen.value = false;
   }
 
   const {
@@ -348,12 +351,15 @@ export function useApp() {
     clearCapturePolling,
     canRetryAutoPageSlower,
     nextPageRecordMinWaitMs,
+    runRecoveryDialogAction,
+    closeCaptureRecoveryDialog,
   } = createCaptureActions({
     activeProfileName,
     locale,
     captureMode,
+    captureWinDivertBackendEnabled,
     captureStatus,
-    captureStalledDialogOpen,
+    captureRecoveryState,
     captureActionBusy,
     capturePollInFlight,
     lastReport,
@@ -599,11 +605,11 @@ export function useApp() {
 
   return reactive({
     t, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
-    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureStalledDialogOpen, captureActionBusy,
+    exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, captureWinDivertBackendEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureRecoveryState, captureActionBusy,
     capturePollInFlight, diagnosticPromptOpen, diagnosticStatus, diagnosticActionBusy, diagnosticPollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
     sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
     canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isDiagnosticActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, startPendingAdminDiagnostic, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, openAboutLink, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
-    loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, retryAutoPageSlower, canRetryAutoPageSlower, nextPageRecordMinWaitMs, closeCaptureStalledDialog, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
+    loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, retryAutoPageSlower, canRetryAutoPageSlower, nextPageRecordMinWaitMs, closeCaptureRecoveryDialog, runRecoveryDialogAction, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, setCaptureWinDivertBackendEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
     openDiagnosticPrompt, cancelDiagnosticPrompt, confirmDiagnosticPrompt, cancelDiagnostic, pollDiagnosticStatus, applyDiagnosticStatus, ensureDiagnosticPolling, clearDiagnosticPolling, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, ...formatters,
     formatPityRatio, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog,
   });

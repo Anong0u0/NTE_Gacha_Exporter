@@ -5,8 +5,7 @@ mod tests {
     #[test]
     fn classifies_no_packets_seen() {
         let result = classify_capture_result(
-            &DiagnosticCaptureCounters::default(),
-            &DiagnosticCaptureSummary::default(),
+            &diagnostic_result(DiagnosticCaptureCounters::default()),
             Vec::new(),
         );
         assert_eq!(result.verdict, "no_packets_seen");
@@ -23,7 +22,7 @@ mod tests {
             small_parsed_payload_packets: 9,
             ..Default::default()
         };
-        let result = classify_capture_result(&counters, &summary, Vec::new());
+        let result = classify_capture_result(&diagnostic_result((counters, summary)), Vec::new());
         assert_eq!(result.verdict, "only_idle_packets");
     }
 
@@ -34,8 +33,7 @@ mod tests {
             dropped_packets: 6,
             ..Default::default()
         };
-        let result =
-            classify_capture_result(&counters, &DiagnosticCaptureSummary::default(), Vec::new());
+        let result = classify_capture_result(&diagnostic_result(counters), Vec::new());
         assert_eq!(result.verdict, "high_parser_drop");
     }
 
@@ -61,7 +59,7 @@ mod tests {
             .failure_reason_counts
             .insert("unsupported_ppp_protocol".to_string(), 4);
 
-        let result = classify_capture_result(&counters, &summary, Vec::new());
+        let result = classify_capture_result(&diagnostic_result((counters, summary)), Vec::new());
 
         assert_eq!(result.verdict, "high_parser_drop");
         assert!(result.findings.iter().any(|finding| finding.contains("PPPoE")));
@@ -81,8 +79,183 @@ mod tests {
             decoded_packets: 1,
             ..Default::default()
         };
-        let result =
-            classify_capture_result(&counters, &DiagnosticCaptureSummary::default(), Vec::new());
+        let result = classify_capture_result(&diagnostic_result(counters), Vec::new());
         assert_eq!(result.verdict, "decoded_ok");
+    }
+
+    #[test]
+    fn classifies_no_filter_zero_decode_as_undecodable_path() {
+        let counters = DiagnosticCaptureCounters {
+            packets_seen: 10,
+            ..Default::default()
+        };
+        let mut result = diagnostic_result(counters);
+        result.target.capture_strategy = "no_filter".to_string();
+
+        let result = classify_capture_result(&result, Vec::new());
+
+        assert_eq!(result.verdict, "undecodable_path");
+    }
+
+    #[test]
+    fn records_windivert_success_finding() {
+        let counters = DiagnosticCaptureCounters {
+            packets_seen: 10,
+            decoded_packets: 1,
+            ..Default::default()
+        };
+        let mut result = diagnostic_result(counters);
+        result.target.interface = "windivert".to_string();
+
+        let result = classify_capture_result(&result, Vec::new());
+
+        assert_eq!(result.verdict, "decoded_ok");
+        assert!(result
+            .findings
+            .iter()
+            .any(|finding| finding == "WinDivert capture decoded records"));
+    }
+
+    #[test]
+    fn classifies_windivert_zero_decode_as_windivert_no_decode() {
+        let counters = DiagnosticCaptureCounters {
+            packets_seen: 10,
+            ..Default::default()
+        };
+        let mut result = diagnostic_result(counters);
+        result.target.interface = "windivert".to_string();
+
+        let result = classify_capture_result(&result, Vec::new());
+
+        assert_eq!(result.verdict, "windivert_no_decode");
+    }
+
+    #[test]
+    fn cancelled_diagnostic_status_has_no_bundle_summary_or_error() {
+        let runtime = diagnostic_session(diagnostic_status("diagnostic-cancelled", "running", 1.0));
+
+        mark_diagnostic_cancelled(&runtime);
+
+        let status = runtime.status.lock().unwrap();
+        assert_eq!(status.state, crate::lifecycle::STATE_CANCELLED);
+        assert_eq!(status.stage, crate::lifecycle::STATE_CANCELLED);
+        assert!(status.support_zip_path.is_none());
+        assert!(status.summary.is_none());
+        assert!(status.error.is_none());
+    }
+
+    #[test]
+    fn prune_diagnostic_session_map_treats_cancelled_as_terminal() {
+        let mut sessions = std::collections::HashMap::from([(
+            "cancelled".to_string(),
+            diagnostic_session(diagnostic_status(
+                "cancelled",
+                crate::lifecycle::STATE_CANCELLED,
+                1.0,
+            )),
+        )]);
+
+        prune_diagnostic_session_map(&mut sessions, "other", 2_000.0);
+
+        assert!(!sessions.contains_key("cancelled"));
+    }
+
+    #[test]
+    fn cleanup_diagnostic_staging_removes_only_session_artifacts() {
+        let temp = tempfile::tempdir().unwrap();
+        let paths = support_paths(temp.path(), "cleanup");
+        std::fs::create_dir_all(&paths.support_dir).unwrap();
+        for (_, path) in artifact_specs(&paths) {
+            std::fs::write(path, b"session").unwrap();
+        }
+        std::fs::write(&paths.zip_path, b"zip").unwrap();
+        let unrelated = paths.support_dir.join("diagnostic-other.zip");
+        std::fs::write(&unrelated, b"keep").unwrap();
+
+        cleanup_diagnostic_staging(&paths);
+
+        for (_, path) in artifact_specs(&paths) {
+            assert!(!path.exists(), "session artifact still exists: {}", path.display());
+        }
+        assert!(!paths.zip_path.exists());
+        assert_eq!(std::fs::read(unrelated).unwrap(), b"keep");
+    }
+
+    trait IntoDiagnosticResultParts {
+        fn into_parts(self) -> (DiagnosticCaptureCounters, DiagnosticCaptureSummary);
+    }
+
+    impl IntoDiagnosticResultParts for DiagnosticCaptureCounters {
+        fn into_parts(self) -> (DiagnosticCaptureCounters, DiagnosticCaptureSummary) {
+            (self, DiagnosticCaptureSummary::default())
+        }
+    }
+
+    impl IntoDiagnosticResultParts for (DiagnosticCaptureCounters, DiagnosticCaptureSummary) {
+        fn into_parts(self) -> (DiagnosticCaptureCounters, DiagnosticCaptureSummary) {
+            self
+        }
+    }
+
+    fn diagnostic_result(
+        value: impl IntoDiagnosticResultParts,
+    ) -> DiagnosticCaptureResult {
+        let (counters, summary) = value.into_parts();
+        DiagnosticCaptureResult {
+            target: nte_capture::CaptureTarget {
+                pid: 1,
+                exe: "HTGame.exe".to_string(),
+                interface: "pktmon".to_string(),
+                ports: Vec::new(),
+                bpf: String::new(),
+                capture_strategy: "port_filtered".to_string(),
+                strategy_reason: "default".to_string(),
+                pppoe_detection: PppoeDetection::default(),
+                attempts: Vec::new(),
+            },
+            counters,
+            summary,
+            warnings: Vec::new(),
+            elapsed_seconds: 0.0,
+        }
+    }
+
+    fn diagnostic_status(session_id: &str, state: &str, updated_at: f64) -> DiagnosticStatus {
+        DiagnosticStatus {
+            session_id: session_id.to_string(),
+            mode: DiagnosticMode::Pktmon.as_str().to_string(),
+            state: state.to_string(),
+            started_at: updated_at,
+            updated_at,
+            duration_seconds: 20,
+            elapsed_seconds: 0.0,
+            stage: state.to_string(),
+            progress: 0.0,
+            support_zip_path: Some("support.zip".to_string()),
+            error: Some(RuntimeError {
+                code: "diagnostic_failed".to_string(),
+                message: "failed".to_string(),
+                support_path: None,
+                support_image_path: None,
+            }),
+            summary: Some(DiagnosticStatusSummary {
+                verdict: "failed".to_string(),
+                findings: Vec::new(),
+                packets_seen: 0,
+                decoded_packets: 0,
+                dropped_packets: 0,
+                duplicate_packets: 0,
+                rows_count: 0,
+                external_ok: false,
+            }),
+        }
+    }
+
+    fn diagnostic_session(status: DiagnosticStatus) -> Arc<DiagnosticRuntimeSession> {
+        Arc::new(DiagnosticRuntimeSession {
+            status: Mutex::new(status),
+            stop: Arc::new(AtomicBool::new(false)),
+            handle: Mutex::new(None),
+        })
     }
 }

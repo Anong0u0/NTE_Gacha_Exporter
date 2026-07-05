@@ -166,6 +166,7 @@ export function formatCaptureState(value: string | null | undefined, t: Translat
   if (value === "stopping") return t("capture.stateStopping");
   if (value === "completed") return t("capture.stateCompleted");
   if (value === "failed") return t("capture.stateFailed");
+  if (value === "cancelled") return t("capture.stateCancelled");
   return "";
 }
 

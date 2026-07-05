@@ -6,7 +6,7 @@ pub(crate) fn raw_record_from_parsed_packet(
 ) -> RawPacketRecord {
     RawPacketRecord {
         typ: "packet".to_string(),
-        schema_version: 1,
+        schema_version: 2,
         captured_at,
         capture_index,
         proto: parsed.proto.clone(),

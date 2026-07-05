@@ -47,6 +47,10 @@ function onAutoPageChange(event: Event) {
 function onFullUpdateChange(event: Event) {
   app.setCaptureFullUpdateEnabled((event.target as HTMLInputElement).checked);
 }
+
+function onWinDivertBackendChange(event: Event) {
+  app.setCaptureWinDivertBackendEnabled((event.target as HTMLInputElement).checked);
+}
 </script>
 
 <template>
@@ -99,6 +103,10 @@ function onFullUpdateChange(event: Event) {
               <label class="menu-check">
                 <input type="checkbox" :checked="app.captureFullUpdateEnabled" :disabled="app.isWorkflowBusy || !app.captureAutoPageEnabled" @change="onFullUpdateChange" />
                 <span>{{ app.t("capture.fullUpdateEnabled") }}</span>
+              </label>
+              <label class="menu-check" :title="app.t('capture.winDivertBackendHint')">
+                <input type="checkbox" :checked="app.captureWinDivertBackendEnabled" :disabled="app.isWorkflowBusy" @change="onWinDivertBackendChange" />
+                <span>{{ app.t("capture.winDivertBackend") }}</span>
               </label>
             </div>
           </div>

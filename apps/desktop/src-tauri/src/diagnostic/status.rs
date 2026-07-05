@@ -122,27 +122,13 @@ fn prune_diagnostic_session_map(
 }
 
 fn diagnostic_status_is_terminal(status: &DiagnosticStatus) -> bool {
-    matches!(status.state.as_str(), "completed" | "failed")
+    crate::lifecycle::is_terminal_state(&status.state)
 }
 
 fn diagnostic_handle_joined(session: &DiagnosticRuntimeSession) -> bool {
-    session
-        .handle
-        .lock()
-        .map(|handle| handle.is_none())
-        .unwrap_or(false)
+    crate::lifecycle::handle_joined(&session.handle)
 }
 
 fn try_join_finished_diagnostic_thread(session: &DiagnosticRuntimeSession) -> bool {
-    let handle = session.handle.lock().ok().and_then(|mut guard| {
-        guard
-            .as_ref()
-            .is_some_and(std::thread::JoinHandle::is_finished)
-            .then(|| guard.take())
-            .flatten()
-    });
-    let Some(handle) = handle else {
-        return false;
-    };
-    handle.join().is_ok()
+    crate::lifecycle::try_join_finished_thread(&session.handle)
 }

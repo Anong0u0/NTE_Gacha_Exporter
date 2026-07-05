@@ -72,6 +72,8 @@ struct DiskSettings {
     capture_auto_page_enabled: bool,
     #[serde(default)]
     capture_full_update_enabled: bool,
+    #[serde(default)]
+    capture_windivert_backend_enabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

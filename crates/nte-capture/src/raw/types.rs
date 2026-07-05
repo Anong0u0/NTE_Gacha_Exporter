@@ -40,10 +40,11 @@ pub struct CaptureStartRecord {
     typ: &'static str,
     schema_version: u32,
     pid: u32,
-    iface: &'static str,
+    iface: String,
     ports: Vec<u16>,
     bpf: String,
-    filter_mode: String,
+    capture_strategy: String,
+    strategy_reason: String,
     pppoe_detection: crate::net::PppoeDetection,
 }
 

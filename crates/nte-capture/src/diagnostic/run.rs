@@ -24,8 +24,10 @@ pub fn run_diagnostic_capture(
         .pppoe_detection
         .clone()
         .unwrap_or_else(net::detect_pppoe);
-    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
-    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
+    let strategy = options
+        .strategy
+        .unwrap_or_else(|| CaptureStrategy::for_pppoe_detection(&pppoe_detection));
+    if ports.is_empty() && strategy.kind == CaptureStrategyKind::PortFiltered {
         anyhow::bail!("no candidate ports found for pid={}", options.pid);
     }
     let mut target = CaptureTarget {
@@ -33,17 +35,20 @@ pub fn run_diagnostic_capture(
         exe: options.exe.clone(),
         interface: "pktmon".to_string(),
         ports: ports.clone(),
-        bpf: bpf(filter_mode, &ports),
-        filter_mode: filter_mode.as_str().to_string(),
+        bpf: bpf(strategy.kind, &ports),
+        capture_strategy: strategy.kind.as_str().to_string(),
+        strategy_reason: strategy.reason.as_str().to_string(),
         pppoe_detection: pppoe_detection.clone(),
+        attempts: Vec::new(),
     };
     let mut raw_writer = match options.raw_out.as_ref() {
         Some(path) => Some(RawWriter::open(
             path,
             options.pid,
             &ports,
-            filter_mode.as_str(),
+            strategy,
             &pppoe_detection,
+            options.raw_append,
         )?),
         None => None,
     };
@@ -57,6 +62,7 @@ pub fn run_diagnostic_capture(
     let mut summary = DiagnosticCaptureSummary::default();
     let mut last_packet: Option<DiagnosticRecentPacket> = None;
     let mut last_progress_seen = 0_u64;
+    let mut attempts = Vec::new();
     emit_progress(
         &options,
         &target,
@@ -67,8 +73,13 @@ pub fn run_diagnostic_capture(
     );
 
     while !stop.load(Ordering::SeqCst) && started_at.elapsed() < duration {
+        target.capture_strategy = strategy.kind.as_str().to_string();
+        target.strategy_reason = strategy.reason.as_str().to_string();
+        target.bpf = bpf(strategy.kind, &ports);
+        let attempt_started_at = now_seconds();
+        let attempt_start_counters = counters.clone();
         let mut capture = pktmon::Capture::new()?;
-        if filter_mode == CaptureFilterMode::PortFiltered {
+        if strategy.kind == CaptureStrategyKind::PortFiltered {
             for port in &ports {
                 capture.add_filter(PktMonFilter {
                     name: format!("NTE diagnostic UDP {port}"),
@@ -163,7 +174,6 @@ pub fn run_diagnostic_capture(
                         signature: DiagnosticRawSignature::from_packet(&parsed_packet),
                         captured_at,
                     });
-
                     add_parsed_summary(&mut summary, &parsed_packet);
                     let (blocks, found_warnings) = parse_payload_blocks(
                         &parsed_packet.payload,
@@ -178,7 +188,7 @@ pub fn run_diagnostic_capture(
                         &parsed_packet,
                         &ports,
                         !blocks.is_empty(),
-                        filter_mode,
+                        strategy.kind,
                     ) {
                         let record = raw_record_from_parsed_packet(
                             &parsed_packet,
@@ -230,8 +240,8 @@ pub fn run_diagnostic_capture(
                         if latest.iter().any(|port| !ports.contains(port)) {
                             ports = latest;
                             target.ports = ports.clone();
-                            target.bpf = bpf(filter_mode, &ports);
-                            if filter_mode == CaptureFilterMode::PortFiltered {
+                            target.bpf = bpf(strategy.kind, &ports);
+                            if strategy.kind == CaptureStrategyKind::PortFiltered {
                                 counters.filter_restarts += 1;
                                 restart_for_ports = true;
                                 break;
@@ -244,6 +254,16 @@ pub fn run_diagnostic_capture(
         }
         let _ = capture.stop();
         let _ = capture.unload();
+        let attempt = CaptureAttemptSummary {
+            attempt_index: attempts.len() as u32,
+            capture_strategy: target.capture_strategy.clone(),
+            strategy_reason: target.strategy_reason.clone(),
+            started_at: attempt_started_at,
+            ended_at: now_seconds(),
+            counters: diagnostic_counters_delta(&attempt_start_counters, &counters),
+        };
+        attempts.push(attempt);
+        target.attempts = attempts.clone();
         if !restart_for_ports {
             break;
         }
@@ -280,4 +300,18 @@ pub fn run_diagnostic_capture(
         warnings,
         elapsed_seconds: started_at.elapsed().as_secs_f64(),
     })
+}
+
+#[cfg(windows)]
+fn diagnostic_counters_delta(
+    start: &DiagnosticCaptureCounters,
+    end: &DiagnosticCaptureCounters,
+) -> CaptureCounters {
+    CaptureCounters {
+        packets_seen: end.packets_seen.saturating_sub(start.packets_seen),
+        decoded_packets: end.decoded_packets.saturating_sub(start.decoded_packets),
+        dropped_packets: end.dropped_packets.saturating_sub(start.dropped_packets),
+        duplicate_packets: end.duplicate_packets.saturating_sub(start.duplicate_packets),
+        filter_restarts: end.filter_restarts.saturating_sub(start.filter_restarts),
+    }
 }

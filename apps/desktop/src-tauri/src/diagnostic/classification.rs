@@ -23,9 +23,6 @@ fn classify_diagnostic(
     if target.selected_pid.is_none() {
         return classification("game_not_found", findings);
     }
-    if target.selected_ports.is_empty() && !target.pppoe_detection.detected {
-        return classification("no_candidate_ports", findings);
-    }
     if let Some(error) = &internal.error {
         findings.push(format!("internal capture error: {error}"));
         if internal.result.is_none() {
@@ -35,20 +32,31 @@ fn classify_diagnostic(
     let Some(result) = &internal.result else {
         return classification("internal_capture_missing", findings);
     };
-    classify_capture_result(&result.counters, &result.summary, findings)
+    classify_capture_result(result, findings)
 }
 
 fn classify_capture_result(
-    counters: &DiagnosticCaptureCounters,
-    summary: &DiagnosticCaptureSummary,
+    result: &DiagnosticCaptureResult,
     mut findings: Vec<String>,
 ) -> DiagnosticClassification {
+    let counters = &result.counters;
+    let summary = &result.summary;
     add_dropped_evidence_findings(counters, summary, &mut findings);
     if counters.packets_seen == 0 {
         return classification("no_packets_seen", findings);
     }
     if summary.rows_count > 0 || counters.decoded_packets > 0 {
+        if result.target.interface == "windivert" {
+            findings.push("WinDivert capture decoded records".to_string());
+        }
         return classification("decoded_ok", findings);
+    }
+    if result.target.interface == "windivert" {
+        return classification("windivert_no_decode", findings);
+    }
+    if result.target.capture_strategy == "no_filter" {
+        findings.push("no records decoded; WinDivert capture is recommended for VPN/proxy networks".to_string());
+        return classification("undecodable_path", findings);
     }
     let dropped_ratio = counters.dropped_packets as f64 / counters.packets_seen.max(1) as f64;
     if dropped_ratio >= 0.50 {

@@ -2,14 +2,15 @@
 pub(crate) fn diagnostic_start(
     state: State<'_, AppState>,
     duration_seconds: Option<u64>,
+    mode: Option<DiagnosticMode>,
 ) -> Result<DiagnosticStatus, ApiError> {
     if admin_relaunch_required()? {
         return Err(api_error_message(
             "admin_required",
-            "pktmon diagnostic requires administrator permission",
+            "capture diagnostic requires administrator permission",
         ));
     }
-    start_diagnostic_session(&state, duration_seconds)
+    start_diagnostic_session(&state, duration_seconds, mode)
 }
 
 #[tauri::command]
@@ -31,9 +32,9 @@ pub(crate) fn diagnostic_cancel(
         let mut status = session.status.lock().map_err(|_| {
             api_error_message("diagnostic_lock_poisoned", "diagnostic lock poisoned")
         })?;
-        if matches!(status.state.as_str(), "starting" | "running") {
-            status.state = "stopping".to_string();
-            status.stage = "stopping".to_string();
+        if crate::lifecycle::is_active_state(&status.state) {
+            crate::lifecycle::set_stopping(&mut status.state);
+            status.stage = crate::lifecycle::STATE_STOPPING.to_string();
             status.updated_at = now_seconds();
         }
     }
@@ -43,6 +44,7 @@ pub(crate) fn diagnostic_cancel(
 pub(crate) fn start_diagnostic_session(
     state: &State<'_, AppState>,
     duration_seconds: Option<u64>,
+    mode: Option<DiagnosticMode>,
 ) -> Result<DiagnosticStatus, ApiError> {
     let duration_seconds = duration_seconds
         .unwrap_or(DEFAULT_DIAGNOSTIC_DURATION_SECONDS)
@@ -50,11 +52,13 @@ pub(crate) fn start_diagnostic_session(
             MIN_DIAGNOSTIC_DURATION_SECONDS,
             MAX_DIAGNOSTIC_DURATION_SECONDS,
         );
+    let mode = mode.unwrap_or(DiagnosticMode::Pktmon);
     let session_id = new_named_session_id("diagnostic");
     let now = now_seconds();
     let initial_status = DiagnosticStatus {
         session_id: session_id.clone(),
-        state: "starting".to_string(),
+        mode: mode.as_str().to_string(),
+        state: crate::lifecycle::STATE_STARTING.to_string(),
         started_at: now,
         updated_at: now,
         duration_seconds,
@@ -79,7 +83,7 @@ pub(crate) fn start_diagnostic_session(
 
     let runtime_for_thread = Arc::clone(&runtime);
     let handle = std::thread::spawn(move || {
-        run_diagnostic_thread(runtime_for_thread, session_id, duration_seconds);
+        run_diagnostic_thread(runtime_for_thread, session_id, duration_seconds, mode);
     });
     *runtime
         .handle

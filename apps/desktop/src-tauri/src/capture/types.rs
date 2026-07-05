@@ -15,14 +15,15 @@ use nte_automation::{
     RecordSnapshot as AutomationRecordSnapshot, run_auto_page,
 };
 use nte_capture::{
-    CaptureOptions, CaptureRecordBuilder, CaptureTarget, build_capture_document, candidate_ports,
-    capture_live, detect_pppoe, find_process_pid, CaptureFilterMode,
+    CaptureAttemptSummary, CaptureBackend, CaptureOptions, CaptureRecordBuilder, CaptureStrategy,
+    CaptureStrategyKind, CaptureStrategyReason, CaptureTarget, build_capture_document,
+    candidate_ports, capture_live, detect_pppoe, find_process_pid,
 };
-use nte_core::ImportReport;
+use nte_core::{ImportReport, SettingsPatch};
 use nte_store::load_locale_or_settings;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use tauri::{AppHandle, State, Wry};
+use tauri::{AppHandle, Manager, State, Wry};
 
 use crate::admin::admin_relaunch_required;
 use crate::error::{ApiError, RuntimeError, api_error, api_error_message};
@@ -51,6 +52,7 @@ pub(crate) struct CaptureSessionMeta {
 pub(crate) struct CaptureRuntimeSession {
     status: Mutex<CaptureStatus>,
     stop: Arc<AtomicBool>,
+    attempt_stop: Mutex<Option<Arc<AtomicBool>>>,
     handle: Mutex<Option<JoinHandle<()>>>,
 }
 
@@ -66,6 +68,16 @@ pub(crate) enum CaptureMode {
 pub(crate) struct CaptureStartOptions {
     #[serde(default)]
     page_record_min_wait_ms: Option<u64>,
+    #[serde(default)]
+    capture_backend: Option<CaptureBackendOverride>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) enum CaptureBackendOverride {
+    #[serde(rename = "pktmon")]
+    Pktmon,
+    #[serde(rename = "windivert")]
+    WinDivert,
 }
 
 impl CaptureMode {
@@ -351,6 +363,8 @@ pub(crate) struct CaptureStatus {
     records_count: u64,
     latest_records: Vec<Value>,
     counters: CaptureCounters,
+    #[serde(default)]
+    attempts: Vec<CaptureAttemptSummary>,
     started_at: f64,
     updated_at: f64,
     target: Option<Value>,

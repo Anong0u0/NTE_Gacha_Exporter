@@ -102,6 +102,20 @@ fn help_does_not_expose_removed_tui_or_debug_json() {
 }
 
 #[test]
+fn capture_help_exposes_windivert_flags() {
+    let output = Command::new(bin())
+        .args(["capture", "--help"])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("--windivert"));
+    assert!(stdout.contains("--install-windivert"));
+    assert!(!stdout.contains("--no-filter"));
+}
+
+#[test]
 fn maps_build_writes_locale_map() {
     let tmp = tempfile::tempdir().unwrap();
     let assets = tmp.path().join("NTE_Assets");

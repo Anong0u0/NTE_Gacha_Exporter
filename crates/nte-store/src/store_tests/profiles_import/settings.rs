@@ -13,6 +13,7 @@ fn store_bootstraps_default_profile_and_files() {
     assert_eq!(settings.skipped_update_version, None);
     assert!(settings.capture_auto_page_enabled);
     assert!(!settings.capture_full_update_enabled);
+    assert!(!settings.capture_windivert_backend_enabled);
     assert_eq!(profiles.len(), 1);
     assert_eq!(profiles[0].name, "default");
     assert!(tmp.path().join("data/settings.json").exists());
@@ -79,8 +80,10 @@ fn store_migrates_missing_ui_locale_from_defaults() {
     assert_eq!(settings.ui_locale, "zh-Hant");
     assert!(settings.capture_auto_page_enabled);
     assert!(!settings.capture_full_update_enabled);
+    assert!(!settings.capture_windivert_backend_enabled);
     assert!(settings_text.contains("\"ui_locale\""));
     assert!(settings_text.contains("\"capture_auto_page_enabled\""));
+    assert!(settings_text.contains("\"capture_windivert_backend_enabled\""));
 }
 
 #[test]
@@ -99,6 +102,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
             skipped_update_version: Some("1.2.3".to_string()),
             capture_auto_page_enabled: Some(true),
             capture_full_update_enabled: Some(true),
+            capture_windivert_backend_enabled: Some(true),
         })
         .unwrap();
 
@@ -110,6 +114,7 @@ fn settings_update_persists_locale_active_profile_and_update_flags() {
     assert_eq!(settings.skipped_update_version.as_deref(), Some("1.2.3"));
     assert!(settings.capture_auto_page_enabled);
     assert!(settings.capture_full_update_enabled);
+    assert!(settings.capture_windivert_backend_enabled);
     let settings = store
         .update_settings(SettingsPatch {
             capture_auto_page_enabled: Some(false),

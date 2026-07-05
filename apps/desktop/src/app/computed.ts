@@ -82,6 +82,7 @@ export function createAppComputed(deps: ComputedDeps) {
     }
     if (deps.captureStatus.value.state === "completed") return deps.t("capture.completed");
     if (deps.captureStatus.value.state === "failed") return deps.t("capture.failed");
+    if (deps.captureStatus.value.state === "cancelled") return deps.t("capture.cancelled");
     if (deps.captureStatus.value.state === "stopping") return deps.t("capture.stopping");
     return deps.t("capture.running");
   });

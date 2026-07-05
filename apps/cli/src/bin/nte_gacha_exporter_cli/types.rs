@@ -19,9 +19,9 @@ use nte_assets::{
 };
 use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
 use nte_capture::{
-    CaptureFilterMode, CaptureOptions, CaptureProgress, CaptureRecordBuilder, ParsedRow,
-    build_capture_document, candidate_ports, capture_doctor, capture_live, detect_pppoe,
-    find_process_pid, is_admin, read_raw_capture,
+    CaptureBackend, CaptureOptions, CaptureProgress, CaptureRecordBuilder, CaptureStrategy,
+    CaptureStrategyKind, ParsedRow, build_capture_document, candidate_ports, capture_doctor,
+    capture_live, detect_pppoe, find_process_pid, is_admin, read_raw_capture,
 };
 use nte_core::available_locales;
 use nte_store::JsonStore;
@@ -166,6 +166,10 @@ struct CaptureArgs {
     output_raw: Option<PathBuf>,
     #[arg(long)]
     pid: Option<u32>,
+    #[arg(long, action = clap::ArgAction::SetTrue, help = "Use WinDivert full IP sniff capture")]
+    windivert: bool,
+    #[arg(long, action = clap::ArgAction::SetTrue, help = "Download and install WinDivert before --windivert capture")]
+    install_windivert: bool,
     #[arg(long, action = clap::ArgAction::SetTrue)]
     auto_page: bool,
     #[arg(short, long, action = clap::ArgAction::SetTrue)]

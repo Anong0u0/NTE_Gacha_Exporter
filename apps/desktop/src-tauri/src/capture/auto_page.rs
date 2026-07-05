@@ -2,7 +2,8 @@ fn wait_for_capture_drain(
     runtime: &Arc<CaptureRuntimeSession>,
     coordinator: &Arc<AutoPageCoordinator>,
     auto_result: &AutoPageRunResult,
-    stop: &Arc<AtomicBool>,
+    session_stop: &Arc<AtomicBool>,
+    attempt_stop: &Arc<AtomicBool>,
 ) -> Option<RuntimeError> {
     let mut required = auto_result.visited_pages_by_pool.clone();
     for pool in &auto_result.skipped_pools {
@@ -14,11 +15,14 @@ fn wait_for_capture_drain(
 
     let started = Instant::now();
     loop {
-        if stop.load(Ordering::SeqCst) {
+        if session_stop.load(Ordering::SeqCst) {
             return Some(runtime_error(
                 "capture_stopped",
                 "capture stopped before packet drain completed",
             ));
+        }
+        if attempt_stop.load(Ordering::SeqCst) {
+            return None;
         }
 
         let decoded = coordinator.counts();
@@ -38,8 +42,8 @@ fn wait_for_capture_drain(
         }
 
         if let Ok(mut status) = runtime.status.lock() {
-            if status.state != "stopping" {
-                status.state = "running".to_string();
+            if status.state != crate::lifecycle::STATE_STOPPING {
+                status.state = crate::lifecycle::STATE_RUNNING.to_string();
             }
             status.auto_page = Some(json!({
                 "state": "draining",
@@ -89,15 +93,16 @@ fn capture_progress_callback(
             coordinator.add_progress(&progress, update.automation_snapshot.as_deref());
         }
         if let Ok(mut status) = runtime.status.lock() {
-            status.state = if status.state == "stopping" {
-                "stopping".to_string()
+            status.state = if status.state == crate::lifecycle::STATE_STOPPING {
+                crate::lifecycle::STATE_STOPPING.to_string()
             } else {
-                "running".to_string()
+                crate::lifecycle::STATE_RUNNING.to_string()
             };
             status.records_count = update.records_count;
             status.latest_records = update.latest;
             status.counters = CaptureCounters::from(progress.counters);
-            status.target = serde_json::to_value(progress.target).ok();
+            status.attempts = progress.target.attempts.clone();
+            status.target = serde_json::to_value(&progress.target).ok();
             status.updated_at = now_seconds();
         }
     })

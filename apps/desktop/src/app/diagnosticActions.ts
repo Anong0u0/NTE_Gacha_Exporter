@@ -1,9 +1,9 @@
 import type { ComputedRef, Ref } from "vue";
 
-import { api, type DiagnosticStatus, type PendingAdminDiagnostic } from "../api";
+import { api, type DiagnosticMode, type DiagnosticStatus, type PendingAdminDiagnostic } from "../api";
 import type { I18nKey } from "./i18n";
 
-const DEFAULT_DIAGNOSTIC_DURATION_SECONDS = 30;
+const DEFAULT_DIAGNOSTIC_DURATION_SECONDS = 20;
 
 type DiagnosticActionsDeps = {
   diagnosticPromptOpen: Ref<boolean>;
@@ -32,8 +32,8 @@ export function createDiagnosticActions(deps: DiagnosticActionsDeps) {
     deps.diagnosticPromptOpen.value = false;
   }
 
-  async function confirmDiagnosticPrompt() {
-    await startDiagnostic();
+  async function confirmDiagnosticPrompt(mode: DiagnosticMode = "pktmon") {
+    await startDiagnostic({ mode });
   }
 
   async function startPendingAdminDiagnostic() {
@@ -43,21 +43,22 @@ export function createDiagnosticActions(deps: DiagnosticActionsDeps) {
     return true;
   }
 
-  async function startDiagnostic(options: { skipAdminRequest?: boolean; pending?: PendingAdminDiagnostic } = {}) {
+  async function startDiagnostic(options: { skipAdminRequest?: boolean; pending?: PendingAdminDiagnostic; mode?: DiagnosticMode } = {}) {
     if ((deps.isWorkflowBusy.value && !options.skipAdminRequest) || deps.diagnosticActionBusy.value) return;
     const durationSeconds = options.pending?.duration_seconds ?? DEFAULT_DIAGNOSTIC_DURATION_SECONDS;
+    const mode = options.pending?.mode ?? options.mode ?? "pktmon";
     deps.diagnosticPromptOpen.value = true;
     deps.diagnosticActionBusy.value = true;
     deps.errorText.value = "";
     try {
       if (!options.skipAdminRequest) {
-        const relaunching = await api.requestAdminDiagnosticStart(durationSeconds);
+        const relaunching = await api.requestAdminDiagnosticStart(durationSeconds, mode);
         if (relaunching) {
           deps.statusText.value = deps.t("status.waitingAdmin");
           return;
         }
       }
-      await applyDiagnosticStatus(await api.diagnosticStart(durationSeconds));
+      await applyDiagnosticStatus(await api.diagnosticStart(durationSeconds, mode));
       deps.statusText.value = options.pending
         ? deps.t("diagnostic.resumed")
         : deps.t("diagnostic.started");
@@ -111,6 +112,10 @@ export function createDiagnosticActions(deps: DiagnosticActionsDeps) {
     } else if (status.state === "failed") {
       clearDiagnosticPolling();
       deps.errorText.value = status.error ? `${status.error.code}: ${status.error.message}` : deps.t("diagnostic.failed");
+    } else if (status.state === "cancelled") {
+      clearDiagnosticPolling();
+      deps.errorText.value = "";
+      deps.statusText.value = deps.t("diagnostic.cancelled");
     } else {
       deps.statusText.value = deps.t("diagnostic.running");
     }

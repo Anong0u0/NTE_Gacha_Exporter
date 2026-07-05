@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::capture::{CaptureMode, CaptureStartOptions};
+use crate::diagnostic::DiagnosticMode;
 use crate::error::{ApiError, api_error, api_error_message};
 use crate::state::{AppState, with_store};
 
@@ -22,6 +23,8 @@ pub(crate) struct PendingAdminCapture {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct PendingAdminDiagnostic {
     pub(crate) duration_seconds: u64,
+    #[serde(default = "default_diagnostic_mode")]
+    pub(crate) mode: DiagnosticMode,
 }
 
 #[tauri::command]
@@ -56,17 +59,23 @@ pub(crate) fn request_admin_capture_start(
 #[tauri::command]
 pub(crate) fn request_admin_diagnostic_start(
     duration_seconds: Option<u64>,
+    mode: Option<DiagnosticMode>,
 ) -> Result<bool, ApiError> {
     if !admin_relaunch_required()? {
         return Ok(false);
     }
     let payload = PendingAdminDiagnostic {
-        duration_seconds: duration_seconds.unwrap_or(30).clamp(5, 120),
+        duration_seconds: duration_seconds.unwrap_or(20).clamp(5, 120),
+        mode: mode.unwrap_or(DiagnosticMode::Pktmon),
     };
     let path = write_admin_diagnostic_payload(&payload)?;
     relaunch_admin_with_diagnostic_payload(&path)?;
     schedule_process_exit();
     Ok(true)
+}
+
+fn default_diagnostic_mode() -> DiagnosticMode {
+    DiagnosticMode::Pktmon
 }
 
 #[tauri::command]

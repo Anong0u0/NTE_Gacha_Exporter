@@ -6,6 +6,7 @@ import type {
   CaptureStatus,
   DashboardSelection,
   DiagnosticStatus,
+  DiagnosticMode,
   PoolKind,
   RecordFilter,
   SettingsPatch,
@@ -31,7 +32,9 @@ let mockCheckUpdatesOnStartup = true;
 let mockSkippedUpdateVersion: string | null = null;
 let mockCaptureAutoPageEnabled = true;
 let mockCaptureFullUpdateEnabled = false;
-const mockDiagnosticSessions = new Map<string, { polls: number; stopped: boolean; duration: number }>();
+let mockCaptureWinDivertBackendEnabled = false;
+let mockWindDivertInstalled = false;
+const mockDiagnosticSessions = new Map<string, { polls: number; stopped: boolean; duration: number; mode: DiagnosticMode }>();
 
 
 function mockSettings() {
@@ -44,6 +47,24 @@ function mockSettings() {
     skipped_update_version: mockSkippedUpdateVersion,
     capture_auto_page_enabled: mockCaptureAutoPageEnabled,
     capture_full_update_enabled: mockCaptureFullUpdateEnabled,
+    capture_windivert_backend_enabled: mockCaptureWinDivertBackendEnabled,
+  };
+}
+
+function mockWindDivertStatus() {
+  const installDir = "mock-root/drivers/windivert";
+  return {
+    platform_supported: true,
+    installed: mockWindDivertInstalled,
+    version: "2.2.2-A",
+    install_dir: installDir,
+    dll_path: `${installDir}/WinDivert.dll`,
+    sys_path: `${installDir}/WinDivert64.sys`,
+    license_path: `${installDir}/LICENSE`,
+    download_url: "https://github.com/basil00/WinDivert/releases/download/v2.2.2/WinDivert-2.2.2-A.zip",
+    zip_sha256: "63cb41763bb4b20f600b6de04e991a9c2be73279e317d4d82f237b150c5f3f15",
+    loadable: mockWindDivertInstalled,
+    error: mockWindDivertInstalled ? null : "WinDivert is not installed",
   };
 }
 
@@ -60,6 +81,7 @@ export const mockApi: AppApi = {
     mockSkippedUpdateVersion = patch.skipped_update_version ?? mockSkippedUpdateVersion;
     mockCaptureAutoPageEnabled = patch.capture_auto_page_enabled ?? mockCaptureAutoPageEnabled;
     mockCaptureFullUpdateEnabled = patch.capture_full_update_enabled ?? mockCaptureFullUpdateEnabled;
+    mockCaptureWinDivertBackendEnabled = patch.capture_windivert_backend_enabled ?? mockCaptureWinDivertBackendEnabled;
     if (!mockCaptureAutoPageEnabled) mockCaptureFullUpdateEnabled = false;
     if (mockCaptureFullUpdateEnabled) mockCaptureAutoPageEnabled = true;
     return mockSettings();
@@ -209,6 +231,19 @@ export const mockApi: AppApi = {
       url: mockAssetDataUrl(ref.asset_ref, ref.kind ?? "asset"),
     }));
   },
+  async windivertStatus() {
+    return mockWindDivertStatus();
+  },
+  async windivertInstall() {
+    mockWindDivertInstalled = true;
+    const status = mockWindDivertStatus();
+    return {
+      status,
+      downloaded: true,
+      verified_sha256: status.zip_sha256,
+      installed_files: [status.dll_path, status.sys_path, status.license_path],
+    };
+  },
   async requestAdminCaptureStart() {
     return false;
   },
@@ -241,9 +276,9 @@ export const mockApi: AppApi = {
     }
     return mockCaptureStatus(sessionId);
   },
-  async diagnosticStart(durationSeconds = 30) {
+  async diagnosticStart(durationSeconds = 20, mode: DiagnosticMode = "pktmon") {
     const sessionId = `mock-diagnostic-${Date.now()}`;
-    mockDiagnosticSessions.set(sessionId, { polls: 0, stopped: false, duration: durationSeconds });
+    mockDiagnosticSessions.set(sessionId, { polls: 0, stopped: false, duration: durationSeconds, mode });
     return mockDiagnosticStatus(sessionId);
   },
   async diagnosticStatus(sessionId: string) {
@@ -376,10 +411,11 @@ function mockCaptureSourceKind(mode: CaptureMode): string {
 function mockDiagnosticStatus(sessionId: string): DiagnosticStatus {
   const session = mockDiagnosticSessions.get(sessionId);
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
-  const duration = session?.duration ?? 30;
+  const duration = session?.duration ?? 20;
   const progress = completed ? 1 : session?.polls ? 0.45 : 0.08;
   return {
     session_id: sessionId,
+    mode: session?.mode ?? "pktmon",
     state: completed ? "completed" : session?.polls ? "running" : "starting",
     started_at: Date.now() / 1000 - progress * duration,
     updated_at: Date.now() / 1000,

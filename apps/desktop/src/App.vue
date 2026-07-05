@@ -2,7 +2,7 @@
 import { provideAppContext } from "./app/context";
 import { useApp } from "./app/useApp";
 import AppSidebar from "./components/AppSidebar.vue";
-import CaptureStalledDialog from "./components/CaptureStalledDialog.vue";
+import CaptureRecoveryDialog from "./components/CaptureRecoveryDialog.vue";
 import DashboardView from "./components/DashboardView.vue";
 import DiagnosticDialog from "./components/DiagnosticDialog.vue";
 import RecordsView from "./components/RecordsView.vue";
@@ -24,7 +24,7 @@ provideAppContext(app);
       <SettingsView v-else />
     </main>
     <UpdateDialog />
-    <CaptureStalledDialog />
+    <CaptureRecoveryDialog />
     <DiagnosticDialog />
   </div>
 </template>

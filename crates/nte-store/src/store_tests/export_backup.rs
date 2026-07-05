@@ -409,6 +409,7 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
             skipped_update_version: Some("9.9.9".to_string()),
             capture_auto_page_enabled: Some(true),
             capture_full_update_enabled: Some(true),
+            capture_windivert_backend_enabled: Some(true),
         })
         .unwrap();
     let same = record(
@@ -469,4 +470,5 @@ fn restore_backup_merges_existing_profile_creates_new_profile_and_overwrites_set
     assert_eq!(settings.skipped_update_version.as_deref(), Some("9.9.9"));
     assert!(settings.capture_auto_page_enabled);
     assert!(settings.capture_full_update_enabled);
+    assert!(settings.capture_windivert_backend_enabled);
 }

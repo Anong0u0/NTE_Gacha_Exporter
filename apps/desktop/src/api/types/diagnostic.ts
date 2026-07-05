@@ -1,4 +1,5 @@
-type DiagnosticState = "starting" | "running" | "stopping" | "completed" | "failed";
+type DiagnosticState = "starting" | "running" | "stopping" | "completed" | "failed" | "cancelled";
+export type DiagnosticMode = "pktmon" | "windivert";
 
 type DiagnosticStatusSummary = {
   verdict: string;
@@ -13,6 +14,7 @@ type DiagnosticStatusSummary = {
 
 export type DiagnosticStatus = {
   session_id: string;
+  mode: DiagnosticMode;
   state: DiagnosticState;
   started_at: number;
   updated_at: number;
@@ -32,4 +34,5 @@ export type DiagnosticStatus = {
 
 export type PendingAdminDiagnostic = {
   duration_seconds: number;
+  mode?: DiagnosticMode;
 };

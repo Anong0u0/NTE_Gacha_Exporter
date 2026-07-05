@@ -10,6 +10,7 @@ mod tests {
             records_count: 0,
             latest_records: Vec::new(),
             counters: CaptureCounters::default(),
+            attempts: Vec::new(),
             started_at: updated_at,
             updated_at,
             target: None,
@@ -35,6 +36,7 @@ mod tests {
         Arc::new(CaptureRuntimeSession {
             status: Mutex::new(status),
             stop: Arc::new(AtomicBool::new(false)),
+            attempt_stop: Mutex::new(None),
             handle: Mutex::new(None),
         })
     }
@@ -61,7 +63,10 @@ mod tests {
         assert_eq!(paths.len(), 3);
         assert!(paths.iter().all(|path| {
             let path = Path::new(path);
-            path.parent().and_then(Path::file_name).and_then(|name| name.to_str()) == Some("runs")
+            path.parent()
+                .and_then(Path::file_name)
+                .and_then(|name| name.to_str())
+                == Some("runs")
                 && path
                     .parent()
                     .and_then(Path::parent)
@@ -74,7 +79,10 @@ mod tests {
                     .is_some_and(|name| name.starts_with("raw-") && name.ends_with(".jsonl"))
         }));
         assert_eq!(
-            paths.iter().collect::<std::collections::BTreeSet<_>>().len(),
+            paths
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
             paths.len()
         );
     }
@@ -112,10 +120,7 @@ mod tests {
             capture_pool("fork", Some("ForkLottery_AnHunQu")),
             Some("fork")
         );
-        assert_eq!(
-            capture_pool("monopoly", Some("CardPool_Weapon")),
-            None
-        );
+        assert_eq!(capture_pool("monopoly", Some("CardPool_Weapon")), None);
     }
 
     #[test]
@@ -171,10 +176,28 @@ mod tests {
     }
 
     #[test]
+    fn prune_capture_session_maps_treats_cancelled_as_terminal() {
+        let mut sessions = HashMap::from([(
+            "cancelled".to_string(),
+            test_session(test_status("cancelled", crate::lifecycle::STATE_CANCELLED, 1.0)),
+        )]);
+        let mut captures = HashMap::from([("cancelled".to_string(), test_meta())]);
+
+        prune_capture_session_maps(&mut sessions, &mut captures, "other", 2_000.0);
+
+        assert!(!sessions.contains_key("cancelled"));
+        assert!(!captures.contains_key("cancelled"));
+    }
+
+    #[test]
     fn support_json_excludes_record_payloads_and_raw_contents() {
         let tmp = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(tmp.path().join("data/runs")).unwrap();
-        std::fs::write(tmp.path().join("data/runs/raw-private.jsonl"), b"private raw").unwrap();
+        std::fs::write(
+            tmp.path().join("data/runs/raw-private.jsonl"),
+            b"private raw",
+        )
+        .unwrap();
         let status = failed_status("session/private");
 
         let result = write_capture_support(SupportRequest {
@@ -219,10 +242,7 @@ mod tests {
         });
 
         let image_path = result.image_path.unwrap();
-        assert_eq!(
-            std::fs::read(&image_path).unwrap(),
-            vec![137, 80, 78, 71]
-        );
+        assert_eq!(std::fs::read(&image_path).unwrap(), vec![137, 80, 78, 71]);
         assert!(image_path.ends_with("capture-session-image-context.png"));
         let text = std::fs::read_to_string(result.json_path.unwrap()).unwrap();
         assert!(text.contains("support_image_path"));
@@ -230,10 +250,7 @@ mod tests {
         assert!(text.contains("\"input\""));
         assert!(text.contains("\"physical_button\": \"right\""));
         let raw_path = image_path.with_file_name("capture-session-image-page-number-raw.png");
-        assert_eq!(
-            std::fs::read(&raw_path).unwrap(),
-            vec![137, 80, 78, 71, 2]
-        );
+        assert_eq!(std::fs::read(&raw_path).unwrap(), vec![137, 80, 78, 71, 2]);
     }
 
     #[test]
@@ -246,7 +263,10 @@ mod tests {
         let error = status.error.unwrap();
         assert_eq!(error.code, "auto_page_failed");
         let support_path = Path::new(error.support_path.as_deref().unwrap());
-        assert_eq!(support_path.parent().unwrap().file_name().unwrap(), "support");
+        assert_eq!(
+            support_path.parent().unwrap().file_name().unwrap(),
+            "support"
+        );
         assert_eq!(
             support_path
                 .parent()
@@ -286,7 +306,11 @@ mod tests {
         std::fs::create_dir_all(&support_dir).unwrap();
         write_support_bundle(&support_dir, "capture-current");
         std::fs::write(support_dir.join("capture-orphan-context.png"), b"orphan").unwrap();
-        std::fs::write(support_dir.join("capture-legacy-page-number.png"), b"legacy").unwrap();
+        std::fs::write(
+            support_dir.join("capture-legacy-page-number.png"),
+            b"legacy",
+        )
+        .unwrap();
         std::fs::write(support_dir.join("notes.txt"), b"keep").unwrap();
         std::fs::create_dir(support_dir.join("capture-dir.json")).unwrap();
 
@@ -294,10 +318,11 @@ mod tests {
 
         assert_support_bundle_exists(&support_dir, "capture-current");
         assert!(!support_dir.join("capture-orphan-context.png").exists());
-        assert!(!support_dir
-            .join("capture-legacy-page-number.png")
-            .exists());
-        assert_eq!(std::fs::read(support_dir.join("notes.txt")).unwrap(), b"keep");
+        assert!(!support_dir.join("capture-legacy-page-number.png").exists());
+        assert_eq!(
+            std::fs::read(support_dir.join("notes.txt")).unwrap(),
+            b"keep"
+        );
         assert!(support_dir.join("capture-dir.json").is_dir());
     }
 
@@ -315,7 +340,10 @@ mod tests {
         let error = rotate_capture_support_files(tmp.path(), 3, None).unwrap_err();
 
         assert!(error.to_string().contains("support path is symlink"));
-        assert_eq!(std::fs::read(outside.path().join("capture-outside.json")).unwrap(), b"outside");
+        assert_eq!(
+            std::fs::read(outside.path().join("capture-outside.json")).unwrap(),
+            b"outside"
+        );
     }
 
     #[test]
@@ -361,7 +389,9 @@ mod tests {
 
     #[test]
     fn auto_page_coordinator_skips_when_snapshot_has_known_run() {
-        let known = (1..=6).map(|index| format!("old-{index}")).collect::<Vec<_>>();
+        let known = (1..=6)
+            .map(|index| format!("old-{index}"))
+            .collect::<Vec<_>>();
         let coordinator = AutoPageCoordinator::new(false, &known);
         let records = vec![
             automation_record("new", "CardPool_NewRole", "monopoly"),
@@ -373,7 +403,10 @@ mod tests {
             automation_record("old-6", "CardPool_NewRole", "monopoly"),
         ];
 
-        coordinator.add_progress(&progress_with_rows(vec![parsed_row("CardPool_NewRole", 0)]), Some(&records));
+        coordinator.add_progress(
+            &progress_with_rows(vec![parsed_row("CardPool_NewRole", 0)]),
+            Some(&records),
+        );
 
         assert_eq!(
             coordinator.decision(control_context("standard", 2)),
@@ -421,6 +454,189 @@ mod tests {
     }
 
     #[test]
+    fn pktmon_zero_decode_packets_reports_vpn_proxy_suspected() {
+        let result = capture_result("pktmon", "port_filtered", "default", 0, 12);
+
+        let error = zero_decode_runtime_error(&result).unwrap();
+
+        assert_eq!(error.code, "vpn_proxy_suspected");
+        assert!(error.message.contains("pktmon"));
+    }
+
+    #[test]
+    fn zero_packet_capture_reports_no_packets_seen() {
+        let result = capture_result("pktmon", "port_filtered", "default", 0, 0);
+
+        let error = zero_decode_runtime_error(&result).unwrap();
+
+        assert_eq!(error.code, "no_packets_seen");
+    }
+
+    #[test]
+    fn windivert_zero_decode_packets_reports_windivert_no_decode() {
+        let result = capture_result("windivert", "no_filter", "windivert_backend", 0, 12);
+
+        let error = zero_decode_runtime_error(&result).unwrap();
+
+        assert_eq!(error.code, "windivert_no_decode");
+        assert!(error.message.contains("WinDivert"));
+    }
+
+    #[test]
+    fn auto_page_cancelled_zero_decode_does_not_report_recovery_error() {
+        let finish = classify_capture_finish(
+            Ok(capture_result("pktmon", "port_filtered", "default", 0, 12)),
+            "en",
+            "pktmon-auto-page-capture",
+            None,
+            true,
+        );
+        let mut status = test_status("cancelled-zero-decode", "running", 1.0);
+
+        apply_capture_finish_status(&mut status, finish, None);
+
+        assert_eq!(status.state, crate::lifecycle::STATE_CANCELLED);
+        assert!(status.error.is_none());
+        assert!(status.document.is_none());
+        assert!(status.import_report.is_none());
+    }
+
+    #[test]
+    fn auto_page_cancelled_backend_error_prefers_cancelled_state() {
+        let finish = classify_capture_finish(
+            Err("pktmon exited with code 1".to_string()),
+            "en",
+            "pktmon-auto-page-capture",
+            None,
+            true,
+        );
+        let mut status = test_status("cancelled-backend-error", "running", 1.0);
+
+        apply_capture_finish_status(&mut status, finish, None);
+
+        assert_eq!(status.state, crate::lifecycle::STATE_CANCELLED);
+        assert!(status.error.is_none());
+        assert!(status.document.is_none());
+        assert!(status.import_report.is_none());
+    }
+
+    #[test]
+    fn successful_result_completes_even_when_stop_was_requested() {
+        let finish = classify_capture_finish(
+            Ok(capture_result("pktmon", "port_filtered", "default", 1, 12)),
+            "en",
+            "pktmon-live-capture",
+            None,
+            true,
+        );
+        let mut status = test_status("completed-stop", "running", 1.0);
+
+        apply_capture_finish_status(&mut status, finish, None);
+
+        assert_eq!(status.state, crate::lifecycle::STATE_COMPLETED);
+        assert!(status.error.is_none());
+        assert!(status.document.is_some());
+    }
+
+    #[test]
+    fn windivert_success_enables_windivert_persistence_check() {
+        let result: Result<_, String> = Ok(capture_result(
+            "windivert",
+            "no_filter",
+            "windivert_backend",
+            1,
+            12,
+        ));
+
+        assert!(windivert_capture_succeeded(&result, None));
+    }
+
+    #[test]
+    fn pktmon_success_does_not_enable_windivert_persistence() {
+        let result: Result<_, String> =
+            Ok(capture_result("pktmon", "port_filtered", "default", 1, 12));
+
+        assert!(!windivert_capture_succeeded(&result, None));
+    }
+
+    #[test]
+    fn windivert_backend_setting_selects_windivert_target_fields() {
+        let detection = nte_capture::PppoeDetection::default();
+        let backend = capture_backend_for_start(true, None);
+        let strategy = capture_strategy_for_start(&detection, backend);
+
+        assert_eq!(backend, CaptureBackend::WinDivert);
+        assert_eq!(capture_interface(backend), "windivert");
+        assert_eq!(
+            capture_bpf(backend, CaptureStrategyKind::PortFiltered, &[30031]),
+            "ip"
+        );
+        assert_eq!(
+            capture_source_kind(backend, false),
+            "windivert-live-capture"
+        );
+        assert_eq!(
+            capture_source_kind(backend, true),
+            "windivert-auto-page-capture"
+        );
+        assert_eq!(strategy.kind, CaptureStrategyKind::NoFilter);
+        assert_eq!(strategy.reason, CaptureStrategyReason::WinDivertBackend);
+    }
+
+    #[test]
+    fn pktmon_backend_setting_keeps_existing_strategy_rules() {
+        let detection = nte_capture::PppoeDetection::default();
+        let backend = capture_backend_for_start(false, None);
+        let strategy = capture_strategy_for_start(&detection, backend);
+
+        assert_eq!(backend, CaptureBackend::Pktmon);
+        assert_eq!(capture_interface(backend), "pktmon");
+        assert_eq!(
+            capture_bpf(backend, CaptureStrategyKind::PortFiltered, &[30031, 30230]),
+            "port 30031 or port 30230"
+        );
+        assert_eq!(capture_source_kind(backend, false), "pktmon-live-capture");
+        assert_eq!(strategy.kind, CaptureStrategyKind::PortFiltered);
+    }
+
+    #[test]
+    fn pppoe_detection_keeps_pktmon_no_filter_fast_path() {
+        let detection = nte_capture::PppoeDetection {
+            detected: true,
+            ..Default::default()
+        };
+        let backend = capture_backend_for_start(false, None);
+        let strategy = capture_strategy_for_start(&detection, backend);
+
+        assert_eq!(backend, CaptureBackend::Pktmon);
+        assert_eq!(strategy.kind, CaptureStrategyKind::NoFilter);
+        assert_eq!(strategy.reason, CaptureStrategyReason::PppoeFastPath);
+    }
+
+    #[test]
+    fn capture_backend_start_override_wins_over_setting() {
+        assert_eq!(
+            capture_backend_for_start(true, Some(CaptureBackendOverride::Pktmon)),
+            CaptureBackend::Pktmon
+        );
+        assert_eq!(
+            capture_backend_for_start(false, Some(CaptureBackendOverride::WinDivert)),
+            CaptureBackend::WinDivert
+        );
+    }
+
+    #[test]
+    fn windivert_unavailable_error_uses_specific_error_code() {
+        let error = capture_backend_runtime_error(
+            "windivert-live-capture",
+            "windivert_unavailable: failed to load WinDivert.dll",
+        );
+
+        assert_eq!(error.code, "windivert_unavailable");
+        assert_eq!(error.message, "failed to load WinDivert.dll");
+    }
+
+    #[test]
     fn capture_start_options_override_page_record_wait() {
         let stop = Arc::new(AtomicBool::new(false));
         let mut options = AutomationOptions::new(123, stop);
@@ -429,6 +645,7 @@ mod tests {
             &mut options,
             &CaptureStartOptions {
                 page_record_min_wait_ms: Some(500),
+                capture_backend: None,
             },
         );
 
@@ -444,6 +661,7 @@ mod tests {
             &mut options,
             &CaptureStartOptions {
                 page_record_min_wait_ms: Some(2000),
+                capture_backend: None,
             },
         );
 
@@ -484,13 +702,16 @@ mod tests {
             last,
         );
 
-        assert!(wait_for_capture_drain(
-            &runtime,
-            &coordinator,
-            &auto_result,
-            &runtime.stop,
-        )
-        .is_none());
+        assert!(
+            wait_for_capture_drain(
+                &runtime,
+                &coordinator,
+                &auto_result,
+                &runtime.stop,
+                &Arc::new(AtomicBool::new(false)),
+            )
+            .is_none()
+        );
     }
 
     fn write_support_bundle(support_dir: &Path, base: &str) {
@@ -529,14 +750,58 @@ mod tests {
                 interface: "test".to_string(),
                 ports: Vec::new(),
                 bpf: String::new(),
-                filter_mode: "port_filtered".to_string(),
+                capture_strategy: "port_filtered".to_string(),
+                strategy_reason: "default".to_string(),
                 pppoe_detection: nte_capture::PppoeDetection::default(),
+                attempts: Vec::new(),
             },
             counters: nte_capture::CaptureCounters::default(),
             new_rows: rows.clone(),
             rows_snapshot: rows.clone(),
             row_count: rows.len(),
             warning_count: 0,
+        }
+    }
+
+    fn capture_result(
+        interface: &str,
+        strategy: &str,
+        reason: &str,
+        rows_count: usize,
+        packets_seen: u64,
+    ) -> nte_capture::CaptureResult {
+        let attempts = vec![nte_capture::CaptureAttemptSummary {
+            attempt_index: 0,
+            capture_strategy: strategy.to_string(),
+            strategy_reason: reason.to_string(),
+            started_at: 1.0,
+            ended_at: 2.0,
+            counters: nte_capture::CaptureCounters {
+                packets_seen,
+                ..Default::default()
+            },
+        }];
+        nte_capture::CaptureResult {
+            target: CaptureTarget {
+                pid: 1,
+                exe: "HTGame.exe".to_string(),
+                interface: interface.to_string(),
+                ports: Vec::new(),
+                bpf: String::new(),
+                capture_strategy: strategy.to_string(),
+                strategy_reason: reason.to_string(),
+                pppoe_detection: nte_capture::PppoeDetection::default(),
+                attempts: attempts.clone(),
+            },
+            counters: nte_capture::CaptureCounters {
+                packets_seen,
+                ..Default::default()
+            },
+            attempts,
+            rows: (0..rows_count)
+                .map(|index| parsed_row("CardPool_NewRole", index as u32))
+                .collect(),
+            warnings: Vec::new(),
         }
     }
 

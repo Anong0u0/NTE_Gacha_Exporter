@@ -356,6 +356,7 @@ fn support_report(
             "mode": request.status.mode,
             "target": request.status.target,
             "counters": request.status.counters,
+            "attempts": request.status.attempts,
             "raw_path_exists": request.status.raw_path.as_ref().map(|path| {
                 let path = Path::new(path);
                 if path.is_absolute() {

@@ -4,11 +4,11 @@ fn run_external_pktmon_capture(
     paths: &SupportPaths,
     ports: &[u16],
     pppoe_detection: PppoeDetection,
-    filter_mode: CaptureFilterMode,
+    strategy: CaptureStrategy,
     duration: Duration,
     stop: Arc<AtomicBool>,
 ) -> ExternalCaptureReport {
-    let mut runner = PktmonRunner::new(paths, pppoe_detection, filter_mode);
+    let mut runner = PktmonRunner::new(paths, pppoe_detection, strategy);
     let staging_dir = external_pktmon_staging_dir();
     let staging_paths = external_staging_paths(paths, &staging_dir);
 
@@ -24,7 +24,7 @@ fn run_external_pktmon_capture(
     }
 
     runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
-    if filter_mode == CaptureFilterMode::PortFiltered {
+    if strategy.kind == CaptureStrategyKind::PortFiltered {
         for port in ports {
             runner.add_port_filters(*port);
         }
@@ -47,6 +47,13 @@ fn run_external_pktmon_capture(
     let started = Instant::now();
     while started.elapsed() < duration && !stop.load(Ordering::SeqCst) {
         std::thread::sleep(Duration::from_millis(250));
+    }
+
+    if stop.load(Ordering::SeqCst) {
+        runner.run(&["stop"], "pktmon.exe stop failed");
+        runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
+        runner.cleanup_staging_files(&staging_paths);
+        return runner.finish();
     }
 
     runner.capture_output(
@@ -83,14 +90,14 @@ struct PktmonRunner<'a> {
     ok: bool,
     error: Option<String>,
     pppoe_detection: PppoeDetection,
-    filter_mode: CaptureFilterMode,
+    strategy: CaptureStrategy,
 }
 
 impl<'a> PktmonRunner<'a> {
     fn new(
         paths: &'a SupportPaths,
         pppoe_detection: PppoeDetection,
-        filter_mode: CaptureFilterMode,
+        strategy: CaptureStrategy,
     ) -> Self {
         Self {
             paths,
@@ -100,7 +107,7 @@ impl<'a> PktmonRunner<'a> {
             ok: true,
             error: None,
             pppoe_detection,
-            filter_mode,
+            strategy,
         }
     }
 
@@ -210,7 +217,8 @@ impl<'a> PktmonRunner<'a> {
             attempted: true,
             ok: self.ok,
             error: self.error,
-            filter_mode: self.filter_mode.as_str().to_string(),
+            capture_strategy: self.strategy.kind.as_str().to_string(),
+            strategy_reason: self.strategy.reason.as_str().to_string(),
             pppoe_detection: self.pppoe_detection,
             etl_path: Some(self.paths.external_etl.to_string_lossy().to_string()),
             pcapng_path: Some(self.paths.external_pcapng.to_string_lossy().to_string()),

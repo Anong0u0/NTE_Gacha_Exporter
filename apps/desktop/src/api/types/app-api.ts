@@ -1,10 +1,11 @@
 import type { AboutLinkTarget, BackupReport, CaptureMode, DoctorReport, ImportReport, MapLocaleList, PoolKind, Profile, RestoreReport, Settings, SettingsPatch } from "./base";
 import type { CaptureStartOptions, CaptureStatus, PendingAdminCapture } from "./capture";
 import type { DashboardOverview, DashboardSelection, DashboardSelectionDetail, PoolKindDetail, ProfileAnalysisView } from "./dashboard";
-import type { DiagnosticStatus, PendingAdminDiagnostic } from "./diagnostic";
+import type { DiagnosticMode, DiagnosticStatus, PendingAdminDiagnostic } from "./diagnostic";
 import type { AssetResolveRequest, AssetResolveResult } from "./assets-pack";
 import type { RecordFilter, RecordFilterOptions, RecordList } from "./records";
 import type { UpdateCheckReport, UpdatePackage, UpdateStageReport, UpdateStatus } from "./update";
+import type { WinDivertInstallReport, WinDivertInstallStatus } from "./windivert";
 
 export type AppApi = {
   getSettings(): Promise<Settings>;
@@ -38,14 +39,16 @@ export type AppApi = {
   updaterDownloadAndStage(packageInfo: UpdatePackage): Promise<UpdateStageReport>;
   updaterInstallStaged(version: string, relaunch?: boolean): Promise<void>;
   assetsResolveRefs(refs: AssetResolveRequest[]): Promise<AssetResolveResult[]>;
+  windivertStatus(checkLoad?: boolean): Promise<WinDivertInstallStatus>;
+  windivertInstall(): Promise<WinDivertInstallReport>;
   requestAdminCaptureStart(profileName: string, locale?: string, mode?: CaptureMode, options?: CaptureStartOptions): Promise<boolean>;
   takePendingAdminCapture(): Promise<PendingAdminCapture | null>;
-  requestAdminDiagnosticStart(durationSeconds?: number): Promise<boolean>;
+  requestAdminDiagnosticStart(durationSeconds?: number, mode?: DiagnosticMode): Promise<boolean>;
   takePendingAdminDiagnostic(): Promise<PendingAdminDiagnostic | null>;
   captureStart(profileName: string, locale?: string, mode?: CaptureMode, options?: CaptureStartOptions): Promise<CaptureStatus>;
   captureStatus(sessionId: string): Promise<CaptureStatus>;
   captureStop(sessionId: string): Promise<CaptureStatus>;
-  diagnosticStart(durationSeconds?: number): Promise<DiagnosticStatus>;
+  diagnosticStart(durationSeconds?: number, mode?: DiagnosticMode): Promise<DiagnosticStatus>;
   diagnosticStatus(sessionId: string): Promise<DiagnosticStatus>;
   diagnosticCancel(sessionId: string): Promise<DiagnosticStatus>;
 };

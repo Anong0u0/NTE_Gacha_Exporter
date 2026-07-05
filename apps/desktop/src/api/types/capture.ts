@@ -1,6 +1,6 @@
 import type { CaptureMode, ImportReport } from "./base";
 
-type CaptureState = "starting" | "running" | "stopping" | "completed" | "failed";
+type CaptureState = "starting" | "running" | "stopping" | "completed" | "failed" | "cancelled";
 
 type CaptureCounters = {
   packets_seen: number;
@@ -15,6 +15,19 @@ type CaptureTarget = {
   interface?: string;
   ports?: number[];
   bpf?: string;
+  capture_strategy?: string;
+  strategy_reason?: string;
+  pppoe_detection?: Record<string, unknown>;
+  attempts?: CaptureAttemptSummary[];
+};
+
+type CaptureAttemptSummary = {
+  attempt_index: number;
+  capture_strategy: string;
+  strategy_reason: string;
+  started_at: number;
+  ended_at: number;
+  counters: CaptureCounters;
 };
 
 type AutoPageStatus = {
@@ -37,6 +50,7 @@ export type CaptureStatus = {
   records_count: number;
   latest_records: Record<string, unknown>[];
   counters: CaptureCounters;
+  attempts?: CaptureAttemptSummary[];
   started_at: number;
   updated_at: number;
   target?: CaptureTarget | null;
@@ -53,6 +67,7 @@ export type CaptureStatus = {
 
 export type CaptureStartOptions = {
   page_record_min_wait_ms?: number;
+  capture_backend?: "pktmon" | "windivert";
 };
 
 export type PendingAdminCapture = {

@@ -38,6 +38,7 @@
 
 - `自動翻頁`：預設增量更新，遇到既有紀錄後跳過該池。
 - `完整更新`：重新翻閱全部頁面，匯入前會建立備份；資料仍依紀錄合併。
+- `WinDivert 抓包`：改用 WinDivert network layer 擷取，適用於 VPN、代理等 pktmon 無法解碼的網路。
 
 使用自動翻頁前請讓遊戲停在 F3 抽卡主頁，且左下文件圖示與弧盤研募入口可見。
 執行時，工具會操作前台遊戲視窗與滑鼠，請避免手動操作干擾。需要中止時可按 Esc。
@@ -46,6 +47,7 @@ CLI Examples:
 
 ```powershell
 .\nte-gacha-exporter-cli.exe capture --output-raw --json .\output\history.json --csv .\output\history.csv
+.\nte-gacha-exporter-cli.exe capture --windivert --install-windivert --output-raw --json .\output\history.json --csv .\output\history.csv
 .\nte-gacha-exporter-cli.exe replay .\output\raw-260611-153012.jsonl --json .\output\history.json --csv .\output\history.csv
 .\nte-gacha-exporter-cli.exe doctor
 ```
@@ -87,13 +89,13 @@ JSON/CSV 會依選用語系輸出本地化欄位名稱。
 
 ## 疑難排解
 
-設定頁的「診斷」會檢查 Windows、管理員權限、`HTGame.exe` 與 ports 狀態。擷取或自動翻頁失敗時，狀態視窗可能顯示 raw / support 路徑；回報問題時可附上 `data/support/capture-*.json`，頁碼辨識問題可能另有 `*-page-number.png`。
+設定頁的「診斷」會檢查 Windows、管理員權限、`HTGame.exe`、ports 與 PPPoE 狀態。擷取或自動翻頁失敗時，狀態視窗可能顯示 raw / support 路徑；回報問題時可附上 `data/support/capture-*.json`，頁碼辨識問題可能另有 `*-page-number.png`。
 
 ### Could not find the WebView2 Runtime.
 
 App 依賴 Windows 系統級的 WebView2，請[前往下載](https://developer.microsoft.com/microsoft-edge/webview2/#download)並安裝。
 
-### `pktmon capture requires administrator privilege`
+### `capture requires administrator privilege`
 
 用管理員權限重新開啟工具。
 
@@ -103,7 +105,7 @@ App 依賴 Windows 系統級的 WebView2，請[前往下載](https://developer.m
 
 ### 沒有寫出紀錄
 
-開啟遊戲內抽卡歷史紀錄畫面，讓遊戲送出相關封包；若仍沒有紀錄，切換網路環境或重新啟動遊戲後再試。
+開啟遊戲內抽卡歷史紀錄畫面，讓遊戲送出相關封包；若使用 VPN 或代理，可開啟「WinDivert 抓包」。
 
 ## 開發
 

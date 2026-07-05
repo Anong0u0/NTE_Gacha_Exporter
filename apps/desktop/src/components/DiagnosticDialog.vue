@@ -8,7 +8,7 @@ const app = useAppContext();
 const isActive = computed(() => app.isDiagnosticActive);
 const progressPercent = computed(() => Math.round((app.diagnosticStatus?.progress ?? 0) * 100));
 const elapsed = computed(() => Math.round(app.diagnosticStatus?.elapsed_seconds ?? 0));
-const duration = computed(() => app.diagnosticStatus?.duration_seconds ?? 30);
+const duration = computed(() => app.diagnosticStatus?.duration_seconds ?? 20);
 </script>
 
 <template>
@@ -81,9 +81,13 @@ const duration = computed(() => app.diagnosticStatus?.duration_seconds ?? 30);
           </button>
 
           <div>
-            <button v-if="!app.diagnosticStatus" class="primary" type="button" :disabled="app.diagnosticActionBusy" @click="app.confirmDiagnosticPrompt">
+            <button v-if="!app.diagnosticStatus" type="button" :disabled="app.diagnosticActionBusy" @click="app.confirmDiagnosticPrompt('pktmon')">
               <Play :size="17" />
-              <span>{{ app.t("diagnostic.start") }}</span>
+              <span>{{ app.t("diagnostic.startPktmon") }}</span>
+            </button>
+            <button v-if="!app.diagnosticStatus" class="primary" type="button" :disabled="app.diagnosticActionBusy" @click="app.confirmDiagnosticPrompt('windivert')">
+              <Play :size="17" />
+              <span>{{ app.t("diagnostic.startWinDivert") }}</span>
             </button>
           </div>
         </div>

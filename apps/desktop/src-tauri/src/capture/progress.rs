@@ -60,49 +60,27 @@ struct LiveProgressUpdate {
 
 fn finish_capture_result(
     runtime: &Arc<CaptureRuntimeSession>,
-    result: Result<nte_capture::CaptureResult, String>,
-    locale: &str,
-    source_kind: &str,
-    auto_page: Option<Value>,
-    auto_error: Option<RuntimeError>,
-    auto_result: Option<&AutoPageRunResult>,
+    input: FinishCaptureInput<'_>,
 ) {
     let mut final_status = runtime.status.lock().expect("capture status lock");
-    let now = now_seconds();
-    match result {
-        Ok(result) => match build_capture_document(&result.rows, locale) {
-            Ok(document) => {
-                let latest = latest_records_from_capture_document(&document);
-                final_status.records_count = result.rows.len() as u64;
-                final_status.latest_records = latest;
-                final_status.counters = CaptureCounters::from(result.counters);
-                final_status.target = serde_json::to_value(result.target).ok();
-                final_status.state = if auto_error.is_some() {
-                    "failed".to_string()
-                } else {
-                    "completed".to_string()
-                };
-                final_status.auto_page = auto_page;
-                final_status.error = auto_error;
-                final_status.document = Some(document);
-                final_status.import_report = None;
-            }
-            Err(error) => {
-                final_status.state = "failed".to_string();
-                final_status.error = Some(runtime_error("capture_document_failed", error.to_string()));
-            }
-        },
-        Err(message) => {
-            final_status.state = "failed".to_string();
-            final_status.error = Some(runtime_error(source_kind, message));
-            final_status.auto_page = auto_page;
-        }
-    }
-    final_status.updated_at = now;
-    if final_status.state == "failed" {
+    let finish = classify_capture_finish(
+        input.result,
+        input.locale,
+        input.source_kind,
+        input.auto_error,
+        input.cancel_requested,
+    );
+    apply_capture_finish_status(&mut final_status, finish, input.auto_page);
+    final_status.updated_at = now_seconds();
+    if final_status.state == crate::lifecycle::STATE_FAILED {
         let root = portable_root();
         match root {
-            Ok(root) => attach_capture_support(&root, &mut final_status, source_kind, auto_result),
+            Ok(root) => attach_capture_support(
+                &root,
+                &mut final_status,
+                input.source_kind,
+                input.auto_result,
+            ),
             Err(error) => {
                 if let Some(runtime_error) = final_status.error.as_mut() {
                     runtime_error.message =
@@ -111,6 +89,198 @@ fn finish_capture_result(
             }
         }
     }
+}
+
+struct FinishCaptureInput<'a> {
+    result: Result<nte_capture::CaptureResult, String>,
+    locale: &'a str,
+    source_kind: &'a str,
+    auto_page: Option<Value>,
+    auto_error: Option<RuntimeError>,
+    auto_result: Option<&'a AutoPageRunResult>,
+    cancel_requested: bool,
+}
+
+enum CaptureFinish {
+    Completed {
+        result: nte_capture::CaptureResult,
+        document: Value,
+    },
+    Failed {
+        result: Option<nte_capture::CaptureResult>,
+        error: RuntimeError,
+    },
+    Cancelled {
+        result: Option<nte_capture::CaptureResult>,
+    },
+}
+
+fn classify_capture_finish(
+    result: Result<nte_capture::CaptureResult, String>,
+    locale: &str,
+    source_kind: &str,
+    auto_error: Option<RuntimeError>,
+    cancel_requested: bool,
+) -> CaptureFinish {
+    match result {
+        Ok(result) => {
+            if let Some(error) = auto_error {
+                let error = auto_page_stalled_capture_path_error(&result, &error).unwrap_or(error);
+                return if cancel_requested {
+                    CaptureFinish::Cancelled {
+                        result: Some(result),
+                    }
+                } else {
+                    CaptureFinish::Failed {
+                        result: Some(result),
+                        error,
+                    }
+                };
+            }
+            if let Some(error) = zero_decode_runtime_error(&result) {
+                return if cancel_requested {
+                    CaptureFinish::Cancelled {
+                        result: Some(result),
+                    }
+                } else {
+                    CaptureFinish::Failed {
+                        result: Some(result),
+                        error,
+                    }
+                };
+            }
+            match build_capture_document(&result.rows, locale) {
+                Ok(document) => CaptureFinish::Completed { result, document },
+                Err(_) if cancel_requested => CaptureFinish::Cancelled {
+                    result: Some(result),
+                },
+                Err(error) => CaptureFinish::Failed {
+                    result: Some(result),
+                    error: runtime_error("capture_document_failed", error.to_string()),
+                },
+            }
+        }
+        Err(_) if cancel_requested => CaptureFinish::Cancelled { result: None },
+        Err(message) => CaptureFinish::Failed {
+            result: None,
+            error: capture_backend_runtime_error(source_kind, &message),
+        },
+    }
+}
+
+fn apply_capture_finish_status(
+    final_status: &mut CaptureStatus,
+    finish: CaptureFinish,
+    auto_page: Option<Value>,
+) {
+    match finish {
+        CaptureFinish::Completed { result, document } => {
+            let latest = latest_records_from_capture_document(&document);
+            final_status.records_count = result.rows.len() as u64;
+            final_status.latest_records = latest;
+            final_status.counters = CaptureCounters::from(result.counters);
+            final_status.attempts = result.attempts.clone();
+            final_status.target = serde_json::to_value(result.target).ok();
+            final_status.state = crate::lifecycle::STATE_COMPLETED.to_string();
+            final_status.auto_page = auto_page;
+            final_status.error = None;
+            final_status.document = Some(document);
+            final_status.import_report = None;
+        }
+        CaptureFinish::Failed { result, error } => {
+            if let Some(result) = result {
+                final_status.records_count = result.rows.len() as u64;
+                final_status.latest_records = Vec::new();
+                final_status.counters = CaptureCounters::from(result.counters);
+                final_status.attempts = result.attempts.clone();
+                final_status.target = serde_json::to_value(result.target).ok();
+            }
+            final_status.state = crate::lifecycle::STATE_FAILED.to_string();
+            final_status.auto_page = auto_page;
+            final_status.error = Some(error);
+            final_status.document = None;
+            final_status.import_report = None;
+        }
+        CaptureFinish::Cancelled { result } => {
+            if let Some(result) = result {
+                final_status.records_count = result.rows.len() as u64;
+                final_status.latest_records = Vec::new();
+                final_status.counters = CaptureCounters::from(result.counters);
+                final_status.attempts = result.attempts.clone();
+                final_status.target = serde_json::to_value(result.target).ok();
+            }
+            final_status.state = crate::lifecycle::STATE_CANCELLED.to_string();
+            final_status.auto_page = auto_page;
+            final_status.error = None;
+            final_status.document = None;
+            final_status.import_report = None;
+        }
+    }
+}
+
+fn capture_backend_runtime_error(source_kind: &str, message: &str) -> RuntimeError {
+    const WINDIVERT_UNAVAILABLE: &str = "windivert_unavailable";
+    if let Some(detail) = message.strip_prefix(WINDIVERT_UNAVAILABLE) {
+        let detail = detail.trim_start_matches(':').trim();
+        return runtime_error(
+            WINDIVERT_UNAVAILABLE,
+            if detail.is_empty() { message } else { detail }.to_string(),
+        );
+    }
+    runtime_error(source_kind, message.to_string())
+}
+
+fn auto_page_stalled_capture_path_error(
+    result: &nte_capture::CaptureResult,
+    error: &RuntimeError,
+) -> Option<RuntimeError> {
+    if error.code != AUTO_PAGE_CAPTURE_WINDOW_STALLED_CODE
+        || !result.rows.is_empty()
+        || result.counters.decoded_packets > 0
+    {
+        return None;
+    }
+    if result.target.interface == "windivert" {
+        if result.counters.packets_seen > 0 {
+            return Some(runtime_error(
+                "windivert_no_decode",
+                format!(
+                    "WinDivert saw packets but no decodable NTE records were found; auto_page_stalled: {}",
+                    error.message
+                ),
+            ));
+        }
+        return None;
+    }
+    Some(runtime_error(
+        "vpn_proxy_suspected",
+        format!(
+            "auto-page stalled with no decoded NTE records through pktmon; packets_seen={}; auto_page_stalled: {}",
+            result.counters.packets_seen, error.message
+        ),
+    ))
+}
+
+fn zero_decode_runtime_error(result: &nte_capture::CaptureResult) -> Option<RuntimeError> {
+    if !result.rows.is_empty() || result.counters.decoded_packets > 0 {
+        return None;
+    }
+    if result.counters.packets_seen == 0 {
+        return Some(runtime_error(
+            "no_packets_seen",
+            "no packets seen during capture",
+        ));
+    }
+    if result.target.interface == "windivert" {
+        return Some(runtime_error(
+            "windivert_no_decode",
+            "WinDivert saw packets but no decodable NTE records were found",
+        ));
+    }
+    Some(runtime_error(
+        "vpn_proxy_suspected",
+        "packets seen but no decodable NTE records were found through pktmon",
+    ))
 }
 
 fn automation_snapshot(

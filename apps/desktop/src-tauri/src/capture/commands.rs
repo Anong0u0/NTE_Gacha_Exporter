@@ -11,7 +11,7 @@ pub(crate) fn capture_start(
     if admin_relaunch_required()? {
         return Err(api_error_message(
             "admin_required",
-            "pktmon capture requires administrator permission",
+            "capture requires administrator permission",
         ));
     }
     let locale = with_store(&state, |store| {
@@ -50,7 +50,7 @@ pub(crate) fn capture_start(
                 import_report: None,
             },
         );
-    if status.state == "completed" {
+    if status.state == crate::lifecycle::STATE_COMPLETED {
         return capture_status_with_merge(&state, &status.session_id);
     }
     Ok(status)
@@ -71,13 +71,18 @@ pub(crate) fn capture_stop(
 ) -> Result<CaptureStatus, ApiError> {
     let session = capture_runtime_session(&state, &session_id)?;
     session.stop.store(true, Ordering::SeqCst);
+    if let Ok(guard) = session.attempt_stop.lock() {
+        if let Some(stop) = guard.as_ref() {
+            stop.store(true, Ordering::SeqCst);
+        }
+    }
     {
         let mut status = session
             .status
             .lock()
             .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
-        if matches!(status.state.as_str(), "starting" | "running") {
-            status.state = "stopping".to_string();
+        if crate::lifecycle::is_active_state(&status.state) {
+            crate::lifecycle::set_stopping(&mut status.state);
             status.updated_at = now_seconds();
         }
     }

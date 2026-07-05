@@ -11,11 +11,12 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use nte_capture::{
-    CaptureFilterMode, DiagnosticCaptureCounters, DiagnosticCaptureOptions,
-    DiagnosticCaptureResult, DiagnosticCaptureSummary, PppoeDetection, candidate_ports,
-    detect_pppoe, find_process_pids, is_admin, run_diagnostic_capture,
+    CaptureBackend, CaptureOptions, CaptureStrategy, CaptureStrategyKind,
+    DiagnosticCaptureCounters, DiagnosticCaptureOptions, DiagnosticCaptureResult,
+    DiagnosticCaptureSummary, PppoeDetection, candidate_ports, capture_live, detect_pppoe,
+    find_process_pids, is_admin, run_diagnostic_capture,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 use zip::{CompressionMethod, ZipWriter, write::FileOptions};
 
@@ -23,7 +24,7 @@ use crate::admin::admin_relaunch_required;
 use crate::error::{ApiError, RuntimeError, api_error_message};
 use crate::state::{AppState, new_named_session_id, now_seconds, portable_root};
 
-const DEFAULT_DIAGNOSTIC_DURATION_SECONDS: u64 = 30;
+const DEFAULT_DIAGNOSTIC_DURATION_SECONDS: u64 = 20;
 const MIN_DIAGNOSTIC_DURATION_SECONDS: u64 = 5;
 const MAX_DIAGNOSTIC_DURATION_SECONDS: u64 = 120;
 const DIAGNOSTIC_SESSION_RETENTION_SECONDS: f64 = 30.0 * 60.0;

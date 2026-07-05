@@ -9,11 +9,30 @@ fn replay(args: ReplayArgs) -> CliResult<()> {
 }
 
 fn capture(args: CaptureArgs) -> CliResult<()> {
+    if args.install_windivert && !args.windivert {
+        return Err(CliError::new(
+            2,
+            "--install-windivert must be used with --windivert",
+        ));
+    }
     if relaunch_capture_as_admin()? {
         return Ok(());
     }
     let locale = args.output.locale.clone();
     let verbose = args.verbose;
+    let backend = if args.windivert {
+        CaptureBackend::WinDivert
+    } else {
+        CaptureBackend::Pktmon
+    };
+    if args.install_windivert {
+        install_windivert_runtime()?;
+    } else if backend == CaptureBackend::WinDivert && !windivert_installed() {
+        return Err(CliError::new(
+            3,
+            "WinDivert is not installed; rerun with --windivert --install-windivert",
+        ));
+    }
     let pid = match args.pid {
         Some(pid) => pid,
         None => find_process_pid(EXE_NAME)
@@ -22,8 +41,15 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
     };
     let ports = candidate_ports(pid).map_err(CliError::from_error)?;
     let pppoe_detection = detect_pppoe();
-    let filter_mode = CaptureFilterMode::for_pppoe_detection(&pppoe_detection);
-    if ports.is_empty() && filter_mode == CaptureFilterMode::PortFiltered {
+    let strategy = if backend == CaptureBackend::WinDivert {
+        CaptureStrategy::no_filter(nte_capture::CaptureStrategyReason::WinDivertBackend)
+    } else {
+        CaptureStrategy::for_pppoe_detection(&pppoe_detection)
+    };
+    if backend == CaptureBackend::Pktmon
+        && ports.is_empty()
+        && strategy.kind == CaptureStrategyKind::PortFiltered
+    {
         return Err(CliError::new(
             3,
             format!("no candidate ports found for pid={pid}"),
@@ -51,6 +77,8 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
             pid,
             ports,
             pppoe_detection,
+            backend,
+            strategy,
             output_raw,
             json,
             csv,
@@ -71,7 +99,11 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
                 exe: EXE_NAME.to_string(),
                 ports,
                 pppoe_detection: Some(pppoe_detection),
+                backend,
+                strategy: Some(strategy),
                 raw_out: output_raw.clone(),
+                raw_append: false,
+                windivert_dir: windivert_dir_for_backend(backend),
                 max_packets: 0,
                 max_decoded: 0,
                 on_progress: Some(progress_callback(&locale, verbose)),
@@ -86,10 +118,51 @@ fn capture(args: CaptureArgs) -> CliResult<()> {
     }
 }
 
+fn windivert_dir_for_backend(backend: CaptureBackend) -> Option<PathBuf> {
+    if backend == CaptureBackend::WinDivert {
+        return Some(nte_capture::windivert::windivert_install_dir(
+            &portable_root(),
+        ));
+    }
+    None
+}
+
+fn windivert_installed() -> bool {
+    nte_capture::windivert::windivert_status(&portable_root(), false).installed
+}
+
+fn install_windivert_runtime() -> CliResult<()> {
+    let report =
+        nte_capture::windivert::install_windivert(&portable_root()).map_err(|message| {
+            CliError::new(
+                3,
+                format!("WinDivert install failed: {message}"),
+            )
+        })?;
+    println!("windivert_installed={}", report.status.install_dir);
+    println!("windivert_sha256={}", report.verified_sha256);
+    Ok(())
+}
+
+fn portable_root() -> PathBuf {
+    std::env::var_os("NTE_GACHA_EXPORTER_PORTABLE_ROOT")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|path| path.parent().map(PathBuf::from))
+        })
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
 struct AutoCaptureContext {
     pid: u32,
     ports: Vec<u16>,
     pppoe_detection: nte_capture::PppoeDetection,
+    backend: CaptureBackend,
+    strategy: CaptureStrategy,
     output_raw: Option<PathBuf>,
     json: PathBuf,
     csv: PathBuf,
@@ -104,6 +177,8 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
         pid,
         ports,
         pppoe_detection,
+        backend,
+        strategy,
         output_raw,
         json,
         csv,
@@ -128,7 +203,11 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
                 exe: EXE_NAME.to_string(),
                 ports,
                 pppoe_detection: Some(pppoe_detection),
+                backend,
+                strategy: Some(strategy),
                 raw_out: capture_raw,
+                raw_append: false,
+                windivert_dir: windivert_dir_for_backend(backend),
                 max_packets: 0,
                 max_decoded: 0,
                 on_progress: Some(progress),

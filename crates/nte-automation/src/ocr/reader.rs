@@ -182,11 +182,7 @@ impl PageNumberReader {
 
         let error = format!(
             "cannot read page number: {}",
-            attempts
-                .iter()
-                .filter_map(|attempt| attempt.error.as_deref())
-                .collect::<Vec<_>>()
-                .join("; ")
+            summarize_attempt_errors(&attempts)
         );
         (
             Err(AutomationError::message(&error)),
@@ -311,6 +307,31 @@ impl PageNumberReader {
         sequences.truncate(64);
         sequences
     }
+}
+
+fn summarize_attempt_errors(attempts: &[OcrAttemptDiagnostic]) -> String {
+    let mut summary = Vec::<(String, usize)>::new();
+    for error in attempts.iter().filter_map(|attempt| attempt.error.as_deref()) {
+        if let Some((_, count)) = summary.iter_mut().find(|(seen, _)| seen == error) {
+            *count += 1;
+        } else {
+            summary.push((error.to_string(), 1));
+        }
+    }
+    if summary.is_empty() {
+        return "no OCR attempts produced a page candidate".to_string();
+    }
+    summary
+        .into_iter()
+        .map(|(error, count)| {
+            if count > 1 {
+                format!("{error} (x{count})")
+            } else {
+                error
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 fn component_split_counts(component: TextComponent) -> Vec<usize> {
