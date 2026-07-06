@@ -22,7 +22,6 @@ fn fork_banner_asset_refs(normalized_items: &JsonObject, rate_up_5: &[String]) -
 }
 
 fn standard_banner(
-    locale: &str,
     localization: &Localization,
     standard_5_pool: Vec<String>,
     standard_4_pool: Vec<String>,
@@ -60,16 +59,6 @@ fn standard_banner(
         "rule_id".to_string(),
         Value::String("monopoly_standard".to_string()),
     );
-    banner.insert(
-        "source".to_string(),
-        source_evidence(
-            &[
-                MONOPOLY_LOTTERY_TABLE.to_string(),
-                format!("Localization/{locale}/game.json"),
-            ],
-            &["Standard pool uses the available monopoly lottery table; banner instance is not explicit."],
-        ),
-    );
     Some(banner)
 }
 
@@ -88,6 +77,7 @@ fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, Gui
     let mut banners = JsonObject::new();
     for banner in limited_monopoly_banners(
         ctx.assets_root,
+        ctx.locale,
         ctx.localization,
         ctx.canonicalizer,
         Some(ctx.known_item_ids),
@@ -125,14 +115,13 @@ fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, Gui
             Value::String("limited".to_string()),
         );
         entry.insert("title".to_string(), Value::String(banner.title));
-        entry.insert(
-            "end_at".to_string(),
-            Value::String(banner.end_at_tz8.clone()),
-        );
-        entry.insert(
-            "timezone".to_string(),
-            Value::String("Asia/Shanghai".to_string()),
-        );
+        if let Some(end_at) = banner.end_at_tz8 {
+            entry.insert("end_at".to_string(), Value::String(end_at));
+            entry.insert(
+                "timezone".to_string(),
+                Value::String("Asia/Shanghai".to_string()),
+            );
+        }
         entry.insert(
             "rate_up_5".to_string(),
             Value::Array(rate_up_5.into_iter().map(Value::String).collect()),
@@ -161,20 +150,6 @@ fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, Gui
         entry.insert(
             "rule_id".to_string(),
             Value::String("monopoly_limited".to_string()),
-        );
-        entry.insert(
-            "source".to_string(),
-            source_evidence(
-                &[
-                    MONOPOLY_LOTTERY_TABLE.to_string(),
-                    MONOPOLY_CELL_TABLE.to_string(),
-                    INVENTORY_TABLE.to_string(),
-                    CHARACTER_TABLE.to_string(),
-                    COMBAT_AWARD_TABLE.to_string(),
-                    format!("Localization/{}/game.json", ctx.locale),
-                ],
-                &["Limited banner order, rate-up role, and schedule are inferred from asset tables."],
-            ),
         );
         if let Some(start_at) = banner.start_at_tz8 {
             entry.insert("start_at".to_string(), Value::String(start_at));
@@ -223,10 +198,6 @@ fn fork_banners(
             "rule_id".to_string(),
             Value::String("fork_lottery_s".to_string()),
         );
-        banner.insert(
-            "source".to_string(),
-            source_evidence(&[FORK_POOL_TABLE.to_string()], &[]),
-        );
         let refs = fork_banner_asset_refs(normalized_items, &rate_up_5);
         if !refs.is_empty() {
             banner.insert("asset_refs".to_string(), Value::Object(refs));
@@ -267,7 +238,6 @@ fn build_banners(
     let standard_4_pool = lottery_item_ids(assets_root, "SRItems", canonicalizer, &known_item_ids)?;
     let mut banners = JsonObject::new();
     if let Some(standard) = standard_banner(
-        locale,
         localization,
         standard_5_pool.clone(),
         standard_4_pool.clone(),

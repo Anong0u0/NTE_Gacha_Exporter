@@ -86,6 +86,32 @@ mod tests {
     }
 
     #[test]
+    fn status_message_uses_label_when_available() {
+        let labels = BTreeMap::from([(
+            "ui_forkshop_03".to_string(),
+            "Arc Research".to_string(),
+        )]);
+
+        let status =
+            StatusEvent::new("template verified", "template").step("arcResearch").to_status(
+                1.0,
+                &labels,
+            );
+
+        assert_eq!(status.message, "Arc Research");
+        assert_eq!(status.technical_detail, "");
+    }
+
+    #[test]
+    fn status_message_keeps_english_when_label_missing() {
+        let status = StatusEvent::new("template verified", "template")
+            .step("arcResearch")
+            .to_status(1.0, &BTreeMap::new());
+
+        assert_eq!(status.message, "template verified");
+    }
+
+    #[test]
     fn page_context_rect_expands_to_include_cursor_with_margin() {
         let page_rect = crate::model::Rect {
             x: 100,

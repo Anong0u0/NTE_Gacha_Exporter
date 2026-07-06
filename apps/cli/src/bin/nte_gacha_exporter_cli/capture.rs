@@ -220,6 +220,7 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
     options.full_update = true;
     options.non_interactive = true;
     options.tooltip = false;
+    options.labels = auto_page_labels(&locale);
     options.on_status = Some(Arc::new(print_auto_status));
     let auto_result = run_auto_page(options);
     println!(
@@ -242,4 +243,10 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
     } else {
         Err(CliError::new(2, auto_result.message))
     }
+}
+
+fn auto_page_labels(locale: &str) -> BTreeMap<String, String> {
+    load_map(locale)
+        .map(|map| map.labels)
+        .unwrap_or_else(|_| BTreeMap::new())
 }

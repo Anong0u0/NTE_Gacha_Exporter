@@ -11,6 +11,21 @@ fn required_item_refs(
     Ok(dedupe_item_refs(refs))
 }
 
+fn is_excluded_catalog_item_id(item_id: &str) -> bool {
+    item_id.starts_with("Characterawaken_")
+}
+
+fn is_excluded_catalog_item_ref(item_ref: &ItemRef) -> bool {
+    is_excluded_catalog_item_id(&item_ref.id) || is_excluded_catalog_item_id(&item_ref.raw_id)
+}
+
+fn filter_catalog_item_refs(item_refs: Vec<ItemRef>) -> Vec<ItemRef> {
+    item_refs
+        .into_iter()
+        .filter(|item_ref| !is_excluded_catalog_item_ref(item_ref))
+        .collect()
+}
+
 fn inventory_prefix(
     row: &JsonObject,
     localization: &Localization,
@@ -28,7 +43,7 @@ fn item_build_context(
         known_item_id_priorities(assets_root, &localization)?,
         &localization,
     );
-    let item_refs = required_item_refs(assets_root, &canonicalizer)?;
+    let item_refs = filter_catalog_item_refs(required_item_refs(assets_root, &canonicalizer)?);
     let required_item_ids = item_refs
         .iter()
         .map(|item_ref| item_ref.id.clone())

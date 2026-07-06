@@ -82,7 +82,7 @@ mod tests {
                 "outside",
                 "CardPool_Character",
                 "fork_dustbin",
-                "2026-07-08 05:59:01",
+                "2026-08-19 05:59:01",
             ),
         )
         .expect("fallback rule should resolve");

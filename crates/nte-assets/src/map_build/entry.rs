@@ -79,7 +79,7 @@ pub fn build_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiErr
     let localization = load_localization(assets_root, locale)?;
     let (items, item_ctx) = build_item_data(assets_root, localization)?;
     let (pools, mut pool_meta) =
-        build_pools(assets_root, &item_ctx.localization, &item_ctx.canonicalizer)?;
+        build_pools(assets_root, locale, &item_ctx.localization, &item_ctx.canonicalizer)?;
     let item_meta = build_item_meta_rows(assets_root, &items, &item_ctx.canonicalizer)?;
     let normalized_items = normalized_items(&items, &item_meta);
     let banners = build_banners(
@@ -123,4 +123,3 @@ pub fn build_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiErr
     validate_map_source(&value, &format!("{locale}.json"))?;
     Ok(value)
 }
-

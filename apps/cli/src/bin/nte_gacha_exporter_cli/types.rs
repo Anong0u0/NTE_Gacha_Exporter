@@ -1,5 +1,6 @@
 #[cfg(windows)]
 use std::ffi::{OsStr, OsString};
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
@@ -23,7 +24,7 @@ use nte_capture::{
     CaptureStrategyKind, ParsedRow, build_capture_document, candidate_ports, capture_doctor,
     capture_live, detect_pppoe, find_process_pid, is_admin, read_raw_capture,
 };
-use nte_core::available_locales;
+use nte_core::{available_locales, load_map};
 use nte_store::JsonStore;
 
 const DEFAULT_LOCALE: &str = "zh-Hant";

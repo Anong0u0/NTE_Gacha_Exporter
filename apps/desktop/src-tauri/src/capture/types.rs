@@ -19,7 +19,7 @@ use nte_capture::{
     CaptureStrategyKind, CaptureStrategyReason, CaptureTarget, build_capture_document,
     candidate_ports, capture_live, detect_pppoe, find_process_pid,
 };
-use nte_core::{ImportReport, SettingsPatch};
+use nte_core::{ImportReport, SettingsPatch, load_map};
 use nte_store::load_locale_or_settings;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};

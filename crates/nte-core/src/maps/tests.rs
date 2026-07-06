@@ -110,6 +110,11 @@ mod tests {
             ("2026-06-03 05:59:01", "monopoly_limited_AnHunQu"),
             ("2026-06-24 05:59:00", "monopoly_limited_AnHunQu"),
             ("2026-06-24 05:59:01", "monopoly_limited_Kaesi"),
+            ("2026-07-08 05:59:00", "monopoly_limited_Kaesi"),
+            ("2026-07-08 05:59:01", "monopoly_limited_ZhenHong"),
+            ("2026-07-29 05:59:00", "monopoly_limited_ZhenHong"),
+            ("2026-07-29 05:59:01", "monopoly_limited_Yiluoyi"),
+            ("2026-08-19 05:59:00", "monopoly_limited_Yiluoyi"),
         ] {
             let resolved = map.resolve_banner("CardPool_Character", Some(record_time));
             assert_eq!(resolved.resolution_issue, None);
@@ -134,16 +139,16 @@ mod tests {
             Some(BannerResolutionIssue::UnknownTime)
         );
         assert_eq!(
-            map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"))
+            map.resolve_banner("CardPool_Character", Some("2026-08-19 05:59:01"))
                 .resolution_issue,
             Some(BannerResolutionIssue::OutsideKnownWindows)
         );
-        let unresolved = map.resolve_banner("CardPool_Character", Some("2026-07-08 05:59:01"));
+        let unresolved = map.resolve_banner("CardPool_Character", Some("2026-08-19 05:59:01"));
         assert_eq!(unresolved.banner_id.as_deref(), Some("CardPool_Character"));
         assert!(unresolved.asset_refs.is_empty());
         assert_eq!(unresolved.version, None);
         assert_eq!(
-            map.pool_label("CardPool_Character", Some("2026-07-08 05:59:01")),
+            map.pool_label("CardPool_Character", Some("2026-08-19 05:59:01")),
             "限定棋盤"
         );
         assert_eq!(

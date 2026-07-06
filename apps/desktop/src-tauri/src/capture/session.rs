@@ -230,6 +230,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         let mut options = AutomationOptions::new(pid, Arc::clone(&attempt_stop));
         options.full_update = mode.full_update();
         options.non_interactive = true;
+        options.labels = auto_page_labels(&locale);
         apply_capture_start_options(&mut options, &start_options);
         options.control = Some(control);
         options.on_status = Some(auto_status_callback);
@@ -399,6 +400,12 @@ fn apply_attempts_to_result(
         result.target.attempts = attempts.to_vec();
         result
     })
+}
+
+fn auto_page_labels(locale: &str) -> BTreeMap<String, String> {
+    load_map(locale)
+        .map(|map| map.labels)
+        .unwrap_or_else(|_| BTreeMap::new())
 }
 
 fn finish_auto_page_terminal(pid: u32, stopped_by_user: bool, app: &AppHandle<Wry>) {

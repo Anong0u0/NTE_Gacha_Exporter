@@ -238,7 +238,7 @@ fn hit_rarity_for_pity(item: Option<&MapItem>, pool_kind: PoolKind) -> Option<u8
         PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => "character",
     };
     let matches_domain = item.category.as_deref() == Some(expected_domain)
-        || item.domain_type.as_deref() == Some(expected_domain);
+        || item.subtype.as_deref() == Some(expected_domain);
     matches_domain.then_some(item.rarity)
 }
 

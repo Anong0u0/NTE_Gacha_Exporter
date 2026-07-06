@@ -41,7 +41,6 @@ impl MapData {
             .map(|(_, item)| {
                 item_kind_from_taxonomy(
                     item.category.as_deref(),
-                    item.domain_type.as_deref(),
                     item.subtype.as_deref(),
                 )
             })
@@ -223,13 +222,8 @@ impl MapData {
     }
 }
 
-fn item_kind_from_taxonomy(
-    category: Option<&str>,
-    domain_type: Option<&str>,
-    subtype: Option<&str>,
-) -> ItemKind {
+fn item_kind_from_taxonomy(category: Option<&str>, subtype: Option<&str>) -> ItemKind {
     let normalized = category
-        .or(domain_type)
         .or(subtype)
         .map(str::trim)
         .filter(|value| !value.is_empty());

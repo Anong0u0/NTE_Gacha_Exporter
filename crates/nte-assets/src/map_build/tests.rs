@@ -9,7 +9,10 @@ mod tests {
 
         let map = build_asset_map(tmp.path(), "zh-Hant").unwrap();
 
-        assert_eq!(map["schema_version"], 2);
+        assert_eq!(map["schema_version"], 3);
+        let map_text = serde_json::to_string(&map).unwrap();
+        assert!(!map_text.contains("\"source\""));
+        assert!(!map_text.contains("\"domain_type\""));
         assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
         assert_eq!(map["items"]["1010"]["rarity"], 5);
         assert_eq!(map["items"]["201"]["name"], "Arc·Forgotten");
@@ -57,13 +60,11 @@ mod tests {
             .unwrap();
         assert_eq!(map["items"]["Fashion_Glide_1010"]["name"], "滑翔翼·Nanali Glide");
         assert_eq!(map["items"]["Fashion_Glide_1010"]["category"], "glider");
-        assert_eq!(map["items"]["Fashion_Glide_1010"]["domain_type"], "glider");
         assert_eq!(glide_refs.get("icon"), Some(&json!("/Game/GlideIcon")));
         assert!(!glide_refs.contains_key("portrait"));
         assert!(!glide_refs.contains_key("banner"));
         assert_eq!(map["items"]["Fashion_character_1010"]["name"], "時裝·Nanali Fashion");
         assert_eq!(map["items"]["Fashion_character_1010"]["category"], "fashion");
-        assert_eq!(map["items"]["Fashion_character_1010"]["domain_type"], "fashion");
         assert_eq!(map["labels"]["item_kind_fashion"], "時裝");
         assert_eq!(map["labels"]["item_kind_glider"], "滑翔翼");
         let vehicle_refs = map["items"]["Fashion_vehicle_1010_V008"]["asset_refs"]
@@ -141,12 +142,46 @@ mod tests {
             json!(["1071"])
         );
         assert_eq!(
+            map["banners"]["monopoly_limited_ZhenHong"]["title"],
+            json!("破晓前")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_ZhenHong"]["start_at"],
+            json!("2026-07-08 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_ZhenHong"]["end_at"],
+            json!("2026-07-29 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_ZhenHong"]["rate_up_5"],
+            json!(["1076"])
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Yiluoyi"]["title"],
+            json!("生命线")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Yiluoyi"]["start_at"],
+            json!("2026-07-29 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Yiluoyi"]["end_at"],
+            json!("2026-08-19 05:59:00")
+        );
+        assert_eq!(
+            map["banners"]["monopoly_limited_Yiluoyi"]["rate_up_5"],
+            json!(["1075"])
+        );
+        assert_eq!(
             map["pools"]["CardPool_Character"]["title_windows"],
             json!([
                 {"end_at_tz8": "2026-05-13 05:59:00", "title": "Nanali Banner"},
                 {"end_at_tz8": "2026-06-03 05:59:00", "title": "Xun Banner"},
                 {"end_at_tz8": "2026-06-24 05:59:00", "title": "久夢初醒時"},
-                {"end_at_tz8": "2026-07-08 05:59:00", "title": "Kaesi Banner"}
+                {"end_at_tz8": "2026-07-08 05:59:00", "title": "Kaesi Banner"},
+                {"end_at_tz8": "2026-07-29 05:59:00", "title": "破晓前"},
+                {"end_at_tz8": "2026-08-19 05:59:00", "title": "生命线"}
             ])
         );
         assert_eq!(
@@ -195,7 +230,7 @@ mod tests {
     #[test]
     fn rejects_case_folded_duplicate_item_ids() {
         let map = json!({
-            "schema_version": 2,
+            "schema_version": 3,
             "items": {
                 "Foo": {"name": "Foo", "rarity": 3},
                 "foo": {"name": "foo", "rarity": 4}
@@ -210,28 +245,6 @@ mod tests {
         assert!(error
             .to_string()
             .contains("case-insensitive duplicate item_id"));
-    }
-
-    #[test]
-    fn skips_limited_banner_without_time_boundary() {
-        let tmp = tempfile::tempdir().unwrap();
-        write_minimal_assets(tmp.path());
-        write_json(
-            tmp.path()
-                .join("DataTable/CombatAward/DT_CombatAwardEntranceConfig.json"),
-            json!({"Rows": {
-                "CombatAward_02": {"StartDateTime": schedule(2026, 4, 28, 22, 30, true)},
-                "CombatAward_03": {"StartDateTime": schedule(2026, 6, 2, 22, 30, true)}
-            }}),
-        );
-
-        let map = build_asset_map(tmp.path(), "zh-Hant").unwrap();
-
-        assert!(map["banners"]["monopoly_limited_Kaesi"].is_null());
-        assert_eq!(
-            map["banners"]["monopoly_limited_AnHunQu"]["end_at"],
-            json!("2026-06-24 05:59:00")
-        );
     }
 
     #[test]
@@ -289,6 +302,17 @@ mod tests {
             }),
         );
         write_json(
+            root.join("Localization/zh-CN/game.json"),
+            json!({
+                "ST_Ui": {
+                    "LotteryDes_Jishishuoming_ZhenhongDes": "1.<Orange>「破晓前」</>属于<Orange>「限定棋盘」</>。",
+                    "LotteryDes_Jishishuoming_YiluoyiDes": "1.<Orange>「生命线」</>属于<Orange>「限定棋盘」</>。",
+                    "Lottery_kachimingcheng_zhenhong": "破晓前",
+                    "Lottery_Kachimingcheng_yiluoyi": "生命线"
+                }
+            }),
+        );
+        write_json(
             root.join("Localization/zh-Hant/game.json"),
             json!({
                 "ST_Common": {
@@ -314,6 +338,8 @@ mod tests {
                     "char_1010": "Nanali",
                     "char_1052": "Xun",
                     "char_1071": "Kaesi",
+                    "char_1075": "Yiluoyi",
+                    "char_1076": "ZhenHong",
                     "Dicelimite_lacrimosa_usedesc": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。",
                     "fork_200": "Fork Weapon",
                     "fork_201": "Forgotten",
@@ -345,6 +371,16 @@ mod tests {
                     "char_1071",
                     "/Game/KaesiPortrait",
                     schedule(2026, 6, 23, 22, 30, true)
+                ),
+                "1075": character_row(
+                    "char_1075",
+                    "/Game/YiluoyiPortrait",
+                    schedule(2026, 7, 28, 22, 30, true)
+                ),
+                "1076": character_row(
+                    "char_1076",
+                    "/Game/ZhenHongPortrait",
+                    schedule(2026, 7, 7, 22, 30, true)
                 )
             }}),
         );
@@ -371,12 +407,32 @@ mod tests {
                 "1052_LotteryShow_xun": lottery_show_row("1052_LotteryShow_xun", "Xun（1.8700%）"),
                 "1004_LotteryShow_lacrimosa": lottery_show_row("1004_LotteryShow_lacrimosa", "Lacrimosa（1.8700%）"),
                 "1071_LotteryShow_kaesi": lottery_show_row("1071_LotteryShow_kaesi", "Kaesi（1.8700%）"),
+                "1075_LotteryShow_yiluoyi": lottery_show_row("1075_LotteryShow_yiluoyi", "伊洛伊（1.8700%）"),
+                "1076_LotteryShow_shinku": lottery_show_row("1076_LotteryShow_shinku", "真红（1.8700%）"),
                 "Dicelimite_lacrimosa": {
                     "ItemName": {"Key": "dice_lacrimosa", "TableId": "ST_Item"},
                     "UseContext": {
                         "Key": "Dicelimite_lacrimosa_usedesc",
                         "TableId": "ST_Item",
                         "SourceString": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。"
+                    },
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                },
+                "Dicelimite_onerioi": {
+                    "ItemName": {"Key": "dice_onerioi", "TableId": "ST_Item"},
+                    "UseContext": {
+                        "Key": "Dicelimite_onerioi_usedesc",
+                        "TableId": "ST_Item",
+                        "SourceString": "仅可在限定棋盘「生命线」中进行投掷获得所需物品。"
+                    },
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                },
+                "Dicelimite_shinku": {
+                    "ItemName": {"Key": "dice_shinku", "TableId": "ST_Item"},
+                    "UseContext": {
+                        "Key": "Dicelimite_shinku_uesdesc",
+                        "TableId": "ST_Item",
+                        "SourceString": "仅可在限定棋盘「破晓前」中进行投掷获得所需物品。"
                     },
                     "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
                 },
@@ -403,14 +459,18 @@ mod tests {
                         {"Key": "Lottery_Xun"},
                         {"Key": "Lottery_Permanent"},
                         {"Key": "Lottery_AnHunQu"},
-                        {"Key": "Lottery_Kaesi"}
+                        {"Key": "Lottery_Kaesi"},
+                        {"Key": "Lottery_ZhenHong", "Value": {"MapDropDatas": [{"Value": "ZhenHong_Chess_LessMiDie"}]}},
+                        {"Key": "Lottery_Yiluoyi", "Value": {"MapDropDatas": [{"Value": "Yiluoyi_Chess_LessMiDie"}]}}
                     ]},
                     "2": {"PoolDropDatas": [
                         {"Key": "Lottery_Nanali"},
                         {"Key": "Lottery_Xun"},
                         {"Key": "Lottery_Permanent"},
                         {"Key": "Lottery_AnHunQu"},
-                        {"Key": "Lottery_Kaesi"}
+                        {"Key": "Lottery_Kaesi"},
+                        {"Key": "Lottery_ZhenHong", "Value": {"MapDropDatas": [{"Value": "ZhenHong_Character_ZhenHong"}]}},
+                        {"Key": "Lottery_Yiluoyi", "Value": {"MapDropDatas": [{"Value": "Yiluoyi_Character_Yiluoyi"}]}}
                     ]}
                 }
             }),

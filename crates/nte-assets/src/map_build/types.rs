@@ -3,12 +3,13 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, Timelike};
 use regex::Regex;
 use serde_json::{json, Map, Value};
 
 use nte_core::GuiError;
 
-const MAP_SCHEMA_VERSION: u64 = 2;
+const MAP_SCHEMA_VERSION: u64 = 3;
 const ASSET_FALLBACK_LOCALE: &str = "en";
 const REMOVED_MAP_LOCALES: &[&str] = &["en-JM"];
 
@@ -63,7 +64,7 @@ struct LimitedMonopolyBanner {
     banner_id: String,
     title: String,
     start_at_tz8: Option<String>,
-    end_at_tz8: String,
+    end_at_tz8: Option<String>,
     rate_up_5: Vec<String>,
 }
 

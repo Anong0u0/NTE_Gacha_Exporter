@@ -12,26 +12,6 @@ fn add_pool(pools: &mut BTreeMap<String, String>, pool_id: String, name: String,
     }
 }
 
-fn source_evidence(tables: &[String], notes: &[&str]) -> Value {
-    let mut object = JsonObject::new();
-    object.insert(
-        "tables".to_string(),
-        Value::Array(tables.iter().cloned().map(Value::String).collect()),
-    );
-    if !notes.is_empty() {
-        object.insert(
-            "notes".to_string(),
-            Value::Array(
-                notes
-                    .iter()
-                    .map(|note| Value::String((*note).to_string()))
-                    .collect(),
-            ),
-        );
-    }
-    Value::Object(object)
-}
-
 fn fork_pickup_item_ids(
     pool_id: &str,
     row: &JsonObject,
@@ -190,6 +170,7 @@ fn localized_monopoly_pool_title(localization: &Localization, tail: &str) -> Opt
 
 fn monopoly_pool_meta(
     assets_root: &Path,
+    locale: &str,
     localization: &Localization,
     canonicalizer: &ItemCanonicalizer,
     pool_id: &str,
@@ -210,8 +191,11 @@ fn monopoly_pool_meta(
     }
 
     let mut title_windows = Vec::new();
-    for banner in limited_monopoly_banners(assets_root, localization, canonicalizer, None)? {
-        title_windows.push(json!({"end_at_tz8": banner.end_at_tz8, "title": banner.title}));
+    for banner in limited_monopoly_banners(assets_root, locale, localization, canonicalizer, None)?
+    {
+        if let Some(end_at_tz8) = banner.end_at_tz8 {
+            title_windows.push(json!({"end_at_tz8": end_at_tz8, "title": banner.title}));
+        }
     }
     if !title_windows.is_empty() {
         meta.insert("title_windows".to_string(), Value::Array(title_windows));
@@ -223,6 +207,7 @@ fn add_monopoly_pools(
     pools: &mut BTreeMap<String, String>,
     pool_meta: &mut BTreeMap<String, JsonObject>,
     assets_root: &Path,
+    locale: &str,
     localization: &Localization,
     canonicalizer: &ItemCanonicalizer,
 ) -> Result<(), GuiError> {
@@ -232,7 +217,7 @@ fn add_monopoly_pools(
                 add_pool(pools, pool_id.to_string(), name, true);
             }
         }
-        let meta = monopoly_pool_meta(assets_root, localization, canonicalizer, pool_id)?;
+        let meta = monopoly_pool_meta(assets_root, locale, localization, canonicalizer, pool_id)?;
         if !meta.is_empty() {
             pool_meta.insert(pool_id.to_string(), meta);
         }
@@ -272,6 +257,7 @@ fn add_fork_pools(
 
 fn build_pools(
     assets_root: &Path,
+    locale: &str,
     localization: &Localization,
     canonicalizer: &ItemCanonicalizer,
 ) -> Result<PoolBuildData, GuiError> {
@@ -281,6 +267,7 @@ fn build_pools(
         &mut pools,
         &mut pool_meta,
         assets_root,
+        locale,
         localization,
         canonicalizer,
     )?;

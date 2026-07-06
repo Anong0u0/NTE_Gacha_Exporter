@@ -9,6 +9,7 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+chrono.workspace = true
 image = { workspace = true, default-features = false, features = ["png"] }
 nte-core = { path = "../nte-core" }
 regex.workspace = true

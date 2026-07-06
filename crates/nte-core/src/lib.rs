@@ -21,8 +21,8 @@ pub use identity::{
     record_semantic_key_from_parts, stable_record_id_from_key,
 };
 pub use maps::{
-    MapBanner, MapData, MapGachaRule, MapItem, MapPool, MapSourceEvidence, PoolTitleWindow,
-    available_locales, bundled_maps_hash, load_map,
+    MapBanner, MapData, MapGachaRule, MapItem, MapPool, PoolTitleWindow, available_locales,
+    bundled_maps_hash, load_map,
 };
 pub use model::{
     AssetsPackAsset, AssetsPackManifest, BackupReport, BannerResolutionIssue, BannerSummary,

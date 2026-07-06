@@ -123,10 +123,6 @@ fn row_item_meta(item_id: &str, row: &JsonObject, category: &str) -> JsonObject 
     let mut meta = JsonObject::new();
     let taxonomy_category = item_taxonomy_category(item_id, row, category);
     meta.insert(
-        "domain_type".to_string(),
-        Value::String(taxonomy_category.to_string()),
-    );
-    meta.insert(
         "category".to_string(),
         Value::String(taxonomy_category.to_string()),
     );
@@ -194,10 +190,6 @@ fn add_vehicle_module_meta(
             let mut patch = JsonObject::new();
             patch.insert(
                 "category".to_string(),
-                Value::String("vehicle_module".to_string()),
-            );
-            patch.insert(
-                "domain_type".to_string(),
                 Value::String("vehicle_module".to_string()),
             );
             let refs = asset_refs_from_fields(
@@ -311,7 +303,7 @@ fn build_item_meta_rows(
         row.insert("item_id".to_string(), Value::String(item_id.clone()));
         row.insert("item_name".to_string(), Value::String(item_name.clone()));
         row.insert("rarity".to_string(), json!(rarity));
-        for key in ["category", "domain_type", "color"] {
+        for key in ["category", "color"] {
             if let Some(value) = asset_item.get(key).and_then(Value::as_str) {
                 if !value.is_empty() {
                     row.insert(key.to_string(), Value::String(value.to_string()));
@@ -357,7 +349,7 @@ fn normalized_items(items: &BTreeMap<String, String>, item_meta: &[JsonObject]) 
         if let Some(category) = meta.get("category").and_then(Value::as_str) {
             entry.insert("category".to_string(), Value::String(category.to_string()));
         }
-        for key in ["domain_type", "subtype", "color"] {
+        for key in ["subtype", "color"] {
             if let Some(value) = meta.get(key).and_then(Value::as_str) {
                 if !value.is_empty() {
                     entry.insert(key.to_string(), Value::String(value.to_string()));

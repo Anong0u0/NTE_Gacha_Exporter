@@ -207,7 +207,7 @@ fn stats_include_synthetic_limited_banner_for_banner_summary() {
         "after",
         "CardPool_Character",
         "fork_dustbin",
-        Some("2026-07-08 05:59:01"),
+        Some("2026-08-19 05:59:01"),
         Some(6),
     )]);
     store
@@ -240,7 +240,7 @@ fn stats_include_synthetic_limited_banner_for_banner_summary() {
             .time_stats
             .monthly
             .iter()
-            .any(|bucket| bucket.bucket == "2026-07" && bucket.total_pulls == 1)
+            .any(|bucket| bucket.bucket == "2026-08" && bucket.total_pulls == 1)
     );
 }
 

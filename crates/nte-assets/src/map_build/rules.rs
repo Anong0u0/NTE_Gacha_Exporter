@@ -212,7 +212,7 @@ fn fork_rule_text_refs(fork_rows: &JsonObject) -> JsonObject {
 
 fn build_gacha_rules(
     assets_root: &Path,
-    locale: &str,
+    _locale: &str,
     canonicalizer: &ItemCanonicalizer,
 ) -> Result<JsonObject, GuiError> {
     let mut rules = JsonObject::new();
@@ -226,10 +226,6 @@ fn build_gacha_rules(
             "guarantee_scope": "unknown",
             "carry_scope": "pool_kind",
             "rule_text_refs": monopoly_rule_text_refs(true),
-            "source": source_evidence(
-                &[format!("Localization/{locale}/game.json")],
-                &["Numeric rule follows current desktop hard-pity behavior; rate-up precision is unknown."],
-            ),
         }),
     );
     rules.insert(
@@ -242,10 +238,6 @@ fn build_gacha_rules(
             "guarantee_scope": "unknown",
             "carry_scope": "pool_kind",
             "rule_text_refs": monopoly_rule_text_refs(false),
-            "source": source_evidence(
-                &[format!("Localization/{locale}/game.json")],
-                &["Numeric rule follows current desktop hard-pity behavior; standard rate-up is not modeled."],
-            ),
         }),
     );
 
@@ -256,15 +248,6 @@ fn build_gacha_rules(
     {
         let hard_pity_5 = fork_hard_pity_5(&fork_rows);
         let pickup_win_rate_5 = fork_pickup_win_rate_5(assets_root, &fork_rows, canonicalizer)?;
-        let notes = if hard_pity_5.is_some() && pickup_win_rate_5.is_some() {
-            vec![
-                "Fork S-class pickup rate is backed by gold drop sequence weights in the asset dump.",
-            ]
-        } else {
-            vec![
-                "Fallback numeric rule follows current desktop behavior when structured values are absent.",
-            ]
-        };
         rules.insert(
             "fork_lottery_s".to_string(),
             json!({
@@ -277,14 +260,6 @@ fn build_gacha_rules(
                 "guarantee_scope": "pool_kind",
                 "carry_scope": "pool_kind",
                 "rule_text_refs": fork_rule_text_refs(&fork_rows),
-                "source": source_evidence(
-                    &[
-                        FORK_POOL_TABLE.to_string(),
-                        DROP_GROUP_TABLE.to_string(),
-                        DROP_SEQUENCE_TABLE.to_string(),
-                    ],
-                    &notes,
-                ),
             }),
         );
     }

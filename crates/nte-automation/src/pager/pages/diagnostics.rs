@@ -144,11 +144,17 @@ impl AutoPager {
 
     fn status(&self, event: StatusEvent<'_>) {
         if let Some(callback) = &self.options.on_status {
-            let status = event.to_status(self.started_at.elapsed().as_secs_f64());
+            let status = event.to_status(
+                self.started_at.elapsed().as_secs_f64(),
+                &self.options.labels,
+            );
             self.tooltip.show(&status_text(&status));
             callback(status);
         } else {
-            let status = event.to_status(self.started_at.elapsed().as_secs_f64());
+            let status = event.to_status(
+                self.started_at.elapsed().as_secs_f64(),
+                &self.options.labels,
+            );
             self.tooltip.show(&status_text(&status));
         }
     }

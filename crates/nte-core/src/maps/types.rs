@@ -48,7 +48,7 @@ const BUNDLED_MAPS: &[(&str, &str)] = &[
         include_str!("../../../nte-assets/resources/maps/zh-Hant.json"),
     ),
 ];
-const MAP_SCHEMA_VERSION: u64 = 2;
+const MAP_SCHEMA_VERSION: u64 = 3;
 static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize)]
@@ -72,7 +72,6 @@ pub struct MapItem {
     pub name: String,
     pub rarity: u8,
     pub category: Option<String>,
-    pub domain_type: Option<String>,
     pub subtype: Option<String>,
     #[serde(default)]
     pub asset_refs: BTreeMap<String, serde_json::Value>,
@@ -122,8 +121,6 @@ pub struct MapBanner {
     pub currency_id: Option<String>,
     pub currency_count: Option<u64>,
     pub roll_unit: Option<u64>,
-    #[serde(default)]
-    pub source: MapSourceEvidence,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -138,14 +135,4 @@ pub struct MapGachaRule {
     pub carry_scope: Option<String>,
     #[serde(default)]
     pub rule_text_refs: BTreeMap<String, String>,
-    #[serde(default)]
-    pub source: MapSourceEvidence,
-}
-
-#[derive(Debug, Clone, Default, Deserialize)]
-pub struct MapSourceEvidence {
-    #[serde(default)]
-    pub tables: Vec<String>,
-    #[serde(default)]
-    pub notes: Vec<String>,
 }

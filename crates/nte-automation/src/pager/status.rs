@@ -50,10 +50,10 @@ impl<'a> StatusEvent<'a> {
         self
     }
 
-    fn to_status(self, elapsed_seconds: f64) -> AutoPageStatus {
+    fn to_status(self, elapsed_seconds: f64, labels: &BTreeMap<String, String>) -> AutoPageStatus {
         AutoPageStatus {
             elapsed_seconds,
-            message: self.message.to_string(),
+            message: localized_status_message(&self, labels),
             kind: self.kind.to_string(),
             step: self.step.map(str::to_string),
             pool: self.pool.map(str::to_string),
@@ -63,6 +63,40 @@ impl<'a> StatusEvent<'a> {
             replaceable: self.replaceable,
         }
     }
+}
+
+const AUTO_PAGE_STEP_LABEL_KEYS: &[(&str, &str)] = &[
+    ("limited", "BPUI_LotteryDiceRecord_xiandingqipan"),
+    ("limitedBoard", "BPUI_LotteryDiceRecord_xiandingqipan"),
+    ("limitedBoardPages", "BPUI_LotteryDiceRecord_xiandingqipan"),
+    ("standard", "BPUI_LotteryDiceRecord_biaozhunqipan"),
+    ("standardBoard", "BPUI_LotteryDiceRecord_biaozhunqipan"),
+    ("standardBoardPages", "BPUI_LotteryDiceRecord_biaozhunqipan"),
+    ("boardType", "BPUI_LotteryDiceRecord_qipanleixing"),
+    ("fork", "UW_LotteryBase_BP_Hupanyanmu"),
+    ("arcShop", "UW_LotteryBase_BP_Hupanyanmu"),
+    ("arcResearch", "ui_forkshop_03"),
+    ("arcResearchDetails", "ui_forkshop_07"),
+    ("arcResearchRecords", "ui_forkshop_10"),
+    ("arcResearchPages", "ui_forkshop_10"),
+];
+
+fn localized_status_message(event: &StatusEvent<'_>, labels: &BTreeMap<String, String>) -> String {
+    event
+        .step
+        .and_then(|step| auto_page_label(step, labels))
+        .or_else(|| event.pool.and_then(|pool| auto_page_label(pool, labels)))
+        .unwrap_or(event.message)
+        .to_string()
+}
+
+fn auto_page_label<'a>(key: &str, labels: &'a BTreeMap<String, String>) -> Option<&'a str> {
+    AUTO_PAGE_STEP_LABEL_KEYS
+        .iter()
+        .find_map(|(step, label_key)| (*step == key).then_some(*label_key))
+        .and_then(|label_key| labels.get(label_key))
+        .map(String::as_str)
+        .filter(|value| !value.is_empty())
 }
 
 fn required<'a>(value: Option<&'a str>, name: &str) -> AutomationResult<&'a str> {

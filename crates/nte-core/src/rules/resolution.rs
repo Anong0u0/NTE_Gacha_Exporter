@@ -182,8 +182,9 @@ pub fn rate_up_result(
         return RateUpResult::Unknown;
     };
     let Some(item_domain) = item
-        .domain_type
+        .category
         .as_deref()
+        .or(item.subtype.as_deref())
         .filter(|value| !value.is_empty())
     else {
         return RateUpResult::Unknown;
@@ -216,8 +217,9 @@ fn rate_up_domains(map: &MapData, candidates: &[String]) -> Vec<String> {
             continue;
         };
         let Some(domain) = item
-            .domain_type
+            .category
             .as_deref()
+            .or(item.subtype.as_deref())
             .filter(|value| !value.is_empty())
         else {
             continue;
