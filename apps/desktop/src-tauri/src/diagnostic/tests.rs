@@ -62,14 +62,21 @@ mod tests {
         let result = classify_capture_result(&diagnostic_result((counters, summary)), Vec::new());
 
         assert_eq!(result.verdict, "high_parser_drop");
-        assert!(result.findings.iter().any(|finding| finding.contains("PPPoE")));
+        assert!(
+            result
+                .findings
+                .iter()
+                .any(|finding| finding.contains("PPPoE"))
+        );
         assert!(result.findings.iter().any(|finding| {
             finding.contains("unsupported_ppp_protocol") && finding.contains("count=4")
         }));
-        assert!(result
-            .findings
-            .iter()
-            .any(|finding| finding == "dropped full samples included: 3"));
+        assert!(
+            result
+                .findings
+                .iter()
+                .any(|finding| finding == "dropped full samples included: 3")
+        );
     }
 
     #[test]
@@ -110,10 +117,12 @@ mod tests {
         let result = classify_capture_result(&result, Vec::new());
 
         assert_eq!(result.verdict, "decoded_ok");
-        assert!(result
-            .findings
-            .iter()
-            .any(|finding| finding == "WinDivert capture decoded records"));
+        assert!(
+            result
+                .findings
+                .iter()
+                .any(|finding| finding == "WinDivert capture decoded records")
+        );
     }
 
     #[test]
@@ -175,10 +184,46 @@ mod tests {
         cleanup_diagnostic_staging(&paths);
 
         for (_, path) in artifact_specs(&paths) {
-            assert!(!path.exists(), "session artifact still exists: {}", path.display());
+            assert!(
+                !path.exists(),
+                "session artifact still exists: {}",
+                path.display()
+            );
         }
         assert!(!paths.zip_path.exists());
         assert_eq!(std::fs::read(unrelated).unwrap(), b"keep");
+    }
+
+    #[test]
+    fn windivert_timer_completion_stops_capture_without_marking_cancelled() {
+        let cancel_requested = Arc::new(AtomicBool::new(false));
+        let capture_stop = Arc::new(AtomicBool::new(false));
+
+        let timer = spawn_windivert_diagnostic_timer(
+            Duration::ZERO,
+            Arc::clone(&cancel_requested),
+            Arc::clone(&capture_stop),
+        );
+        timer.join().unwrap();
+
+        assert!(capture_stop.load(Ordering::SeqCst));
+        assert!(!cancel_requested.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn windivert_timer_cancel_stops_capture_and_preserves_cancel_flag() {
+        let cancel_requested = Arc::new(AtomicBool::new(true));
+        let capture_stop = Arc::new(AtomicBool::new(false));
+
+        let timer = spawn_windivert_diagnostic_timer(
+            Duration::from_secs(60),
+            Arc::clone(&cancel_requested),
+            Arc::clone(&capture_stop),
+        );
+        timer.join().unwrap();
+
+        assert!(capture_stop.load(Ordering::SeqCst));
+        assert!(cancel_requested.load(Ordering::SeqCst));
     }
 
     trait IntoDiagnosticResultParts {
@@ -197,9 +242,7 @@ mod tests {
         }
     }
 
-    fn diagnostic_result(
-        value: impl IntoDiagnosticResultParts,
-    ) -> DiagnosticCaptureResult {
+    fn diagnostic_result(value: impl IntoDiagnosticResultParts) -> DiagnosticCaptureResult {
         let (counters, summary) = value.into_parts();
         DiagnosticCaptureResult {
             target: nte_capture::CaptureTarget {
@@ -254,7 +297,7 @@ mod tests {
     fn diagnostic_session(status: DiagnosticStatus) -> Arc<DiagnosticRuntimeSession> {
         Arc::new(DiagnosticRuntimeSession {
             status: Mutex::new(status),
-            stop: Arc::new(AtomicBool::new(false)),
+            cancel_requested: Arc::new(AtomicBool::new(false)),
             handle: Mutex::new(None),
         })
     }

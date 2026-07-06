@@ -123,7 +123,7 @@ impl AutoPager {
     }
 
     fn wait_for_template(&mut self, name: &str) -> AutomationResult<(TemplateMatch, u32)> {
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.template_timeout);
+        let deadline = Instant::now() + self.template_verify_wait();
         let mut attempts = 0_u32;
         let mut next_focus = Instant::now();
         let mut last_error = None;
@@ -166,7 +166,7 @@ impl AutoPager {
             .map(|name| self.point(name))
             .collect::<AutomationResult<Vec<_>>>()?;
         let settle = step.settle.unwrap_or(0.1);
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.template_timeout);
+        let deadline = Instant::now() + self.post_click_template_wait();
         let started = Instant::now();
         let mut clicks = 0_u32;
         let mut last_error = None;
@@ -206,16 +206,18 @@ impl AutoPager {
         let detail = last_error
             .map(|error| format!(": {error}"))
             .unwrap_or_default();
-        Err(AutomationError::message(format!(
+        self.record_template_failure(template);
+        let error = AutomationError::message(format!(
             "screen template not found after click sequence: {template}{detail}"
-        )))
+        ));
+        Err(error)
     }
 
     fn click_template_until_template(&mut self, step: &WorkflowStep) -> AutomationResult<()> {
         let source_template = required(step.template.as_deref(), "template")?;
         let target_template = required(step.target_template.as_deref(), "targetTemplate")?;
         let settle = step.settle.unwrap_or(0.1);
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.template_timeout);
+        let deadline = Instant::now() + self.post_click_template_wait();
         let started = Instant::now();
         let mut clicks = 0_u32;
         let mut source: Option<TemplateMatch> = None;
@@ -280,8 +282,10 @@ impl AutoPager {
             .or(last_source_error)
             .map(|error| format!(": {error}"))
             .unwrap_or_default();
-        Err(AutomationError::message(format!(
+        self.record_template_failure(target_template);
+        let error = AutomationError::message(format!(
             "screen template not found after template click sequence: {source_template}->{target_template}{detail}"
-        )))
+        ));
+        Err(error)
     }
 }

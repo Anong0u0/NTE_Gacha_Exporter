@@ -28,10 +28,12 @@ use crate::raw::{
 use std::fs::File;
 #[cfg(windows)]
 use std::io::{BufWriter, Write};
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 use std::sync::atomic::Ordering;
+#[cfg(any(windows, test))]
+use std::time::Instant;
 #[cfg(windows)]
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(any(windows, test))]
 use base64::Engine;

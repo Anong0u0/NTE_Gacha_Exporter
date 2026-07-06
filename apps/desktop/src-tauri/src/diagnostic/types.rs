@@ -1,6 +1,6 @@
 pub(crate) struct DiagnosticRuntimeSession {
     status: Mutex<DiagnosticStatus>,
-    stop: Arc<AtomicBool>,
+    cancel_requested: Arc<AtomicBool>,
     handle: Mutex<Option<JoinHandle<()>>>,
 }
 

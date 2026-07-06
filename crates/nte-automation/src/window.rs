@@ -203,7 +203,6 @@ pub fn foreground_click(
 ) -> AutomationResult<MouseClickDiagnostics> {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
         MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
-        mouse_event,
     };
 
     force_foreground(window)?;
@@ -214,18 +213,100 @@ pub fn foreground_click(
         MouseButton::Left => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP),
         MouseButton::Right => (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
     };
-    unsafe {
-        move_cursor(screen_point)?;
-        thread::sleep(Duration::from_millis(25));
-        mouse_event(button_down, 0, 0, 0, 0);
-        thread::sleep(Duration::from_millis(35));
-        mouse_event(button_up, 0, 0, 0, 0);
-    }
+    move_cursor(screen_point)?;
+    thread::sleep(Duration::from_millis(25));
+    send_mouse_input("mouse_down", button_down, 0, 0, 0)?;
+    thread::sleep(Duration::from_millis(35));
+    send_mouse_input("mouse_up", button_up, 0, 0, 0)?;
     Ok(MouseClickDiagnostics {
         point,
         physical_button,
         mouse_buttons_swapped,
     })
+}
+
+#[cfg(windows)]
+fn send_mouse_input(
+    label: &str,
+    flags: u32,
+    dx: i32,
+    dy: i32,
+    mouse_data: u32,
+) -> AutomationResult<()> {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        INPUT, INPUT_0, INPUT_MOUSE, MOUSEINPUT,
+    };
+
+    send_input_event(
+        label,
+        INPUT {
+            r#type: INPUT_MOUSE,
+            Anonymous: INPUT_0 {
+                mi: MOUSEINPUT {
+                    dx,
+                    dy,
+                    mouseData: mouse_data,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    )
+}
+
+#[cfg(windows)]
+fn send_input_keyboard_event(label: &str, virtual_key: u16, flags: u32) -> AutomationResult<()> {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+    };
+
+    send_input_event(
+        label,
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: virtual_key,
+                    wScan: 0,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    )
+}
+
+#[cfg(windows)]
+fn send_input_event(
+    label: &str,
+    input: windows_sys::Win32::UI::Input::KeyboardAndMouse::INPUT,
+) -> AutomationResult<()> {
+    use std::mem;
+
+    use windows_sys::Win32::Foundation::GetLastError;
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{INPUT, SendInput};
+
+    let mut winerr = 0;
+    for attempt in 0..=1 {
+        let sent = unsafe { SendInput(1, &input, mem::size_of::<INPUT>() as i32) };
+        if sent == 1 {
+            return Ok(());
+        }
+        winerr = unsafe { GetLastError() };
+        if attempt == 0 {
+            thread::sleep(Duration::from_millis(10));
+        }
+    }
+    Err(AutomationError::message(send_input_error_message(
+        label, winerr,
+    )))
+}
+
+#[cfg(any(windows, test))]
+fn send_input_error_message(label: &str, winerr: u32) -> String {
+    format!("SendInput {label} failed winerr={winerr}")
 }
 
 #[cfg(windows)]
@@ -237,19 +318,17 @@ fn mouse_buttons_swapped() -> bool {
 
 #[cfg(windows)]
 fn move_cursor(point: Point) -> AutomationResult<()> {
-    use windows_sys::Win32::Foundation::{GetLastError, POINT};
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_MOVE, mouse_event,
+        MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_MOVE, MOUSEEVENTF_VIRTUALDESK,
     };
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        GetCursorPos, GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+        GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
         SM_YVIRTUALSCREEN, SetCursorPos,
     };
 
     if unsafe { SetCursorPos(point.x, point.y) } != 0 {
         return Ok(());
     }
-    let last_error = unsafe { GetLastError() };
 
     let left = unsafe { GetSystemMetrics(SM_XVIRTUALSCREEN) };
     let top = unsafe { GetSystemMetrics(SM_YVIRTUALSCREEN) };
@@ -261,22 +340,15 @@ fn move_cursor(point: Point) -> AutomationResult<()> {
     let target_y = point.y.clamp(top, bottom);
     let dx = (((target_x - left) as i64 * 65_535) / width.saturating_sub(1).max(1) as i64) as i32;
     let dy = (((target_y - top) as i64 * 65_535) / height.saturating_sub(1).max(1) as i64) as i32;
-    unsafe {
-        mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, 0);
-    }
+    send_mouse_input(
+        "mouse_move",
+        MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK,
+        dx,
+        dy,
+        0,
+    )?;
     thread::sleep(Duration::from_millis(25));
-
-    let mut cursor = POINT { x: 0, y: 0 };
-    if unsafe { GetCursorPos(&mut cursor) } != 0
-        && (cursor.x - target_x).abs() <= 2
-        && (cursor.y - target_y).abs() <= 2
-    {
-        return Ok(());
-    }
-    Err(AutomationError::message(format!(
-        "SetCursorPos failed: target={},{} virtual={},{} {}x{} cursor={},{} winerr={}",
-        point.x, point.y, left, top, width, height, cursor.x, cursor.y, last_error
-    )))
+    Ok(())
 }
 
 #[cfg(not(windows))]
@@ -286,16 +358,12 @@ pub fn foreground_escape(_window: &GameWindow) -> AutomationResult<()> {
 
 #[cfg(windows)]
 pub fn foreground_escape(window: &GameWindow) -> AutomationResult<()> {
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        KEYEVENTF_KEYUP, VK_ESCAPE, keybd_event,
-    };
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_ESCAPE};
 
     force_foreground(window)?;
-    unsafe {
-        keybd_event(VK_ESCAPE as u8, 0, 0, 0);
-        thread::sleep(Duration::from_millis(35));
-        keybd_event(VK_ESCAPE as u8, 0, KEYEVENTF_KEYUP, 0);
-    }
+    let _ = send_input_keyboard_event("escape_down", VK_ESCAPE, 0);
+    thread::sleep(Duration::from_millis(35));
+    let _ = send_input_keyboard_event("escape_up", VK_ESCAPE, KEYEVENTF_KEYUP);
     Ok(())
 }
 
@@ -414,7 +482,7 @@ fn window_text(hwnd: usize) -> String {
 #[cfg(windows)]
 fn try_force_foreground(hwnd: windows_sys::Win32::Foundation::HWND) {
     use windows_sys::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_MENU, keybd_event};
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{KEYEVENTF_KEYUP, VK_MENU};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
     };
@@ -442,8 +510,8 @@ fn try_force_foreground(hwnd: windows_sys::Win32::Foundation::HWND) {
             let _ = AttachThreadInput(current_thread, thread_id, 0);
         }
         if GetForegroundWindow() != hwnd {
-            keybd_event(VK_MENU as u8, 0, 0, 0);
-            keybd_event(VK_MENU as u8, 0, KEYEVENTF_KEYUP, 0);
+            let _ = send_input_keyboard_event("alt_down", VK_MENU, 0);
+            let _ = send_input_keyboard_event("alt_up", VK_MENU, KEYEVENTF_KEYUP);
             SetForegroundWindow(hwnd);
         }
     }
@@ -457,5 +525,13 @@ mod tests {
     fn primary_mouse_button_follows_swap_setting() {
         assert_eq!(primary_mouse_button(false), MouseButton::Left);
         assert_eq!(primary_mouse_button(true), MouseButton::Right);
+    }
+
+    #[test]
+    fn send_input_error_message_includes_label_and_winerr() {
+        assert_eq!(
+            send_input_error_message("mouse_down", 5),
+            "SendInput mouse_down failed winerr=5"
+        );
     }
 }

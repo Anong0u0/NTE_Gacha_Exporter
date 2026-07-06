@@ -13,7 +13,7 @@ fn run_diagnostic_thread(
         None,
     );
     let result = build_support_bundle(&runtime, &session_id, duration_seconds, mode);
-    if runtime.stop.load(Ordering::SeqCst) {
+    if runtime.cancel_requested.load(Ordering::SeqCst) {
         mark_diagnostic_cancelled(&runtime);
         return;
     }
@@ -80,7 +80,7 @@ fn build_support_bundle(
         process_id: std::process::id(),
     };
     let target = discover_target(detect_pppoe());
-    if runtime.stop.load(Ordering::SeqCst) {
+    if runtime.cancel_requested.load(Ordering::SeqCst) {
         cleanup_diagnostic_staging(&paths);
         anyhow::bail!("diagnostic cancelled");
     }
@@ -95,18 +95,28 @@ fn build_support_bundle(
 
     let duration = Duration::from_secs(duration_seconds);
     let strategy = diagnostic_strategy(mode);
-    let external_handle = (mode == DiagnosticMode::Pktmon).then(|| {
-        start_external_capture_thread(
-            &paths,
-            &target.selected_ports,
-            &target.pppoe_detection,
-            strategy,
-            duration,
-            Arc::clone(&runtime.stop),
-        )
-    }).flatten();
-    let internal = run_internal_capture(runtime, &paths, &target, &environment, duration, mode, &root);
-    if runtime.stop.load(Ordering::SeqCst) {
+    let external_handle = (mode == DiagnosticMode::Pktmon)
+        .then(|| {
+            start_external_capture_thread(
+                &paths,
+                &target.selected_ports,
+                &target.pppoe_detection,
+                strategy,
+                duration,
+                Arc::clone(&runtime.cancel_requested),
+            )
+        })
+        .flatten();
+    let internal = run_internal_capture(
+        runtime,
+        &paths,
+        &target,
+        &environment,
+        duration,
+        mode,
+        &root,
+    );
+    if runtime.cancel_requested.load(Ordering::SeqCst) {
         let _ = external_handle.map(|handle| handle.join());
         cleanup_diagnostic_staging(&paths);
         anyhow::bail!("diagnostic cancelled");
@@ -159,7 +169,7 @@ fn build_support_bundle(
             commands: Vec::new(),
         });
 
-    if runtime.stop.load(Ordering::SeqCst) {
+    if runtime.cancel_requested.load(Ordering::SeqCst) {
         cleanup_diagnostic_staging(&paths);
         anyhow::bail!("diagnostic cancelled");
     }

@@ -6,8 +6,7 @@ impl AutoPager {
         let previous = request.previous;
         for attempt in 1..=2 {
             let clicked_at = Instant::now();
-            let click = window::foreground_click(&self.window, request.point)?;
-            self.record_click(click);
+            self.click(request.point, Some(0.0))?;
             match self.wait_for_page(
                 request.page_rect,
                 request.pool,
@@ -33,8 +32,7 @@ impl AutoPager {
         }
         Err(AutomationError::message(format!(
             "page did not change after retry: expected {}, still {}",
-            request.expected_page,
-            previous.current
+            request.expected_page, previous.current
         )))
     }
 
@@ -51,12 +49,14 @@ impl AutoPager {
         expected_page: u32,
         visited_pages: u32,
     ) -> AutomationResult<PageWaitOutcome> {
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.click_timeout);
+        let started = Instant::now();
+        let mut verify_deadline = started + self.click_verify_wait();
+        let capture_deadline = started + Duration::from_secs_f64(self.options.click_timeout);
         let mut last_error = None;
         let mut saw_previous = false;
         let mut unexpected_page = None::<PageNumber>;
         let mut unexpected_count = 0_u8;
-        while Instant::now() < deadline {
+        loop {
             if self.should_stop() {
                 return Err(AutomationError::message("auto page stopped"));
             }
@@ -76,7 +76,7 @@ impl AutoPager {
                     decoded_pages,
                     max_visited_pages,
                 } => {
-                    if Instant::now() >= deadline {
+                    if Instant::now() >= capture_deadline {
                         return Err(AutomationError::message(format!(
                             "capture window stalled: pool={pool} visited_pages={visited_pages} decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
                         )));
@@ -90,9 +90,14 @@ impl AutoPager {
                             ))
                             .persistent(),
                     );
+                    let wait_started = Instant::now();
                     self.sleep_poll();
+                    verify_deadline += wait_started.elapsed();
                     continue;
                 }
+            }
+            if Instant::now() >= verify_deadline {
+                break;
             }
             self.sleep_poll();
             match self.read_page_with_hint(
@@ -155,7 +160,7 @@ impl AutoPager {
         page_rect: crate::model::Rect,
         pool: &str,
     ) -> AutomationResult<PageNumber> {
-        let deadline = Instant::now() + Duration::from_secs_f64(self.options.template_timeout);
+        let deadline = Instant::now() + self.template_verify_wait();
         let mut stable_page = None::<(PageNumber, Instant)>;
         let mut last_page = None;
         let mut last_error = None;

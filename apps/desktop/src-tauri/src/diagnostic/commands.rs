@@ -27,7 +27,7 @@ pub(crate) fn diagnostic_cancel(
     session_id: String,
 ) -> Result<DiagnosticStatus, ApiError> {
     let session = diagnostic_runtime_session(&state, &session_id)?;
-    session.stop.store(true, Ordering::SeqCst);
+    session.cancel_requested.store(true, Ordering::SeqCst);
     {
         let mut status = session.status.lock().map_err(|_| {
             api_error_message("diagnostic_lock_poisoned", "diagnostic lock poisoned")
@@ -69,10 +69,10 @@ pub(crate) fn start_diagnostic_session(
         error: None,
         summary: None,
     };
-    let stop = Arc::new(AtomicBool::new(false));
+    let cancel_requested = Arc::new(AtomicBool::new(false));
     let runtime = Arc::new(DiagnosticRuntimeSession {
         status: Mutex::new(initial_status.clone()),
-        stop: Arc::clone(&stop),
+        cancel_requested: Arc::clone(&cancel_requested),
         handle: Mutex::new(None),
     });
     state

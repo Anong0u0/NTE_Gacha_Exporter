@@ -156,4 +156,16 @@ impl AutoPager {
     fn sleep_poll(&self) {
         thread::sleep(Duration::from_secs_f64(self.options.click_poll_interval));
     }
+
+    fn click_verify_wait(&self) -> Duration {
+        Duration::from_secs_f64(self.options.click_timeout)
+    }
+
+    fn template_verify_wait(&self) -> Duration {
+        Duration::from_secs_f64(self.options.template_timeout)
+    }
+
+    fn post_click_template_wait(&self) -> Duration {
+        Duration::from_secs_f64(self.options.template_timeout)
+    }
 }

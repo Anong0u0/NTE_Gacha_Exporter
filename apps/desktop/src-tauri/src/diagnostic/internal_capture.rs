@@ -80,7 +80,7 @@ fn run_internal_capture(
                 max_full_dropped_samples: 32,
                 on_progress: Some(progress),
             },
-            Arc::clone(&runtime.stop),
+            Arc::clone(&runtime.cancel_requested),
         ),
         DiagnosticMode::WinDivert => run_windivert_diagnostic_capture(
             pid,
@@ -88,7 +88,7 @@ fn run_internal_capture(
             paths,
             root,
             duration,
-            Arc::clone(&runtime.stop),
+            Arc::clone(&runtime.cancel_requested),
             progress,
         ),
     };
@@ -108,12 +108,12 @@ fn run_internal_capture(
 
 fn diagnostic_strategy(mode: DiagnosticMode) -> CaptureStrategy {
     match mode {
-        DiagnosticMode::Pktmon => CaptureStrategy::no_filter(
-            nte_capture::CaptureStrategyReason::DiagnosticNoFilter,
-        ),
-        DiagnosticMode::WinDivert => CaptureStrategy::no_filter(
-            nte_capture::CaptureStrategyReason::WinDivertBackend,
-        ),
+        DiagnosticMode::Pktmon => {
+            CaptureStrategy::no_filter(nte_capture::CaptureStrategyReason::DiagnosticNoFilter)
+        }
+        DiagnosticMode::WinDivert => {
+            CaptureStrategy::no_filter(nte_capture::CaptureStrategyReason::WinDivertBackend)
+        }
     }
 }
 
@@ -123,17 +123,15 @@ fn run_windivert_diagnostic_capture(
     paths: &SupportPaths,
     root: &Path,
     duration: Duration,
-    stop: Arc<AtomicBool>,
+    cancel_requested: Arc<AtomicBool>,
     progress: Arc<dyn Fn(nte_capture::DiagnosticCaptureProgress) + Send + Sync + 'static>,
 ) -> anyhow::Result<DiagnosticCaptureResult> {
-    let capture_stop = Arc::clone(&stop);
-    let timer = std::thread::spawn(move || {
-        let started = Instant::now();
-        while started.elapsed() < duration && !capture_stop.load(Ordering::SeqCst) {
-            std::thread::sleep(Duration::from_millis(100));
-        }
-        capture_stop.store(true, Ordering::SeqCst);
-    });
+    let capture_stop = Arc::new(AtomicBool::new(false));
+    let timer = spawn_windivert_diagnostic_timer(
+        duration,
+        Arc::clone(&cancel_requested),
+        Arc::clone(&capture_stop),
+    );
     let result = capture_live(
         CaptureOptions {
             pid,
@@ -159,10 +157,29 @@ fn run_windivert_diagnostic_capture(
                 });
             })),
         },
-        stop,
-    )?;
+        Arc::clone(&capture_stop),
+    );
+    capture_stop.store(true, Ordering::SeqCst);
     let _ = timer.join();
+    let result = result?;
     Ok(diagnostic_result_from_live(result, duration))
+}
+
+fn spawn_windivert_diagnostic_timer(
+    duration: Duration,
+    cancel_requested: Arc<AtomicBool>,
+    capture_stop: Arc<AtomicBool>,
+) -> JoinHandle<()> {
+    std::thread::spawn(move || {
+        let started = Instant::now();
+        while started.elapsed() < duration
+            && !cancel_requested.load(Ordering::SeqCst)
+            && !capture_stop.load(Ordering::SeqCst)
+        {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        capture_stop.store(true, Ordering::SeqCst);
+    })
 }
 
 fn diagnostic_result_from_live(
@@ -189,7 +206,9 @@ fn diagnostic_result_from_live(
     }
 }
 
-fn diagnostic_counters_from_live(counters: &nte_capture::CaptureCounters) -> DiagnosticCaptureCounters {
+fn diagnostic_counters_from_live(
+    counters: &nte_capture::CaptureCounters,
+) -> DiagnosticCaptureCounters {
     DiagnosticCaptureCounters {
         packets_seen: counters.packets_seen,
         decoded_packets: counters.decoded_packets,
@@ -215,13 +234,6 @@ fn start_external_capture_thread(
     let ports = ports.to_vec();
     let pppoe_detection = pppoe_detection.clone();
     Some(std::thread::spawn(move || {
-        run_external_pktmon_capture(
-            &paths,
-            &ports,
-            pppoe_detection,
-            strategy,
-            duration,
-            stop,
-        )
+        run_external_pktmon_capture(&paths, &ports, pppoe_detection, strategy, duration, stop)
     }))
 }

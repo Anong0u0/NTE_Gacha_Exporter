@@ -230,6 +230,7 @@ pub enum AutoPageControlDecision {
     },
 }
 
+#[derive(Clone)]
 pub struct AutoPageOptions {
     pub pid: u32,
     pub stop: Arc<AtomicBool>,

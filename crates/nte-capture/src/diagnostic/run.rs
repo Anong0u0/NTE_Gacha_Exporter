@@ -99,12 +99,9 @@ pub fn run_diagnostic_capture(
 
         let mut restart_for_ports = false;
         let mut idle_ticks = 0_u32;
-        loop {
-            if stop.load(Ordering::SeqCst) || started_at.elapsed() >= duration {
-                stop.store(true, Ordering::SeqCst);
-                break;
-            }
-
+        while let DiagnosticCaptureStopReason::Continue =
+            diagnostic_capture_stop_reason(&stop, started_at, duration)
+        {
             match capture.next_packet_timeout(Duration::from_secs(1)) {
                 Ok(packet) => {
                     idle_ticks = 0;
@@ -311,7 +308,66 @@ fn diagnostic_counters_delta(
         packets_seen: end.packets_seen.saturating_sub(start.packets_seen),
         decoded_packets: end.decoded_packets.saturating_sub(start.decoded_packets),
         dropped_packets: end.dropped_packets.saturating_sub(start.dropped_packets),
-        duplicate_packets: end.duplicate_packets.saturating_sub(start.duplicate_packets),
+        duplicate_packets: end
+            .duplicate_packets
+            .saturating_sub(start.duplicate_packets),
         filter_restarts: end.filter_restarts.saturating_sub(start.filter_restarts),
+    }
+}
+
+#[cfg(any(windows, test))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DiagnosticCaptureStopReason {
+    Continue,
+    CancelRequested,
+    DurationElapsed,
+}
+
+#[cfg(any(windows, test))]
+fn diagnostic_capture_stop_reason(
+    stop: &AtomicBool,
+    started_at: Instant,
+    duration: Duration,
+) -> DiagnosticCaptureStopReason {
+    if stop.load(Ordering::SeqCst) {
+        DiagnosticCaptureStopReason::CancelRequested
+    } else if started_at.elapsed() >= duration {
+        DiagnosticCaptureStopReason::DurationElapsed
+    } else {
+        DiagnosticCaptureStopReason::Continue
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn diagnostic_capture_stop_reason_keeps_duration_separate_from_cancel() {
+        let stop = AtomicBool::new(false);
+
+        let reason = diagnostic_capture_stop_reason(&stop, Instant::now(), Duration::ZERO);
+
+        assert_eq!(reason, DiagnosticCaptureStopReason::DurationElapsed);
+        assert!(!stop.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn diagnostic_capture_stop_reason_reports_cancel_without_clearing_it() {
+        let stop = AtomicBool::new(true);
+
+        let reason = diagnostic_capture_stop_reason(&stop, Instant::now(), Duration::from_secs(60));
+
+        assert_eq!(reason, DiagnosticCaptureStopReason::CancelRequested);
+        assert!(stop.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn diagnostic_capture_stop_reason_continues_before_deadline() {
+        let stop = AtomicBool::new(false);
+
+        let reason = diagnostic_capture_stop_reason(&stop, Instant::now(), Duration::from_secs(60));
+
+        assert_eq!(reason, DiagnosticCaptureStopReason::Continue);
     }
 }

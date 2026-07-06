@@ -23,25 +23,33 @@ pub fn run_auto_page(options: AutoPageOptions) -> AutoPageResult {
     let non_interactive = options.non_interactive;
     let mut pager = match AutoPager::new(options) {
         Ok(pager) => pager,
-        Err(error) if non_interactive => {
-            return AutoPageResult::failed(error.to_string(), Vec::new(), Vec::new());
+        Err(error) => {
+            return failed_result(non_interactive, error, AutoPageDiagnostics::default());
         }
-        Err(error) => return AutoPageResult::manual(error.to_string(), Vec::new(), Vec::new()),
     };
     match pager.run() {
         Ok(result) => result,
-        Err(error) if non_interactive => AutoPageResult::failed_with_diagnostics(
-            error.to_string(),
-            Vec::new(),
-            Vec::new(),
-            pager.diagnostics,
-        ),
-        Err(error) => AutoPageResult::manual_with_diagnostics(
-            error.to_string(),
-            Vec::new(),
-            Vec::new(),
-            pager.diagnostics,
-        ),
+        Err(error) => failed_result(non_interactive, error, pager.diagnostics),
+    }
+}
+
+fn failed_result(
+    non_interactive: bool,
+    error: AutomationError,
+    diagnostics: AutoPageDiagnostics,
+) -> AutoPageResult {
+    failure_result_with_message(non_interactive, error.to_string(), diagnostics)
+}
+
+fn failure_result_with_message(
+    non_interactive: bool,
+    message: String,
+    diagnostics: AutoPageDiagnostics,
+) -> AutoPageResult {
+    if non_interactive {
+        AutoPageResult::failed_with_diagnostics(message, Vec::new(), Vec::new(), diagnostics)
+    } else {
+        AutoPageResult::manual_with_diagnostics(message, Vec::new(), Vec::new(), diagnostics)
     }
 }
 
