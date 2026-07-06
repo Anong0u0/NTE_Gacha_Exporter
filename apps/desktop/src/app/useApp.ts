@@ -1,4 +1,4 @@
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, reactive, ref } from "vue";
 import {
   api,
   type AboutLinkTarget,
@@ -15,8 +15,6 @@ import {
   type RecordFilterOptions,
   type Profile,
   type RestoreReport,
-  type Settings,
-  type SettingsPatch,
   type UpdateCheckReport,
   type UpdateStatus,
 } from "../api";
@@ -37,6 +35,8 @@ import { navItems, type ViewId } from "./navigation";
 import { kindOrder, type ExportMode, type ImportMode } from "./options";
 import { createProfileActions } from "./profileActions";
 import { createRecordState } from "./recordState";
+import { createAppRuntime } from "./runtime";
+import { createSettingsActions } from "./settingsActions";
 import { createTaskRunner } from "./task";
 
 installEcharts();
@@ -194,50 +194,39 @@ export function useApp() {
   const { latestFiveStarWallModeForPool } = dashboardUi.internal;
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError: formatters.formatError });
 
-  function applySettings(settings: Settings) {
-    setActiveProfileName(settings.active_profile);
-    locale.value = settings.locale;
-    uiLocale.value = settings.ui_locale || uiLocale.value;
-    settingsUpdateChannel.value = settings.update_channel;
-    settingsCheckUpdates.value = settings.check_updates_on_startup;
-    settingsSkippedUpdateVersion.value = settings.skipped_update_version ?? null;
-    captureAutoPageEnabled.value = settings.capture_auto_page_enabled;
-    captureFullUpdateEnabled.value = settings.capture_auto_page_enabled && settings.capture_full_update_enabled;
-    captureWinDivertBackendEnabled.value = settings.capture_windivert_backend_enabled;
-    captureMode.value = effectiveCaptureMode.value;
-  }
-
-  async function saveCaptureSettings() {
-    try {
-      const settings = await api.updateSettings({
-        capture_auto_page_enabled: captureAutoPageEnabled.value,
-        capture_full_update_enabled: captureFullUpdateEnabled.value,
-        capture_windivert_backend_enabled: captureWinDivertBackendEnabled.value,
-      });
-      applySettings(settings);
-    } catch (error) {
-      errorText.value = formatters.formatError(error);
-    }
-  }
-
-  function setCaptureAutoPageEnabled(value: boolean) {
-    captureAutoPageEnabled.value = value;
-    if (!value) captureFullUpdateEnabled.value = false;
-    captureMode.value = effectiveCaptureMode.value;
-    void saveCaptureSettings();
-  }
-
-  function setCaptureFullUpdateEnabled(value: boolean) {
-    captureFullUpdateEnabled.value = value;
-    if (value) captureAutoPageEnabled.value = true;
-    captureMode.value = effectiveCaptureMode.value;
-    void saveCaptureSettings();
-  }
-
-  function setCaptureWinDivertBackendEnabled(value: boolean) {
-    captureWinDivertBackendEnabled.value = value;
-    void saveCaptureSettings();
-  }
+  let loadProfilesImpl: () => Promise<void> = async () => {};
+  let refreshAllImpl: () => Promise<void> = async () => {};
+  const loadProfilesProxy = () => loadProfilesImpl();
+  const refreshAllProxy = () => refreshAllImpl();
+  const {
+    applySettings,
+    setCaptureAutoPageEnabled,
+    setCaptureFullUpdateEnabled,
+    setCaptureWinDivertBackendEnabled,
+    setUiLocale,
+    setDataLocale,
+    setUpdateChannel,
+    setCheckUpdatesOnStartup,
+  } = createSettingsActions({
+    locale,
+    uiLocale,
+    settingsUpdateChannel,
+    settingsCheckUpdates,
+    settingsSkippedUpdateVersion,
+    captureAutoPageEnabled,
+    captureFullUpdateEnabled,
+    captureWinDivertBackendEnabled,
+    captureMode,
+    effectiveCaptureMode,
+    errorText,
+    setActiveProfileName,
+    saveRecordViewPrefs,
+    loadProfiles: loadProfilesProxy,
+    refreshAll: refreshAllProxy,
+    runTask,
+    formatError: formatters.formatError,
+    t,
+  });
 
   async function startPreferredCapture() {
     captureMode.value = effectiveCaptureMode.value;
@@ -306,12 +295,6 @@ export function useApp() {
     );
   });
 
-  function isSameDashboardScope(left: DashboardSelection, right: DashboardSelection) {
-    if (left.kind !== right.kind || left.pool_kind !== right.pool_kind) return false;
-    if (left.kind === "pool_kind" || right.kind === "pool_kind") return true;
-    return left.banner_id === right.banner_id;
-  }
-
   const {
     loadProfiles,
     createProfile,
@@ -336,7 +319,7 @@ export function useApp() {
     setActiveProfileName,
     copyRecordViewPrefs,
     removeRecordViewPrefs,
-    refreshAll,
+    refreshAll: refreshAllProxy,
   });
 
   const {
@@ -373,7 +356,7 @@ export function useApp() {
     formatCaptureMode: formatters.formatCaptureMode,
     saveRecordViewPrefs,
     setActiveProfileName,
-    refreshAll,
+    refreshAll: refreshAllProxy,
   });
 
   const {
@@ -425,104 +408,9 @@ export function useApp() {
     runTask,
     t,
     saveRecordViewPrefs,
-    loadProfiles,
-    refreshAll,
+    loadProfiles: loadProfilesProxy,
+    refreshAll: refreshAllProxy,
   });
-
-  onMounted(async () => {
-    await bootstrap();
-  });
-
-  onBeforeUnmount(() => {
-    clearCapturePolling();
-    clearDiagnosticPolling();
-    disposeChart();
-  });
-
-  watch(chartEl, async (element) => {
-    if (!element) {
-      disposeChart();
-      return;
-    }
-    await nextTick();
-    renderChart();
-  });
-  watch(detail, async () => { await nextTick(); renderChart(); }, { deep: true });
-  watch(uiLocale, async () => { await nextTick(); renderChart(); });
-  watch(() => selectedDashboardScope.value, () => { rankingDialogOpen.value = false; }, { deep: true });
-  watch([recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize], () => {
-    if (shouldSkipFilterWatch()) return;
-    normalizeAfterFilterWatch();
-    resetPageAfterFilterWatch();
-    saveRecordViewPrefs();
-    void loadRecords();
-  }, { flush: "sync" });
-  watch(pageIndex, () => {
-    if (shouldSkipPageWatch()) return;
-    void loadRecords();
-  }, { flush: "sync" });
-  watch(recordAdvancedFiltersOpen, () => {
-    if (shouldSkipPrefsWatch()) return;
-    saveRecordViewPrefs();
-  }, { flush: "sync" });
-  watch(visibleRecordColumns, () => {
-    if (shouldSkipColumnWatch()) return;
-    normalizeAfterFilterWatch();
-    saveRecordViewPrefs();
-  }, { flush: "sync" });
-  async function bootstrap() {
-    busy.value = true;
-    try {
-      const [settings, maps, uiLocaleList] = await Promise.all([api.getSettings(), api.mapsList(), api.uiLocaleList()]);
-      applySettings(settings);
-      locales.value = maps.locales;
-      uiLocales.value = uiLocaleList.locales;
-      await loadProfiles();
-      await refreshAll();
-      await loadUpdaterStatus();
-      const startedPendingCapture = await startPendingAdminCapture();
-      const startedPendingDiagnostic = startedPendingCapture ? false : await startPendingAdminDiagnostic();
-      if (!startedPendingCapture && !startedPendingDiagnostic && settings.check_updates_on_startup) {
-        void checkForUpdates({ silent: true });
-      }
-    } catch (error) {
-      errorText.value = formatters.formatError(error);
-    } finally {
-      busy.value = false;
-    }
-  }
-
-  async function updateRuntimeSettings(patch: SettingsPatch, options: { refreshData?: boolean } = {}) {
-    await runTask(t("status.settingsUpdated"), async () => {
-      const settings = await api.updateSettings(patch);
-      saveRecordViewPrefs();
-      applySettings(settings);
-      if (options.refreshData) {
-        await loadProfiles();
-        await refreshAll();
-      }
-    });
-  }
-
-  async function setUiLocale(value: string) {
-    if (value === uiLocale.value) return;
-    await updateRuntimeSettings({ ui_locale: value });
-  }
-
-  async function setDataLocale(value: string) {
-    if (value === locale.value) return;
-    await updateRuntimeSettings({ locale: value }, { refreshData: true });
-  }
-
-  async function setUpdateChannel(value: string) {
-    if (value === settingsUpdateChannel.value) return;
-    await updateRuntimeSettings({ update_channel: value });
-  }
-
-  async function setCheckUpdatesOnStartup(value: boolean) {
-    if (value === settingsCheckUpdates.value) return;
-    await updateRuntimeSettings({ check_updates_on_startup: value });
-  }
 
   async function openAboutLink(target: AboutLinkTarget) {
     try {
@@ -532,45 +420,79 @@ export function useApp() {
     }
   }
 
-  async function refreshAll() {
-    if (!activeProfileName.value) return;
-    const requestedScope = selectedDashboardScope.value;
-    const view = await api.profileAnalysisView(activeProfileName.value, requestedScope, currentRecordFilter(), locale.value);
-    summary.value = view.overview;
-    detail.value = view.selected_detail;
-    detailLoading.value = false;
-    filterOptions.value = view.record_filter_options;
-    records.value = view.record_page.records;
-    recordTotal.value = view.record_page.total;
-    const firstActive = summary.value.pool_kinds.find((pool) => pool.total_pulls > 0)?.pool_kind;
-    normalizeDashboardScope(firstActive);
-    const scopeChanged = !isSameDashboardScope(requestedScope, selectedDashboardScope.value);
-    const beforeFilter = recordFilterKey(currentRecordFilter());
-    if (!isRecordPrefsReady()) {
-      applyRecordViewPrefs();
-    } else {
-      normalizeRecordFilterSelection();
-    }
-    const filterChanged = recordFilterKey(currentRecordFilter()) !== beforeFilter;
-    await Promise.all([scopeChanged ? loadDetail() : Promise.resolve(), filterChanged ? loadRecords() : Promise.resolve()]);
-    statusText.value = t("status.dashboardUpdated");
-    await resolveVisibleAssets();
-    await nextTick();
-    renderChart();
-  }
-
-  async function loadFilterOptions() {
-    if (!activeProfileName.value) return;
-    filterOptions.value = await api.recordFilterOptions(activeProfileName.value, locale.value);
-  }
-
-  async function loadRecords() {
-    if (!activeProfileName.value) return;
-    const result = await api.recordPage(activeProfileName.value, currentRecordFilter(), locale.value);
-    records.value = result.records;
-    recordTotal.value = result.total;
-    await resolveVisibleAssets();
-  }
+  const {
+    bootstrap,
+    refreshAll,
+    loadFilterOptions,
+    loadRecords,
+  } = createAppRuntime({
+    busy,
+    statusText,
+    errorText,
+    activeProfileName,
+    locale,
+    uiLocale,
+    locales,
+    uiLocales,
+    summary,
+    selectedDashboardScope,
+    selectedPoolKind,
+    detail,
+    detailLoading,
+    filterOptions,
+    records,
+    recordTotal,
+    chartEl,
+    rankingDialogOpen,
+    recordPoolKind,
+    recordBannerIds,
+    itemRarities,
+    focusedRarities,
+    rateUpResults,
+    rollBuckets,
+    itemKinds,
+    forkResultMarks,
+    forkPityBadges,
+    dateFrom,
+    dateTo,
+    search,
+    sortDirection,
+    pageSize,
+    pageIndex,
+    recordAdvancedFiltersOpen,
+    visibleRecordColumns,
+    captureStatus,
+    diagnosticStatus,
+    applySettings,
+    loadProfiles: loadProfilesProxy,
+    loadUpdaterStatus,
+    startPendingAdminCapture,
+    startPendingAdminDiagnostic,
+    checkForUpdates,
+    clearCapturePolling,
+    clearDiagnosticPolling,
+    disposeChart,
+    renderChart,
+    currentRecordFilter,
+    recordFilterKey,
+    saveRecordViewPrefs,
+    normalizeDashboardScope,
+    loadDetail,
+    resolveVisibleAssets,
+    isRecordPrefsReady,
+    applyRecordViewPrefs,
+    normalizeRecordFilterSelection,
+    normalizeAfterFilterWatch,
+    resetPageAfterFilterWatch,
+    shouldSkipFilterWatch,
+    shouldSkipPageWatch,
+    shouldSkipPrefsWatch,
+    shouldSkipColumnWatch,
+    formatError: formatters.formatError,
+    t,
+  });
+  loadProfilesImpl = loadProfiles;
+  refreshAllImpl = refreshAll;
 
   function showDashboardFiveStarRecords() {
     const scope = selectedDashboardScope.value;
