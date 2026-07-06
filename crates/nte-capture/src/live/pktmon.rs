@@ -11,7 +11,7 @@ use crate::live::{
     CaptureTarget,
 };
 use crate::net;
-use crate::raw::{PacketKind, RawWriter, parse_packet_bytes};
+use crate::raw::{PacketKind, RawPacketSource, RawWriter, parse_packet_bytes};
 
 pub(super) fn capture_live_pktmon(
     options: CaptureOptions,
@@ -88,7 +88,9 @@ pub(super) fn capture_live_pktmon(
                     loop_state.counters_mut().packets_seen += 1;
                     let kind = packet_kind(&packet.payload);
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
+                    let Some(parsed_packet) =
+                        parse_packet_bytes(bytes, kind, RawPacketSource::Pktmon)
+                    else {
                         loop_state.record_parse_drop();
                         continue;
                     };

@@ -22,29 +22,42 @@ pub(crate) fn raw_record_from_parsed_packet(
 }
 
 #[cfg(any(windows, test))]
-pub(crate) fn parse_packet_bytes(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
-    parse_network_packet(bytes, kind)
+pub(crate) fn parse_packet_bytes(
+    bytes: &[u8],
+    kind: PacketKind,
+    source: RawPacketSource,
+) -> Option<ParsedNetworkPacket> {
+    parse_network_packet(bytes, kind, source)
 }
 
 #[cfg(any(windows, test))]
-fn parse_network_packet(bytes: &[u8], kind: PacketKind) -> Option<ParsedNetworkPacket> {
+fn parse_network_packet(
+    bytes: &[u8],
+    kind: PacketKind,
+    source: RawPacketSource,
+) -> Option<ParsedNetworkPacket> {
     match kind {
-        PacketKind::Ethernet => parse_ethernet(bytes),
-        PacketKind::Ip => parse_ip(bytes, "pktmon-ip"),
-        PacketKind::Udp => parse_udp_l4(bytes).or_else(|| assume_l4_payload(bytes, "udp")),
-        PacketKind::Tcp => parse_tcp_l4(bytes).or_else(|| assume_l4_payload(bytes, "tcp")),
-        PacketKind::L4Payload => assume_l4_payload(bytes, "l4"),
-        PacketKind::Unknown => parse_ethernet(bytes)
-            .or_else(|| parse_ip(bytes, "pktmon-ip"))
+        PacketKind::Ethernet => parse_ethernet(bytes, source),
+        PacketKind::Ip => parse_ip(bytes, &source.parser_label("ip")),
+        PacketKind::Udp => {
+            parse_udp_l4(bytes, source).or_else(|| assume_l4_payload(bytes, "udp", source))
+        }
+        PacketKind::Tcp => {
+            parse_tcp_l4(bytes, source).or_else(|| assume_l4_payload(bytes, "tcp", source))
+        }
+        PacketKind::L4Payload => assume_l4_payload(bytes, "l4", source),
+        PacketKind::Unknown => parse_ethernet(bytes, source)
+            .or_else(|| parse_ip(bytes, &source.parser_label("ip")))
             .or_else(|| {
-                parse_raw_ipv4_offsets(bytes).or_else(|| assume_l4_payload(bytes, "unknown"))
+                parse_raw_ipv4_offsets(bytes, source)
+                    .or_else(|| assume_l4_payload(bytes, "unknown", source))
             }),
     }
-    .or_else(|| parse_raw_ipv4_offsets(bytes))
+    .or_else(|| parse_raw_ipv4_offsets(bytes, source))
 }
 
 #[cfg(any(windows, test))]
-fn parse_ethernet(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
+fn parse_ethernet(bytes: &[u8], source: RawPacketSource) -> Option<ParsedNetworkPacket> {
     if bytes.len() < 14 {
         return None;
     }
@@ -58,14 +71,18 @@ fn parse_ethernet(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
         offset += 4;
     }
     match ether_type {
-        0x0800 | 0x86dd => parse_ip_at(bytes, offset, "pktmon-ethernet"),
-        0x8864 => parse_pppoe_session(bytes, offset),
+        0x0800 | 0x86dd => parse_ip_at(bytes, offset, &source.parser_label("ethernet")),
+        0x8864 => parse_pppoe_session(bytes, offset, source),
         _ => None,
     }
 }
 
 #[cfg(any(windows, test))]
-fn parse_pppoe_session(bytes: &[u8], offset: usize) -> Option<ParsedNetworkPacket> {
+fn parse_pppoe_session(
+    bytes: &[u8],
+    offset: usize,
+    source: RawPacketSource,
+) -> Option<ParsedNetworkPacket> {
     const PPPOE_HEADER_LEN: usize = 6;
     const PPP_PROTOCOL_LEN: usize = 2;
     const PPP_IPV4: u16 = 0x0021;
@@ -89,16 +106,17 @@ fn parse_pppoe_session(bytes: &[u8], offset: usize) -> Option<ParsedNetworkPacke
     let protocol = u16::from_be_bytes([bytes[ppp_offset], bytes[ppp_offset + 1]]);
     let ip_offset = ppp_offset + PPP_PROTOCOL_LEN;
     match protocol {
-        PPP_IPV4 | PPP_IPV6 => parse_ip_at(bytes, ip_offset, "pktmon-pppoe"),
+        PPP_IPV4 | PPP_IPV6 => parse_ip_at(bytes, ip_offset, &source.parser_label("pppoe")),
         _ => None,
     }
 }
 
 #[cfg(any(windows, test))]
-fn parse_raw_ipv4_offsets(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
+fn parse_raw_ipv4_offsets(bytes: &[u8], source: RawPacketSource) -> Option<ParsedNetworkPacket> {
+    let parser = source.parser_label("raw-ip");
     [14_usize, 0]
         .into_iter()
-        .find_map(|offset| parse_ip_at(bytes, offset, "pktmon-raw-ip"))
+        .find_map(|offset| parse_ip_at(bytes, offset, &parser))
 }
 
 #[cfg(any(windows, test))]
@@ -170,13 +188,13 @@ fn parse_ipv6_at(bytes: &[u8], ip_off: usize, parser: &str) -> Option<ParsedNetw
 }
 
 #[cfg(any(windows, test))]
-fn parse_udp_l4(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
-    parse_udp_at(bytes, 0, bytes.len(), "pktmon-udp")
+fn parse_udp_l4(bytes: &[u8], source: RawPacketSource) -> Option<ParsedNetworkPacket> {
+    parse_udp_at(bytes, 0, bytes.len(), &source.parser_label("udp"))
 }
 
 #[cfg(any(windows, test))]
-fn parse_tcp_l4(bytes: &[u8]) -> Option<ParsedNetworkPacket> {
-    parse_tcp_at(bytes, 0, bytes.len(), "pktmon-tcp")
+fn parse_tcp_l4(bytes: &[u8], source: RawPacketSource) -> Option<ParsedNetworkPacket> {
+    parse_tcp_at(bytes, 0, bytes.len(), &source.parser_label("tcp"))
 }
 
 #[cfg(any(windows, test))]
@@ -258,7 +276,11 @@ fn parse_tcp_at(
 }
 
 #[cfg(any(windows, test))]
-fn assume_l4_payload(bytes: &[u8], parser: &str) -> Option<ParsedNetworkPacket> {
+fn assume_l4_payload(
+    bytes: &[u8],
+    parser: &str,
+    source: RawPacketSource,
+) -> Option<ParsedNetworkPacket> {
     if bytes.is_empty() {
         return None;
     }
@@ -270,6 +292,6 @@ fn assume_l4_payload(bytes: &[u8], parser: &str) -> Option<ParsedNetworkPacket> 
         ack: None,
         flags: None,
         payload: bytes.to_vec(),
-        parser: format!("pktmon-{parser}-payload"),
+        parser: source.payload_parser_label(parser),
     })
 }

@@ -5,24 +5,31 @@ mod tests {
     #[test]
     fn parses_ipv4_udp_payload() {
         let payload = b"hello";
-        let udp_len = 8 + payload.len();
-        let total_len = 20 + udp_len;
-        let mut packet = vec![0_u8; total_len];
-        packet[0] = 0x45;
-        packet[2..4].copy_from_slice(&(total_len as u16).to_be_bytes());
-        packet[9] = 17;
-        packet[20..22].copy_from_slice(&30230_u16.to_be_bytes());
-        packet[22..24].copy_from_slice(&49310_u16.to_be_bytes());
-        packet[24..26].copy_from_slice(&(udp_len as u16).to_be_bytes());
-        packet[28..].copy_from_slice(payload);
+        let packet = ipv4_udp_packet(30230, 49310, payload);
 
-        let parsed = parse_packet_bytes(&packet, PacketKind::Ip).unwrap();
+        let parsed = parse_packet_bytes(&packet, PacketKind::Ip, RawPacketSource::Pktmon).unwrap();
         let record = raw_record_from_parsed_packet(&parsed, 1, 1.0);
 
         assert_eq!(record.proto, "udp");
         assert_eq!(record.sport, Some(30230));
         assert_eq!(record.dport, Some(49310));
         assert_eq!(record.size, 5);
+        assert_eq!(record.parser, "pktmon-ip");
+    }
+
+    #[test]
+    fn windivert_source_uses_windivert_parser_labels() {
+        let packet = ipv4_udp_packet(30230, 49310, b"hello");
+        let payload = b"raw-payload";
+
+        let parsed =
+            parse_packet_bytes(&packet, PacketKind::Ip, RawPacketSource::WinDivert).unwrap();
+        let fallback =
+            parse_packet_bytes(payload, PacketKind::L4Payload, RawPacketSource::WinDivert)
+                .unwrap();
+
+        assert_eq!(parsed.parser, "windivert-ip");
+        assert_eq!(fallback.parser, "windivert-l4-payload");
     }
 
     #[test]
@@ -30,7 +37,8 @@ mod tests {
         let payload = b"hello";
         let packet = pppoe_ipv4_udp_packet(64208, 30138, payload, 0x0021);
 
-        let parsed = parse_packet_bytes(&packet, PacketKind::Ethernet).unwrap();
+        let parsed =
+            parse_packet_bytes(&packet, PacketKind::Ethernet, RawPacketSource::Pktmon).unwrap();
 
         assert_eq!(parsed.proto, "udp");
         assert_eq!(parsed.sport, Some(64208));
@@ -44,7 +52,8 @@ mod tests {
         let payload = b"hello-v6";
         let packet = pppoe_ipv6_udp_packet(64208, 30138, payload);
 
-        let parsed = parse_packet_bytes(&packet, PacketKind::Ethernet).unwrap();
+        let parsed =
+            parse_packet_bytes(&packet, PacketKind::Ethernet, RawPacketSource::Pktmon).unwrap();
 
         assert_eq!(parsed.proto, "udp");
         assert_eq!(parsed.sport, Some(64208));
@@ -57,7 +66,7 @@ mod tests {
     fn rejects_unsupported_pppoe_protocol() {
         let packet = pppoe_ipv4_udp_packet(64208, 30138, b"hello", 0x0059);
 
-        assert!(parse_packet_bytes(&packet, PacketKind::Ethernet).is_none());
+        assert!(parse_packet_bytes(&packet, PacketKind::Ethernet, RawPacketSource::Pktmon).is_none());
     }
 
     #[test]
@@ -65,7 +74,7 @@ mod tests {
         let mut packet = pppoe_ipv4_udp_packet(64208, 30138, b"hello", 0x0021);
         packet[18..20].copy_from_slice(&1_u16.to_be_bytes());
 
-        assert!(parse_packet_bytes(&packet, PacketKind::Ethernet).is_none());
+        assert!(parse_packet_bytes(&packet, PacketKind::Ethernet, RawPacketSource::Pktmon).is_none());
     }
 
     #[test]
@@ -78,8 +87,22 @@ mod tests {
             PacketKind::Udp,
             PacketKind::L4Payload,
         ] {
-            assert!(parse_packet_bytes(&empty, kind).is_none());
+            assert!(parse_packet_bytes(&empty, kind, RawPacketSource::Pktmon).is_none());
         }
+    }
+
+    fn ipv4_udp_packet(sport: u16, dport: u16, payload: &[u8]) -> Vec<u8> {
+        let udp_len = 8 + payload.len();
+        let total_len = 20 + udp_len;
+        let mut packet = vec![0_u8; total_len];
+        packet[0] = 0x45;
+        packet[2..4].copy_from_slice(&(total_len as u16).to_be_bytes());
+        packet[9] = 17;
+        packet[20..22].copy_from_slice(&sport.to_be_bytes());
+        packet[22..24].copy_from_slice(&dport.to_be_bytes());
+        packet[24..26].copy_from_slice(&(udp_len as u16).to_be_bytes());
+        packet[28..].copy_from_slice(payload);
+        packet
     }
 
     fn pppoe_ipv4_udp_packet(sport: u16, dport: u16, payload: &[u8], ppp_protocol: u16) -> Vec<u8> {

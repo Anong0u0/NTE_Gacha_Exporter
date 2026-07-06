@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from "vue";
 
 import { api, type DiagnosticMode, type DiagnosticStatus, type PendingAdminDiagnostic } from "../api";
 import type { I18nKey } from "./i18n";
+import { ensureWinDivertInstalled } from "./windivertInstall";
 
 const DEFAULT_DIAGNOSTIC_DURATION_SECONDS = 20;
 
@@ -57,6 +58,13 @@ export function createDiagnosticActions(deps: DiagnosticActionsDeps) {
           deps.statusText.value = deps.t("status.waitingAdmin");
           return;
         }
+      }
+      if (mode === "windivert") {
+        await ensureWinDivertInstalled({
+          onStage: () => {
+            deps.statusText.value = deps.t("diagnostic.installingWinDivert");
+          },
+        });
       }
       await applyDiagnosticStatus(await api.diagnosticStart(durationSeconds, mode));
       deps.statusText.value = options.pending

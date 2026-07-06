@@ -82,6 +82,7 @@
   "diagnostic.externalFailed": "failed",
   "diagnostic.externalOk": "ok",
   "diagnostic.failed": "Diagnostic failed",
+  "diagnostic.installingWinDivert": "Preparing WinDivert",
   "diagnostic.packets": "Packets",
   "diagnostic.progress": "Diagnostic progress",
   "diagnostic.prompt": "Open NTE gacha history, then flip pages manually during the 20-second capture window. A support ZIP will be created without importing records.",

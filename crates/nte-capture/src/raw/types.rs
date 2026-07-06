@@ -10,6 +10,31 @@ pub enum PacketKind {
 }
 
 #[cfg(any(windows, test))]
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum RawPacketSource {
+    Pktmon,
+    WinDivert,
+}
+
+#[cfg(any(windows, test))]
+impl RawPacketSource {
+    fn label_prefix(self) -> &'static str {
+        match self {
+            Self::Pktmon => "pktmon",
+            Self::WinDivert => "windivert",
+        }
+    }
+
+    fn parser_label(self, suffix: &str) -> String {
+        format!("{}-{suffix}", self.label_prefix())
+    }
+
+    fn payload_parser_label(self, parser: &str) -> String {
+        format!("{}-{parser}-payload", self.label_prefix())
+    }
+}
+
+#[cfg(any(windows, test))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawPacketRecord {
     #[serde(rename = "type")]

@@ -82,6 +82,7 @@
   "diagnostic.externalFailed": "失敗",
   "diagnostic.externalOk": "正常",
   "diagnostic.failed": "診斷失敗",
+  "diagnostic.installingWinDivert": "正在準備 WinDivert",
   "diagnostic.packets": "封包",
   "diagnostic.progress": "診斷進度",
   "diagnostic.prompt": "開啟 NTE 抽卡紀錄，並在 20 秒抓包期間手動翻頁。診斷只會建立 support ZIP，不會匯入紀錄。",

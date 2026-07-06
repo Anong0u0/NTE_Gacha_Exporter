@@ -21,7 +21,8 @@ use crate::protocol::{ProtocolAssembler, RecordType, parse_payload_blocks};
 use crate::raw::PacketKind;
 #[cfg(windows)]
 use crate::raw::{
-    ParsedNetworkPacket, RawWriter, parse_packet_bytes, raw_record_from_parsed_packet,
+    ParsedNetworkPacket, RawPacketSource, RawWriter, parse_packet_bytes,
+    raw_record_from_parsed_packet,
 };
 
 #[cfg(windows)]

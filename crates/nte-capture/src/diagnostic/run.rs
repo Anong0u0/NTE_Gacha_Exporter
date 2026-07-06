@@ -109,7 +109,9 @@ pub fn run_diagnostic_capture(
                     let kind = packet_kind(&packet.payload);
                     increment(&mut summary.packet_kind_counts, packet_kind_name(kind));
                     let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) = parse_packet_bytes(bytes, kind) else {
+                    let Some(parsed_packet) =
+                        parse_packet_bytes(bytes, kind, RawPacketSource::Pktmon)
+                    else {
                         counters.dropped_packets += 1;
                         increment(
                             &mut summary.dropped_packet_size_buckets,

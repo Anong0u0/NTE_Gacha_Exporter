@@ -2,6 +2,7 @@ import { computed, ref, type ComputedRef, type Ref } from "vue";
 
 import { api, type CaptureMode, type CaptureStartOptions, type CaptureStatus, type ImportReport, type PendingAdminCapture } from "../api";
 import type { I18nKey } from "./i18n";
+import { ensureWinDivertInstalled, reinstallWinDivert as reinstallWinDivertFiles, type WinDivertInstallStage } from "./windivertInstall";
 
 const CAPTURE_WINDOW_STALLED_CODE = "auto_page_capture_window_stalled";
 const VPN_PROXY_SUSPECTED_CODE = "vpn_proxy_suspected";
@@ -24,7 +25,7 @@ export type CaptureRecoveryState = {
   kind: "stalled" | "vpn_proxy_suspected" | "windivert_unavailable" | "windivert_no_decode";
   technicalDetail: string;
   actions: { id: RecoveryDialogActionId; label: string; primary?: boolean }[];
-  busyStage?: "checking" | "downloading" | "verifying" | "installing" | "ready" | "failed" | null;
+  busyStage?: WinDivertInstallStage | null;
 };
 
 type CaptureActionsDeps = {
@@ -321,27 +322,13 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
   async function reinstallWinDivert() {
     deps.captureActionBusy.value = true;
     try {
-      await setInstallStage("checking");
-      await api.windivertStatus(false);
-      await setInstallStage("downloading");
-      const report = await api.windivertInstall();
-      await setInstallStage("verifying");
-      if (!report.verified_sha256) throw new Error("WinDivert verification failed");
-      await setInstallStage("installing");
-      await api.windivertStatus(false);
-      await setInstallStage("ready");
+      await reinstallWinDivertFiles({ onStage: setInstallStage });
     } catch (error) {
       await setInstallStage("failed");
       deps.errorText.value = deps.formatError(error);
     } finally {
       deps.captureActionBusy.value = false;
     }
-  }
-
-  async function ensureWinDivertInstalled() {
-    const status = await api.windivertStatus(false);
-    if (status.installed) return;
-    await api.windivertInstall();
   }
 
   async function disableWinDivertBackend() {

@@ -10,7 +10,7 @@ use crate::live::{
     CaptureStrategyKind, CaptureStrategyReason, CaptureTarget,
 };
 use crate::net;
-use crate::raw::{PacketKind, RawCaptureTarget, RawWriter, parse_packet_bytes};
+use crate::raw::{PacketKind, RawCaptureTarget, RawPacketSource, RawWriter, parse_packet_bytes};
 
 pub(super) fn capture_live_windivert(
     options: CaptureOptions,
@@ -79,7 +79,11 @@ pub(super) fn capture_live_windivert(
             continue;
         }
         loop_state.counters_mut().packets_seen += 1;
-        let Some(parsed_packet) = parse_packet_bytes(&buffer[..packet_len], PacketKind::Ip) else {
+        let Some(parsed_packet) = parse_packet_bytes(
+            &buffer[..packet_len],
+            PacketKind::Ip,
+            RawPacketSource::WinDivert,
+        ) else {
             loop_state.record_parse_drop();
             continue;
         };
