@@ -261,7 +261,7 @@
       }
     },
     "Fashion_1075_rpg_level2_Base": {
-      "name": "コスチューム·大魔导师",
+      "name": "コスチューム·アークメイジ",
       "rarity": 5,
       "category": "inventory",
       "asset_refs": {
@@ -305,7 +305,7 @@
       }
     },
     "Fashion_Glide_1076": {
-      "name": "グライダー·蔽日之影",
+      "name": "グライダー·ダークフレア",
       "rarity": 4,
       "category": "glider",
       "color": "#000000",
@@ -358,7 +358,7 @@
       }
     },
     "Fashion_character_1076_01": {
-      "name": "コスチューム·地海高校生",
+      "name": "コスチューム·放課後セーラー",
       "rarity": 5,
       "category": "fashion",
       "color": "#000000",
@@ -372,8 +372,9 @@
       "name": "グライダー·ダークチェイサー",
       "rarity": 4,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI/Appearance/Glider/Fashion_Glide_1071.Fashion_glide_1071"
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1076_256.Fashion_glide_1076_256"
       }
     },
     "Fashion_vehicleSkin_1052_V016": {
@@ -427,16 +428,17 @@
       }
     },
     "Fashion_vehicle_1075_V006": {
-      "name": "改造パーツ·赤炎龙影-涂装",
+      "name": "改造パーツ·ドラグーン-塗装",
       "rarity": 5,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1076_V024.Fashion_vehicle_1076_V024",
         "head_icon": "/Game/UI/UI_Icon/item_100/ItemIcon_V024_Decal_003_100.ItemIcon_V024_Decal_003_100"
       }
     },
     "Fashion_vehicle_1076_V024": {
-      "name": "改造パーツ·赤炎龙影-涂装",
+      "name": "改造パーツ·ドラグーン-塗装",
       "rarity": 5,
       "category": "vehicle_module",
       "color": "#000000",
@@ -495,7 +497,7 @@
       }
     },
     "fork_Door": {
-      "name": "弧盤·错误的门",
+      "name": "弧盤·偽りの門",
       "rarity": 5,
       "category": "fork",
       "asset_refs": {
@@ -523,7 +525,7 @@
       }
     },
     "fork_LunarPhase": {
-      "name": "弧盤·穿过胭红蜃景",
+      "name": "弧盤·紅き蜃気楼",
       "rarity": 5,
       "category": "fork",
       "asset_refs": {
@@ -826,11 +828,11 @@
         },
         {
           "end_at_tz8": "2026-07-29 05:59:00",
-          "title": "ZhenHong"
+          "title": "夜明けの刻"
         },
         {
           "end_at_tz8": "2026-08-19 05:59:00",
-          "title": "Yiluoyi"
+          "title": "ラスト・リゾート"
         }
       ],
       "banner_ids": [
@@ -897,7 +899,7 @@
     "ForkLottery_Yiluoyi": {
       "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
-      "title": "启门特刊",
+      "title": "羊夢特別号",
       "pickup_item_ids": [
         "fork_Door"
       ],
@@ -908,7 +910,7 @@
     "ForkLottery_Zhenhong": {
       "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
-      "title": "决意特刊",
+      "title": "反逆特別号",
       "pickup_item_ids": [
         "fork_LunarPhase"
       ],
@@ -1054,7 +1056,7 @@
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
-      "title": "ZhenHong",
+      "title": "夜明けの刻",
       "end_at": "2026-07-29 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
@@ -1082,7 +1084,7 @@
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
-      "title": "Yiluoyi",
+      "title": "ラスト・リゾート",
       "end_at": "2026-08-19 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
@@ -1179,7 +1181,7 @@
       "pool_id": "ForkLottery_Zhenhong",
       "pool_kind": "fork_lottery",
       "banner_type": "fork",
-      "title": "决意特刊",
+      "title": "反逆特別号",
       "rate_up_5": [
         "fork_LunarPhase"
       ],
@@ -1197,7 +1199,7 @@
       "pool_id": "ForkLottery_Yiluoyi",
       "pool_kind": "fork_lottery",
       "banner_type": "fork",
-      "title": "启门特刊",
+      "title": "羊夢特別号",
       "rate_up_5": [
         "fork_Door"
       ],

@@ -372,8 +372,9 @@
       "name": "滑翔翼·天际猎手",
       "rarity": 4,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI/Appearance/Glider/Fashion_Glide_1071.Fashion_glide_1071"
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1076_256.Fashion_glide_1076_256"
       }
     },
     "Fashion_vehicleSkin_1052_V016": {
@@ -430,8 +431,9 @@
       "name": "改装件·赤炎龙影-涂装",
       "rarity": 5,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1076_V024.Fashion_vehicle_1076_V024",
         "head_icon": "/Game/UI/UI_Icon/item_100/ItemIcon_V024_Decal_003_100.ItemIcon_V024_Decal_003_100"
       }
     },

@@ -209,7 +209,7 @@
       }
     },
     "1076": {
-      "name": "Персонаж·Багрянец",
+      "name": "Персонаж·Шинку",
       "rarity": 5,
       "category": "character",
       "color": "#9B376D",
@@ -261,7 +261,7 @@
       }
     },
     "Fashion_1075_rpg_level2_Base": {
-      "name": "Костюм·大魔导师",
+      "name": "Костюм·Архимаг",
       "rarity": 5,
       "category": "inventory",
       "asset_refs": {
@@ -305,7 +305,7 @@
       }
     },
     "Fashion_Glide_1076": {
-      "name": "Планер·蔽日之影",
+      "name": "Планер·Пасмурный навес",
       "rarity": 4,
       "category": "glider",
       "color": "#000000",
@@ -358,7 +358,7 @@
       }
     },
     "Fashion_character_1076_01": {
-      "name": "Костюм·地海高校生",
+      "name": "Костюм·Ученица Терраси",
       "rarity": 5,
       "category": "fashion",
       "color": "#000000",
@@ -372,8 +372,9 @@
       "name": "Планер·Небесный всадник",
       "rarity": 4,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI/Appearance/Glider/Fashion_Glide_1071.Fashion_glide_1071"
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1076_256.Fashion_glide_1076_256"
       }
     },
     "Fashion_vehicleSkin_1052_V016": {
@@ -427,16 +428,17 @@
       }
     },
     "Fashion_vehicle_1075_V006": {
-      "name": "Детали модификации·赤炎龙影-涂装",
+      "name": "Детали модификации·Окраска «Затаившийся дракон»",
       "rarity": 5,
       "category": "inventory",
+      "color": "#000000",
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1076_V024.Fashion_vehicle_1076_V024",
         "head_icon": "/Game/UI/UI_Icon/item_100/ItemIcon_V024_Decal_003_100.ItemIcon_V024_Decal_003_100"
       }
     },
     "Fashion_vehicle_1076_V024": {
-      "name": "Детали модификации·赤炎龙影-涂装",
+      "name": "Детали модификации·Окраска «Затаившийся дракон»",
       "rarity": 5,
       "category": "vehicle_module",
       "color": "#000000",
@@ -495,7 +497,7 @@
       }
     },
     "fork_Door": {
-      "name": "Дуга·错误的门",
+      "name": "Дуга·Неверные врата",
       "rarity": 5,
       "category": "fork",
       "asset_refs": {
@@ -523,7 +525,7 @@
       }
     },
     "fork_LunarPhase": {
-      "name": "Дуга·穿过胭红蜃景",
+      "name": "Дуга·Алеющий мираж",
       "rarity": 5,
       "category": "fork",
       "asset_refs": {
@@ -822,15 +824,15 @@
         },
         {
           "end_at_tz8": "2026-07-08 05:59:00",
-          "title": "Заброшенная тропа"
+          "title": "Забытый путь"
         },
         {
           "end_at_tz8": "2026-07-29 05:59:00",
-          "title": "ZhenHong"
+          "title": "Перед рассветом"
         },
         {
           "end_at_tz8": "2026-08-19 05:59:00",
-          "title": "Yiluoyi"
+          "title": "Путь к спасению"
         }
       ],
       "banner_ids": [
@@ -897,7 +899,7 @@
     "ForkLottery_Yiluoyi": {
       "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
-      "title": "启门特刊",
+      "title": "Особый фонд Врат грёз",
       "pickup_item_ids": [
         "fork_Door"
       ],
@@ -908,7 +910,7 @@
     "ForkLottery_Zhenhong": {
       "name": "Чудо-коробка",
       "group_label": "Исследование дуги",
-      "title": "决意特刊",
+      "title": "Особый фонд Решимости",
       "pickup_item_ids": [
         "fork_LunarPhase"
       ],
@@ -1026,7 +1028,7 @@
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
-      "title": "Заброшенная тропа",
+      "title": "Забытый путь",
       "end_at": "2026-07-08 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
@@ -1054,7 +1056,7 @@
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
-      "title": "ZhenHong",
+      "title": "Перед рассветом",
       "end_at": "2026-07-29 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
@@ -1082,7 +1084,7 @@
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
-      "title": "Yiluoyi",
+      "title": "Путь к спасению",
       "end_at": "2026-08-19 05:59:00",
       "timezone": "Asia/Shanghai",
       "rate_up_5": [
@@ -1179,7 +1181,7 @@
       "pool_id": "ForkLottery_Zhenhong",
       "pool_kind": "fork_lottery",
       "banner_type": "fork",
-      "title": "决意特刊",
+      "title": "Особый фонд Решимости",
       "rate_up_5": [
         "fork_LunarPhase"
       ],
@@ -1197,7 +1199,7 @@
       "pool_id": "ForkLottery_Yiluoyi",
       "pool_kind": "fork_lottery",
       "banner_type": "fork",
-      "title": "启门特刊",
+      "title": "Особый фонд Врат грёз",
       "rate_up_5": [
         "fork_Door"
       ],
