@@ -59,15 +59,15 @@
   },
   "rects": {
     "boardPageNumber": {
-      "x": 915,
+      "x": 893,
       "y": 860,
-      "width": 95,
+      "width": 140,
       "height": 60
     },
     "forkPageNumber": {
-      "x": 915,
+      "x": 893,
       "y": 835,
-      "width": 95,
+      "width": 140,
       "height": 60
     }
   },
@@ -167,7 +167,7 @@
       "pageRect": null,
       "nextButton": null,
       "pool": null,
-      "settle": null
+      "settle": 0.5
     },
     {
       "action": "click",

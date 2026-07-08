@@ -7,7 +7,9 @@ use crate::model::{
     OcrAttemptDiagnostic, OcrReadDiagnostics, PageNumber, PageReadHintDiagnostics, Size,
 };
 
-const MAX_TOTAL_PAGE: u32 = 999;
+const MAX_TOTAL_PAGE: u32 = 9999;
+const MAX_PAGE_TEXT_LEN: usize = 9;
+const MAX_UNHINTED_PAGE_TEXT_LEN: usize = 7;
 const MIN_DECODE_SCORE: f32 = 0.58;
 const MIN_UNHINTED_MARGIN: f32 = 0.025;
 const MIN_HINTED_UNEXPECTED_MARGIN: f32 = 0.04;

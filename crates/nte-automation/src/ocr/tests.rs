@@ -85,6 +85,64 @@ mod tests {
     }
 
     #[test]
+    fn reads_four_digit_page_number_with_hint() {
+        let reader = PageNumberReader::default();
+        let image = fixture_image("../tests/fixtures/page_numbers/page_9999_of_9999.png");
+        let text_width = measured_text_width(&image);
+        assert!(text_width <= 140, "text width {text_width} exceeds page rect");
+
+        let page = reader
+            .read_page_number_with_hint(
+                &image,
+                PageReadHint {
+                    previous_current: Some(9998),
+                    expected_current: Some(9999),
+                    expected_total: Some(9999),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(page.current, 9999);
+        assert_eq!(page.total, 9999);
+        assert_eq!(page.text, "9999/9999");
+    }
+
+    #[test]
+    fn reads_composite_200_page_number_with_hint() {
+        let reader = PageNumberReader::default();
+        let image = fixture_image("../tests/fixtures/page_numbers/page_200_of_265_composite.png");
+        let page = reader
+            .read_page_number_with_hint(
+                &image,
+                PageReadHint {
+                    previous_current: Some(199),
+                    expected_current: Some(200),
+                    expected_total: Some(265),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(page.current, 200);
+        assert_eq!(page.total, 265);
+        assert_eq!(page.text, "200/265");
+    }
+
+    #[test]
+    fn unhinted_four_digit_page_number_fails_fast() {
+        let reader = PageNumberReader::default();
+        let image = fixture_image("../tests/fixtures/page_numbers/page_9999_of_9999.png");
+        let (result, diagnostics) =
+            reader.read_page_number_with_hint_diagnostics(&image, PageReadHint::default());
+
+        assert!(result.is_err());
+        assert!(
+            diagnostics.error.contains("requires page hint"),
+            "{}",
+            diagnostics.error
+        );
+    }
+
+    #[test]
     fn hint_does_not_fill_missing_current_page() {
         let reader = PageNumberReader::default();
         let image = image::load_from_memory(fixture_bytes(
@@ -121,6 +179,23 @@ mod tests {
                 .iter()
                 .all(|attempt| attempt.text.is_none() && attempt.error.is_some())
         );
+    }
+
+    fn fixture_image(path: &str) -> RgbaImage {
+        image::load_from_memory(fixture_bytes(path))
+            .unwrap_or_else(|error| panic!("{path}: {error}"))
+            .to_rgba8()
+    }
+
+    fn measured_text_width(image: &RgbaImage) -> u32 {
+        THRESHOLDS
+            .iter()
+            .filter_map(|threshold| {
+                target_from_mask(&threshold_white_text(image, *threshold), image, *threshold)
+                    .map(|target| target.width)
+            })
+            .max()
+            .expect("fixture should contain page text")
     }
 
     fn fixture_bytes(path: &str) -> &'static [u8] {
@@ -196,6 +271,12 @@ mod tests {
             }
             "../tests/fixtures/page_numbers/page_02_of_14.png" => {
                 include_bytes!("../../tests/fixtures/page_numbers/page_02_of_14.png")
+            }
+            "../tests/fixtures/page_numbers/page_9999_of_9999.png" => {
+                include_bytes!("../../tests/fixtures/page_numbers/page_9999_of_9999.png")
+            }
+            "../tests/fixtures/page_numbers/page_200_of_265_composite.png" => {
+                include_bytes!("../../tests/fixtures/page_numbers/page_200_of_265_composite.png")
             }
             _ => panic!("unknown fixture: {path}"),
         }

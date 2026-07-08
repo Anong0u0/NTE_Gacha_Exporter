@@ -77,6 +77,9 @@ impl AutoPager {
                     required(step.template.as_deref(), "template")?,
                     &step.status,
                 )?;
+                if let Some(settle) = step.settle {
+                    thread::sleep(Duration::from_secs_f64(settle));
+                }
                 Ok(None)
             }
             "click" => {

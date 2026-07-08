@@ -373,7 +373,7 @@ mod tests {
             })
             .unwrap();
         assert_eq!(scaled.points["homeBoardFile"].x, 900);
-        assert_eq!(scaled.rects["boardPageNumber"].width, 190);
+        assert_eq!(scaled.rects["boardPageNumber"].width, 280);
         assert!(scaled.templates["recordTabSelectedCap"].rect.width >= 176);
     }
 

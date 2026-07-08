@@ -194,6 +194,12 @@ impl PageNumberReader {
         let pass = format!("threshold:{}", target.threshold);
         let mut candidates_by_text = HashMap::<String, PageCandidate>::new();
         for slots in self.slot_sequences(target) {
+            if hint.expected_total.is_none() && slots.len() > MAX_UNHINTED_PAGE_TEXT_LEN {
+                return Err(AutomationError::message(format!(
+                    "unhinted page number length {} requires page hint",
+                    slots.len()
+                )));
+            }
             let slot_scores = slots
                 .iter()
                 .map(|slot| self.classify_glyph(target, *slot))
@@ -291,7 +297,7 @@ impl PageNumberReader {
                 for sequence in &sequences {
                     let mut candidate = sequence.clone();
                     candidate.extend(slots.iter().copied());
-                    if candidate.len() <= 7 {
+                    if candidate.len() <= MAX_PAGE_TEXT_LEN {
                         next.push(candidate);
                     }
                 }

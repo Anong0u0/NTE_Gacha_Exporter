@@ -31,11 +31,12 @@ fn target_from_mask(mask: &[bool], image: &RgbaImage, threshold: u8) -> Option<T
         .unwrap();
     let text_height = max_y - min_y + 1;
     let component_count = components.len();
+    let min_char_count = component_count.min(MAX_PAGE_TEXT_LEN);
     let estimated_char_count = components
         .iter()
         .map(estimate_component_char_count)
         .sum::<usize>()
-        .clamp(component_count, 7);
+        .clamp(min_char_count, MAX_PAGE_TEXT_LEN);
 
     let pad = 1_u32;
     let left = min_x.saturating_sub(pad);
