@@ -1,5 +1,5 @@
 use crate::{
-    GachaRuleView, GuiError, InternalRecord, PoolKind, RateUpResult, RecordDerived,
+    GachaRuleView, GuiError, InternalRecord, ItemKind, PoolKind, RateUpResult, RecordDerived,
     ResolvedBanner, RuleResolutionIssue,
 };
 use crate::{MapData, MapGachaRule};
@@ -163,14 +163,18 @@ pub fn rate_up_result(
     if banner.resolution_issue.is_some() {
         return RateUpResult::Unknown;
     }
+    let Some((_, item)) = map.item(&record.item_id) else {
+        return RateUpResult::Unknown;
+    };
+    if rarity == 5 && banner.banner_type.as_deref() == Some("standard") {
+        return if map.item_kind(&record.item_id) == ItemKind::Character {
+            RateUpResult::Up
+        } else {
+            RateUpResult::NotApplicable
+        };
+    }
     let canonical = map.canonical_item_id(&record.item_id);
     let candidates = match rarity {
-        5 if banner.rate_up_5.is_empty()
-            && banner.banner_type.as_deref() == Some("standard")
-            && !banner.standard_5_pool.is_empty() =>
-        {
-            &banner.standard_5_pool
-        }
         5 => &banner.rate_up_5,
         4 => &banner.rate_up_4,
         _ => return RateUpResult::Unknown,
@@ -178,9 +182,6 @@ pub fn rate_up_result(
     if candidates.is_empty() {
         return RateUpResult::Unknown;
     }
-    let Some((_, item)) = map.item(&record.item_id) else {
-        return RateUpResult::Unknown;
-    };
     let Some(item_domain) = item
         .category
         .as_deref()

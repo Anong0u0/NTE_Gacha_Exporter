@@ -53,8 +53,6 @@ export function mockBanner(
     title,
     rate_up_5: [],
     rate_up_4: [],
-    standard_5_pool: [],
-    standard_4_pool: [],
     rule_id: poolKind === "fork_lottery" ? "fork_lottery_s" : poolKind,
     asset_refs: bannerType === "fork" ? forkAssetRefs : limitedAssetRefs,
   };
@@ -136,8 +134,6 @@ export function mockSyntheticBanner(
     title,
     rate_up_5: [],
     rate_up_4: [],
-    standard_5_pool: [],
-    standard_4_pool: [],
     rule_id: null,
     asset_refs: {},
   };

@@ -29,10 +29,11 @@ const app = useAppContext();
 
           <div class="toolbar dense">
             <div class="segmented">
-              <button :class="{ active: app.recordPoolKind === 'all' }" type="button" @click="app.recordPoolKind = 'all'">{{ app.t("common.all") }}</button>
+              <button data-record-pool-kind="all" :class="{ active: app.recordPoolKind === 'all' }" type="button" @click="app.recordPoolKind = 'all'">{{ app.t("common.all") }}</button>
               <button
                 v-for="kind in app.kindOrder"
                 :key="kind"
+                :data-record-pool-kind="kind"
                 :class="{ active: app.recordPoolKind === kind }"
                 type="button"
                 @click="app.recordPoolKind = kind"
@@ -199,7 +200,18 @@ const app = useAppContext();
               <span v-if="app.isRecordColumnVisible('tenPullProgress')">{{ app.t("records.tenPullProgress") }}</span>
               <span v-if="app.isRecordColumnVisible('rolls')">{{ app.t("records.rolls") }}</span>
             </div>
-            <div v-for="record in app.records" :key="record.record_id" class="record-line history-line" :style="{ '--history-grid-template': app.visibleRecordGridTemplate }">
+            <div
+              v-for="record in app.records"
+              :key="record.record_id"
+              class="record-line history-line"
+              :data-record-id="record.record_id"
+              :data-item-id="record.item_id"
+              :data-pool-kind="record.pool_kind"
+              :data-item-kind="record.item_kind"
+              :data-rarity="record.rarity ?? ''"
+              :data-rate-up-result="record.derived.rate_up_result"
+              :style="{ '--history-grid-template': app.visibleRecordGridTemplate }"
+            >
               <span v-if="app.isRecordColumnVisible('index')">{{ app.formatPoolKindPullNo(record) }}</span>
               <span v-if="app.isRecordColumnVisible('time')">{{ app.formatTime(record.time) }}</span>
               <span v-if="app.isRecordColumnVisible('banner')" class="history-banner-cell">

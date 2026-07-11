@@ -266,8 +266,6 @@ pub struct ResolvedBanner {
     pub timezone: Option<String>,
     pub rate_up_5: Vec<String>,
     pub rate_up_4: Vec<String>,
-    pub standard_5_pool: Vec<String>,
-    pub standard_4_pool: Vec<String>,
     pub rule_id: Option<String>,
     pub asset_refs: BTreeMap<String, serde_json::Value>,
 }

@@ -21,11 +21,7 @@ fn fork_banner_asset_refs(normalized_items: &JsonObject, rate_up_5: &[String]) -
     refs
 }
 
-fn standard_banner(
-    localization: &Localization,
-    standard_5_pool: Vec<String>,
-    standard_4_pool: Vec<String>,
-) -> Option<JsonObject> {
+fn standard_banner(localization: &Localization) -> Option<JsonObject> {
     let title = localized_monopoly_pool_title(localization, STANDARD_MONOPOLY_TITLE_TAIL)?;
     let mut banner = JsonObject::new();
     banner.insert(
@@ -48,14 +44,6 @@ fn standard_banner(
     banner.insert("rate_up_5".to_string(), Value::Array(Vec::new()));
     banner.insert("rate_up_4".to_string(), Value::Array(Vec::new()));
     banner.insert(
-        "standard_5_pool".to_string(),
-        Value::Array(standard_5_pool.into_iter().map(Value::String).collect()),
-    );
-    banner.insert(
-        "standard_4_pool".to_string(),
-        Value::Array(standard_4_pool.into_iter().map(Value::String).collect()),
-    );
-    banner.insert(
         "rule_id".to_string(),
         Value::String("monopoly_standard".to_string()),
     );
@@ -69,8 +57,6 @@ struct LimitedBannerBuildContext<'a> {
     canonicalizer: &'a ItemCanonicalizer,
     known_item_ids: &'a BTreeSet<String>,
     normalized_items: &'a JsonObject,
-    standard_5_pool: &'a [String],
-    standard_4_pool: &'a [String],
 }
 
 fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, GuiError> {
@@ -127,26 +113,6 @@ fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, Gui
             Value::Array(rate_up_5.into_iter().map(Value::String).collect()),
         );
         entry.insert("rate_up_4".to_string(), Value::Array(Vec::new()));
-        entry.insert(
-            "standard_5_pool".to_string(),
-            Value::Array(
-                ctx.standard_5_pool
-                    .iter()
-                    .cloned()
-                    .map(Value::String)
-                    .collect(),
-            ),
-        );
-        entry.insert(
-            "standard_4_pool".to_string(),
-            Value::Array(
-                ctx.standard_4_pool
-                    .iter()
-                    .cloned()
-                    .map(Value::String)
-                    .collect(),
-            ),
-        );
         entry.insert(
             "rule_id".to_string(),
             Value::String("monopoly_limited".to_string()),
@@ -233,15 +199,8 @@ fn build_banners(
     normalized_items: &JsonObject,
 ) -> Result<JsonObject, GuiError> {
     let known_item_ids = normalized_items.keys().cloned().collect::<BTreeSet<_>>();
-    let standard_5_pool =
-        lottery_item_ids(assets_root, "SSRItems", canonicalizer, &known_item_ids)?;
-    let standard_4_pool = lottery_item_ids(assets_root, "SRItems", canonicalizer, &known_item_ids)?;
     let mut banners = JsonObject::new();
-    if let Some(standard) = standard_banner(
-        localization,
-        standard_5_pool.clone(),
-        standard_4_pool.clone(),
-    ) {
+    if let Some(standard) = standard_banner(localization) {
         banners.insert("monopoly_standard".to_string(), Value::Object(standard));
     }
     banners.extend(limited_banners(LimitedBannerBuildContext {
@@ -251,8 +210,6 @@ fn build_banners(
         canonicalizer,
         known_item_ids: &known_item_ids,
         normalized_items,
-        standard_5_pool: &standard_5_pool,
-        standard_4_pool: &standard_4_pool,
     })?);
     banners.extend(fork_banners(
         assets_root,

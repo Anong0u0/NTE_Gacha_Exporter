@@ -124,6 +124,60 @@ mod tests {
     }
 
     #[test]
+    fn standard_five_star_result_uses_item_kind() {
+        let map = load_map("zh-Hant").expect("map should load");
+        let banner = map.resolve_banner("CardPool_NewRole", None);
+
+        for item_id in ["1003", "1023", "1054", "1055"] {
+            assert_eq!(
+                rate_up_result(
+                    &map,
+                    &record("character", "CardPool_NewRole", item_id, "2026-01-01 00:00:00"),
+                    5,
+                    &banner,
+                ),
+                RateUpResult::Up,
+                "standard five-star character should be classified as UP: {item_id}"
+            );
+        }
+        for item_id in ["fork_rishi", "DiceNormal"] {
+            assert_eq!(
+                rate_up_result(
+                    &map,
+                    &record("item", "CardPool_NewRole", item_id, "2026-01-01 00:00:00"),
+                    5,
+                    &banner,
+                ),
+                RateUpResult::NotApplicable,
+                "standard non-character five-star should not use UP classification: {item_id}"
+            );
+        }
+        assert_eq!(
+            rate_up_result(
+                &map,
+                &record(
+                    "unknown",
+                    "CardPool_NewRole",
+                    "UnknownItem",
+                    "2026-01-01 00:00:00",
+                ),
+                5,
+                &banner,
+            ),
+            RateUpResult::Unknown
+        );
+        assert_eq!(
+            rate_up_result(
+                &map,
+                &record("four", "CardPool_NewRole", "1019", "2026-01-01 00:00:00"),
+                4,
+                &banner,
+            ),
+            RateUpResult::Unknown
+        );
+    }
+
+    #[test]
     fn derive_pool_kind_hits_tracks_five_star_state() {
         let map = load_map("zh-Hant").expect("map should load");
         let records = vec![

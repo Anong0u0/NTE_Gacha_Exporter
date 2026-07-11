@@ -180,6 +180,84 @@ fn records_list_filters_by_derived_fields() {
 }
 
 #[test]
+fn records_list_standard_five_star_results_use_item_kind() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document(vec![
+        record(
+            "standard-1023",
+            "CardPool_NewRole",
+            "1023",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "standard-1054",
+            "CardPool_NewRole",
+            "1054",
+            "2026-01-01 10:01:00",
+        ),
+        record(
+            "standard-1055",
+            "CardPool_NewRole",
+            "1055",
+            "2026-01-01 10:02:00",
+        ),
+        record(
+            "standard-item",
+            "CardPool_NewRole",
+            "DiceNormal",
+            "2026-01-01 10:03:00",
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let filtered = |result| {
+        store
+            .list_records(
+                "default",
+                "zh-Hant",
+                &RecordFilter {
+                    pool_kind: Some(PoolKind::MonopolyStandard),
+                    rate_up_results: vec![result],
+                    sort_direction: Some(SortDirection::Asc),
+                    ..RecordFilter::default()
+                },
+            )
+            .unwrap()
+    };
+    let up = filtered(RateUpResult::Up);
+    let off_rate = filtered(RateUpResult::OffRate);
+    let not_applicable = filtered(RateUpResult::NotApplicable);
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::PoolKind {
+                pool_kind: PoolKind::MonopolyStandard,
+            },
+        )
+        .unwrap();
+
+    assert_eq!(
+        up.records
+            .iter()
+            .map(|record| record.item_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["1023", "1054", "1055"]
+    );
+    assert_eq!(off_rate.total, 0);
+    assert_eq!(not_applicable.total, 1);
+    assert_eq!(not_applicable.records[0].item_id, "DiceNormal");
+    assert_eq!(detail.summary.up_count, 3);
+    assert_eq!(detail.summary.off_rate_count, 0);
+    assert_eq!(detail.summary.not_applicable_rate_up_count, 1);
+    assert_eq!(detail.summary.unknown_rate_up_count, 0);
+    assert_eq!(detail.summary.observed_up_rate, Some(1.0));
+}
+
+#[test]
 fn records_list_focused_five_star_filter_uses_pool_kind_wall_semantics() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();

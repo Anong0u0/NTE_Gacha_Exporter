@@ -9,25 +9,16 @@ mod tests {
 
         let map = build_asset_map(tmp.path(), "zh-Hant").unwrap();
 
-        assert_eq!(map["schema_version"], 3);
+        assert_eq!(map["schema_version"], 4);
         let map_text = serde_json::to_string(&map).unwrap();
         assert!(!map_text.contains("\"source\""));
         assert!(!map_text.contains("\"domain_type\""));
+        assert!(!map_text.contains("\"standard_5_pool\""));
+        assert!(!map_text.contains("\"standard_4_pool\""));
         assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
         assert_eq!(map["items"]["1010"]["rarity"], 5);
         assert_eq!(map["items"]["201"]["name"], "Arc·Forgotten");
         assert_eq!(map["items"]["201"]["rarity"], 4);
-        assert_eq!(
-            map["banners"]["monopoly_standard"]["standard_5_pool"],
-            json!([
-                "1010",
-                "201",
-                "Fashion_character_1010",
-                "Fashion_Glide_1010",
-                "Fashion_vehicle_1010_V008",
-                "Fashion_vehicleSkin_1010_V001"
-            ])
-        );
         let nanali_refs = map["items"]["1010"]["asset_refs"].as_object().unwrap();
         assert_eq!(nanali_refs.get("head_icon"), Some(&json!("/Game/SmallIcon")));
         assert_eq!(
@@ -230,7 +221,7 @@ mod tests {
     #[test]
     fn rejects_case_folded_duplicate_item_ids() {
         let map = json!({
-            "schema_version": 3,
+            "schema_version": 4,
             "items": {
                 "Foo": {"name": "Foo", "rarity": 3},
                 "foo": {"name": "foo", "rarity": 4}
@@ -487,22 +478,6 @@ mod tests {
             }}),
         );
         write_json(
-            root.join("DataTable/Gacha/DT_LotteryDataTable_Nanali.json"),
-            json!({"Rows": {
-                "row": {
-                    "SSRItems": [
-                        {"ItemID": "1010"},
-                        {"ItemID": "201"},
-                        {"ItemID": "Fashion_character_1010"},
-                        {"ItemID": "Fashion_Glide_1010"},
-                        {"ItemID": "Fashion_vehicle_1010_V008"},
-                        {"ItemID": "Fashion_vehicleSkin_1010_V001"}
-                    ],
-                    "SRItems": []
-                }
-            }}),
-        );
-        write_json(
             root.join("DataTable/Character/Appearance/DT_AppearanceData.json"),
             json!({"Rows": {
                 "Fashion_Glide_1010": {
@@ -553,7 +528,11 @@ mod tests {
                 "201": {
                     "ActivityHeadIcon": {"AssetPathName": "/Game/ForkBanner"},
                     "MaterialTexture": {"AssetPathName": "/Game/ForkMaterial"}
-                }
+                },
+                "Fashion_character_1010": {},
+                "Fashion_Glide_1010": {},
+                "Fashion_vehicle_1010_V008": {},
+                "Fashion_vehicleSkin_1010_V001": {}
             }}),
         );
         write_json(

@@ -181,7 +181,7 @@ fn wait_dashboard_five_wall_items(addr: &str, pool_kind: &str, expected: &Value)
           .map((item) => ({
             recordId: item.dataset.recordId ?? "",
             poolKind: item.dataset.poolKind ?? "",
-            fiveWallDistance: item.dataset.fiveWallDistance ?? "",
+            fiveWallDistance: item.dataset.fiveWallGroupDistance ?? "",
           }));
         return {
           ready:
@@ -239,7 +239,7 @@ fn audit_selected_dashboard_five_wall_data(
             poolId: el.dataset.poolId ?? "",
             itemId: el.dataset.itemId ?? "",
             rarity: el.dataset.rarity ?? "",
-            fiveWallDistance: el.dataset.fiveWallDistance ?? "",
+            fiveWallDistance: el.dataset.fiveWallGroupDistance ?? "",
           }));
 
         const expectedPoolCounters = expectedSmoke.poolCounters ?? {};

@@ -59,8 +59,6 @@ export type ResolvedBanner = {
   timezone?: string | null;
   rate_up_5: string[];
   rate_up_4: string[];
-  standard_5_pool: string[];
-  standard_4_pool: string[];
   rule_id?: string | null;
   asset_refs: AssetRefs;
 };

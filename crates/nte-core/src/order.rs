@@ -115,8 +115,6 @@ mod tests {
             timezone: None,
             rate_up_5: Vec::new(),
             rate_up_4: Vec::new(),
-            standard_5_pool: Vec::new(),
-            standard_4_pool: Vec::new(),
             rule_id: None,
             asset_refs: BTreeMap::new(),
         }

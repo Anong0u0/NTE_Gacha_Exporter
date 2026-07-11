@@ -46,6 +46,12 @@ export function formatRecordResultBadge(value: string, t: Translator) {
 export function primaryRecordBadge(record: DisplayRecord, t: Translator) {
   const forkBadge = forkHitBadge(record);
   if (forkBadge) return forkBadge;
+  if (
+    record.pool_kind === "monopoly_standard" &&
+    record.item_kind === "character" &&
+    record.rarity === 5 &&
+    record.derived.rate_up_result === "up"
+  ) return "";
   return formatRecordResultBadge(record.derived.rate_up_result, t);
 }
 

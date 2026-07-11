@@ -147,7 +147,7 @@ fn maps_build_writes_locale_map() {
     let map: Value =
         serde_json::from_str(&std::fs::read_to_string(out_dir.join("zh-Hant.json")).unwrap())
             .unwrap();
-    assert_eq!(map["schema_version"], 3);
+    assert_eq!(map["schema_version"], 4);
     assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
     assert_eq!(
         map["banners"]["monopoly_standard"]["banner_type"],
@@ -184,13 +184,8 @@ fn write_minimal_assets(root: &std::path::Path) {
         }}),
     );
     write_json(
-        root.join("DataTable/Gacha/DT_LotteryDataTable_Nanali.json"),
-        json!({"Rows": {
-            "row": {
-                "SSRItems": [{"ItemID": "1010"}],
-                "SRItems": []
-            }
-        }}),
+        root.join("DataTable/Gacha/GachaIllustrate.json"),
+        json!({"Rows": {"1010": {}}}),
     );
 }
 

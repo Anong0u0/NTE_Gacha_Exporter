@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "csv_headers": {
     "count": "수량",
     "item_name": "아이템 이름",
@@ -928,16 +928,6 @@
       "title": "기묘한 만남",
       "rate_up_5": [],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_standard"
     },
     "monopoly_limited_Nanali": {
@@ -952,16 +942,6 @@
         "1010"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "asset_refs": {
         "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
@@ -979,16 +959,6 @@
         "1052"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "start_at": "2026-05-13 05:59:00",
       "asset_refs": {
@@ -1007,16 +977,6 @@
         "1004"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "start_at": "2026-06-03 05:59:00",
       "asset_refs": {
@@ -1035,16 +995,6 @@
         "1071"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "start_at": "2026-06-24 05:59:00",
       "asset_refs": {
@@ -1063,16 +1013,6 @@
         "1076"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "start_at": "2026-07-08 05:59:00",
       "asset_refs": {
@@ -1091,16 +1031,6 @@
         "1075"
       ],
       "rate_up_4": [],
-      "standard_5_pool": [
-        "1003",
-        "1010",
-        "fork_wuhuakuang",
-        "fork_rishi"
-      ],
-      "standard_4_pool": [
-        "1019",
-        "fork_jiaojuan"
-      ],
       "rule_id": "monopoly_limited",
       "start_at": "2026-07-29 05:59:00"
     },

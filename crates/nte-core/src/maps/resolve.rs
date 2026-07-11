@@ -169,8 +169,6 @@ fn resolved(banner: &MapBanner) -> ResolvedBanner {
         timezone: banner.timezone.clone(),
         rate_up_5: banner.rate_up_5.clone(),
         rate_up_4: banner.rate_up_4.clone(),
-        standard_5_pool: banner.standard_5_pool.clone(),
-        standard_4_pool: banner.standard_4_pool.clone(),
         rule_id: Some(banner.rule_id.clone()),
         asset_refs: banner.asset_refs.clone(),
     }
@@ -213,8 +211,6 @@ fn synthetic_unresolved(
         timezone: None,
         rate_up_5: Vec::new(),
         rate_up_4: Vec::new(),
-        standard_5_pool: Vec::new(),
-        standard_4_pool: Vec::new(),
         rule_id: None,
         asset_refs: BTreeMap::new(),
     })
@@ -235,8 +231,6 @@ fn unresolved(issue: BannerResolutionIssue, reason: impl Into<String>) -> Resolv
         timezone: None,
         rate_up_5: Vec::new(),
         rate_up_4: Vec::new(),
-        standard_5_pool: Vec::new(),
-        standard_4_pool: Vec::new(),
         rule_id: None,
         asset_refs: BTreeMap::new(),
     }

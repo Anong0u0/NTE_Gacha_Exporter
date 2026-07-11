@@ -1,7 +1,7 @@
 use std::{path::Path, thread, time::Duration};
 
 use anyhow::{Result, bail};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::{
     api::{action, click_nav, eval_js, wait_agent},
@@ -92,11 +92,141 @@ pub(super) fn capture_navigation_views(
             push_step(report, "layout_status_dialog", Some(dialog));
             let expanded = audit_dashboard_expanded_layout(addr)?;
             push_step(report, "layout_dashboard_expanded", Some(expanded));
+        } else if view == "records" {
+            let badges = audit_record_rate_up_badges(addr)?;
+            push_step(report, "records_rate_up_badges", Some(badges));
         }
         capture_step(report, screenshots, &format!("{view}_after"), window)?;
         push_step(report, format!("view_{view}"), None);
     }
     Ok(())
+}
+
+fn audit_record_rate_up_badges(addr: &str) -> Result<Value> {
+    let standard = audit_record_badge(
+        addr,
+        "monopoly_standard",
+        "1023",
+        "character",
+        5,
+        "up",
+        None,
+    )?;
+    let limited = audit_record_badge(
+        addr,
+        "monopoly_limited",
+        "1004",
+        "character",
+        5,
+        "up",
+        Some("UP"),
+    )?;
+    select_record_pool(addr, "all")?;
+    wait_record_item(addr, "1023")?;
+    Ok(json!({
+        "standard": standard,
+        "limited": limited,
+    }))
+}
+
+fn audit_record_badge(
+    addr: &str,
+    pool_kind: &str,
+    item_id: &str,
+    expected_item_kind: &str,
+    expected_rarity: u8,
+    expected_rate_up_result: &str,
+    expected_badge: Option<&str>,
+) -> Result<Value> {
+    select_record_pool(addr, pool_kind)?;
+    wait_record_item(addr, item_id)?;
+    let script = format!(
+        r#"
+        const fail = (message, detail = {{}}) => {{
+          throw new Error(`${{message}} ${{JSON.stringify(detail)}}`);
+        }};
+        const itemId = {item_id_json};
+        const expected = {{
+          itemId,
+          poolKind: {pool_kind_json},
+          itemKind: {item_kind_json},
+          rarity: {rarity},
+          rateUpResult: {rate_up_result_json},
+          badges: {badges_json},
+        }};
+        const row = document.querySelector(`.history-line[data-item-id="${{itemId}}"]`);
+        if (!row) fail("seeded record row missing", {{ itemId, expected }});
+        const actual = {{
+          itemId: row.dataset.itemId ?? "",
+          poolKind: row.dataset.poolKind ?? "",
+          itemKind: row.dataset.itemKind ?? "",
+          rarity: Number(row.dataset.rarity),
+          rateUpResult: row.dataset.rateUpResult ?? "",
+          badges: [...row.querySelectorAll(".derived-chip")]
+            .map((badge) => badge.textContent?.trim() ?? ""),
+        }};
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) {{
+          fail("record rate-up badge mismatch", {{ recordId: row.dataset.recordId, actual, expected }});
+        }}
+        return {{ recordId: row.dataset.recordId ?? "", ...actual }};
+        "#,
+        item_id_json = serde_json::to_string(item_id)?,
+        pool_kind_json = serde_json::to_string(pool_kind)?,
+        item_kind_json = serde_json::to_string(expected_item_kind)?,
+        rarity = expected_rarity,
+        rate_up_result_json = serde_json::to_string(expected_rate_up_result)?,
+        badges_json = serde_json::to_string(&expected_badge.into_iter().collect::<Vec<_>>())?,
+    );
+    eval_js(addr, &script, 5000)
+}
+
+fn select_record_pool(addr: &str, pool_kind: &str) -> Result<()> {
+    let script = format!(
+        r#"
+        const poolKind = {pool_kind_json};
+        const button = document.querySelector(`[data-record-pool-kind="${{poolKind}}"]`);
+        if (!button) throw new Error(`record pool button missing ${{poolKind}}`);
+        if (!button.classList.contains("active")) button.click();
+        return true;
+        "#,
+        pool_kind_json = serde_json::to_string(pool_kind)?,
+    );
+    eval_js(addr, &script, 5000)?;
+    for _ in 0..30 {
+        thread::sleep(Duration::from_millis(100));
+        let selected = eval_js(
+            addr,
+            &format!(
+                r#"
+                const poolKind = {pool_kind_json};
+                return document.querySelector(`[data-record-pool-kind="${{poolKind}}"]`)?.classList.contains("active") ?? false;
+                "#,
+                pool_kind_json = serde_json::to_string(pool_kind)?,
+            ),
+            5000,
+        )?;
+        if selected.as_bool().unwrap_or(false) {
+            return Ok(());
+        }
+    }
+    bail!("record pool did not become active: {pool_kind}")
+}
+
+fn wait_record_item(addr: &str, item_id: &str) -> Result<()> {
+    let script = format!(
+        r#"
+        const itemId = {item_id_json};
+        return document.querySelector(`.history-line[data-item-id="${{itemId}}"]`) !== null;
+        "#,
+        item_id_json = serde_json::to_string(item_id)?,
+    );
+    for _ in 0..30 {
+        thread::sleep(Duration::from_millis(100));
+        if eval_js(addr, &script, 5000)?.as_bool().unwrap_or(false) {
+            return Ok(());
+        }
+    }
+    bail!("seeded record item did not become visible: {item_id}")
 }
 
 fn audit_layout(addr: &str, view: &str) -> Result<Value> {

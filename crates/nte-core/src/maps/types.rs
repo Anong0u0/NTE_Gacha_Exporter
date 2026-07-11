@@ -48,7 +48,7 @@ const BUNDLED_MAPS: &[(&str, &str)] = &[
         include_str!("../../../nte-assets/resources/maps/zh-Hant.json"),
     ),
 ];
-const MAP_SCHEMA_VERSION: u64 = 3;
+const MAP_SCHEMA_VERSION: u64 = 4;
 static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = OnceLock::new();
 
 #[derive(Debug, Clone, Deserialize)]
@@ -110,10 +110,6 @@ pub struct MapBanner {
     pub rate_up_5: Vec<String>,
     #[serde(default)]
     pub rate_up_4: Vec<String>,
-    #[serde(default)]
-    pub standard_5_pool: Vec<String>,
-    #[serde(default)]
-    pub standard_4_pool: Vec<String>,
     pub rule_id: String,
     #[serde(default)]
     pub asset_refs: BTreeMap<String, serde_json::Value>,

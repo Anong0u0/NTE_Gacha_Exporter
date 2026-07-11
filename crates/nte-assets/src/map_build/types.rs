@@ -9,7 +9,7 @@ use serde_json::{json, Map, Value};
 
 use nte_core::GuiError;
 
-const MAP_SCHEMA_VERSION: u64 = 3;
+const MAP_SCHEMA_VERSION: u64 = 4;
 const ASSET_FALLBACK_LOCALE: &str = "en";
 const REMOVED_MAP_LOCALES: &[&str] = &["en-JM"];
 
@@ -46,7 +46,6 @@ const MONOPOLY_DESCRIPTION_KEYS: &[&str] = &[
 const STANDARD_MONOPOLY_TITLE_TAIL: &str = "changzhu";
 const MONOPOLY_LIMITED_RULE_TEXT_KEY: &str = "LotteryDes_XiandingJishiguize_Des";
 const MONOPOLY_STANDARD_RULE_TEXT_KEY: &str = "LotteryDes_Changzhujishiguize_Des";
-const MONOPOLY_LOTTERY_TABLE: &str = "DataTable/Gacha/DT_LotteryDataTable_Nanali.json";
 const MONOPOLY_CELL_TABLE: &str = "DataTable/Monopoly/DT_MonopolyCellDataTable.json";
 const FORK_POOL_TABLE: &str = "DataTable/Fork/DT_ForkLotteryPoolData.json";
 
