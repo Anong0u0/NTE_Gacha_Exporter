@@ -44,7 +44,7 @@ export function mockFilterOptionsForScenario(scenario: MockScenario = mockScenar
     return {
       ...mockFilterOptions,
       banners: mockFilterOptions.banners.map((banner) =>
-        banner.banner_id === "ForkLottery_AnHunQu" ? { ...banner, count: 290 } : banner,
+        banner.banner_id === "ForkLottery_AnHunQu" ? { ...banner, count: 300 } : banner,
       ),
     };
   }

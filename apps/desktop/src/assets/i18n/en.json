@@ -164,6 +164,7 @@
   "dashboard.convertedCurrency": "Converted currency",
   "dashboard.collapseFiveWall": "Collapse",
   "dashboard.costPulls": "Cost pulls",
+  "dashboard.crossBannerPullBreakdown": "{total} pulls ({current} in this Banner + {other} in other Banners)",
   "dashboard.fiveHits": "5-star hits",
   "dashboard.fiveStarRecordsHiddenByItems": "No 5-star records match the current display setting.",
   "dashboard.fiveStarRecordsEmpty": "This banner has no 5-star records.",

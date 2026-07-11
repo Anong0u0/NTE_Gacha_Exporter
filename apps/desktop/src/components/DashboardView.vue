@@ -55,6 +55,9 @@ type FiveWallFrameLayout = {
   distanceMode: string;
   recordIds: string;
   label: string;
+  distanceLabel: string;
+  currentBannerPulls: number | null;
+  otherBannerPulls: number | null;
   crossesRows: boolean;
   crossesFirstRow: boolean;
 };
@@ -234,6 +237,9 @@ function buildFiveWallFrameLayouts(
       distanceMode: group.distanceMode,
       recordIds: group.recordIds,
       label: app.fiveWallGroupItemLabel(group),
+      distanceLabel: app.fiveWallDistanceLabel(group),
+      currentBannerPulls: group.currentBannerPulls,
+      otherBannerPulls: group.otherBannerPulls,
       crossesRows: segments.length > 1,
       crossesFirstRow:
         groupBoxes.some((box) => Math.abs(box.top - firstTop) <= fiveWallRowTolerance) &&
@@ -456,6 +462,8 @@ watch(
                   :data-five-wall-group-distance-mode="frame.distanceMode"
                   :data-five-wall-group-hit-count="frame.hitCount"
                   :data-five-wall-group-record-ids="frame.recordIds"
+                  :data-five-wall-current-banner-pulls="frame.currentBannerPulls ?? undefined"
+                  :data-five-wall-other-banner-pulls="frame.otherBannerPulls ?? undefined"
                   :data-five-wall-segment-count="frame.segments.length"
                   :data-five-wall-crosses-row="frame.crossesRows"
                   :data-five-wall-crosses-first-row="frame.crossesFirstRow"
@@ -496,8 +504,10 @@ watch(
                   :data-five-wall-group-distance="hitIndex === 0 ? group.displayDistance : undefined"
                   :data-five-wall-group-distance-mode="hitIndex === 0 ? group.distanceMode : undefined"
                   :data-five-wall-group-hit-count="hitIndex === 0 ? group.hits.length : undefined"
-                  :title="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} · ${app.formatTime(hit.record.time)} · ${group.displayDistance}`"
-                  :aria-label="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} ${group.displayDistance}`"
+                  :data-five-wall-current-banner-pulls="group.currentBannerPulls ?? undefined"
+                  :data-five-wall-other-banner-pulls="group.otherBannerPulls ?? undefined"
+                  :title="`${app.fiveWallGroupItemLabel(group)} · ${app.fiveWallDistanceLabel(group)}`"
+                  :aria-label="`${app.fiveWallGroupItemLabel(group)} ${app.fiveWallDistanceLabel(group)}`"
                 >
                   <span class="five-wall-thumb" :class="{ empty: !app.hasRecordVisual(hit.record) }">
                     <img v-if="app.hasRecordVisual(hit.record)" :src="app.itemVisualUrl(hit.record)" :alt="app.formatQuantityName(hit.record.item_name, hit.record.count)" />
@@ -528,8 +538,10 @@ watch(
                   :style="fiveWallGroupDistanceStyle(frame)"
                   :data-five-wall-group-key="frame.key"
                   data-five-wall-distance-placement="terminal"
-                  :title="`${frame.label} · ${frame.displayDistance}`"
-                  :aria-label="`${frame.label} ${frame.displayDistance}`"
+                  :data-five-wall-current-banner-pulls="frame.currentBannerPulls ?? undefined"
+                  :data-five-wall-other-banner-pulls="frame.otherBannerPulls ?? undefined"
+                  :title="`${frame.label} · ${frame.distanceLabel}`"
+                  :aria-label="`${frame.label} ${frame.distanceLabel}`"
                 >{{ frame.displayDistance }}</span>
                 <span
                   v-else
@@ -538,8 +550,10 @@ watch(
                   :style="fiveWallGroupDistanceStyle(frame, true)"
                   :data-five-wall-group-key="frame.key"
                   data-five-wall-distance-placement="proxy"
-                  :title="`${frame.label} · ${frame.displayDistance}`"
-                  :aria-label="`${frame.label} ${frame.displayDistance}`"
+                  :data-five-wall-current-banner-pulls="frame.currentBannerPulls ?? undefined"
+                  :data-five-wall-other-banner-pulls="frame.otherBannerPulls ?? undefined"
+                  :title="`${frame.label} · ${frame.distanceLabel}`"
+                  :aria-label="`${frame.label} ${frame.distanceLabel}`"
                 >{{ frame.displayDistance }}</span>
               </template>
             </div>

@@ -294,6 +294,63 @@ export const mockLatestFiveCostDistanceRecords: DisplayRecord[] = [
   ...mockRecords.filter((record) => record.pool_kind !== "fork_lottery"),
 ];
 
+const mockLatestFiveCrossBannerForkOffRateRecord = mockCrossBannerRecord({
+  recordId: "mock-cross-fork-old-off-rate",
+  sourceOrder: 35,
+  time: "2026-02-01 20:00:00",
+  poolKind: "fork_lottery",
+  bannerId: "fork_cross_old",
+  bannerTitle: "Old Fork Banner",
+  pullNoInPoolKind: 35,
+  pullNoInBanner: 35,
+  pity5Before: 34,
+  itemId: "fork_cross_off_rate",
+  itemName: "Old Off-rate Arc",
+  itemKind: "fork",
+  rateUpResult: "off_rate",
+  forkResultMark: "lose",
+});
+
+export const mockLatestFiveCrossBannerForkRecord = mockCrossBannerRecord({
+  recordId: "mock-cross-fork-new-up",
+  sourceOrder: 60,
+  time: "2026-02-02 20:00:00",
+  poolKind: "fork_lottery",
+  bannerId: "fork_cross_new",
+  bannerTitle: "New Fork Banner",
+  pullNoInPoolKind: 60,
+  pullNoInBanner: 20,
+  pity5Before: 24,
+  itemId: "fork_cross_up",
+  itemName: "New UP Arc",
+  itemKind: "fork",
+  rateUpResult: "up",
+  forkResultMark: "win",
+});
+
+export const mockLatestFiveCrossBannerCharacterRecord = mockCrossBannerRecord({
+  recordId: "mock-cross-character-new-up",
+  sourceOrder: 60,
+  time: "2026-02-02 20:01:00",
+  poolKind: "monopoly_limited",
+  bannerId: "limited_cross_new",
+  bannerTitle: "New Character Banner",
+  pullNoInPoolKind: 60,
+  pullNoInBanner: 20,
+  pity5Before: 59,
+  itemId: "character_cross_up",
+  itemName: "New Character",
+  itemKind: "character",
+  rateUpResult: "up",
+  forkResultMark: null,
+});
+
+export const mockLatestFiveCrossBannerRecords: DisplayRecord[] = [
+  mockLatestFiveCrossBannerCharacterRecord,
+  mockLatestFiveCrossBannerForkRecord,
+  mockLatestFiveCrossBannerForkOffRateRecord,
+];
+
 export const mockUnknownLimitedRecord: DisplayRecord = {
   record_id: "mock-unknown-limited",
   source_order: 6,
@@ -371,7 +428,64 @@ export const mockUnknownForkRecord: DisplayRecord = {
 export function mockRecordsForScenario(scenario: MockScenario = mockScenario()) {
   if (scenario === "unknown-banners") return [mockUnknownForkRecord, mockUnknownLimitedRecord, ...mockRecords];
   if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceRecords;
+  if (scenario === "latest-five-cross-banner") return mockLatestFiveCrossBannerRecords;
   return mockRecords;
+}
+
+function mockCrossBannerRecord(options: {
+  recordId: string;
+  sourceOrder: number;
+  time: string;
+  poolKind: "monopoly_limited" | "fork_lottery";
+  bannerId: string;
+  bannerTitle: string;
+  pullNoInPoolKind: number;
+  pullNoInBanner: number;
+  pity5Before: number;
+  itemId: string;
+  itemName: string;
+  itemKind: "character" | "fork";
+  rateUpResult: RateUpResult;
+  forkResultMark: DisplayRecord["fork_result_mark"];
+}): DisplayRecord {
+  const isFork = options.poolKind === "fork_lottery";
+  const bannerType = isFork ? "fork" : "limited";
+  return {
+    record_id: options.recordId,
+    source_order: options.sourceOrder,
+    record_type: isFork ? "fork" : "monopoly",
+    time: options.time,
+    pool_kind: options.poolKind,
+    pool_id: options.bannerId,
+    pool_label: options.bannerTitle,
+    banner: mockBanner(options.bannerId, options.poolKind, bannerType, options.bannerTitle),
+    item_id: options.itemId,
+    item_name: options.itemName,
+    item_asset_refs: {},
+    item_kind: options.itemKind,
+    rarity: 5,
+    count: 1,
+    roll_points: options.pullNoInBanner,
+    roll_label: String(options.pullNoInBanner),
+    roll_bucket: "not_applicable",
+    fork_result_mark: options.forkResultMark,
+    secondary_item_asset_refs: {},
+    derived: mockDerived(options.recordId, {
+      bannerId: options.bannerId,
+      poolKind: options.poolKind,
+      pullNoInPoolKind: options.pullNoInPoolKind,
+      pullNoInBanner: options.pullNoInBanner,
+      pity5Before: options.pity5Before,
+      pity5After: 0,
+      tenPullProgressBefore: options.pullNoInPoolKind % 10,
+      tenPullProgressAfter: 0,
+      hitRarity: 5,
+      rateUpResult: options.rateUpResult,
+      guarantee5Before: false,
+      guarantee5After: false,
+      ruleId: isFork ? "fork_lottery_s" : "monopoly_limited",
+    }),
+  };
 }
 
 function mockForkCostDistanceRecord(options: {

@@ -28,6 +28,8 @@ export type FiveStarWallDisplayGroup = {
   displayDistance: number;
   distanceMode: FiveStarDistanceMode;
   recordIds: string;
+  currentBannerPulls: number | null;
+  otherBannerPulls: number | null;
 };
 type Translator = (
   key: I18nKey,
@@ -261,10 +263,7 @@ export function createDashboardUi(deps: DashboardUiDeps) {
   }
 
   function fiveWallCostPull(hit: FiveStarRecord) {
-    const pullNo =
-      latestFiveStarWallModeForPool(hit.record.pool_kind) === "focused" || deps.selectedDashboardScope.value.kind === "pool_kind"
-        ? hit.record.derived.pull_no_in_pool_kind
-        : hit.record.derived.pull_no_in_banner;
+    const pullNo = hit.record.derived.pull_no_in_pool_kind;
     return typeof pullNo === "number" && Number.isFinite(pullNo) && pullNo > 0 ? pullNo : null;
   }
 
@@ -280,17 +279,57 @@ export function createDashboardUi(deps: DashboardUiDeps) {
   }
 
   function buildFiveWallGroup(hits: FiveStarRecord[], displayDistance: number, distanceMode: FiveStarDistanceMode): FiveStarWallDisplayGroup {
+    const breakdown = fiveWallBannerBreakdown(hits, displayDistance, distanceMode);
     return {
       key: hits.map((hit) => hit.record.record_id).join(":"),
       hits,
       displayDistance,
       distanceMode,
       recordIds: hits.map((hit) => hit.record.record_id).join(" "),
+      currentBannerPulls: breakdown?.currentBannerPulls ?? null,
+      otherBannerPulls: breakdown?.otherBannerPulls ?? null,
+    };
+  }
+
+  function fiveWallBannerBreakdown(hits: FiveStarRecord[], displayDistance: number, distanceMode: FiveStarDistanceMode) {
+    const scope = deps.selectedDashboardScope.value;
+    if (scope.kind !== "banner") return null;
+
+    const terminalHit = hits.reduce<FiveStarRecord | null>((latest, hit) => {
+      const pullNo = finitePositiveNumber(hit.record.derived.pull_no_in_pool_kind);
+      const latestPullNo = finitePositiveNumber(latest?.record.derived.pull_no_in_pool_kind);
+      return pullNo != null && (latestPullNo == null || pullNo > latestPullNo) ? hit : latest;
+    }, null);
+    if (!terminalHit || terminalHit.record.derived.banner_id !== scope.banner_id) return null;
+
+    const poolPull = finitePositiveNumber(terminalHit.record.derived.pull_no_in_pool_kind);
+    const bannerPull = finitePositiveNumber(terminalHit.record.derived.pull_no_in_banner);
+    if (poolPull == null || bannerPull == null || bannerPull > poolPull) return null;
+
+    const pullsBeforeBanner = poolPull - bannerPull;
+    const intervalEnd = distanceMode === "cost" ? costBoundary(poolPull) : poolPull;
+    const bannerBoundary = distanceMode === "cost" ? costBoundary(pullsBeforeBanner) : pullsBeforeBanner;
+    const intervalStart = intervalEnd - displayDistance;
+    const otherBannerPulls = Math.min(displayDistance, Math.max(0, bannerBoundary - intervalStart));
+    if (otherBannerPulls <= 0) return null;
+
+    return {
+      currentBannerPulls: displayDistance - otherBannerPulls,
+      otherBannerPulls,
     };
   }
 
   function fiveWallGroupItemLabel(group: FiveStarWallDisplayGroup) {
     return group.hits.map((hit) => formatQuantityName(hit.record.item_name, hit.record.count)).join(", ");
+  }
+
+  function fiveWallDistanceLabel(group: FiveStarWallDisplayGroup) {
+    if (group.currentBannerPulls == null || group.otherBannerPulls == null) return String(group.displayDistance);
+    return deps.t("dashboard.crossBannerPullBreakdown", {
+      total: group.displayDistance,
+      current: group.currentBannerPulls,
+      other: group.otherBannerPulls,
+    });
   }
 
   return {
@@ -326,6 +365,7 @@ export function createDashboardUi(deps: DashboardUiDeps) {
       toggleRankingRarity,
       fiveWallPityTone,
       fiveWallGroupItemLabel,
+      fiveWallDistanceLabel,
       summaryProgressLabel,
       pullCurrency,
       formatPityRatio,
@@ -352,4 +392,8 @@ function compareRecordTime(left?: string | null, right?: string | null) {
   if (left != null && right == null) return -1;
   if (left == null && right != null) return 1;
   return String(left ?? "").localeCompare(String(right ?? ""));
+}
+
+function finitePositiveNumber(value?: number | null) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 }

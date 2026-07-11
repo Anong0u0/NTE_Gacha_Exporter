@@ -82,10 +82,11 @@ export function mockSelectionDetail(selection: DashboardSelection): DashboardSel
   const allRecords = mockRecordsForScenario();
   const poolSummaries = mockSummaryForScenario();
   const banners = mockBannersForScenario();
-  const records = allRecords.filter((record) =>
+  const poolKindRecords = allRecords.filter((record) => record.pool_kind === selection.pool_kind);
+  const records = poolKindRecords.filter((record) =>
     selection.kind === "pool_kind"
-      ? record.pool_kind === selection.pool_kind
-      : record.pool_kind === selection.pool_kind && record.derived.banner_id === selection.banner_id,
+      ? true
+      : record.derived.banner_id === selection.banner_id,
   );
   const baseSummary =
     selection.kind === "pool_kind"
@@ -106,7 +107,7 @@ export function mockSelectionDetail(selection: DashboardSelection): DashboardSel
   const summary: PoolKindSummary = {
     ...fallback,
     label: label ?? fallback.label,
-    total_pulls: countableRecords.length,
+    total_pulls: baseSummary?.total_pulls ?? countableRecords.length,
     hit_count: fiveStarRecords.length,
     five_star_item_count: countableRecords.filter((record) => record.rarity === 5).length,
     up_count: countableRecords.filter((record) => record.rarity === 5 && record.derived.rate_up_result === "up").length,
@@ -177,7 +178,7 @@ export function mockSelectionDetail(selection: DashboardSelection): DashboardSel
         left.reward_count - right.reward_count,
     );
 
-  const fiveStarDistances = mockFiveStarDistances(records, poolKind);
+  const fiveStarDistances = mockFiveStarDistances(poolKindRecords, poolKind);
 
   return {
     summary,
@@ -218,9 +219,9 @@ function mockFiveStarDistances(records: MockRecord[], poolKind: PoolKind) {
   for (const record of [...records].sort(compareRecordsChronological)) {
     if (record.derived.counts_as_pull) {
       fallbackPull += 1;
-      currentPull = record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? fallbackPull;
+      currentPull = record.derived.pull_no_in_pool_kind ?? fallbackPull;
     }
-    const effectivePull = currentPull || record.derived.pull_no_in_banner || record.derived.pull_no_in_pool_kind || record.derived.pity_5_before + 1;
+    const effectivePull = currentPull || record.derived.pull_no_in_pool_kind || record.derived.pity_5_before + 1;
     if (!mockIsFiveStarWallRecord(record, poolKind)) continue;
 
     const fiveStarDistance: number =

@@ -181,8 +181,7 @@ fn selection_detail_from_display_records(
             banner_id.is_none_or(|banner_id| record.derived.banner_id.as_deref() == Some(banner_id))
         })
         .collect::<Vec<_>>();
-    let five_star_distances =
-        five_star_distances_by_record_id(&pool_records, &pool_kind_records, pool_kind, banner_id);
+    let five_star_distances = five_star_distances_by_record_id(&pool_kind_records, pool_kind);
 
     let mut five_star_records = pool_records
         .iter()
@@ -336,18 +335,15 @@ fn five_star_record(record: &DisplayRecord, distances: Option<FiveStarDistances>
 }
 
 fn five_star_distances_by_record_id(
-    records: &[&DisplayRecord],
     pool_kind_records: &[&DisplayRecord],
     pool_kind: PoolKind,
-    banner_id: Option<&str>,
 ) -> HashMap<String, FiveStarDistances> {
     let mut distances = HashMap::new();
-    let records_with_scoped_pull = records_with_effective_pull(records, banner_id);
-    let records_with_pool_pull = records_with_effective_pull(pool_kind_records, None);
+    let records_with_pool_pull = records_with_effective_pull(pool_kind_records);
     let mut last_five_star_pull = None;
     let mut current_five_star_distance = None;
 
-    for (record, effective_pull) in records_with_scoped_pull {
+    for (record, effective_pull) in records_with_pool_pull.iter().copied() {
         if !is_five_star_wall_record(record, pool_kind) {
             continue;
         }
@@ -403,7 +399,6 @@ fn five_star_distances_by_record_id(
 
 fn records_with_effective_pull<'a>(
     records: &[&'a DisplayRecord],
-    banner_id: Option<&str>,
 ) -> Vec<(&'a DisplayRecord, u64)> {
     let mut fallback_pull = 0_u64;
     let mut current_pull = 0_u64;
@@ -413,12 +408,18 @@ fn records_with_effective_pull<'a>(
     for record in ordered {
         if record.derived.counts_as_pull {
             fallback_pull += 1;
-            current_pull = scoped_pull_no(record, banner_id).unwrap_or(fallback_pull);
+            current_pull = record
+                .derived
+                .pull_no_in_pool_kind
+                .unwrap_or(fallback_pull);
         }
         let effective_pull = if current_pull > 0 {
             current_pull
         } else {
-            scoped_pull_no(record, banner_id).unwrap_or(record.derived.pity_5_before + 1)
+            record
+                .derived
+                .pull_no_in_pool_kind
+                .unwrap_or(record.derived.pity_5_before + 1)
         };
         records_with_effective_pull.push((record, effective_pull.max(1)));
     }
@@ -435,14 +436,6 @@ fn records_with_effective_pull<'a>(
             .then_with(|| compare_display_chronological(left.0, right.0))
     });
     records_with_effective_pull
-}
-
-fn scoped_pull_no(record: &DisplayRecord, banner_id: Option<&str>) -> Option<u64> {
-    if banner_id.is_some() {
-        record.derived.pull_no_in_banner
-    } else {
-        record.derived.pull_no_in_pool_kind
-    }
 }
 
 fn is_five_star_wall_record(record: &DisplayRecord, pool_kind: PoolKind) -> bool {

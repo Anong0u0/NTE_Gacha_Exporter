@@ -1,6 +1,13 @@
 import type { BannerSummary, DisplayRecord } from "../types";
 import { mockBanner, mockScenario, type MockScenario } from "./common";
-import { mockLatestFiveCostDistanceForkRecords, mockRecords, mockUnknownForkRecord, mockUnknownLimitedRecord } from "./records";
+import {
+  mockLatestFiveCostDistanceForkRecords,
+  mockLatestFiveCrossBannerCharacterRecord,
+  mockLatestFiveCrossBannerForkRecord,
+  mockRecords,
+  mockUnknownForkRecord,
+  mockUnknownLimitedRecord,
+} from "./records";
 
 function mockSyntheticBannerSummary(record: DisplayRecord, title: string): BannerSummary {
   return {
@@ -47,6 +54,7 @@ const mockUnknownBanners: BannerSummary[] = [
 
 export function mockBannersForScenario(scenario: MockScenario = mockScenario()) {
   if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceBanners();
+  if (scenario === "latest-five-cross-banner") return mockLatestFiveCrossBannerBanners();
   return scenario === "unknown-banners" ? [...mockUnknownBanners, ...mockBanners] : mockBanners;
 }
 
@@ -56,13 +64,13 @@ function mockLatestFiveCostDistanceBanners(): BannerSummary[] {
     const latestForkHit = mockLatestFiveCostDistanceForkRecords[0];
     return {
       ...banner,
-      total_pulls: 290,
-      roll_points_total: 290,
-      known_roll_point_records: 290,
+      total_pulls: 300,
+      roll_points_total: 300,
+      known_roll_point_records: 300,
       missing_roll_point_records: 0,
       five_star_count: 12,
       four_star_count: 0,
-      current_5star_pity: 2,
+      current_5star_pity: 12,
       average_5star_pity: 24,
       rate_up_5_count: 6,
       off_rate_5_count: 6,
@@ -81,6 +89,60 @@ function mockLatestFiveCostDistanceBanners(): BannerSummary[] {
       latest_hit: latestForkHit,
     };
   });
+}
+
+function mockLatestFiveCrossBannerBanners(): BannerSummary[] {
+  return [
+    mockCrossBannerSummary("limited_cross_old", "monopoly_limited", "limited", "Old Character Banner", 40, null, 0),
+    mockCrossBannerSummary("limited_cross_new", "monopoly_limited", "limited", "New Character Banner", 20, mockLatestFiveCrossBannerCharacterRecord, 1),
+    mockCrossBannerSummary("fork_cross_old", "fork_lottery", "fork", "Old Fork Banner", 40, null, 1),
+    mockCrossBannerSummary("fork_cross_new", "fork_lottery", "fork", "New Fork Banner", 20, mockLatestFiveCrossBannerForkRecord, 1),
+  ];
+}
+
+function mockCrossBannerSummary(
+  bannerId: string,
+  poolKind: BannerSummary["pool_kind"],
+  bannerType: "limited" | "fork",
+  title: string,
+  totalPulls: number,
+  latestHit: DisplayRecord | null,
+  fiveStarCount: number,
+): BannerSummary {
+  return {
+    banner_id: bannerId,
+    pool_id: bannerId,
+    pool_kind: poolKind,
+    banner_type: bannerType,
+    title,
+    version: null,
+    start_at: null,
+    end_at: null,
+    asset_refs: mockBanner(bannerId, poolKind, bannerType, title).asset_refs,
+    total_pulls: totalPulls,
+    roll_points_total: totalPulls,
+    known_roll_point_records: totalPulls,
+    missing_roll_point_records: 0,
+    five_star_count: fiveStarCount,
+    four_star_count: 0,
+    current_5star_pity: latestHit ? 0 : totalPulls,
+    average_5star_pity: latestHit ? latestHit.derived.pity_5_before + 1 : null,
+    rate_up_5_count: latestHit?.derived.rate_up_result === "up" ? 1 : 0,
+    off_rate_5_count: fiveStarCount - (latestHit?.derived.rate_up_result === "up" ? 1 : 0),
+    not_applicable_rate_up_5_count: 0,
+    unknown_rate_up_5_count: 0,
+    fork_win_count: poolKind === "fork_lottery" && latestHit?.derived.rate_up_result === "up" ? 1 : 0,
+    fork_loss_count: poolKind === "fork_lottery" && fiveStarCount > 0 && latestHit == null ? 1 : 0,
+    fork_forced_up_count: 0,
+    fork_observed_25_75_win_rate: null,
+    rate_up_4_count: 0,
+    off_rate_4_count: 0,
+    not_applicable_rate_up_4_count: 0,
+    unknown_rate_up_4_count: 0,
+    average_roll_points_to_5star: latestHit ? latestHit.derived.pity_5_before + 1 : null,
+    roll_point_cost_samples_5star: fiveStarCount,
+    latest_hit: latestHit,
+  };
 }
 
 const mockBanners: BannerSummary[] = [

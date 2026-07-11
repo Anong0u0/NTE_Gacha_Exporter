@@ -147,8 +147,126 @@ fn banner_scope_keeps_focused_wall_distance_from_pool_kind_history() {
 
     assert_eq!(xun_up.focused_distance, Some(9));
     assert_eq!(pool_anhunqu_up.focused_distance, Some(44));
-    assert_eq!(banner_anhunqu_up.five_star_distance, 26);
+    assert_eq!(banner_anhunqu_up.five_star_distance, 44);
     assert_eq!(banner_anhunqu_up.focused_distance, Some(44));
+}
+
+#[test]
+fn fork_banner_scope_keeps_no_hit_pulls_from_pool_kind_history() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    for index in 1..=40 {
+        records.push(record(
+            &format!("old-filler-{index}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!("2026-01-01 00:{:02}:00", index - 1),
+        ));
+    }
+    for index in 1..=19 {
+        records.push(record(
+            &format!("new-filler-{index}"),
+            "ForkLottery_Zhenhong",
+            "fork_dustbin",
+            &format!("2026-01-02 00:{:02}:00", index - 1),
+        ));
+    }
+    records.push(record(
+        "new-up",
+        "ForkLottery_Zhenhong",
+        "fork_LunarPhase",
+        "2026-01-02 00:19:00",
+    ));
+    store
+        .import_public_document("default", &public_document(records), "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::Banner {
+                pool_kind: PoolKind::ForkLottery,
+                banner_id: "ForkLottery_Zhenhong".to_string(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(detail.summary.total_pulls, 20);
+    assert_eq!(detail.five_star_wall_history.len(), 1);
+    let hit = &detail.five_star_wall_history[0];
+    assert_eq!(hit.record.item_id, "fork_LunarPhase");
+    assert_eq!(hit.record.derived.pull_no_in_pool_kind, Some(60));
+    assert_eq!(hit.record.derived.pull_no_in_banner, Some(20));
+    assert_eq!(hit.pity_distance, 60);
+    assert_eq!(hit.five_star_distance, 60);
+    assert_eq!(hit.focused_distance, Some(60));
+}
+
+#[test]
+fn fork_banner_scope_keeps_off_rate_and_paid_boundary_history() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let mut records = Vec::new();
+    for index in 1..=34 {
+        records.push(record(
+            &format!("old-filler-{index}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!("2026-01-01 00:{:02}:00", index - 1),
+        ));
+    }
+    records.push(record(
+        "old-off-rate",
+        "ForkLottery_AnHunQu",
+        "fork_Arachne",
+        "2026-01-01 00:34:00",
+    ));
+    for index in 36..=40 {
+        records.push(record(
+            &format!("old-post-{index}"),
+            "ForkLottery_AnHunQu",
+            "fork_dustbin",
+            &format!("2026-01-01 00:{:02}:00", index - 1),
+        ));
+    }
+    for index in 1..=19 {
+        records.push(record(
+            &format!("new-filler-{index}"),
+            "ForkLottery_Zhenhong",
+            "fork_dustbin",
+            &format!("2026-01-02 00:{:02}:00", index - 1),
+        ));
+    }
+    records.push(record(
+        "new-up",
+        "ForkLottery_Zhenhong",
+        "fork_LunarPhase",
+        "2026-01-02 00:19:00",
+    ));
+    store
+        .import_public_document("default", &public_document(records), "json", None)
+        .unwrap();
+
+    let detail = store
+        .dashboard_selection_detail(
+            "default",
+            "zh-Hant",
+            &DashboardSelection::Banner {
+                pool_kind: PoolKind::ForkLottery,
+                banner_id: "ForkLottery_Zhenhong".to_string(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(detail.summary.total_pulls, 20);
+    assert_eq!(detail.five_star_wall_history.len(), 1);
+    let hit = &detail.five_star_wall_history[0];
+    assert_eq!(hit.record.item_id, "fork_LunarPhase");
+    assert_eq!(hit.pity_distance, 25);
+    assert_eq!(hit.five_star_distance, 25);
+    assert_eq!(hit.focused_distance, Some(60));
 }
 
 #[test]

@@ -1,9 +1,15 @@
 import type { CaptureMode, CaptureStartOptions, PoolKindSummary, TimeStats } from "../types";
 import { mockScenario, type MockScenario } from "./common";
-import { mockLatestFiveCostDistanceForkRecords, mockRecords } from "./records";
+import {
+  mockLatestFiveCostDistanceForkRecords,
+  mockLatestFiveCrossBannerCharacterRecord,
+  mockLatestFiveCrossBannerForkRecord,
+  mockRecords,
+} from "./records";
 
 export function mockSummaryForScenario(scenario: MockScenario = mockScenario()) {
   if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceSummary();
+  if (scenario === "latest-five-cross-banner") return mockLatestFiveCrossBannerSummary();
   if (scenario !== "unknown-banners") return mockSummary;
   return mockSummary.map((summary) => {
     if (summary.pool_kind === "monopoly_limited") {
@@ -34,13 +40,13 @@ function mockLatestFiveCostDistanceSummary(): PoolKindSummary[] {
     const latestForkHit = mockLatestFiveCostDistanceForkRecords[0];
     return {
       ...summary,
-      total_pulls: 290,
-      roll_points_total: 290,
-      known_roll_point_records: 290,
+      total_pulls: 300,
+      roll_points_total: 300,
+      known_roll_point_records: 300,
       missing_roll_point_records: 0,
       hit_count: 12,
       five_star_item_count: 12,
-      current_pity: 2,
+      current_pity: 12,
       current_ten_pull_progress: 0,
       current_guarantee: false,
       average_5star_pity: 24,
@@ -67,6 +73,40 @@ function mockLatestFiveCostDistanceSummary(): PoolKindSummary[] {
       average_roll_points_to_5star: 24.2,
       roll_point_cost_samples_5star: 12,
     };
+  });
+}
+
+function mockLatestFiveCrossBannerSummary(): PoolKindSummary[] {
+  return mockSummary.map((summary) => {
+    if (summary.pool_kind === "monopoly_limited") {
+      return {
+        ...summary,
+        total_pulls: 60,
+        roll_points_total: 60,
+        known_roll_point_records: 60,
+        hit_count: 1,
+        five_star_item_count: 1,
+        current_pity: 0,
+        latest_5star: mockLatestFiveCrossBannerCharacterRecord,
+        latest_5star_any: mockLatestFiveCrossBannerCharacterRecord,
+      };
+    }
+    if (summary.pool_kind === "fork_lottery") {
+      return {
+        ...summary,
+        total_pulls: 60,
+        roll_points_total: 60,
+        known_roll_point_records: 60,
+        hit_count: 2,
+        five_star_item_count: 2,
+        current_pity: 0,
+        up_count: 1,
+        off_rate_count: 1,
+        latest_5star: mockLatestFiveCrossBannerForkRecord,
+        latest_5star_any: mockLatestFiveCrossBannerForkRecord,
+      };
+    }
+    return summary;
   });
 }
 

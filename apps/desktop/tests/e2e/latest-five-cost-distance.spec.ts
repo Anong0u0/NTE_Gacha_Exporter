@@ -5,7 +5,6 @@ const defaultProfile = "default";
 const altProfile = "cost_alt";
 const defaultPrefsKey = `nte.recordView.v1:${defaultProfile}`;
 const altPrefsKey = `nte.recordView.v1:${altProfile}`;
-const initDoneKey = "nte.latestFiveCostDistanceE2eInitDone";
 const sameTenAllRecordIds = [
   "mock-fork-cost-160",
   "mock-fork-cost-159",
@@ -16,21 +15,8 @@ const sameTenAllRecordIds = [
 const sameTenFocusedRecordIds = ["mock-fork-cost-160", "mock-fork-cost-156"];
 const sameTenAllGroupKey = sameTenAllRecordIds.join(":");
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(
-    ({ mockScenarioKey, defaultPrefsKey, altPrefsKey, initDoneKey }) => {
-      window.localStorage.setItem(mockScenarioKey, "latest-five-cost-distance");
-      if (!window.sessionStorage.getItem(initDoneKey)) {
-        window.localStorage.removeItem(defaultPrefsKey);
-        window.localStorage.removeItem(altPrefsKey);
-        window.sessionStorage.setItem(initDoneKey, "1");
-      }
-    },
-    { mockScenarioKey, defaultPrefsKey, altPrefsKey, initDoneKey },
-  );
-});
-
 test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page }) => {
+  await useMockScenario(page, "latest-five-cost-distance", [defaultPrefsKey, altPrefsKey]);
   await page.setViewportSize({ width: 1130, height: 900 });
   await page.goto("/");
 
@@ -40,6 +26,10 @@ test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page 
   await expect(wall.locator(".latest-distance-toggle")).toHaveCount(0);
 
   await selectForkPool(page);
+  await expect(page.locator('.pool-strip [data-pool-kind="fork_lottery"]')).toHaveAttribute("data-current-pity", "12");
+  await expect(page.locator('.pool-strip [data-pool-kind="fork_lottery"]')).toContainText("300 抽");
+  await expect(page.locator(".summary-metric-card--total-pulls")).toContainText("300");
+  await expect(page.locator(".summary-metric-card--five-pity")).toContainText("12/60");
   const distanceToggle = wall.locator(".latest-distance-toggle");
   const wallToggle = wall.locator(".latest-item-toggle");
 
@@ -87,6 +77,7 @@ test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page 
   ], "cost");
   await expectWallDistanceSum(page, 290);
   await expectGroupCountBadge(page, sameTenAllGroupKey, "x5");
+  await expectGroupTooltipUniform(page, sameTenAllGroupKey);
   await expectUniformTileGeometry(page);
   await expectTenPixelGridGaps(page);
 
@@ -144,6 +135,7 @@ test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page 
 });
 
 test("800px wraps frame without enclosing neighbors and swaps collapsed distance proxy", async ({ page }) => {
+  await useMockScenario(page, "latest-five-cost-distance", [defaultPrefsKey]);
   await page.setViewportSize({ width: 800, height: 900 });
   await page.goto("/");
   await selectForkPool(page);
@@ -195,6 +187,85 @@ test("800px wraps frame without enclosing neighbors and swaps collapsed distance
   expect(expanded.distanceBadge.bottom).toBeCloseTo(expanded.gridTop + expanded.segments[1].bottom + 3, 0);
 });
 
+test("pool-kind carry drives fork and character distances across banners", async ({ page }) => {
+  await useMockScenario(page, "latest-five-cross-banner", [defaultPrefsKey]);
+  await page.setViewportSize({ width: 1130, height: 900 });
+  await page.goto("/");
+
+  await selectForkPool(page);
+  const wall = latestFiveWall(page);
+  const distanceToggle = wall.locator(".latest-distance-toggle");
+  const wallToggle = wall.locator(".latest-item-toggle");
+
+  await expectWallGroups(page, [group("60", "mock-cross-fork-new-up")], "actual");
+  await expectNoCrossBannerBreakdown(page);
+
+  await distanceToggle.click();
+  await expectWallGroups(page, [group("60", "mock-cross-fork-new-up")], "cost");
+
+  await wallToggle.click();
+  await expectWallGroups(page, [
+    group("20", "mock-cross-fork-new-up"),
+    group("40", "mock-cross-fork-old-off-rate"),
+  ], "cost");
+
+  await distanceToggle.click();
+  await expectWallGroups(page, [
+    group("25", "mock-cross-fork-new-up"),
+    group("35", "mock-cross-fork-old-off-rate"),
+  ], "actual");
+
+  await wallToggle.click();
+  await expectWallGroups(page, [group("60", "mock-cross-fork-new-up")], "actual");
+  await selectBanner(page, "New Fork Banner");
+  await expect(page.locator(".summary-metric-card--total-pulls")).toContainText("20");
+  await expectCrossBannerGroup(page, {
+    recordId: "mock-cross-fork-new-up",
+    distance: "60",
+    mode: "actual",
+    current: "20",
+    other: "40",
+  });
+
+  await distanceToggle.click();
+  await expectCrossBannerGroup(page, {
+    recordId: "mock-cross-fork-new-up",
+    distance: "60",
+    mode: "cost",
+    current: "20",
+    other: "40",
+  });
+
+  await wallToggle.click();
+  await expectWallGroups(page, [group("20", "mock-cross-fork-new-up")], "cost");
+  await expectNoCrossBannerBreakdown(page);
+  await expectGroupLabelNotToContain(page, "+");
+
+  await distanceToggle.click();
+  await expectCrossBannerGroup(page, {
+    recordId: "mock-cross-fork-new-up",
+    distance: "25",
+    mode: "actual",
+    current: "20",
+    other: "5",
+  });
+
+  await page.locator('.pool-strip [data-pool-kind="monopoly_limited"]').click();
+  await expectWallGroups(page, [group("60", "mock-cross-character-new-up")], "actual");
+  await expectNoCrossBannerBreakdown(page);
+  await expect(wall.locator(".latest-distance-toggle")).toHaveCount(0);
+
+  await selectBanner(page, "New Character Banner");
+  await expect(page.locator(".summary-metric-card--total-pulls")).toContainText("20");
+  await expectCrossBannerGroup(page, {
+    recordId: "mock-cross-character-new-up",
+    distance: "60",
+    mode: "actual",
+    current: "20",
+    other: "40",
+  });
+});
+
 type ExpectedWallGroup = {
   distance: string;
   recordIds: string[];
@@ -207,6 +278,25 @@ function group(distance: string, ...recordIds: string[]): ExpectedWallGroup {
 async function selectForkPool(page: Page) {
   await page.locator('.pool-strip [data-pool-kind="fork_lottery"]').click();
   await expect(latestFiveWall(page).locator(".latest-distance-toggle")).toBeVisible();
+}
+
+async function selectBanner(page: Page, name: string) {
+  await page.locator('[data-agent-id="dashboard-banner-rail"]').getByRole("button", { name }).click();
+  await expect(page.locator('[data-agent-id="dashboard-banner-rail"]').getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
+  await expect(latestFiveWall(page).locator(".five-wall-item")).toBeVisible();
+}
+
+async function useMockScenario(page: Page, scenario: "latest-five-cost-distance" | "latest-five-cross-banner", prefsKeys: string[]) {
+  await page.addInitScript(
+    ({ mockScenarioKey, scenario, prefsKeys }) => {
+      window.localStorage.setItem(mockScenarioKey, scenario);
+      const initKey = `nte.e2eScenarioInit:${scenario}`;
+      if (window.sessionStorage.getItem(initKey)) return;
+      for (const key of prefsKeys) window.localStorage.removeItem(key);
+      window.sessionStorage.setItem(initKey, "1");
+    },
+    { mockScenarioKey, scenario, prefsKeys },
+  );
 }
 
 async function createProfile(page: Page, profileName: string) {
@@ -232,19 +322,46 @@ async function expectWallGroups(page: Page, expected: ExpectedWallGroup[], mode:
       ariaIncludesDistance: true,
     })),
   );
-  await expect.poll(() => wallFrameAttrs(page)).toEqual(
-    expected
-      .filter((item) => item.recordIds.length > 1)
-      .map((item, index) => ({
-        groupKey: item.recordIds.join(":"),
-        paletteIndex: String(index % 6),
-      })),
-  );
-  await expect(latestFiveWall(page).locator(".five-wall-frame-connector")).toHaveCount(0);
 }
 
 async function expectWallDistanceSum(page: Page, expected: number) {
   await expect.poll(async () => (await wallGroupAttrs(page)).reduce((sum, item) => sum + Number(item.distance), 0)).toBe(expected);
+}
+
+async function expectCrossBannerGroup(
+  page: Page,
+  expected: { recordId: string; distance: string; mode: "actual" | "cost"; current: string; other: string },
+) {
+  await expectWallGroups(page, [group(expected.distance, expected.recordId)], expected.mode);
+  const anchor = latestFiveWall(page).locator('.five-wall-item[data-five-wall-group-anchor="true"]');
+  await expect(anchor).toHaveAttribute("data-five-wall-current-banner-pulls", expected.current);
+  await expect(anchor).toHaveAttribute("data-five-wall-other-banner-pulls", expected.other);
+  const breakdownPattern = new RegExp(`${expected.distance}.*${expected.current}.*\\+.*${expected.other}`);
+  await expect(anchor).toHaveAttribute("title", breakdownPattern);
+  await expect(anchor).toHaveAttribute("aria-label", breakdownPattern);
+}
+
+async function expectNoCrossBannerBreakdown(page: Page) {
+  const anchors = latestFiveWall(page).locator('.five-wall-item[data-five-wall-group-anchor="true"]');
+  await expect.poll(() => anchors.evaluateAll((items) => items.every((item) =>
+    !item.hasAttribute("data-five-wall-current-banner-pulls")
+    && !item.hasAttribute("data-five-wall-other-banner-pulls"),
+  ))).toBe(true);
+}
+
+async function expectGroupLabelNotToContain(page: Page, text: string) {
+  const anchor = latestFiveWall(page).locator('.five-wall-item[data-five-wall-group-anchor="true"]');
+  await expect(anchor).not.toHaveAttribute("title", new RegExp(escapeRegExp(text)));
+  await expect(anchor).not.toHaveAttribute("aria-label", new RegExp(escapeRegExp(text)));
+}
+
+async function expectGroupTooltipUniform(page: Page, groupKey: string) {
+  const titles = await latestFiveWall(page).locator(`.five-wall-item[data-five-wall-group-key="${groupKey}"]`).evaluateAll((items) =>
+    items.map((item) => ({ title: item.getAttribute("title"), aria: item.getAttribute("aria-label") })),
+  );
+  expect(new Set(titles.map((item) => item.title)).size).toBe(1);
+  expect(new Set(titles.map((item) => item.aria)).size).toBe(1);
+  expect(titles[0].title).toContain("Rose, Off-rate Arc E, Off-rate Arc F, Off-rate Arc G, Rose");
 }
 
 async function expectGroupCountBadge(page: Page, groupKey: string, expected: string) {
@@ -292,6 +409,10 @@ function latestFiveWall(page: Page) {
   return page.locator('[data-agent-id="dashboard-latest-five-wall"]');
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function wallGroupAttrs(page: Page) {
   return latestFiveWall(page).locator('.five-wall-item[data-five-wall-group-anchor="true"]').evaluateAll((anchors) =>
     anchors.map((anchor) => {
@@ -313,15 +434,6 @@ async function wallGroupAttrs(page: Page) {
         ariaIncludesDistance: anchor.getAttribute("aria-label")?.includes(distance) ?? false,
       };
     }),
-  );
-}
-
-async function wallFrameAttrs(page: Page) {
-  return latestFiveWall(page).locator(".five-wall-group-frame").evaluateAll((frames) =>
-    frames.map((frame) => ({
-      groupKey: frame.getAttribute("data-five-wall-group-key") ?? "",
-      paletteIndex: frame.getAttribute("data-five-wall-palette-index") ?? "",
-    })),
   );
 }
 

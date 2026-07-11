@@ -164,6 +164,7 @@
   "dashboard.convertedCurrency": "換算環石",
   "dashboard.collapseFiveWall": "收合",
   "dashboard.costPulls": "成本抽數",
+  "dashboard.crossBannerPullBreakdown": "{total} 抽（目前卡池 {current} + 其他卡池 {other}）",
   "dashboard.fiveHits": "5★ 命中",
   "dashboard.fiveStarRecordsHiddenByItems": "沒有符合目前顯示設定的 5★紀錄。",
   "dashboard.fiveStarRecordsEmpty": "此卡池沒有 5★ 紀錄。",
