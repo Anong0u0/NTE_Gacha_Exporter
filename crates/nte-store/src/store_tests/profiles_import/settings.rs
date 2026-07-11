@@ -25,6 +25,58 @@ fn store_bootstraps_default_profile_and_files() {
 }
 
 #[test]
+fn store_uses_existing_profile_when_settings_are_missing() {
+    let tmp = tempfile::tempdir().unwrap();
+    {
+        let store = JsonStore::open(tmp.path()).unwrap();
+        store.create_profile("Player_1").unwrap();
+        store.set_active_profile("Player_1").unwrap();
+        store.delete_profile("default").unwrap();
+    }
+    std::fs::remove_file(tmp.path().join("data/settings.json")).unwrap();
+
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let profiles = store.list_profiles().unwrap();
+
+    assert_eq!(store.settings().unwrap().active_profile, "Player_1");
+    assert_eq!(profiles.len(), 1);
+    assert_eq!(profiles[0].name, "Player_1");
+    assert!(profiles[0].active);
+    assert!(!tmp.path().join("data/profiles/default").exists());
+}
+
+#[test]
+fn store_repairs_missing_active_profile_to_first_profile() {
+    let tmp = tempfile::tempdir().unwrap();
+    {
+        let store = JsonStore::open(tmp.path()).unwrap();
+        store.create_profile("Zulu").unwrap();
+        store.create_profile("Alpha").unwrap();
+        store.set_active_profile("Alpha").unwrap();
+        store.delete_profile("default").unwrap();
+    }
+    let settings_path = tmp.path().join("data/settings.json");
+    let mut settings: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&settings_path).unwrap()).unwrap();
+    settings["active_profile"] = json!("missing");
+    std::fs::write(&settings_path, serde_json::to_string(&settings).unwrap()).unwrap();
+
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let profiles = store.list_profiles().unwrap();
+
+    assert_eq!(store.settings().unwrap().active_profile, "Alpha");
+    assert_eq!(
+        profiles
+            .iter()
+            .map(|profile| profile.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Alpha", "Zulu"]
+    );
+    assert!(profiles[0].active);
+    assert!(!tmp.path().join("data/profiles/default").exists());
+}
+
+#[test]
 fn store_migrates_missing_check_updates_on_startup_to_enabled() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(tmp.path().join("data")).unwrap();

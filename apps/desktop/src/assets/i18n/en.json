@@ -43,6 +43,7 @@
   "common.version": "Version",
   "common.visual": "Visual",
   "banner.unmappedLimited": "Unmapped limited",
+  "profile.actionsFor": "Actions for profile \"{name}\"",
   "profile.create": "Create profile",
   "profile.createName": "New profile name",
   "profile.count": "{count} profiles",

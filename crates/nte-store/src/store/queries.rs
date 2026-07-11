@@ -144,8 +144,13 @@ impl JsonStore {
             validate_locale(&settings.locale)?;
             self.write_settings(&settings)?;
         }
-        if !self.profile_dir(DEFAULT_PROFILE).exists() {
-            self.create_profile(DEFAULT_PROFILE)?;
+        let profiles = self.list_profiles()?;
+        if !profiles.iter().any(|profile| profile.active) {
+            let active_profile = match profiles.first() {
+                Some(profile) => profile.name.clone(),
+                None => self.create_profile(DEFAULT_PROFILE)?.name,
+            };
+            self.set_active_profile(&active_profile)?;
         }
         Ok(())
     }

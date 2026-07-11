@@ -271,6 +271,60 @@
   gap: 8px;
 }
 
+.profile-dialog-backdrop {
+  z-index: 54;
+  animation: profile-backdrop-in 150ms ease-out;
+}
+
+.profile-dialog {
+  width: min(400px, 100%);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  animation: profile-dialog-in 170ms ease-out;
+}
+
+.profile-dialog-body {
+  gap: 10px;
+}
+
+.profile-dialog-copy,
+.profile-dialog-error {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.profile-dialog-error {
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border-soft));
+  border-radius: 6px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  padding: 8px 10px;
+}
+
+.profile-dialog-actions {
+  justify-content: flex-end;
+}
+
+@keyframes profile-backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes profile-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-dialog-backdrop,
+  .profile-dialog {
+    animation: none;
+  }
+}
+
 @media (max-width: 620px) {
   .update-dialog-actions,
   .update-dialog-actions > div {

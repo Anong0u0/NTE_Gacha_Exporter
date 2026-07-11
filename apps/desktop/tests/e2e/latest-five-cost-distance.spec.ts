@@ -210,6 +210,7 @@ async function selectForkPool(page: Page) {
 }
 
 async function createProfile(page: Page, profileName: string) {
+  await page.locator('[data-agent-id="profile-create-open"]').click();
   await page.locator('[data-agent-id="profile-create-input"]').fill(profileName);
   await page.locator('[data-agent-id="profile-create-submit"]').click();
   await expect(page.locator(`[data-agent-id="profile-row-${profileName}"]`)).toHaveClass(/active/);

@@ -111,51 +111,6 @@
   white-space: nowrap;
 }
 
-.profile-list {
-  display: grid;
-  gap: 6px;
-}
-
-.profile-row {
-  min-height: 42px;
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  padding: 6px 8px;
-}
-
-.profile-main {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.profile-main strong,
-.profile-main span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.profile-main span {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.profile-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.profile-actions button {
-  width: 32px;
-  padding: 0;
-}
-
 .settings-workbench {
   align-self: start;
   align-items: start;

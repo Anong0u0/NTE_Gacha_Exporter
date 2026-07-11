@@ -36,6 +36,19 @@ let mockCaptureWinDivertBackendEnabled = false;
 let mockWindDivertInstalled = false;
 const mockDiagnosticSessions = new Map<string, { polls: number; stopped: boolean; duration: number; mode: DiagnosticMode }>();
 
+function validateMockProfileName(name: string) {
+  const profileName = name.trim();
+  const upper = profileName.toUpperCase();
+  const reserved = ["CON", "PRN", "AUX", "NUL"].includes(upper) || /^(COM|LPT)[1-9]$/.test(upper);
+  if (!profileName || profileName.length > 40) throw new Error("profile name length must be 1..40");
+  if (!/^[A-Za-z0-9_-]+$/.test(profileName)) throw new Error("profile name must use ASCII letters, digits, _ or -");
+  if (reserved) throw new Error("profile name must not use a reserved Windows device name");
+  if (mockProfiles.some((profile) => profile.name.toLowerCase() === profileName.toLowerCase())) {
+    throw new Error(`profile already exists: ${profileName}`);
+  }
+  return profileName;
+}
+
 
 function mockSettings() {
   return {
@@ -90,7 +103,8 @@ export const mockApi: AppApi = {
     return mockProfiles.map((profile) => ({ ...profile, active: profile.name === mockActiveProfileName }));
   },
   async createProfile(name: string) {
-    const profile = { name, created_at: "0", updated_at: "0", active: false };
+    const profileName = validateMockProfileName(name);
+    const profile = { name: profileName, created_at: "0", updated_at: "0", active: false };
     mockProfiles.push(profile);
     return profile;
   },
@@ -101,7 +115,8 @@ export const mockApi: AppApi = {
   async renameProfile(oldName: string, newName: string) {
     const profile = mockProfiles.find((item) => item.name === oldName);
     if (!profile) throw new Error(`profile not found: ${oldName}`);
-    profile.name = newName;
+    if (oldName === newName) return { ...profile, active: profile.name === mockActiveProfileName };
+    profile.name = validateMockProfileName(newName);
     profile.updated_at = "0";
     if (mockActiveProfileName === oldName) mockActiveProfileName = newName;
     return { ...profile, active: profile.name === mockActiveProfileName };

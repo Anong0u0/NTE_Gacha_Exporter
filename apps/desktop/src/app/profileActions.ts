@@ -6,10 +6,6 @@ import type { I18nKey } from "./i18n";
 type ProfileActionsDeps = {
   profiles: Ref<Profile[]>;
   activeProfileName: Ref<string>;
-  newProfileName: Ref<string>;
-  profileRenameSource: Ref<string>;
-  profileRenameName: Ref<string>;
-  profileDeleteTarget: Ref<string>;
   applySettings(settings: Settings): void;
   runTask(done: string, task: () => Promise<unknown>): Promise<void>;
   t(key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>): string;
@@ -28,40 +24,27 @@ export function createProfileActions(deps: ProfileActionsDeps) {
     }
   }
 
-  async function createProfile() {
-    const name = deps.newProfileName.value.trim();
-    if (!name) return;
+  async function createProfile(name: string) {
+    const profileName = name.trim();
+    if (!profileName) return false;
+    let succeeded = false;
     await deps.runTask(deps.t("status.profileCreated"), async () => {
-      const profile = await api.createProfile(name);
-      deps.newProfileName.value = "";
-      deps.profileDeleteTarget.value = "";
+      const profile = await api.createProfile(profileName);
       await api.setActiveProfile(profile.name);
       deps.setActiveProfileName(profile.name);
       deps.removeRecordViewPrefs(profile.name);
       await loadProfiles();
+      succeeded = true;
       await deps.refreshAll();
     });
+    return succeeded;
   }
 
-  function startRenameProfile(profile: Profile) {
-    deps.profileRenameSource.value = profile.name;
-    deps.profileRenameName.value = profile.name;
-    deps.profileDeleteTarget.value = "";
-  }
-
-  function cancelRenameProfile() {
-    deps.profileRenameSource.value = "";
-    deps.profileRenameName.value = "";
-  }
-
-  async function saveProfileRename() {
-    const oldName = deps.profileRenameSource.value;
-    const newName = deps.profileRenameName.value.trim();
-    if (!oldName || !newName) return;
-    if (oldName === newName) {
-      cancelRenameProfile();
-      return;
-    }
+  async function renameProfile(oldName: string, name: string) {
+    const newName = name.trim();
+    if (!oldName || !newName) return false;
+    if (oldName === newName) return true;
+    let succeeded = false;
     await deps.runTask(deps.t("status.profileRenamed"), async () => {
       if (oldName === deps.activeProfileName.value) deps.saveRecordViewPrefs(oldName);
       const profile = await api.renameProfile(oldName, newName);
@@ -70,38 +53,26 @@ export function createProfileActions(deps: ProfileActionsDeps) {
       if (deps.activeProfileName.value === oldName || profile.active) {
         deps.setActiveProfileName(profile.name);
       }
-      deps.profileDeleteTarget.value = "";
-      cancelRenameProfile();
       await loadProfiles();
+      succeeded = true;
       await deps.refreshAll();
     });
+    return succeeded;
   }
 
-  function requestDeleteProfile(profile: Profile) {
-    if (deps.profiles.value.length <= 1) return;
-    deps.profileRenameSource.value = "";
-    deps.profileRenameName.value = "";
-    deps.profileDeleteTarget.value = profile.name;
-  }
-
-  function cancelDeleteProfile() {
-    deps.profileDeleteTarget.value = "";
-  }
-
-  async function confirmDeleteProfile(profile: Profile) {
-    if (deps.profiles.value.length <= 1) return;
+  async function deleteProfile(profile: Profile) {
+    if (deps.profiles.value.length <= 1) return false;
+    let succeeded = false;
     await deps.runTask(deps.t("status.profileDeleted"), async () => {
       const settings = await api.deleteProfile(profile.name);
       deps.removeRecordViewPrefs(profile.name);
       if (profile.name !== deps.activeProfileName.value) deps.saveRecordViewPrefs();
       deps.applySettings(settings);
-      if (deps.profileRenameSource.value === profile.name) {
-        cancelRenameProfile();
-      }
-      deps.profileDeleteTarget.value = "";
       await loadProfiles();
+      succeeded = true;
       await deps.refreshAll();
     });
+    return succeeded;
   }
 
   async function selectProfile(profileName = deps.activeProfileName.value) {
@@ -109,8 +80,6 @@ export function createProfileActions(deps: ProfileActionsDeps) {
     if (!profileName || profileName === previousProfileName) return;
     deps.saveRecordViewPrefs(previousProfileName);
     deps.setActiveProfileName(profileName);
-    deps.profileDeleteTarget.value = "";
-    cancelRenameProfile();
     await deps.runTask(deps.t("status.profileSelected"), async () => {
       try {
         const settings = await api.updateSettings({ active_profile: profileName });
@@ -128,12 +97,8 @@ export function createProfileActions(deps: ProfileActionsDeps) {
   return {
     loadProfiles,
     createProfile,
-    startRenameProfile,
-    cancelRenameProfile,
-    saveProfileRename,
-    requestDeleteProfile,
-    cancelDeleteProfile,
-    confirmDeleteProfile,
+    renameProfile,
+    deleteProfile,
     selectProfile,
   };
 }

@@ -81,6 +81,26 @@ fn profile_delete_active_switches_to_remaining_profile() {
 }
 
 #[test]
+fn deleted_default_profile_is_not_recreated_on_reopen() {
+    let tmp = tempfile::tempdir().unwrap();
+    {
+        let store = JsonStore::open(tmp.path()).unwrap();
+        store.create_profile("Player_1").unwrap();
+        store.set_active_profile("Player_1").unwrap();
+        store.delete_profile("default").unwrap();
+    }
+
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let profiles = store.list_profiles().unwrap();
+
+    assert_eq!(store.settings().unwrap().active_profile, "Player_1");
+    assert_eq!(profiles.len(), 1);
+    assert_eq!(profiles[0].name, "Player_1");
+    assert!(profiles[0].active);
+    assert!(!tmp.path().join("data/profiles/default").exists());
+}
+
+#[test]
 fn profile_delete_rejects_last_profile_and_unknown_files() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
