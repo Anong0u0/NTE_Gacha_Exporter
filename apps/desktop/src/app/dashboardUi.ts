@@ -10,13 +10,25 @@ import type {
   PoolKindSummary,
 } from "../api";
 import type { I18nKey } from "./i18n";
-import { type FiveStarWallMode } from "./recordPrefs";
+import { type FiveStarDistanceMode, type FiveStarWallMode } from "./recordPrefs";
 import { rarityClass } from "./rarityColors";
 import { dashboardRaritySlices } from "./rarityBuckets";
 import { bannerTitle, formatQuantityName } from "./viewHelpers";
 
 type RankingRarity = (typeof rankingRarities)[number];
 type RankingRaritySelection = Record<RankingRarity, boolean>;
+type FiveStarWallGroupDraft = {
+  boundary: number;
+  displayDistance: number;
+  hits: FiveStarRecord[];
+};
+export type FiveStarWallDisplayGroup = {
+  key: string;
+  hits: FiveStarRecord[];
+  displayDistance: number;
+  distanceMode: FiveStarDistanceMode;
+  recordIds: string;
+};
 type Translator = (
   key: I18nKey,
   params?: Record<string, string | number | boolean | null | undefined>,
@@ -31,6 +43,7 @@ type DashboardUiDeps = {
   selectedPoolSummary: ComputedRef<PoolKindSummary | null>;
   bannerSummaries: ComputedRef<BannerSummary[]>;
   latestFiveStarWallModes: Ref<Record<PoolKind, FiveStarWallMode>>;
+  latestFiveStarDistanceModes: Ref<Record<PoolKind, FiveStarDistanceMode>>;
   t: Translator;
   saveRecordViewPrefs(): void;
 };
@@ -95,9 +108,11 @@ export function createDashboardUi(deps: DashboardUiDeps) {
   const rankingDialogTitle = computed(() => `${selectedDetailTitle.value} · ${deps.t("dashboard.itemRanking")}`);
   const selectedRarityShares = computed(() => dashboardRaritySlices(deps.detail.value, deps.t));
   const latestFiveStarWallMode = computed(() => latestFiveStarWallModeForPool(deps.selectedPoolKind.value));
+  const latestFiveStarDistanceMode = computed(() => latestFiveStarDistanceModeForPool(deps.selectedPoolKind.value));
   const showLatestFiveStarWallModeToggle = computed(() => true);
+  const showLatestFiveStarDistanceModeToggle = computed(() => deps.selectedPoolKind.value === "fork_lottery");
   const visibleLatestFiveStarHits = computed(() => visibleFiveStarHits(deps.detail.value));
-  const displayedLatestFiveStarHits = computed(() => visibleLatestFiveStarHits.value);
+  const displayedLatestFiveStarGroups = computed(() => latestFiveStarGroups(visibleLatestFiveStarHits.value));
   const fiveWallExpanded = computed(() => Boolean(fiveWallExpandedByPoolKind.value[deps.selectedPoolKind.value]));
   const latestFiveStarEmptyText = computed(() => deps.t("dashboard.fiveStarRecordsEmpty"));
 
@@ -124,6 +139,11 @@ export function createDashboardUi(deps: DashboardUiDeps) {
     return poolKind ? (deps.latestFiveStarWallModes.value[poolKind] ?? "all") : "all";
   }
 
+  function latestFiveStarDistanceModeForPool(poolKind?: PoolKind | null): FiveStarDistanceMode {
+    if (poolKind !== "fork_lottery") return "actual";
+    return deps.latestFiveStarDistanceModes.value.fork_lottery ?? "actual";
+  }
+
   function toggleLatestFiveStarWallMode() {
     const mode = latestFiveStarWallMode.value === "all" ? "focused" : "all";
     deps.latestFiveStarWallModes.value = {
@@ -138,6 +158,20 @@ export function createDashboardUi(deps: DashboardUiDeps) {
       return latestFiveStarWallMode.value === "all" ? deps.t("dashboard.allFiveStar") : deps.t("dashboard.upFiveStarOnly");
     }
     return latestFiveStarWallMode.value === "all" ? deps.t("dashboard.showingFiveStarItems") : deps.t("dashboard.hidingFiveStarItems");
+  }
+
+  function toggleLatestFiveStarDistanceMode() {
+    if (deps.selectedPoolKind.value !== "fork_lottery") return;
+    const mode = latestFiveStarDistanceMode.value === "actual" ? "cost" : "actual";
+    deps.latestFiveStarDistanceModes.value = {
+      ...deps.latestFiveStarDistanceModes.value,
+      fork_lottery: mode,
+    };
+    deps.saveRecordViewPrefs();
+  }
+
+  function latestFiveStarDistanceModeLabel() {
+    return latestFiveStarDistanceMode.value === "cost" ? deps.t("dashboard.costPulls") : deps.t("dashboard.actualPulls");
   }
 
   function toggleFiveWallExpanded() {
@@ -187,9 +221,76 @@ export function createDashboardUi(deps: DashboardUiDeps) {
     return "pity-danger";
   }
 
-  function fiveWallDistance(hit: FiveStarRecord) {
-    if (latestFiveStarWallMode.value === "focused") return hit.focused_distance ?? hit.five_star_distance;
+  function latestFiveStarGroups(hits: FiveStarRecord[]): FiveStarWallDisplayGroup[] {
+    const distanceMode = latestFiveStarDistanceModeForPool(deps.selectedPoolKind.value);
+    if (distanceMode !== "cost") {
+      return hits.map((hit) => buildFiveWallGroup([hit], actualFiveWallDistance(hit), "actual"));
+    }
+
+    const chronologicalHits = [...hits].sort(compareFiveWallHitsChronological);
+    const groups: FiveStarWallGroupDraft[] = [];
+    let fallbackPull = 0;
+
+    for (const hit of chronologicalHits) {
+      const actualDistance = actualFiveWallDistance(hit);
+      const explicitPull = fiveWallCostPull(hit);
+      const effectivePull = explicitPull ?? fallbackPull + actualDistance;
+      fallbackPull = effectivePull;
+
+      const boundary = costBoundary(effectivePull);
+      const previousBoundary = costBoundary(Math.max(0, effectivePull - actualDistance));
+      const displayDistance = Math.max(0, boundary - previousBoundary);
+      const group = groups.at(-1);
+
+      if (group?.boundary === boundary) {
+        group.hits.push(hit);
+        group.displayDistance += displayDistance;
+      } else {
+        groups.push({ boundary, displayDistance, hits: [hit] });
+      }
+    }
+
+    return groups
+      .reverse()
+      .map((group) => buildFiveWallGroup([...group.hits].reverse(), group.displayDistance, "cost"));
+  }
+
+  function actualFiveWallDistance(hit: FiveStarRecord) {
+    if (latestFiveStarWallModeForPool(hit.record.pool_kind) === "focused") return hit.focused_distance ?? hit.five_star_distance;
     return hit.five_star_distance;
+  }
+
+  function fiveWallCostPull(hit: FiveStarRecord) {
+    const pullNo =
+      latestFiveStarWallModeForPool(hit.record.pool_kind) === "focused" || deps.selectedDashboardScope.value.kind === "pool_kind"
+        ? hit.record.derived.pull_no_in_pool_kind
+        : hit.record.derived.pull_no_in_banner;
+    return typeof pullNo === "number" && Number.isFinite(pullNo) && pullNo > 0 ? pullNo : null;
+  }
+
+  function compareFiveWallHitsChronological(left: FiveStarRecord, right: FiveStarRecord) {
+    const leftPull = fiveWallCostPull(left);
+    const rightPull = fiveWallCostPull(right);
+    if (leftPull != null && rightPull != null && leftPull !== rightPull) return leftPull - rightPull;
+    return compareRecordTime(left.record.time, right.record.time) || left.record.source_order - right.record.source_order || left.record.record_id.localeCompare(right.record.record_id);
+  }
+
+  function costBoundary(pull: number) {
+    return pull > 0 ? Math.ceil(pull / 10) * 10 : 0;
+  }
+
+  function buildFiveWallGroup(hits: FiveStarRecord[], displayDistance: number, distanceMode: FiveStarDistanceMode): FiveStarWallDisplayGroup {
+    return {
+      key: hits.map((hit) => hit.record.record_id).join(":"),
+      hits,
+      displayDistance,
+      distanceMode,
+      recordIds: hits.map((hit) => hit.record.record_id).join(" "),
+    };
+  }
+
+  function fiveWallGroupItemLabel(group: FiveStarWallDisplayGroup) {
+    return group.hits.map((hit) => formatQuantityName(hit.record.item_name, hit.record.count)).join(", ");
   }
 
   return {
@@ -205,9 +306,11 @@ export function createDashboardUi(deps: DashboardUiDeps) {
       rankingDialogTitle,
       selectedRarityShares,
       latestFiveStarWallMode,
+      latestFiveStarDistanceMode,
       showLatestFiveStarWallModeToggle,
+      showLatestFiveStarDistanceModeToggle,
       visibleLatestFiveStarHits,
-      displayedLatestFiveStarHits,
+      displayedLatestFiveStarGroups,
       fiveWallExpanded,
       latestFiveStarEmptyText,
       showDashboardBannerRail,
@@ -217,10 +320,12 @@ export function createDashboardUi(deps: DashboardUiDeps) {
       latestFiveStarNameForPool,
       toggleLatestFiveStarWallMode,
       latestFiveStarWallToggleLabel,
+      toggleLatestFiveStarDistanceMode,
+      latestFiveStarDistanceModeLabel,
       toggleFiveWallExpanded,
       toggleRankingRarity,
       fiveWallPityTone,
-      fiveWallDistance,
+      fiveWallGroupItemLabel,
       summaryProgressLabel,
       pullCurrency,
       formatPityRatio,
@@ -230,6 +335,7 @@ export function createDashboardUi(deps: DashboardUiDeps) {
     },
     internal: {
       latestFiveStarWallModeForPool,
+      latestFiveStarDistanceModeForPool,
     },
   };
 }
@@ -240,4 +346,10 @@ function defaultRankingRaritySelection(): RankingRaritySelection {
 
 function isRankingRarity(value?: number | null): value is RankingRarity {
   return value === 3 || value === 4 || value === 5;
+}
+
+function compareRecordTime(left?: string | null, right?: string | null) {
+  if (left != null && right == null) return -1;
+  if (left == null && right != null) return 1;
+  return String(left ?? "").localeCompare(String(right ?? ""));
 }

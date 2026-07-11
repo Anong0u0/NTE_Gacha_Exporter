@@ -24,6 +24,7 @@ import {
   recordColumnIds,
   recordPageSizes,
   recordPrefsKey,
+  type FiveStarDistanceMode,
   type FiveStarWallMode,
   type RecordColumnId,
   type RecordPageSize,
@@ -71,6 +72,9 @@ export function createRecordState(deps: RecordStateDeps) {
   const recordAdvancedFiltersOpen = ref(false);
   const latestFiveStarWallModes = ref<Record<PoolKind, FiveStarWallMode>>({
     ...defaultRecordViewPrefs.latestFiveStarWallModes,
+  });
+  const latestFiveStarDistanceModes = ref<Record<PoolKind, FiveStarDistanceMode>>({
+    ...defaultRecordViewPrefs.latestFiveStarDistanceModes,
   });
 
   let recordPrefsReady = false;
@@ -193,6 +197,7 @@ export function createRecordState(deps: RecordStateDeps) {
       visibleRecordColumns: [...visibleRecordColumns.value],
       recordAdvancedFiltersOpen: recordAdvancedFiltersOpen.value,
       latestFiveStarWallModes: { ...latestFiveStarWallModes.value },
+      latestFiveStarDistanceModes: { ...latestFiveStarDistanceModes.value },
     };
   }
 
@@ -251,6 +256,7 @@ export function createRecordState(deps: RecordStateDeps) {
       visibleRecordColumns.value = [...prefs.visibleRecordColumns];
       recordAdvancedFiltersOpen.value = prefs.recordAdvancedFiltersOpen;
       latestFiveStarWallModes.value = { ...prefs.latestFiveStarWallModes };
+      latestFiveStarDistanceModes.value = { ...prefs.latestFiveStarDistanceModes };
       pageIndex.value = 0;
       normalizeRecordFilterSelection();
     });
@@ -452,6 +458,7 @@ export function createRecordState(deps: RecordStateDeps) {
       visibleRecordColumns,
       recordAdvancedFiltersOpen,
       latestFiveStarWallModes,
+      latestFiveStarDistanceModes,
     },
     computed: {
       activeRecordFilterCount,

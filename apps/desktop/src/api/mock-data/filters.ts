@@ -34,10 +34,19 @@ const mockUnknownFilterBanners: RecordFilterOptions["banners"] = [
 ];
 
 export function mockFilterOptionsForScenario(scenario: MockScenario = mockScenario()): RecordFilterOptions {
-  return scenario === "unknown-banners"
-    ? {
-        ...mockFilterOptions,
-        banners: [...mockUnknownFilterBanners, ...mockFilterOptions.banners],
-      }
-    : mockFilterOptions;
+  if (scenario === "unknown-banners") {
+    return {
+      ...mockFilterOptions,
+      banners: [...mockUnknownFilterBanners, ...mockFilterOptions.banners],
+    };
+  }
+  if (scenario === "latest-five-cost-distance") {
+    return {
+      ...mockFilterOptions,
+      banners: mockFilterOptions.banners.map((banner) =>
+        banner.banner_id === "ForkLottery_AnHunQu" ? { ...banner, count: 290 } : banner,
+      ),
+    };
+  }
+  return mockFilterOptions;
 }

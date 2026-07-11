@@ -9,7 +9,8 @@
   gap: 6px;
 }
 
-.latest-item-toggle[aria-pressed="true"] {
+.latest-item-toggle[aria-pressed="true"],
+.latest-distance-toggle[aria-pressed="true"] {
   border-color: var(--accent);
   color: var(--accent-hover);
   background: var(--accent-soft);
@@ -35,13 +36,14 @@
   content: "";
   position: absolute;
   inset: calc(var(--five-wall-row-height) + 34px) 0 0;
-  z-index: 2;
+  z-index: 4;
   pointer-events: none;
   backdrop-filter: blur(2px);
   background: linear-gradient(180deg, rgb(255 255 255 / 18%), var(--surface-panel) 78%);
 }
 
 .five-wall-grid {
+  position: relative;
   min-width: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
@@ -51,6 +53,7 @@
 
 .five-wall-item {
   position: relative;
+  z-index: 2;
   min-width: 0;
   min-height: 0;
   aspect-ratio: 1;
@@ -82,11 +85,27 @@
   display: block;
 }
 
-.five-wall-quantity {
+.five-wall-frame-layer {
   position: absolute;
-  top: -3px;
-  right: -3px;
+  inset: 0;
   z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.five-wall-frame-segment {
+  fill: color-mix(in srgb, var(--five-wall-group-color) 14%, transparent);
+  stroke: color-mix(in srgb, var(--five-wall-group-color) 42%, var(--border-soft));
+  stroke-width: 1px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.five-wall-quantity,
+.five-wall-group-count {
+  position: absolute;
+  z-index: 3;
   min-width: 28px;
   height: 20px;
   border-radius: 4px 8px 4px 7px;
@@ -101,8 +120,19 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 22%);
 }
 
+.five-wall-quantity {
+  top: -3px;
+  right: -3px;
+}
+
+.five-wall-group-count {
+  transform: translate(calc(-100% + 3px), -3px);
+  pointer-events: none;
+}
+
 .five-wall-pity {
   position: absolute;
+  z-index: 3;
   right: -3px;
   bottom: -3px;
   min-width: 30px;
@@ -116,6 +146,13 @@
   font-weight: 800;
   line-height: 1;
   box-shadow: 0 1px 4px rgb(0 0 0 / 22%);
+}
+
+.five-wall-group-distance {
+  right: auto;
+  bottom: auto;
+  transform: translate(calc(-100% + 3px), calc(-100% + 3px));
+  pointer-events: none;
 }
 
 .five-wall-pity.pity-good {
@@ -134,7 +171,7 @@
 .five-wall-toolbar {
   position: sticky;
   bottom: 0;
-  z-index: 3;
+  z-index: 5;
   display: flex;
   justify-content: center;
   margin-top: 10px;
@@ -156,4 +193,3 @@
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
-

@@ -1,8 +1,9 @@
 import type { CaptureMode, CaptureStartOptions, PoolKindSummary, TimeStats } from "../types";
 import { mockScenario, type MockScenario } from "./common";
-import { mockRecords } from "./records";
+import { mockLatestFiveCostDistanceForkRecords, mockRecords } from "./records";
 
 export function mockSummaryForScenario(scenario: MockScenario = mockScenario()) {
+  if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceSummary();
   if (scenario !== "unknown-banners") return mockSummary;
   return mockSummary.map((summary) => {
     if (summary.pool_kind === "monopoly_limited") {
@@ -24,6 +25,48 @@ export function mockSummaryForScenario(scenario: MockScenario = mockScenario()) 
       };
     }
     return summary;
+  });
+}
+
+function mockLatestFiveCostDistanceSummary(): PoolKindSummary[] {
+  return mockSummary.map((summary) => {
+    if (summary.pool_kind !== "fork_lottery") return summary;
+    const latestForkHit = mockLatestFiveCostDistanceForkRecords[0];
+    return {
+      ...summary,
+      total_pulls: 290,
+      roll_points_total: 290,
+      known_roll_point_records: 290,
+      missing_roll_point_records: 0,
+      hit_count: 12,
+      five_star_item_count: 12,
+      current_pity: 2,
+      current_ten_pull_progress: 0,
+      current_guarantee: false,
+      average_5star_pity: 24,
+      average_4star_pity: null,
+      min_5star_pity: 1,
+      max_5star_pity: 80,
+      early_hit_count: 11,
+      up_count: 6,
+      off_rate_count: 6,
+      not_applicable_rate_up_count: 0,
+      unknown_rate_up_count: 0,
+      observed_up_rate: 0.5,
+      fork_win_count: 6,
+      fork_loss_count: 6,
+      fork_forced_up_count: 0,
+      fork_observed_25_75_win_rate: 0.5,
+      latest_5star: latestForkHit,
+      latest_5star_any: latestForkHit,
+      four_star_count: 0,
+      rate_up_4_count: 0,
+      off_rate_4_count: 0,
+      not_applicable_rate_up_4_count: 0,
+      unknown_rate_up_4_count: 0,
+      average_roll_points_to_5star: 24.2,
+      roll_point_cost_samples_5star: 12,
+    };
   });
 }
 

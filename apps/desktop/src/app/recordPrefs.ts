@@ -37,9 +37,11 @@ export type RecordViewPrefs = {
   visibleRecordColumns: RecordColumnId[];
   recordAdvancedFiltersOpen: boolean;
   latestFiveStarWallModes: Record<PoolKind, FiveStarWallMode>;
+  latestFiveStarDistanceModes: Record<PoolKind, FiveStarDistanceMode>;
 };
 
 export type FiveStarWallMode = "all" | "focused";
+export type FiveStarDistanceMode = "actual" | "cost";
 
 export const defaultRecordViewPrefs: RecordViewPrefs = {
   recordPoolKind: "all",
@@ -62,6 +64,11 @@ export const defaultRecordViewPrefs: RecordViewPrefs = {
     monopoly_limited: "focused",
     monopoly_standard: "focused",
     fork_lottery: "focused",
+  },
+  latestFiveStarDistanceModes: {
+    monopoly_limited: "actual",
+    monopoly_standard: "actual",
+    fork_lottery: "actual",
   },
 };
 
@@ -102,6 +109,7 @@ export function readRecordViewPrefs(profileName: string): RecordViewPrefs {
       visibleRecordColumns: readRecordColumnArray(source.visibleRecordColumns),
       recordAdvancedFiltersOpen: typeof source.recordAdvancedFiltersOpen === "boolean" ? source.recordAdvancedFiltersOpen : defaultRecordViewPrefs.recordAdvancedFiltersOpen,
       latestFiveStarWallModes: readFiveStarWallModes(source.latestFiveStarWallModes),
+      latestFiveStarDistanceModes: readFiveStarDistanceModes(source.latestFiveStarDistanceModes),
     };
   } catch {
     return { ...defaultRecordViewPrefs };
@@ -149,6 +157,17 @@ function readFiveStarWallModes(value: unknown): Record<PoolKind, FiveStarWallMod
   for (const kind of kindOrder) {
     const mode = source[kind];
     if (mode === "all" || mode === "focused") result[kind] = mode;
+  }
+  return result;
+}
+
+function readFiveStarDistanceModes(value: unknown): Record<PoolKind, FiveStarDistanceMode> {
+  const result = { ...defaultRecordViewPrefs.latestFiveStarDistanceModes };
+  if (typeof value !== "object" || value === null) return result;
+  const source = value as Record<string, unknown>;
+  for (const kind of kindOrder) {
+    const mode = source[kind];
+    if (mode === "actual" || mode === "cost") result[kind] = mode;
   }
   return result;
 }

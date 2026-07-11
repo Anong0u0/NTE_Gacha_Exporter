@@ -1,4 +1,4 @@
-import type { DisplayRecord } from "../types";
+import type { DisplayRecord, RateUpResult } from "../types";
 import {
   mockBanner,
   mockDerived,
@@ -154,6 +154,146 @@ export const mockRecords: DisplayRecord[] = [
 
 export type MockRecord = (typeof mockRecords)[number];
 
+export const mockLatestFiveCostDistanceForkRecords: DisplayRecord[] = [
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-288",
+    sourceOrder: 288,
+    time: "2026-01-18 20:00:00",
+    pullNo: 288,
+    distance: 20,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-268",
+    sourceOrder: 268,
+    time: "2026-01-17 20:00:00",
+    pullNo: 268,
+    distance: 1,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_2",
+    itemName: "Off-rate Arc B",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-267",
+    sourceOrder: 267,
+    time: "2026-01-17 20:00:00",
+    pullNo: 267,
+    distance: 59,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_1",
+    itemName: "Off-rate Arc A",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-208",
+    sourceOrder: 208,
+    time: "2026-01-16 20:00:00",
+    pullNo: 208,
+    distance: 16,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-192",
+    sourceOrder: 192,
+    time: "2026-01-15 20:00:00",
+    pullNo: 192,
+    distance: 32,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-160",
+    sourceOrder: 160,
+    time: "2026-01-14 20:00:04",
+    pullNo: 160,
+    distance: 1,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-159",
+    sourceOrder: 159,
+    time: "2026-01-14 20:00:03",
+    pullNo: 159,
+    distance: 1,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_same_159",
+    itemName: "Off-rate Arc E",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-158",
+    sourceOrder: 158,
+    time: "2026-01-14 20:00:02",
+    pullNo: 158,
+    distance: 1,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_same_158",
+    itemName: "Off-rate Arc F",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-157",
+    sourceOrder: 157,
+    time: "2026-01-14 20:00:01",
+    pullNo: 157,
+    distance: 1,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_same_157",
+    itemName: "Off-rate Arc G",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-156",
+    sourceOrder: 156,
+    time: "2026-01-14 20:00:00",
+    pullNo: 156,
+    distance: 56,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-100",
+    sourceOrder: 100,
+    time: "2026-01-13 20:00:00",
+    pullNo: 100,
+    distance: 20,
+    rateUpResult: "off_rate",
+    forkResultMark: "lose",
+    itemId: "fork_off_3",
+    itemName: "Off-rate Arc C",
+  }),
+  mockForkCostDistanceRecord({
+    recordId: "mock-fork-cost-80",
+    sourceOrder: 80,
+    time: "2026-01-12 20:00:00",
+    pullNo: 80,
+    distance: 80,
+    rateUpResult: "up",
+    forkResultMark: "win",
+    itemId: "fork_1",
+    itemName: "Rose",
+  }),
+];
+
+export const mockLatestFiveCostDistanceRecords: DisplayRecord[] = [
+  ...mockLatestFiveCostDistanceForkRecords,
+  ...mockRecords.filter((record) => record.pool_kind !== "fork_lottery"),
+];
+
 export const mockUnknownLimitedRecord: DisplayRecord = {
   record_id: "mock-unknown-limited",
   source_order: 6,
@@ -229,5 +369,56 @@ export const mockUnknownForkRecord: DisplayRecord = {
 };
 
 export function mockRecordsForScenario(scenario: MockScenario = mockScenario()) {
-  return scenario === "unknown-banners" ? [mockUnknownForkRecord, mockUnknownLimitedRecord, ...mockRecords] : mockRecords;
+  if (scenario === "unknown-banners") return [mockUnknownForkRecord, mockUnknownLimitedRecord, ...mockRecords];
+  if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceRecords;
+  return mockRecords;
+}
+
+function mockForkCostDistanceRecord(options: {
+  recordId: string;
+  sourceOrder: number;
+  time: string;
+  pullNo: number;
+  distance: number;
+  rateUpResult: RateUpResult;
+  forkResultMark: DisplayRecord["fork_result_mark"];
+  itemId: string;
+  itemName: string;
+}): DisplayRecord {
+  return {
+    record_id: options.recordId,
+    source_order: options.sourceOrder,
+    record_type: "fork",
+    time: options.time,
+    pool_kind: "fork_lottery",
+    pool_id: "ForkLottery_AnHunQu",
+    pool_label: "Arc Research",
+    banner: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research"),
+    item_id: options.itemId,
+    item_name: options.itemName,
+    item_asset_refs: options.itemId === "fork_1" ? mockItemAssetRefs.fork_1 : {},
+    item_kind: "fork",
+    rarity: 5,
+    count: 1,
+    roll_points: options.pullNo,
+    roll_label: String(options.pullNo),
+    roll_bucket: "not_applicable",
+    fork_result_mark: options.forkResultMark,
+    secondary_item_asset_refs: {},
+    derived: mockDerived(options.recordId, {
+      bannerId: "ForkLottery_AnHunQu",
+      poolKind: "fork_lottery",
+      pullNoInPoolKind: options.pullNo,
+      pullNoInBanner: options.pullNo,
+      pity5Before: options.distance - 1,
+      pity5After: 0,
+      tenPullProgressBefore: options.pullNo % 10,
+      tenPullProgressAfter: 0,
+      hitRarity: 5,
+      rateUpResult: options.rateUpResult,
+      guarantee5Before: options.forkResultMark === "guaranteed",
+      guarantee5After: false,
+      ruleId: "fork_lottery_s",
+    }),
+  };
 }

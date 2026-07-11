@@ -85,7 +85,7 @@ export function useApp() {
     recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets,
     itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search, sortDirection, pageSize,
     pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordAdvancedFiltersOpen,
-    latestFiveStarWallModes,
+    latestFiveStarWallModes, latestFiveStarDistanceModes,
   } = recordState.refs;
   const {
     activeRecordFilterCount, recordColumnOptions, visibleRecordGridTemplate, recordBannerOptions,
@@ -176,6 +176,7 @@ export function useApp() {
     selectedPoolSummary,
     bannerSummaries,
     latestFiveStarWallModes,
+    latestFiveStarDistanceModes,
     t,
     saveRecordViewPrefs,
   });
@@ -183,13 +184,15 @@ export function useApp() {
   const {
     selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows,
     rankingRarityOptions, itemRankingShares, rankingDialogTitle, selectedRarityShares, latestFiveStarWallMode,
-    showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded,
-    latestFiveStarEmptyText, showDashboardBannerRail,
+    latestFiveStarDistanceMode, showLatestFiveStarWallModeToggle, showLatestFiveStarDistanceModeToggle,
+    visibleLatestFiveStarHits, displayedLatestFiveStarGroups, fiveWallExpanded, latestFiveStarEmptyText,
+    showDashboardBannerRail,
   } = dashboardUi.computed;
   const {
     latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel,
-    toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, summaryProgressLabel,
-    pullCurrency, formatPityRatio, recordRarityClass, openRankingDialog, closeRankingDialog,
+    toggleLatestFiveStarDistanceMode, latestFiveStarDistanceModeLabel, toggleFiveWallExpanded, toggleRankingRarity,
+    fiveWallPityTone, fiveWallGroupItemLabel, summaryProgressLabel, pullCurrency, formatPityRatio, recordRarityClass,
+    openRankingDialog, closeRankingDialog,
   } = dashboardUi.actions;
   const { latestFiveStarWallModeForPool } = dashboardUi.internal;
   const runTask = createTaskRunner({ busy, statusText, errorText, formatError: formatters.formatError });
@@ -529,11 +532,11 @@ export function useApp() {
     t, navItems, kindOrder, kindLabels, activeView, profiles, activeProfileName, newProfileName, profileRenameSource, profileRenameName, profileDeleteTarget, locale, uiLocale, locales, uiLocales, summary, selectedPoolKind, selectedDashboardScope, detail, detailLoading, records, recordTotal, filterOptions, importPath, importMode,
     exportPath, exportMode, backupPath, restorePath, captureMode, captureAutoPageEnabled, captureFullUpdateEnabled, captureWinDivertBackendEnabled, effectiveCaptureMode, lastReport, lastBackup, lastRestore, updateStatus, updateCheckReport, updatePromptOpen, canOpenDismissedUpdatePrompt, assetUrlCache, captureStatus, captureRecoveryState, captureActionBusy,
     capturePollInFlight, diagnosticPromptOpen, diagnosticStatus, diagnosticActionBusy, diagnosticPollInFlight, busy, statusText, errorText, setChartEl, recordPoolKind, recordBannerIds, itemRarities, focusedRarities, rateUpResults, rollBuckets, itemKinds, forkResultMarks, forkPityBadges, dateFrom, dateTo, search,
-    sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
-    canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isDiagnosticActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarHits, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, startPendingAdminDiagnostic, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, openAboutLink, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
+    sortDirection, pageSize, pageIndex, recordPageJumpOpen, recordPageJumpInput, visibleRecordColumns, recordColumnOptions, visibleRecordGridTemplate, isRecordColumnVisible, recordPageSizes, recordAdvancedFiltersOpen, latestFiveStarWallMode, latestFiveStarDistanceMode, activeRecordFilterCount, recordBannerOptions, itemRarityOptions, focusedRarityOptions, rateUpResultSelectOptions, rollBucketOptions, itemKindOptions, showForkRecordFilters, forkResultMarkSelectOptions, forkPityBadgeSelectOptions, settingsUpdateChannel, settingsCheckUpdates, dataOperationSummary, activeProfile, allPoolSummaries, bannerSummaries, selectedPoolBannerSummaries, selectedSummary, selectedScopeLabel, isDashboardPoolScope, selectedDetailTitle, hasItemRankingRows, rankingRarityOptions, itemRankingShares, recordPageStart, recordPageEnd, recordPageCount, canPrevPage,
+    canNextPage, canFirstPage, canLastPage, bannersForRecordKind, isCaptureActive, isDiagnosticActive, isWorkflowBusy, captureTitle, captureSubtitle, autoPageStatusLine, captureModeLabel, showDashboardBannerRail, showLatestFiveStarWallModeToggle, showLatestFiveStarDistanceModeToggle, visibleLatestFiveStarHits, displayedLatestFiveStarGroups, fiveWallExpanded, latestFiveStarEmptyText, rankingDialogOpen, rankingDialogTitle, bootstrap, startPendingAdminCapture, startPendingAdminDiagnostic, loadProfiles, createProfile, startRenameProfile, cancelRenameProfile, saveProfileRename, requestDeleteProfile, cancelDeleteProfile, confirmDeleteProfile, selectProfile, setUiLocale, setDataLocale, setUpdateChannel, setCheckUpdatesOnStartup, openAboutLink, refreshAll, selectDashboardPool, selectDashboardBanner, isSelectedDashboardPool, isSelectedDashboardBanner, loadDetail,
     loadFilterOptions, loadRecords, resetRecordFilters, pickImportFile, runImport, startPreferredCapture, startLiveCapture, startFullCapture, retryAutoPageSlower, canRetryAutoPageSlower, nextPageRecordMinWaitMs, closeCaptureRecoveryDialog, runRecoveryDialogAction, setCaptureAutoPageEnabled, setCaptureFullUpdateEnabled, setCaptureWinDivertBackendEnabled, stopLiveCapture, pollCaptureStatus, applyCaptureStatus, ensureCapturePolling, clearCapturePolling, pickExportFile, runExport, pickBackupFile, runBackup, pickRestoreFile, runRestore,
     openDiagnosticPrompt, cancelDiagnosticPrompt, confirmDiagnosticPrompt, cancelDiagnostic, pollDiagnosticStatus, applyDiagnosticStatus, ensureDiagnosticPolling, clearDiagnosticPolling, loadUpdaterStatus, checkForUpdates, openUpdatePrompt, cancelUpdatePrompt, skipUpdateVersion, confirmUpdatePrompt, runTask, renderChart, goToRecordPage, goToFirstRecordPage, goToLastRecordPage, openRecordPageJump, closeRecordPageJump, confirmRecordPageJump, ...formatters,
-    formatPityRatio, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallDistance, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog,
+    formatPityRatio, summaryProgressLabel, pullCurrency, recordRarityClass, latestFiveStarForPool, latestFiveStarNameForPool, toggleLatestFiveStarWallMode, latestFiveStarWallToggleLabel, toggleLatestFiveStarDistanceMode, latestFiveStarDistanceModeLabel, toggleFiveWallExpanded, toggleRankingRarity, fiveWallPityTone, fiveWallGroupItemLabel, showDashboardFiveStarRecords, selectedRarityShares, itemVisualUrl, bannerVisualUrl, hasRecordVisual, hasItemVisual, hasBannerVisual, recordsHaveAnyVisual, resolveVisibleAssets, openRankingDialog, closeRankingDialog,
   });
 }
 

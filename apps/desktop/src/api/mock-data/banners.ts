@@ -1,6 +1,6 @@
 import type { BannerSummary, DisplayRecord } from "../types";
 import { mockBanner, mockScenario, type MockScenario } from "./common";
-import { mockRecords, mockUnknownForkRecord, mockUnknownLimitedRecord } from "./records";
+import { mockLatestFiveCostDistanceForkRecords, mockRecords, mockUnknownForkRecord, mockUnknownLimitedRecord } from "./records";
 
 function mockSyntheticBannerSummary(record: DisplayRecord, title: string): BannerSummary {
   return {
@@ -46,7 +46,41 @@ const mockUnknownBanners: BannerSummary[] = [
 ];
 
 export function mockBannersForScenario(scenario: MockScenario = mockScenario()) {
+  if (scenario === "latest-five-cost-distance") return mockLatestFiveCostDistanceBanners();
   return scenario === "unknown-banners" ? [...mockUnknownBanners, ...mockBanners] : mockBanners;
+}
+
+function mockLatestFiveCostDistanceBanners(): BannerSummary[] {
+  return mockBanners.map((banner) => {
+    if (banner.pool_kind !== "fork_lottery") return banner;
+    const latestForkHit = mockLatestFiveCostDistanceForkRecords[0];
+    return {
+      ...banner,
+      total_pulls: 290,
+      roll_points_total: 290,
+      known_roll_point_records: 290,
+      missing_roll_point_records: 0,
+      five_star_count: 12,
+      four_star_count: 0,
+      current_5star_pity: 2,
+      average_5star_pity: 24,
+      rate_up_5_count: 6,
+      off_rate_5_count: 6,
+      not_applicable_rate_up_5_count: 0,
+      unknown_rate_up_5_count: 0,
+      fork_win_count: 6,
+      fork_loss_count: 6,
+      fork_forced_up_count: 0,
+      fork_observed_25_75_win_rate: 0.5,
+      rate_up_4_count: 0,
+      off_rate_4_count: 0,
+      not_applicable_rate_up_4_count: 0,
+      unknown_rate_up_4_count: 0,
+      average_roll_points_to_5star: 24.2,
+      roll_point_cost_samples_5star: 12,
+      latest_hit: latestForkHit,
+    };
+  });
 }
 
 const mockBanners: BannerSummary[] = [
