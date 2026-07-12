@@ -506,8 +506,8 @@ watch(
                   :data-five-wall-group-hit-count="hitIndex === 0 ? group.hits.length : undefined"
                   :data-five-wall-current-banner-pulls="group.currentBannerPulls ?? undefined"
                   :data-five-wall-other-banner-pulls="group.otherBannerPulls ?? undefined"
-                  :title="`${app.fiveWallGroupItemLabel(group)} · ${app.fiveWallDistanceLabel(group)}`"
-                  :aria-label="`${app.fiveWallGroupItemLabel(group)} ${app.fiveWallDistanceLabel(group)}`"
+                  :title="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} · ${app.fiveWallDistanceLabel(group)} · ${app.formatTime(hit.record.time)}`"
+                  :aria-label="`${app.formatQuantityName(hit.record.item_name, hit.record.count)} ${app.fiveWallDistanceLabel(group)}`"
                 >
                   <span class="five-wall-thumb" :class="{ empty: !app.hasRecordVisual(hit.record) }">
                     <img v-if="app.hasRecordVisual(hit.record)" :src="app.itemVisualUrl(hit.record)" :alt="app.formatQuantityName(hit.record.item_name, hit.record.count)" />

@@ -77,7 +77,7 @@ test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page 
   ], "cost");
   await expectWallDistanceSum(page, 290);
   await expectGroupCountBadge(page, sameTenAllGroupKey, "x5");
-  await expectGroupTooltipUniform(page, sameTenAllGroupKey);
+  await expectGroupTooltipRecordTimes(page, sameTenAllGroupKey);
   await expectUniformTileGeometry(page);
   await expectTenPixelGridGaps(page);
 
@@ -355,13 +355,12 @@ async function expectGroupLabelNotToContain(page: Page, text: string) {
   await expect(anchor).not.toHaveAttribute("aria-label", new RegExp(escapeRegExp(text)));
 }
 
-async function expectGroupTooltipUniform(page: Page, groupKey: string) {
-  const titles = await latestFiveWall(page).locator(`.five-wall-item[data-five-wall-group-key="${groupKey}"]`).evaluateAll((items) =>
-    items.map((item) => ({ title: item.getAttribute("title"), aria: item.getAttribute("aria-label") })),
+async function expectGroupTooltipRecordTimes(page: Page, groupKey: string) {
+  const items = await latestFiveWall(page).locator(`.five-wall-item[data-five-wall-group-key="${groupKey}"]`).evaluateAll((tiles) =>
+    tiles.map((tile) => ({ time: tile.getAttribute("data-time"), title: tile.getAttribute("title") })),
   );
-  expect(new Set(titles.map((item) => item.title)).size).toBe(1);
-  expect(new Set(titles.map((item) => item.aria)).size).toBe(1);
-  expect(titles[0].title).toContain("Rose, Off-rate Arc E, Off-rate Arc F, Off-rate Arc G, Rose");
+  expect(items.length).toBeGreaterThan(1);
+  expect(items.every(({ time, title }) => Boolean(time && title?.includes(time)))).toBe(true);
 }
 
 async function expectGroupCountBadge(page: Page, groupKey: string, expected: string) {

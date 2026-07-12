@@ -24,6 +24,9 @@ use util::{print_json, write_png};
 use window::{capture_window, find_window, image_metrics};
 
 fn main() -> Result<()> {
+    #[cfg(windows)]
+    enable_dpi_awareness();
+
     ensure_windows_native()?;
 
     let cli = Cli::parse();
@@ -114,6 +117,20 @@ fn main() -> Result<()> {
                 window,
                 metrics: image_metrics(&image),
             })
+        }
+    }
+}
+
+#[cfg(windows)]
+fn enable_dpi_awareness() {
+    use windows_sys::Win32::UI::HiDpi::{
+        DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext,
+    };
+    use windows_sys::Win32::UI::WindowsAndMessaging::SetProcessDPIAware;
+
+    unsafe {
+        if SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == 0 {
+            let _ = SetProcessDPIAware();
         }
     }
 }
