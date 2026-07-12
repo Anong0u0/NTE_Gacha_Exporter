@@ -186,15 +186,14 @@ fn synthetic_unresolved(
             "limited".to_string(),
             None,
         )
-    } else if let Some(title) = pool_id.strip_prefix("ForkLottery_") {
+    } else {
+        let title = pool_id.strip_prefix("ForkLottery_")?;
         (
             pool_id.to_string(),
             "fork_lottery".to_string(),
             "fork".to_string(),
             Some(title.to_string()),
         )
-    } else {
-        return None;
     };
 
     Some(ResolvedBanner {

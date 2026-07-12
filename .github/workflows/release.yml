@@ -45,7 +45,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: rustfmt, clippy
 
@@ -93,7 +93,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.0
 
       - name: Desktop install
         working-directory: apps/desktop
@@ -120,7 +120,7 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tagName || github.ref }}
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.97.0
 
       - name: Build portable tools
         run: cargo build --release -p nte-gacha-exporter-cli
