@@ -1,3 +1,5 @@
+#![cfg_attr(windows, feature(windows_process_extensions_inherit_handles))]
+
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};

@@ -79,8 +79,7 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
         .into_iter()
         .map(|window| window.hwnd)
         .collect::<BTreeSet<_>>();
-    let mut child = launch_app(&launcher, &portable_root, &options.addr)?;
-    report.process.launcher_pid = Some(child.id());
+    report.process.launcher_pid = Some(launch_app(&launcher, &portable_root, &options.addr)?);
     let mut launched_window: Option<WindowInfo> = None;
 
     let result = run_smoke_steps(
@@ -99,22 +98,19 @@ pub fn run_smoke(options: SmokeOptions) -> Result<()> {
                 .errors
                 .push(format!("failure snapshot failed: {snapshot_error}"));
         }
-        if let Some(window) = launched_window.as_ref() {
-            if let Err(screenshot_error) =
+        if let Some(window) = launched_window.as_ref()
+            && let Err(screenshot_error) =
                 capture_step(&mut report, &screenshots, "failure", window)
-            {
-                report
-                    .errors
-                    .push(format!("screenshot failed: {screenshot_error}"));
-            }
+        {
+            report
+                .errors
+                .push(format!("screenshot failed: {screenshot_error}"));
         }
     }
 
     if let Some(window) = launched_window.as_ref() {
         let _ = close_window(window);
     }
-    let _ = child.kill();
-
     match remove_portable_copy(&run_dir, &portable_root) {
         Ok(removed) => report.cleanup.portable_removed = removed,
         Err(error) => report.cleanup.warnings.push(error.to_string()),

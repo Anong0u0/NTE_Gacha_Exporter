@@ -244,10 +244,10 @@ fn status_error(url: &str, code: u16, response: ureq::Response) -> anyhow::Error
     let text = response
         .into_string()
         .unwrap_or_else(|error| format!("invalid API response body: {error}"));
-    if let Ok(envelope) = serde_json::from_str::<ApiResponse>(&text) {
-        if let Some(error) = envelope.error {
-            return anyhow!("{url}: status code {code}: {error}");
-        }
+    if let Ok(envelope) = serde_json::from_str::<ApiResponse>(&text)
+        && let Some(error) = envelope.error
+    {
+        return anyhow!("{url}: status code {code}: {error}");
     }
     anyhow!("{url}: status code {code}; body={}", truncate_body(&text))
 }

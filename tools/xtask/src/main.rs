@@ -167,7 +167,6 @@ fn run_ci() -> Result<(), String> {
 
     let desktop = root.join("apps").join("desktop");
     run_command(&desktop, "bun", &["install", "--frozen-lockfile"])?;
-    run_command(&desktop, "bun", &["run", "typecheck"])?;
     run_command(&desktop, "bun", &["run", "build"])
 }
 

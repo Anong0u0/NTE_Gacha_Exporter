@@ -3,10 +3,13 @@ use std::{
     fs,
     net::TcpListener,
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
+    process::{Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
+
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 use anyhow::{Context, Result, anyhow, bail};
 
@@ -60,11 +63,11 @@ pub fn run_agent_launch(addr: &str, timeout: Duration) -> Result<LaunchOutput> {
 
     prepare_agent_addr(addr, timeout)?;
 
-    let child = launch_app(&launcher, &portable_root, addr)?;
+    let launcher_pid = launch_app(&launcher, &portable_root, addr)?;
     let health = wait_health(addr, timeout)?;
     let app_pid = health.get("pid").and_then(serde_json::Value::as_u64);
     Ok(LaunchOutput {
-        launcher_pid: child.id(),
+        launcher_pid,
         app_pid,
         addr: addr.to_string(),
         root: portable_root.display().to_string(),
@@ -124,8 +127,9 @@ pub fn stage_portable(source: &Path, destination: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn launch_app(launcher: &Path, portable_root: &Path, addr: &str) -> Result<Child> {
-    Command::new(launcher)
+pub fn launch_app(launcher: &Path, portable_root: &Path, addr: &str) -> Result<u32> {
+    let mut command = Command::new(launcher);
+    command
         .current_dir(portable_root)
         .env("NTE_AGENT_SMOKE", "1")
         .env("NTE_AGENT_SMOKE_ADDR", addr)
@@ -133,9 +137,15 @@ pub fn launch_app(launcher: &Path, portable_root: &Path, addr: &str) -> Result<C
         .env("NTE_GACHA_EXPORTER_ROOT", portable_root)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+
+    #[cfg(windows)]
+    command.inherit_handles(false);
+
+    let child = command
         .spawn()
-        .with_context(|| format!("launch failed: {}", launcher.display()))
+        .with_context(|| format!("launch failed: {}", launcher.display()))?;
+    Ok(child.id())
 }
 
 pub fn ensure_addr_available(addr: &str) -> Result<()> {

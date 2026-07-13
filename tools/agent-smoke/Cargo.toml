@@ -3,7 +3,6 @@ name = "nte-agent-smoke"
 version = "0.1.1"
 edition = "2024"
 license = "MIT"
-rust-version = "1.85"
 
 [[bin]]
 name = "nte-agent-smoke"

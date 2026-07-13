@@ -339,7 +339,7 @@ mod windows_impl {
             bail!("GetDIBits returned {lines}, expected {height}");
         }
         let mut rgb = Vec::with_capacity(width as usize * height as usize * 3);
-        for pixel in bgra.chunks_exact(4) {
+        for pixel in bgra.as_chunks::<4>().0 {
             rgb.push(pixel[2]);
             rgb.push(pixel[1]);
             rgb.push(pixel[0]);
