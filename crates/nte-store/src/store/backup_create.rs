@@ -26,7 +26,7 @@ impl JsonStore {
         self.add_backup_dir(&mut zip, options, Path::new("profiles"), &mut files)?;
         let manifest = serde_json::json!({
             "schema": "nte-gacha-exporter-data-backup",
-            "schema_version": 1,
+            "schema_version": 2,
             "created_at": now_stamp(),
             "files": files,
         });

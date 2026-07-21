@@ -47,7 +47,16 @@ pub(crate) fn with_store<T>(
         .store
         .lock()
         .map_err(|_| api_error_message("store_lock_poisoned", "store lock poisoned"))?;
-    f(&store).map_err(api_error)
+    f(&store).map_err(store_api_error)
+}
+
+fn store_api_error(error: GuiError) -> ApiError {
+    let code = match &error {
+        GuiError::Profile(error) => error.code(),
+        GuiError::ProfileNotFound(_) => "profile_not_found",
+        _ => return api_error(error),
+    };
+    api_error_message(code, error)
 }
 
 pub(crate) fn portable_root() -> Result<PathBuf, std::io::Error> {

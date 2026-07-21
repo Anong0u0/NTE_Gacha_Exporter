@@ -72,12 +72,21 @@ fn merge_records(
     }
 
     fn ensure_profile_absent(&self, name: &str) -> Result<(), GuiError> {
-        let lower = name.to_ascii_lowercase();
+        self.ensure_profile_absent_except(name, None)
+    }
+
+    fn ensure_profile_absent_except(
+        &self,
+        name: &str,
+        except: Option<&str>,
+    ) -> Result<(), GuiError> {
+        let key = profile_name_key(name);
         for profile in self.list_profiles()? {
-            if profile.name.to_ascii_lowercase() == lower {
-                return Err(GuiError::InvalidProfile(format!(
-                    "profile already exists: {name}"
-                )));
+            if except.is_some_and(|except| profile.name == except) {
+                continue;
+            }
+            if profile_name_key(&profile.name) == key {
+                return Err(ProfileError::AlreadyExists(name.to_string()).into());
             }
         }
         Ok(())
