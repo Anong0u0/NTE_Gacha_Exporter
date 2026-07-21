@@ -59,7 +59,7 @@ export function createAppFormatters(t: Translator) {
     forkWinRate,
     captureRecordName,
     captureRecordMeta,
-    formatError,
+    formatError: (error: unknown) => formatError(error, t),
     formatCaptureState: (value?: string | null) => formatCaptureState(value, t),
     formatCaptureMode: (value?: string | null) => formatCaptureMode(value, t),
   };

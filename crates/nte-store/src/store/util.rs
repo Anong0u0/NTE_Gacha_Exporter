@@ -9,39 +9,79 @@ pub fn load_locale_or_settings(
 }
 
 fn validate_profile_name(name: &str) -> Result<String, GuiError> {
-    let name = name.trim();
-    if name.is_empty() || name.len() > 40 {
-        return Err(GuiError::InvalidProfile(
-            "profile name length must be 1..40".to_string(),
-        ));
+    let name = name.trim().nfc().collect::<String>();
+    if name.is_empty() {
+        return Err(ProfileError::NameEmpty.into());
     }
-    if !name
-        .bytes()
-        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
-    {
-        return Err(GuiError::InvalidProfile(
-            "profile name must use ASCII letters, digits, _ or -".to_string(),
-        ));
+    if name.encode_utf16().count() > MAX_PROFILE_NAME_UTF16_UNITS {
+        return Err(ProfileError::NameTooLong.into());
     }
-    if is_reserved_windows_name(name) {
-        return Err(GuiError::InvalidProfile(
-            "profile name must not use a reserved Windows device name".to_string(),
-        ));
+    if is_unsafe_profile_name(&name) {
+        return Err(ProfileError::NameUnsafe.into());
     }
-    Ok(name.to_string())
+    if is_reserved_windows_name(&name) {
+        return Err(ProfileError::NameReserved.into());
+    }
+    Ok(name)
+}
+
+fn profile_name_key(name: &str) -> String {
+    name.nfc().case_fold().nfc().collect()
+}
+
+fn is_unsafe_profile_name(name: &str) -> bool {
+    name == "."
+        || name == ".."
+        || name.ends_with([' ', '.'])
+        || name.chars().any(|character| {
+            character.is_control()
+                || matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+                || is_bidi_control(character)
+        })
+}
+
+fn is_bidi_control(character: char) -> bool {
+    matches!(
+        character,
+        '\u{061c}' | '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}'
+    )
 }
 
 fn is_reserved_windows_name(name: &str) -> bool {
-    let upper = name.to_ascii_uppercase();
-    matches!(upper.as_str(), "CON" | "PRN" | "AUX" | "NUL")
-        || upper
+    let stem = name.split('.').next().unwrap_or(name);
+    let upper = stem.to_ascii_uppercase();
+    matches!(
+        upper.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CLOCK$" | "CONIN$" | "CONOUT$"
+    ) || upper
             .strip_prefix("COM")
-            .and_then(|tail| tail.parse::<u8>().ok())
-            .is_some_and(|value| (1..=9).contains(&value))
+            .is_some_and(is_reserved_device_number)
         || upper
             .strip_prefix("LPT")
-            .and_then(|tail| tail.parse::<u8>().ok())
-            .is_some_and(|value| (1..=9).contains(&value))
+            .is_some_and(is_reserved_device_number)
+}
+
+fn is_reserved_device_number(value: &str) -> bool {
+    value
+        .parse::<u8>()
+        .ok()
+        .is_some_and(|value| (1..=9).contains(&value))
+        || matches!(value, "¹" | "²" | "³")
+}
+
+fn profile_fs_error(name: &str, error: std::io::Error) -> GuiError {
+    let detail = format!("{name}: {error}");
+    match (error.kind(), error.raw_os_error()) {
+        (std::io::ErrorKind::AlreadyExists, _) => {
+            ProfileError::AlreadyExists(name.to_string()).into()
+        }
+        (std::io::ErrorKind::PermissionDenied, _) => ProfileError::StorageDenied(detail).into(),
+        (_, Some(206)) => ProfileError::NameTooLong.into(),
+        (std::io::ErrorKind::InvalidInput, _) | (_, Some(123 | 161 | 267)) => {
+            ProfileError::UnsupportedByFilesystem(detail).into()
+        }
+        _ => ProfileError::Storage(detail).into(),
+    }
 }
 
 fn validate_locale(locale: &str) -> Result<(), GuiError> {
@@ -159,18 +199,13 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), GuiError> {
 
 fn validate_backup_files(files: &HashSet<String>) -> Result<(), GuiError> {
     for name in files {
-        if name.is_empty()
-            || name == "."
-            || name.contains('\\')
-            || name.contains("..")
-            || name.starts_with('/')
-        {
+        if name.is_empty() || name.contains('\\') || name.starts_with('/') {
             return Err(GuiError::InvalidBackup(format!(
                 "invalid backup path: {name}"
             )));
         }
         if name != "settings.json"
-            && !is_supported_profile_backup_path(name)
+            && supported_profile_backup_path(name).is_none()
             && name != "manifest.json"
         {
             return Err(GuiError::InvalidBackup(format!(
@@ -184,24 +219,9 @@ fn validate_backup_files(files: &HashSet<String>) -> Result<(), GuiError> {
 fn backup_profile_names(files: &HashSet<String>) -> Result<Vec<String>, GuiError> {
     let mut names = Vec::new();
     for name in files {
-        let Some(rest) = name.strip_prefix("profiles/") else {
+        let Some((profile_name, _)) = supported_profile_backup_path(name) else {
             continue;
         };
-        let mut parts = rest.split('/');
-        let Some(profile_name) = parts.next() else {
-            continue;
-        };
-        if profile_name.is_empty() {
-            return Err(GuiError::InvalidBackup(format!(
-                "invalid backup path: {name}"
-            )));
-        }
-        validate_profile_name(profile_name)?;
-        if parts.next().is_none() {
-            return Err(GuiError::InvalidBackup(format!(
-                "profile path missing filename: {name}"
-            )));
-        }
         if !names
             .iter()
             .any(|existing: &String| existing == profile_name)
@@ -213,20 +233,25 @@ fn backup_profile_names(files: &HashSet<String>) -> Result<Vec<String>, GuiError
     Ok(names)
 }
 
-fn is_supported_profile_backup_path(name: &str) -> bool {
-    let Some(rest) = name.strip_prefix("profiles/") else {
-        return false;
-    };
-    let mut parts = rest.split('/');
-    let Some(profile_name) = parts.next() else {
-        return false;
-    };
-    let Some(file_name) = parts.next() else {
-        return false;
-    };
-    parts.next().is_none()
-        && !profile_name.is_empty()
-        && matches!(file_name, "profile.json" | "records.json" | "last-run.json")
+fn supported_profile_backup_path(name: &str) -> Option<(&str, &str)> {
+    let mut parts = name.split('/');
+    if parts.next()? != "profiles" {
+        return None;
+    }
+    let profile_name = parts.next()?;
+    let file_name = parts.next()?;
+    if parts.next().is_some()
+        || !matches!(file_name, "profile.json" | "records.json" | "last-run.json")
+    {
+        return None;
+    }
+    let canonical_name = validate_profile_name(profile_name).ok()?;
+    (canonical_name == profile_name).then_some((profile_name, file_name))
+}
+
+fn validate_backup_profile_name(name: &str) -> Result<String, GuiError> {
+    validate_profile_name(name)
+        .map_err(|error| GuiError::InvalidBackup(format!("invalid profile name: {error}")))
 }
 
 fn remove_profile_dir_known_files(path: PathBuf) -> Result<(), GuiError> {
@@ -251,10 +276,10 @@ fn remove_profile_dir_known_files_strict(path: PathBuf) -> Result<(), GuiError> 
                 "profile.json" | "records.json" | "last-run.json"
             )
         {
-            return Err(GuiError::InvalidProfile(format!(
-                "profile directory contains unsupported path: {}",
-                entry.path().display()
-            )));
+            return Err(ProfileError::DirectoryContainsUnsupportedPath(
+                entry.path().display().to_string(),
+            )
+            .into());
         }
     }
     for file_name in ["profile.json", "records.json", "last-run.json"] {
@@ -268,6 +293,29 @@ fn remove_profile_dir_known_files_strict(path: PathBuf) -> Result<(), GuiError> 
 }
 
 impl JsonStore {
+    fn cleanup_profile_staging(&self) -> Result<(), GuiError> {
+        let root = self.profile_staging_dir();
+        let metadata = match fs::symlink_metadata(&root) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.into()),
+        };
+        if !metadata.is_dir() || metadata.file_type().is_symlink() || has_reparse_point(&metadata) {
+            return Ok(());
+        }
+        for entry in fs::read_dir(&root)? {
+            let entry = entry?;
+            let Some(name) = entry.file_name().to_str().map(str::to_string) else {
+                continue;
+            };
+            if entry.file_type()?.is_dir() && name.starts_with("create-") {
+                remove_profile_dir_known_files(entry.path())?;
+            }
+        }
+        let _ = fs::remove_dir(root);
+        Ok(())
+    }
+
     pub fn cleanup_generated_backups_keep_latest(&self) -> Result<(), GuiError> {
         prune_generated_artifacts_keep_latest(&self.root.join("data/backups"), "backup-", ".zip")
     }

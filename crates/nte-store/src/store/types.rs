@@ -7,13 +7,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use atomic_write_file::AtomicWriteFile;
 use serde::{Deserialize, Serialize};
+use unicode_casefold::UnicodeCaseFold;
+use unicode_normalization::UnicodeNormalization;
 use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
 use nte_core::{compare_records_chronological, parse_public_document};
 use nte_core::{
     BackupReport, DashboardOverview, DashboardSelection, DashboardSelectionDetail, GuiError,
-    ImportReport, InternalRecord, PoolKind, PoolKindDetail, Profile, ProfileAnalysisView, RecordFilter,
-    RecordFilterOptions, RecordList, RestoreReport, Settings, SettingsPatch,
+    ImportReport, InternalRecord, PoolKind, PoolKindDetail, Profile, ProfileAnalysisView,
+    ProfileError, RecordFilter, RecordFilterOptions, RecordList, RestoreReport, Settings,
+    SettingsPatch,
 };
 use nte_core::{MapData, load_map};
 use nte_core::{
@@ -28,6 +31,7 @@ const DEFAULT_LOCALE: &str = "en";
 const DEFAULT_UI_LOCALE: &str = "en";
 const DEFAULT_UPDATE_CHANNEL: &str = "stable";
 const DEFAULT_CHECK_UPDATES_ON_STARTUP: bool = true;
+const MAX_PROFILE_NAME_UTF16_UNITS: usize = 255;
 static UNIQUE_STAMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub struct JsonStore {
@@ -76,7 +80,7 @@ struct DiskSettings {
     capture_windivert_backend_enabled: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct DiskProfile {
     schema_version: u32,
     name: String,

@@ -3,6 +3,47 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+pub enum ProfileError {
+    #[error("profile name is required")]
+    NameEmpty,
+    #[error("profile name exceeds the Windows filename limit")]
+    NameTooLong,
+    #[error("profile name contains a path-unsafe character")]
+    NameUnsafe,
+    #[error("profile name uses a reserved Windows device name")]
+    NameReserved,
+    #[error("profile already exists: {0}")]
+    AlreadyExists(String),
+    #[error("cannot delete the last profile")]
+    LastProfile,
+    #[error("profile directory contains unsupported path: {0}")]
+    DirectoryContainsUnsupportedPath(String),
+    #[error("profile storage access denied: {0}")]
+    StorageDenied(String),
+    #[error("profile name is not supported by the filesystem: {0}")]
+    UnsupportedByFilesystem(String),
+    #[error("profile storage operation failed: {0}")]
+    Storage(String),
+}
+
+impl ProfileError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::NameEmpty => "profile_name_empty",
+            Self::NameTooLong => "profile_name_too_long",
+            Self::NameUnsafe => "profile_name_unsafe",
+            Self::NameReserved => "profile_name_reserved",
+            Self::AlreadyExists(_) => "profile_already_exists",
+            Self::LastProfile => "profile_last_required",
+            Self::DirectoryContainsUnsupportedPath(_) => "profile_directory_unsupported",
+            Self::StorageDenied(_) => "profile_storage_denied",
+            Self::UnsupportedByFilesystem(_) => "profile_name_unsupported",
+            Self::Storage(_) => "profile_storage_failed",
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum GuiError {
     #[error("json error: {0}")]
@@ -11,8 +52,8 @@ pub enum GuiError {
     Io(#[from] std::io::Error),
     #[error("invalid document: {0}")]
     InvalidDocument(String),
-    #[error("invalid profile: {0}")]
-    InvalidProfile(String),
+    #[error("{0}")]
+    Profile(#[from] ProfileError),
     #[error("profile not found: {0}")]
     ProfileNotFound(String),
     #[error("unknown pool_id: {0}")]

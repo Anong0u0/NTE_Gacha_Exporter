@@ -1,4 +1,5 @@
 use super::*;
+use std::io::Read;
 
 #[test]
 fn export_public_json_and_csv_from_store() {
@@ -209,6 +210,12 @@ fn data_backup_zip_contains_manifest_and_profile_files() {
     let names = (0..zip.len())
         .map(|index| zip.by_index(index).unwrap().name().to_string())
         .collect::<Vec<_>>();
+    let mut manifest_text = String::new();
+    zip.by_name("manifest.json")
+        .unwrap()
+        .read_to_string(&mut manifest_text)
+        .unwrap();
+    let manifest: serde_json::Value = serde_json::from_str(&manifest_text).unwrap();
 
     assert!(backup.path.starts_with(tmp.path().join("data/backups")));
     assert!(names.contains(&"manifest.json".to_string()));
@@ -216,6 +223,35 @@ fn data_backup_zip_contains_manifest_and_profile_files() {
     assert!(names.contains(&"profiles/default/profile.json".to_string()));
     assert!(names.contains(&"profiles/default/records.json".to_string()));
     assert!(names.contains(&"profiles/default/last-run.json".to_string()));
+    assert_eq!(manifest["schema_version"], 2);
+}
+
+#[test]
+fn unicode_profile_backup_v2_round_trips() {
+    let source_tmp = tempfile::tempdir().unwrap();
+    let source = JsonStore::open(source_tmp.path()).unwrap();
+    source.create_profile("玩家 一號✨").unwrap();
+    source.set_active_profile("玩家 一號✨").unwrap();
+    let backup = source.create_data_backup().unwrap();
+
+    let target_tmp = tempfile::tempdir().unwrap();
+    let target = JsonStore::open(target_tmp.path()).unwrap();
+    target.restore_data_backup(&backup).unwrap();
+
+    assert_eq!(target.settings().unwrap().active_profile, "玩家 一號✨");
+    assert!(
+        target
+            .list_profiles()
+            .unwrap()
+            .iter()
+            .any(|profile| profile.name == "玩家 一號✨")
+    );
+    assert!(
+        target_tmp
+            .path()
+            .join("data/profiles/玩家 一號✨/profile.json")
+            .is_file()
+    );
 }
 
 fn derived_export_keys() -> [&'static str; 21] {

@@ -36,19 +36,37 @@ let mockCaptureWinDivertBackendEnabled = false;
 let mockWindDivertInstalled = false;
 const mockDiagnosticSessions = new Map<string, { polls: number; stopped: boolean; duration: number; mode: DiagnosticMode }>();
 
-function validateMockProfileName(name: string) {
-  const profileName = name.trim();
-  const upper = profileName.toUpperCase();
-  const reserved = ["CON", "PRN", "AUX", "NUL"].includes(upper) || /^(COM|LPT)[1-9]$/.test(upper);
-  if (!profileName || profileName.length > 40) throw new Error("profile name length must be 1..40");
-  if (!/^[A-Za-z0-9_-]+$/.test(profileName)) throw new Error("profile name must use ASCII letters, digits, _ or -");
-  if (reserved) throw new Error("profile name must not use a reserved Windows device name");
-  if (mockProfiles.some((profile) => profile.name.toLowerCase() === profileName.toLowerCase())) {
-    throw new Error(`profile already exists: ${profileName}`);
+function validateMockProfileName(name: string, exceptName?: string) {
+  const profileName = name.trim().normalize("NFC");
+  const stem = profileName.split(".", 1)[0].toUpperCase();
+  const reserved = ["CON", "PRN", "AUX", "NUL", "CLOCK$", "CONIN$", "CONOUT$"].includes(stem)
+    || /^(COM|LPT)([1-9]|[¹²³])$/.test(stem);
+  if (!profileName) throw mockProfileError("profile_name_empty", "profile name is required");
+  if (profileName.length > 255) {
+    throw mockProfileError("profile_name_too_long", "profile name exceeds the Windows filename limit");
+  }
+  if (
+    profileName === "."
+    || profileName === ".."
+    || profileName.endsWith(" ")
+    || profileName.endsWith(".")
+    || /[<>:"/\\|?*\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/u.test(profileName)
+  ) {
+    throw mockProfileError("profile_name_unsafe", "profile name contains a path-unsafe character");
+  }
+  if (reserved) {
+    throw mockProfileError("profile_name_reserved", "profile name uses a reserved Windows device name");
+  }
+  const key = profileName.toUpperCase();
+  if (mockProfiles.some((profile) => profile.name !== exceptName && profile.name.normalize("NFC").toUpperCase() === key)) {
+    throw mockProfileError("profile_already_exists", `profile already exists: ${profileName}`);
   }
   return profileName;
 }
 
+function mockProfileError(code: string, message: string) {
+  return { code, message };
+}
 
 function mockSettings() {
   return {
@@ -116,9 +134,9 @@ export const mockApi: AppApi = {
     const profile = mockProfiles.find((item) => item.name === oldName);
     if (!profile) throw new Error(`profile not found: ${oldName}`);
     if (oldName === newName) return { ...profile, active: profile.name === mockActiveProfileName };
-    profile.name = validateMockProfileName(newName);
+    profile.name = validateMockProfileName(newName, oldName);
     profile.updated_at = "0";
-    if (mockActiveProfileName === oldName) mockActiveProfileName = newName;
+    if (mockActiveProfileName === oldName) mockActiveProfileName = profile.name;
     return { ...profile, active: profile.name === mockActiveProfileName };
   },
   async deleteProfile(profileName: string) {

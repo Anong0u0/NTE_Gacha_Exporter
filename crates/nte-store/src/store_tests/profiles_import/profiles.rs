@@ -5,11 +5,77 @@ fn profile_name_validation_rejects_unsafe_and_duplicate_names() {
 
     store.create_profile("Player_1").unwrap();
 
-    assert!(store.create_profile("Player 1").is_err());
-    assert!(store.create_profile("../bad").is_err());
-    assert!(store.create_profile("player_1").is_err());
-    assert!(store.create_profile("CON").is_err());
-    assert!(store.create_profile("LPT1").is_err());
+    let unicode = store.create_profile("玩家 一號✨").unwrap();
+    assert_eq!(unicode.name, "玩家 一號✨");
+    assert!(tmp.path().join("data/profiles/玩家 一號✨").is_dir());
+
+    for name in [
+        "../bad",
+        "bad/name",
+        "bad\\name",
+        "bad:name",
+        ".",
+        "name.",
+        "CON",
+        "CON.txt",
+        "LPT1",
+    ] {
+        assert!(
+            matches!(
+                store.create_profile(name),
+                Err(GuiError::Profile(
+                    ProfileError::NameUnsafe | ProfileError::NameReserved
+                ))
+            ),
+            "unexpectedly accepted {name:?}"
+        );
+    }
+    assert!(matches!(
+        store.create_profile("player_1"),
+        Err(GuiError::Profile(ProfileError::AlreadyExists(_)))
+    ));
+    assert!(matches!(
+        store.create_profile(&"😀".repeat(128)),
+        Err(GuiError::Profile(ProfileError::NameTooLong))
+    ));
+}
+
+#[test]
+fn profile_names_normalize_and_case_fold_before_duplicate_checks() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+
+    let normalized = store.create_profile("Cafe\u{301}").unwrap();
+    assert_eq!(normalized.name, "Café");
+    assert!(tmp.path().join("data/profiles/Café").is_dir());
+    assert!(matches!(
+        store.create_profile("CAFÉ"),
+        Err(GuiError::Profile(ProfileError::AlreadyExists(_)))
+    ));
+
+    store.create_profile("Straße").unwrap();
+    assert!(matches!(
+        store.create_profile("STRASSE"),
+        Err(GuiError::Profile(ProfileError::AlreadyExists(_)))
+    ));
+}
+
+#[test]
+fn profile_name_accepts_windows_component_limit_and_cleans_staging() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let max_name = "x".repeat(255);
+
+    assert_eq!(store.create_profile(&max_name).unwrap().name, max_name);
+
+    let stale = tmp.path().join("data/.profile-staging/create-stale");
+    std::fs::create_dir_all(&stale).unwrap();
+    std::fs::write(stale.join("profile.json"), "{}").unwrap();
+    std::fs::write(stale.join("records.json"), "{}").unwrap();
+    drop(store);
+
+    JsonStore::open(tmp.path()).unwrap();
+    assert!(!stale.exists());
 }
 
 #[test]

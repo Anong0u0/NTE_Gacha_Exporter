@@ -3,9 +3,11 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
         let file = fs::File::open(path)?;
         let mut zip = ZipArchive::new(file)?;
         let manifest: BackupManifest = read_zip_json(&mut zip, "manifest.json")?;
-        if manifest.schema != "nte-gacha-exporter-data-backup" || manifest.schema_version != 1 {
+        if manifest.schema != "nte-gacha-exporter-data-backup"
+            || !matches!(manifest.schema_version, 1 | 2)
+        {
             return Err(GuiError::InvalidBackup(
-                "manifest schema must be nte-gacha-exporter-data-backup v1".to_string(),
+                "manifest schema must be nte-gacha-exporter-data-backup v1 or v2".to_string(),
             ));
         }
         let files = manifest.files.into_iter().collect::<HashSet<_>>();
@@ -35,6 +37,13 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
             }
         }
         let mut settings: DiskSettings = read_zip_json(&mut zip, "settings.json")?;
+        let active_profile = validate_backup_profile_name(&settings.active_profile)?;
+        if active_profile != settings.active_profile {
+            return Err(GuiError::InvalidBackup(
+                "active profile name must use canonical Unicode form".to_string(),
+            ));
+        }
+        settings.active_profile = active_profile;
         validate_locale(&settings.locale)?;
         settings.ui_locale =
             normalize_ui_locale_or_default(&settings.ui_locale, DEFAULT_UI_LOCALE)?;
@@ -59,7 +68,7 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
                 )));
             }
             let profile: DiskProfile = read_zip_json(&mut zip, &profile_path)?;
-            let canonical_name = validate_profile_name(&profile.name)?;
+            let canonical_name = validate_backup_profile_name(&profile.name)?;
             if canonical_name != name {
                 return Err(GuiError::InvalidBackup(format!(
                     "profile path/name mismatch: {name}"
@@ -67,7 +76,9 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
             }
             if profiles
                 .keys()
-                .any(|existing: &String| existing.eq_ignore_ascii_case(&canonical_name))
+                .any(|existing: &String| {
+                    profile_name_key(existing) == profile_name_key(&canonical_name)
+                })
             {
                 return Err(GuiError::InvalidBackup(format!(
                     "duplicate profile name: {canonical_name}"

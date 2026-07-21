@@ -3,6 +3,7 @@ import { Circle, CircleCheck, MoreHorizontal, Pencil, Plus, Trash2 } from "lucid
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { Profile } from "../api";
 import { useAppContext } from "../app/context";
+import { profileAgentId } from "../app/profileNames";
 import ProfileDialog from "./ProfileDialog.vue";
 
 type ProfileDialogMode = "create" | "rename" | "delete" | null;
@@ -121,7 +122,7 @@ async function closeDialog() {
     return;
   }
   const activeRow = [...(profileListEl.value?.querySelectorAll<HTMLElement>(".sidebar-profile-row") ?? [])]
-    .find((row) => row.dataset.agentId === `profile-row-${app.activeProfileName}`);
+    .find((row) => row.dataset.agentId === profileAgentId("row", app.activeProfileName));
   const activeSelect = activeRow?.querySelector<HTMLButtonElement>(".profile-select");
   if (activeSelect) activeSelect.focus();
   else createButtonEl.value?.focus();
@@ -135,7 +136,7 @@ async function selectProfile(profileName: string) {
 async function scrollActiveProfileIntoView() {
   await nextTick();
   const activeRow = [...(profileListEl.value?.querySelectorAll<HTMLElement>(".sidebar-profile-row") ?? [])]
-    .find((row) => row.dataset.agentId === `profile-row-${app.activeProfileName}`);
+    .find((row) => row.dataset.agentId === profileAgentId("row", app.activeProfileName));
   activeRow?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
@@ -199,12 +200,12 @@ onBeforeUnmount(() => {
           :key="profile.name"
           class="sidebar-profile-row"
           :class="{ active: profile.active }"
-          :data-agent-id="`profile-row-${profile.name}`"
+          :data-agent-id="profileAgentId('row', profile.name)"
         >
           <button
             class="profile-select"
             type="button"
-            :data-agent-id="`profile-select-${profile.name}`"
+            :data-agent-id="profileAgentId('select', profile.name)"
             :disabled="app.isWorkflowBusy"
             :aria-current="profile.active ? 'true' : undefined"
             :aria-label="profileSelectionLabel(profile)"
@@ -218,7 +219,7 @@ onBeforeUnmount(() => {
           <button
             class="profile-more-button"
             type="button"
-            :data-agent-id="`profile-menu-${profile.name}`"
+            :data-agent-id="profileAgentId('menu', profile.name)"
             :disabled="app.isWorkflowBusy"
             :title="app.t('profile.actionsFor', { name: profile.name })"
             :aria-label="app.t('profile.actionsFor', { name: profile.name })"
@@ -263,7 +264,7 @@ onBeforeUnmount(() => {
       <button
         type="button"
         role="menuitem"
-        :data-agent-id="`profile-rename-${menuProfile.name}`"
+        :data-agent-id="profileAgentId('rename', menuProfile.name)"
         :disabled="app.isWorkflowBusy"
         @click="openMenuDialog('rename')"
       >
@@ -274,7 +275,7 @@ onBeforeUnmount(() => {
         class="danger-item"
         type="button"
         role="menuitem"
-        :data-agent-id="`profile-delete-${menuProfile.name}`"
+        :data-agent-id="profileAgentId('delete', menuProfile.name)"
         :disabled="app.isWorkflowBusy || app.profiles.length <= 1"
         :title="app.profiles.length <= 1 ? app.t('profile.deleteLastDisabled') : app.t('profile.delete')"
         @click="openMenuDialog('delete')"
