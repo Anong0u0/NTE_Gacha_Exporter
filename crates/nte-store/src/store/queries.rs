@@ -119,6 +119,7 @@ impl JsonStore {
         fs::create_dir_all(self.profiles_dir())?;
         fs::create_dir_all(self.root.join("data/backups"))?;
         fs::create_dir_all(self.root.join("data/runs"))?;
+        self.cleanup_profile_staging()?;
         if !self.settings_path().exists() {
             validate_locale(&defaults.locale)?;
             validate_ui_locale(&defaults.ui_locale)?;

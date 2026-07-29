@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { profileAgentId } from "../../src/app/profileNames";
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1130, height: 810 });
@@ -81,45 +82,72 @@ test("long names, menu keyboard controls, rename, and delete remain contained", 
   const renamed = `renamed_${"y".repeat(32)}`;
   await createProfile(page, longName);
 
-  const select = page.locator(`[data-agent-id="profile-select-${longName}"]`);
+  const select = page.locator(`[data-agent-id="${profileAgentId("select", longName)}"]`);
   await expect(select).toHaveAttribute("title", longName);
   await expect(select).toHaveAttribute("aria-label", new RegExp(longName));
   expect(await select.locator("strong").evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
 
-  const trigger = page.locator(`[data-agent-id="profile-menu-${longName}"]`);
+  const trigger = page.locator(`[data-agent-id="${profileAgentId("menu", longName)}"]`);
   await trigger.click();
   const menu = page.locator("#profile-actions-menu");
   await expect(menu).toBeVisible();
-  await expect(page.locator(`[data-agent-id="profile-rename-${longName}"]`)).toBeFocused();
+  await expect(page.locator(`[data-agent-id="${profileAgentId("rename", longName)}"]`)).toBeFocused();
   expect(await elementInsideViewport(menu)).toBe(true);
 
   await page.keyboard.press("ArrowDown");
-  await expect(page.locator(`[data-agent-id="profile-delete-${longName}"]`)).toBeFocused();
+  await expect(page.locator(`[data-agent-id="${profileAgentId("delete", longName)}"]`)).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect(trigger).toBeFocused();
 
   await trigger.click();
-  await page.locator(`[data-agent-id="profile-rename-${longName}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("rename", longName)}"]`).click();
   const renameInput = page.locator('[data-agent-id="profile-rename-input"]');
   await expect(renameInput).toBeVisible();
   await expect(renameInput).toBeFocused();
   await expect(renameInput).toHaveValue(longName);
   await renameInput.fill(renamed);
   await page.locator('[data-agent-id="profile-rename-save"]').click();
-  await expect(page.locator(`[data-agent-id="profile-row-${renamed}"]`)).toHaveClass(/active/);
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", renamed)}"]`)).toHaveClass(/active/);
   await expect(page.locator(".profile-dialog")).toBeHidden();
 
-  await page.locator(`[data-agent-id="profile-menu-${renamed}"]`).click();
-  await page.locator(`[data-agent-id="profile-delete-${renamed}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("menu", renamed)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("delete", renamed)}"]`).click();
   await expect(page.locator(".profile-dialog-copy")).toContainText(renamed);
   await page.locator('[data-agent-id="profile-dialog-cancel"]').click();
-  await expect(page.locator(`[data-agent-id="profile-row-${renamed}"]`)).toBeVisible();
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", renamed)}"]`)).toBeVisible();
 
-  await page.locator(`[data-agent-id="profile-menu-${renamed}"]`).click();
-  await page.locator(`[data-agent-id="profile-delete-${renamed}"]`).click();
-  await page.locator(`[data-agent-id="profile-delete-confirm-${renamed}"]`).click();
-  await expect(page.locator(`[data-agent-id="profile-row-${renamed}"]`)).toHaveCount(0);
+  await page.locator(`[data-agent-id="${profileAgentId("menu", renamed)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("delete", renamed)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("delete-confirm", renamed)}"]`).click();
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", renamed)}"]`)).toHaveCount(0);
+  await expect(page.locator('[data-agent-id="profile-row-default"]')).toHaveClass(/active/);
+});
+
+test("Unicode profile names can be created, renamed, and deleted", async ({ page }) => {
+  const original = "玩家 一號✨";
+  const renamed = "旅行者 二號🌙";
+  await createProfile(page, original);
+
+  const originalRow = page.locator(`[data-agent-id="${profileAgentId("row", original)}"]`);
+  await expect(originalRow).toHaveClass(/active/);
+  await expect(originalRow.locator("strong")).toHaveText(original);
+  expect(await elementInside(originalRow, page.locator('[data-agent-id="profile-list"]'))).toBe(true);
+
+  await page.locator(`[data-agent-id="${profileAgentId("menu", original)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("rename", original)}"]`).click();
+  await page.locator('[data-agent-id="profile-rename-input"]').fill(renamed);
+  await page.locator('[data-agent-id="profile-rename-save"]').click();
+
+  const renamedRow = page.locator(`[data-agent-id="${profileAgentId("row", renamed)}"]`);
+  await expect(renamedRow).toHaveClass(/active/);
+  await expect(renamedRow.locator("strong")).toHaveText(renamed);
+  await expect(originalRow).toHaveCount(0);
+
+  await page.locator(`[data-agent-id="${profileAgentId("menu", renamed)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("delete", renamed)}"]`).click();
+  await page.locator(`[data-agent-id="${profileAgentId("delete-confirm", renamed)}"]`).click();
+  await expect(renamedRow).toHaveCount(0);
   await expect(page.locator('[data-agent-id="profile-row-default"]')).toHaveClass(/active/);
 });
 
@@ -142,14 +170,15 @@ test("last-profile protection, API errors, native validation, and dialog focus s
   await renameInput.fill("ALPHA");
   await page.locator('[data-agent-id="profile-rename-save"]').click();
   await expect(page.locator(".profile-dialog")).toBeVisible();
-  await expect(page.locator(".profile-dialog-error")).toContainText("profile already exists");
+  await expect(page.locator(".profile-dialog-error")).toContainText("已存在同名個人檔案");
   await page.keyboard.press("Escape");
   await expect(page.locator(".profile-dialog")).toBeHidden();
 
   await page.locator('[data-agent-id="profile-create-open"]').click();
-  await createInput.fill("bad name");
+  await createInput.fill("bad/name");
   await page.locator('[data-agent-id="profile-create-submit"]').click();
-  expect(await createInput.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
+  expect(await createInput.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(true);
+  await expect(page.locator(".profile-dialog-error")).toContainText("無法用於 Windows 資料夾");
   await expect(page.locator(".profile-dialog")).toBeVisible();
 
   await createInput.fill("valid_name");
@@ -164,7 +193,7 @@ async function createProfile(page: Page, name: string) {
   await page.locator('[data-agent-id="profile-create-open"]').click();
   await page.locator('[data-agent-id="profile-create-input"]').fill(name);
   await page.locator('[data-agent-id="profile-create-submit"]').click();
-  await expect(page.locator(`[data-agent-id="profile-row-${name}"]`)).toHaveClass(/active/);
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", name.normalize("NFC"))}"]`)).toHaveClass(/active/);
   await expect(page.locator(".profile-dialog")).toBeHidden();
 }
 

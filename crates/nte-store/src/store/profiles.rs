@@ -104,15 +104,34 @@ impl JsonStore {
         let name = validate_profile_name(name)?;
         self.ensure_profile_absent(&name)?;
         let now = now_stamp();
-        fs::create_dir_all(self.profile_dir(&name))?;
         let profile = DiskProfile {
             schema_version: 1,
             name: name.clone(),
             created_at: now.clone(),
             updated_at: now,
         };
-        self.write_profile(&profile)?;
-        self.write_records(&name, &[])?;
+        let staging_root = self.profile_staging_dir();
+        fs::create_dir_all(&staging_root).map_err(|error| profile_fs_error(&name, error))?;
+        let staging = staging_root.join(format!("create-{}", now_unique_stamp()));
+        fs::create_dir(&staging).map_err(|error| profile_fs_error(&name, error))?;
+        let staged = (|| {
+            write_json(&staging.join("profile.json"), &profile)?;
+            write_json(
+                &staging.join("records.json"),
+                &DiskRecords {
+                    schema_version: 1,
+                    records: Vec::new(),
+                },
+            )?;
+            fs::rename(&staging, self.profile_dir(&name))
+                .map_err(|error| profile_fs_error(&name, error))?;
+            Ok::<(), GuiError>(())
+        })();
+        if staged.is_err() {
+            let _ = remove_profile_dir_known_files(staging.clone());
+        }
+        let _ = fs::remove_dir(&staging_root);
+        staged?;
         Ok(Profile {
             name,
             created_at: profile.created_at,
@@ -134,18 +153,27 @@ impl JsonStore {
         if old_name == new_name {
             return self.profile_for_api(&old_name);
         }
-        self.read_profile(&old_name)?;
-        self.ensure_profile_absent(&new_name)?;
+        let old_profile = self.read_profile(&old_name)?;
+        self.ensure_profile_absent_except(&new_name, Some(&old_name))?;
 
         let mut settings = self.read_settings()?;
-        fs::rename(self.profile_dir(&old_name), self.profile_dir(&new_name))?;
-        let mut profile = self.read_profile(&new_name)?;
+        let old_dir = self.profile_dir(&old_name);
+        let new_dir = self.profile_dir(&new_name);
+        fs::rename(&old_dir, &new_dir).map_err(|error| profile_fs_error(&new_name, error))?;
+        let mut profile = old_profile.clone();
         profile.name = new_name.clone();
         profile.updated_at = now_stamp();
-        self.write_profile(&profile)?;
+        if let Err(error) = self.write_profile(&profile) {
+            let _ = fs::rename(&new_dir, &old_dir);
+            return Err(error);
+        }
         if settings.active_profile == old_name {
             settings.active_profile = new_name.clone();
-            self.write_settings(&settings)?;
+            if let Err(error) = self.write_settings(&settings) {
+                let _ = write_json(&new_dir.join("profile.json"), &old_profile);
+                let _ = fs::rename(&new_dir, &old_dir);
+                return Err(error);
+            }
         }
         self.profile_for_api(&new_name)
     }
@@ -155,9 +183,7 @@ impl JsonStore {
         self.read_profile(&name)?;
         let profiles = self.list_profiles()?;
         if profiles.len() <= 1 {
-            return Err(GuiError::InvalidProfile(
-                "cannot delete the last profile".to_string(),
-            ));
+            return Err(ProfileError::LastProfile.into());
         }
 
         let mut settings = self.read_settings()?;
@@ -165,9 +191,7 @@ impl JsonStore {
             .iter()
             .find(|profile| profile.name != name)
             .map(|profile| profile.name.clone())
-            .ok_or_else(|| {
-                GuiError::InvalidProfile("cannot delete the last profile".to_string())
-            })?;
+            .ok_or(ProfileError::LastProfile)?;
         remove_profile_dir_known_files_strict(self.profile_dir(&name))?;
         if settings.active_profile == name {
             settings.active_profile = replacement;

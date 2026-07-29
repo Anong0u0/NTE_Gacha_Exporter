@@ -4,6 +4,7 @@ import type { Ref } from "vue";
 import { api, type BackupReport, type ImportReport, type RestoreReport, type Settings } from "../api";
 import type { I18nKey } from "./i18n";
 import type { ExportMode, ImportMode } from "./options";
+import { profileDefaultFilename } from "./profileNames";
 
 export type DataOperationKind = "import" | "export" | "backup" | "restore";
 
@@ -62,7 +63,10 @@ export function createDataOperations(deps: DataOperationDeps) {
     deps.exportMode.value = mode;
     const selected = await save({
       title: mode === "json" ? deps.t("import.publicJson") : "CSV",
-      defaultPath: mode === "json" ? `${deps.activeProfileName.value}-history.json` : `${deps.activeProfileName.value}-history.csv`,
+      defaultPath: profileDefaultFilename(
+        deps.activeProfileName.value,
+        mode === "json" ? "-history.json" : "-history.csv",
+      ),
       filters:
         mode === "json"
           ? [{ name: "Public JSON", extensions: ["json"] }]
@@ -90,7 +94,7 @@ export function createDataOperations(deps: DataOperationDeps) {
   async function pickBackupFile() {
     const selected = await save({
       title: deps.t("import.createBackup"),
-      defaultPath: `${deps.activeProfileName.value}-nte-data-backup.zip`,
+      defaultPath: profileDefaultFilename(deps.activeProfileName.value, "-nte-data-backup.zip"),
       filters: [{ name: "Backup zip", extensions: ["zip"] }],
     });
     if (typeof selected === "string") {

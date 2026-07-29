@@ -29,12 +29,12 @@ pub use model::{
     DashboardOverview, DashboardSelection, DashboardSelectionDetail, DisplayRecord, FiveStarRecord,
     FiveStarResult, ForkResultMark, GachaRuleView, GuiError, ImportReport, InternalRecord,
     ItemKind, ItemRank, MapLocaleList, PityBadge, PoolKind, PoolKindDetail, PoolKindSummary,
-    Profile, ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket,
-    RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
-    RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport,
-    RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary,
-    TimeStats, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
+    Profile, ProfileAnalysisView, ProfileError, PullRarityBucket, PullRarityBucketKey,
+    RarityBucket, RateUpResult, RecordBannerOption, RecordDerived, RecordFilter,
+    RecordFilterOptions, RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner,
+    RestoreReport, RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection,
+    TimeBucketSummary, TimeStats, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport,
+    UpdateInstallPlan, UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
 };
 pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,

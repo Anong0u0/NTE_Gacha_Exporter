@@ -26,9 +26,9 @@ fn replace_data_from_backup(&self, backup: &DataBackup) -> Result<(), GuiError> 
     }
 
     fn profile_name_case_insensitive(&self, name: &str) -> Result<Option<String>, GuiError> {
-        let lower = name.to_ascii_lowercase();
+        let key = profile_name_key(name);
         for profile in self.list_profiles()? {
-            if profile.name.to_ascii_lowercase() == lower {
+            if profile_name_key(&profile.name) == key {
                 return Ok(Some(profile.name));
             }
         }
@@ -113,6 +113,10 @@ fn replace_data_from_backup(&self, backup: &DataBackup) -> Result<(), GuiError> 
 
     fn profiles_dir(&self) -> PathBuf {
         self.root.join("data/profiles")
+    }
+
+    fn profile_staging_dir(&self) -> PathBuf {
+        self.root.join("data/.profile-staging")
     }
 
     fn profile_dir(&self, name: &str) -> PathBuf {

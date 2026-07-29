@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { profileAgentId } from "../../src/app/profileNames";
 
 const mockScenarioKey = "nte.mockScenario";
 const defaultProfile = "default";
@@ -119,8 +120,8 @@ test("1130px keeps same-ten hits full-size and filters x5 to x2", async ({ page 
     group("80", "mock-fork-cost-80"),
   ], "actual");
 
-  await page.locator(`[data-agent-id="profile-select-${defaultProfile}"]`).click();
-  await expect(page.locator(`[data-agent-id="profile-row-${defaultProfile}"]`)).toHaveClass(/active/);
+  await page.locator(`[data-agent-id="${profileAgentId("select", defaultProfile)}"]`).click();
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", defaultProfile)}"]`)).toHaveClass(/active/);
   await selectForkPool(page);
   await expect(distanceToggle).toContainText("成本抽數");
   await expect(distanceToggle).toHaveAttribute("aria-pressed", "true");
@@ -303,7 +304,7 @@ async function createProfile(page: Page, profileName: string) {
   await page.locator('[data-agent-id="profile-create-open"]').click();
   await page.locator('[data-agent-id="profile-create-input"]').fill(profileName);
   await page.locator('[data-agent-id="profile-create-submit"]').click();
-  await expect(page.locator(`[data-agent-id="profile-row-${profileName}"]`)).toHaveClass(/active/);
+  await expect(page.locator(`[data-agent-id="${profileAgentId("row", profileName)}"]`)).toHaveClass(/active/);
 }
 
 async function expectWallGroups(page: Page, expected: ExpectedWallGroup[], mode: "actual" | "cost") {

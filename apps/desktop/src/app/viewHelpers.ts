@@ -191,9 +191,25 @@ export function captureRecordMeta(record: Record<string, unknown>) {
   return String(record.pool_name ?? record.pool_id ?? record.record_type ?? "-");
 }
 
-export function formatError(error: unknown) {
+const errorTranslationKeys: Partial<Record<string, I18nKey>> = {
+  profile_name_empty: "error.profileNameEmpty",
+  profile_name_too_long: "error.profileNameTooLong",
+  profile_name_unsafe: "error.profileNameUnsafe",
+  profile_name_reserved: "error.profileNameReserved",
+  profile_already_exists: "error.profileAlreadyExists",
+  profile_last_required: "error.profileLastRequired",
+  profile_directory_unsupported: "error.profileDirectoryUnsupported",
+  profile_storage_denied: "error.profileStorageDenied",
+  profile_name_unsupported: "error.profileNameUnsupported",
+  profile_storage_failed: "error.profileStorageFailed",
+  profile_not_found: "error.profileNotFound",
+};
+
+export function formatError(error: unknown, t?: Translator) {
   if (typeof error === "object" && error !== null && "message" in error) {
     const apiError = error as { code?: string; message?: string };
+    const translationKey = apiError.code ? errorTranslationKeys[apiError.code] : undefined;
+    if (translationKey && t) return t(translationKey);
     return apiError.code ? `${apiError.code}: ${apiError.message ?? ""}` : (apiError.message ?? String(error));
   }
   return error instanceof Error ? error.message : String(error);

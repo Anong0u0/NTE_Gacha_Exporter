@@ -3,8 +3,9 @@ mod helpers;
 use super::{JsonStore, StoreDefaults};
 use helpers::*;
 use nte_core::{
-    DashboardSelection, FiveStarResult, ForkResultMark, ItemKind, PityBadge, PoolKind,
-    PullRarityBucketKey, RateUpResult, RecordFilter, RollBucket, SettingsPatch, SortDirection,
+    DashboardSelection, FiveStarResult, ForkResultMark, GuiError, ItemKind, PityBadge, PoolKind,
+    ProfileError, PullRarityBucketKey, RateUpResult, RecordFilter, RollBucket, SettingsPatch,
+    SortDirection,
 };
 use serde_json::json;
 

@@ -3,6 +3,7 @@ import { Check, Plus, Trash2, X } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { Profile } from "../api";
 import { useAppContext } from "../app/context";
+import { profileAgentId } from "../app/profileNames";
 
 type ProfileDialogMode = "create" | "rename" | "delete" | null;
 
@@ -130,8 +131,7 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onDocumentKeydown)
               :data-agent-id="mode === 'create' ? 'profile-create-input' : 'profile-rename-input'"
               name="profile-name"
               required
-              maxlength="40"
-              pattern="[A-Za-z0-9_\-]+"
+              maxlength="255"
               placeholder="new_profile"
               autocomplete="off"
               :disabled="app.isWorkflowBusy"
@@ -151,7 +151,7 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onDocumentKeydown)
           <button
             type="submit"
             :class="{ primary: mode !== 'delete', danger: mode === 'delete' }"
-            :data-agent-id="mode === 'create' ? 'profile-create-submit' : mode === 'rename' ? 'profile-rename-save' : `profile-delete-confirm-${profile?.name ?? ''}`"
+            :data-agent-id="mode === 'create' ? 'profile-create-submit' : mode === 'rename' ? 'profile-rename-save' : profileAgentId('delete-confirm', profile?.name ?? '')"
             :disabled="!canSubmit"
           >
             <Plus v-if="mode === 'create'" :size="16" />
