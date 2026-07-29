@@ -205,7 +205,8 @@
       "color": "#A8F5A8",
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_yiluoyi_256.player_yiluoyi_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_yiluoyi_100.player_yiluoyi_100"
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_yiluoyi_100.player_yiluoyi_100",
+        "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_47_s.YH_UI_bg_card_show_strip_47_s"
       }
     },
     "1076": {
@@ -317,7 +318,7 @@
       }
     },
     "Fashion_Glide_1076": {
-      "name": "Gleiter·Wolkenschleier",
+      "name": "Gleiter·Wolken-Baldachin",
       "rarity": 4,
       "category": "glider",
       "color": "#000000",
@@ -914,7 +915,7 @@
     "ForkLottery_Zhenhong": {
       "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
-      "title": "Entschlossenheitsspezial",
+      "title": "Entschlossenheits-Spezial",
       "pickup_item_ids": [
         "fork_LunarPhase"
       ],
@@ -1036,7 +1037,10 @@
       ],
       "rate_up_4": [],
       "rule_id": "monopoly_limited",
-      "start_at": "2026-07-29 05:59:00"
+      "start_at": "2026-07-29 05:59:00",
+      "asset_refs": {
+        "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_47_s.YH_UI_bg_card_show_strip_47_s"
+      }
     },
     "ForkLottery_Nanali": {
       "banner_id": "ForkLottery_Nanali",
@@ -1115,7 +1119,7 @@
       "pool_id": "ForkLottery_Zhenhong",
       "pool_kind": "fork_lottery",
       "banner_type": "fork",
-      "title": "Entschlossenheitsspezial",
+      "title": "Entschlossenheits-Spezial",
       "rate_up_5": [
         "fork_LunarPhase"
       ],

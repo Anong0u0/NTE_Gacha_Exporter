@@ -46,12 +46,14 @@ fn assets_pack_build(args: AssetsPackBuildArgs) -> CliResult<()> {
     let assets_root =
         find_assets_root(args.assets_root.as_deref()).map_err(CliError::from_error)?;
     let maps_dir = args.maps_dir.unwrap_or_else(default_maps_output_dir);
+    let source = asset_pack_source_from_git(&assets_root).map_err(CliError::from_error)?;
     let build = build_assets_pack(&AssetPackBuildOptions {
         assets_root,
         maps_dir,
         out_path: args.out,
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         webp_quality: args.quality,
+        source,
     })
     .map_err(CliError::from_error)?;
     println!("assets={}", build.manifest.file_count);

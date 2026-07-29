@@ -6,15 +6,20 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use image::{GenericImageView, imageops};
-use nte_core::{AssetsPackAsset, AssetsPackManifest, GuiError, bundled_maps_hash};
+use nte_core::{AssetsPackAsset, AssetsPackManifest, GuiError};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use zip::{ZipWriter, write::FileOptions};
 
 const PACK_SCHEMA: &str = "nte-gacha-exporter-assets-pack";
 const PACK_SCHEMA_VERSION: u32 = 1;
-const SOURCE_REPO: &str = "https://github.com/Waifus-Grace/NTE_Assets";
 pub const DEFAULT_WEBP_QUALITY: u8 = 82;
+
+#[derive(Debug, Clone)]
+pub struct AssetPackSource {
+    pub repo: String,
+    pub commit: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct AssetPackBuildOptions {
@@ -23,6 +28,7 @@ pub struct AssetPackBuildOptions {
     pub out_path: PathBuf,
     pub app_version: String,
     pub webp_quality: u8,
+    pub source: AssetPackSource,
 }
 
 #[derive(Debug, Clone)]
@@ -33,11 +39,11 @@ pub struct AssetPackBuild {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct AssetRefUse {
-    asset_ref: String,
-    kind: String,
-    source_path: String,
-    max_edge: u32,
+pub struct AssetPackRef {
+    pub asset_ref: String,
+    pub kind: String,
+    pub source_path: String,
+    pub max_edge: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -51,5 +57,6 @@ struct EncodedAssetUse {
 include!("pack_build/build.rs");
 include!("pack_build/refs.rs");
 include!("pack_build/encode.rs");
+include!("pack_build/map_hash.rs");
 include!("pack_build/manifest.rs");
 include!("pack_build/tests.rs");

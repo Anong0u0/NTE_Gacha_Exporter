@@ -15,8 +15,8 @@ use clap::{Args, CommandFactory, Parser, Subcommand};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use nte_assets::{
-    AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, build_asset_maps, build_assets_pack,
-    find_assets_root,
+    AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, asset_pack_source_from_git, build_asset_maps,
+    build_assets_pack, find_assets_root,
 };
 use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
 use nte_capture::{

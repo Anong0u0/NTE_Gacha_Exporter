@@ -25,7 +25,7 @@ mod tests {
             schema_version: PACK_SCHEMA_VERSION,
             app_version: "0.1.0".to_string(),
             map_hash: "hash".to_string(),
-            source_repo: SOURCE_REPO.to_string(),
+            source_repo: "https://example.invalid/assets".to_string(),
             source_commit: "commit".to_string(),
             format: "webp".to_string(),
             quality: DEFAULT_WEBP_QUALITY,
@@ -42,6 +42,15 @@ mod tests {
         };
 
         assert!(validate_manifest_shape(&manifest).is_err());
+    }
+
+    #[test]
+    fn directory_map_hash_matches_bundled_map_hash() {
+        let maps_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/maps");
+        assert_eq!(
+            maps_hash_from_dir(&maps_dir).unwrap(),
+            nte_core::bundled_maps_hash()
+        );
     }
 
     #[test]
@@ -100,7 +109,11 @@ mod tests {
             }"#,
         )
         .unwrap();
-        let source_commit = init_git_head(&assets_root);
+        let source = AssetPackSource {
+            repo: "https://example.invalid/assets".to_string(),
+            commit: "test-source".to_string(),
+        };
+        let expected_map_hash = maps_hash_from_dir(&maps_dir).unwrap();
 
         let out_path = temp.path().join("pack.zip");
         let build = build_assets_pack(&AssetPackBuildOptions {
@@ -109,15 +122,17 @@ mod tests {
             out_path: out_path.clone(),
             app_version: "0.1.0".to_string(),
             webp_quality: DEFAULT_WEBP_QUALITY,
+            source,
         })
         .unwrap();
 
         assert_eq!(build.manifest.file_count, 6);
-        assert_eq!(build.manifest.source_commit, source_commit);
+        assert_eq!(build.manifest.source_commit, "test-source");
+        assert_eq!(build.manifest.map_hash, expected_map_hash);
         let mut zip = zip::ZipArchive::new(fs::File::open(out_path).unwrap()).unwrap();
         let manifest = read_zip_manifest(&mut zip).unwrap();
         assert_eq!(manifest.assets.len(), 6);
-        assert_eq!(manifest.source_commit, source_commit);
+        assert_eq!(manifest.source_commit, "test-source");
         let icon = manifest
             .assets
             .iter()
@@ -168,36 +183,4 @@ mod tests {
         assert!(zip.by_name(&card.pack_path).is_ok());
     }
 
-    fn init_git_head(root: &Path) -> String {
-        run_git(root, &["init"]);
-        run_git(root, &["config", "user.email", "nte-test@example.invalid"]);
-        run_git(root, &["config", "user.name", "NTE Test"]);
-        run_git(root, &["commit", "--allow-empty", "-m", "test assets"]);
-        git_stdout(root, &["rev-parse", "HEAD"])
-    }
-
-    fn run_git(root: &Path, args: &[&str]) {
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .output()
-            .unwrap();
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
-    fn git_stdout(root: &Path, args: &[&str]) -> String {
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .output()
-            .unwrap();
-        assert!(output.status.success());
-        String::from_utf8_lossy(&output.stdout).trim().to_string()
-    }
 }

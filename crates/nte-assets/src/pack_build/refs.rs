@@ -20,8 +20,8 @@ pub fn normalize_asset_ref(asset_ref: &str) -> Option<String> {
     (!path.contains('\\') && !path.contains("..")).then_some(path)
 }
 
-fn collect_asset_ref_uses(maps_dir: &Path) -> Result<Vec<AssetRefUse>, GuiError> {
-    let mut refs: BTreeMap<(String, String), AssetRefUse> = BTreeMap::new();
+pub fn collect_asset_pack_refs(maps_dir: &Path) -> Result<Vec<AssetPackRef>, GuiError> {
+    let mut refs: BTreeMap<(String, String), AssetPackRef> = BTreeMap::new();
     for entry in fs::read_dir(maps_dir)? {
         let entry = entry?;
         if !entry.file_type()?.is_file()
@@ -59,7 +59,7 @@ fn collect_asset_ref_uses(maps_dir: &Path) -> Result<Vec<AssetRefUse>, GuiError>
 
 fn collect_asset_refs_from_value(
     value: &Value,
-    refs: &mut BTreeMap<(String, String), AssetRefUse>,
+    refs: &mut BTreeMap<(String, String), AssetPackRef>,
 ) {
     match value {
         Value::Object(object) => {
@@ -84,7 +84,7 @@ fn collect_asset_refs_from_value(
 fn collect_asset_refs_from_asset_refs(
     value: &Value,
     current_key: Option<&str>,
-    refs: &mut BTreeMap<(String, String), AssetRefUse>,
+    refs: &mut BTreeMap<(String, String), AssetPackRef>,
 ) {
     match value {
         Value::Object(object) => {
@@ -104,7 +104,7 @@ fn collect_asset_refs_from_asset_refs(
             let kind = current_key.unwrap_or("asset").to_string();
             let max_edge = max_edge_for_kind(&kind);
             refs.entry((asset_ref.clone(), kind.clone()))
-                .or_insert_with(|| AssetRefUse {
+                .or_insert_with(|| AssetPackRef {
                     asset_ref: asset_ref.clone(),
                     kind,
                     source_path,
