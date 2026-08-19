@@ -139,6 +139,7 @@ fn parsed_row(pool_id: &str, segment_index: u32) -> nte_capture::ParsedRow {
         ticks: 639_175_144_000_000_000,
         time: Some("2026-06-20T00:00:00.000000".to_string()),
         pool_id: Some(pool_id.to_string()),
+        lottery_id: (pool_id == "CardPool_NewRole").then(|| "Lottery_Permanent".to_string()),
         item_id: format!("item-{segment_index}"),
         count: 1,
         roll_points: Some(segment_index),

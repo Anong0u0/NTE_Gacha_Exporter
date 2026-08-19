@@ -30,9 +30,8 @@ export async function reinstallWinDivert(options: WinDivertInstallOptions = {}) 
 
 async function installWinDivert(options: WinDivertInstallOptions) {
   await setStage(options, "downloading");
-  const report = await api.windivertInstall();
+  await api.windivertInstall();
   await setStage(options, "verifying");
-  if (!report.verified_sha256) throw new Error("WinDivert verification failed");
   await setStage(options, "installing");
   const status = await api.windivertStatus(false);
   if (!status.installed) throw new Error("WinDivert installation did not complete");

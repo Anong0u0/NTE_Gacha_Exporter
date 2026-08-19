@@ -5,8 +5,9 @@ use serde_json::{Map, Value, json};
 
 use crate::protocol::{ParsedRow, row_public_time};
 use nte_core::{
-    GuiError, PUBLIC_JSON_SCHEMA, RecordIdentityInput, compare_time_asc,
-    record_semantic_key_from_parts, stable_record_id_from_key,
+    BannerResolveInput, GuiError, PUBLIC_JSON_SCHEMA, PUBLIC_JSON_SCHEMA_VERSION,
+    RecordIdentityInput, compare_time_asc, is_valid_lottery_id, record_semantic_key_from_parts,
+    stable_record_id_from_key,
 };
 use nte_core::{MapData, load_map};
 
@@ -28,6 +29,7 @@ pub struct CaptureRecordBuilder {
 struct CanonicalRow<'a> {
     source_index: usize,
     row: &'a ParsedRow,
+    lottery_id: Option<String>,
     banner_id: Option<String>,
     item_id: String,
     rarity: Option<u8>,
@@ -79,6 +81,23 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
         .enumerate()
         .map(|(source_index, row)| canonical_row(source_index, row, &map))
         .collect::<Vec<_>>();
+    let invalid_lottery_ids = canonical_rows
+        .iter()
+        .filter(|row| {
+            row.row.record_type.as_str() == "monopoly"
+                && row
+                    .lottery_id
+                    .as_deref()
+                    .is_none_or(|lottery_id| !is_valid_lottery_id(lottery_id))
+        })
+        .map(|row| row.source_index.to_string())
+        .collect::<Vec<_>>();
+    if !invalid_lottery_ids.is_empty() {
+        return Err(GuiError::InvalidDocument(format!(
+            "monopoly rows missing or invalid lottery_id after legacy fallback: {}",
+            invalid_lottery_ids.join(",")
+        )));
+    }
     canonical_rows.sort_by(compare_canonical_rows_chronological);
     let record_ids = record_ids(&canonical_rows);
     let records = canonical_rows
@@ -90,7 +109,7 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
     Ok(json!({
         "info": {
             "schema": PUBLIC_JSON_SCHEMA,
-            "schema_version": "2.0",
+            "schema_version": PUBLIC_JSON_SCHEMA_VERSION,
             "export_app": "nte-gacha-exporter-desktop",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -106,17 +125,26 @@ pub fn build_capture_document(rows: &[ParsedRow], locale: &str) -> Result<Value,
 }
 
 fn canonical_row<'a>(source_index: usize, row: &'a ParsedRow, map: &MapData) -> CanonicalRow<'a> {
-    let banner = row
-        .pool_id
-        .as_deref()
-        .map(|pool_id| map.resolve_banner(pool_id, row_public_time(row).as_deref()));
+    let lottery_id = row.lottery_id.clone().or_else(|| {
+        let pool_id = row.pool_id.as_deref()?;
+        map.resolve_legacy_lottery_id(pool_id, row_public_time(row).as_deref(), None)
+            .ok()
+            .flatten()
+    });
+    let banner = row.pool_id.as_deref().map(|pool_id| {
+        map.resolve_banner_source(BannerResolveInput {
+            pool_id,
+            lottery_id: lottery_id.as_deref(),
+        })
+    });
     let item_id = map.canonical_item_id(&row.item_id).to_string();
     CanonicalRow {
         source_index,
         row,
+        lottery_id,
         banner_id: banner
             .filter(|banner| banner.resolution_issue.is_none())
-            .and_then(|banner| banner.banner_id),
+            .and_then(|banner| banner.source_id),
         rarity: map.item_rarity(&item_id),
         item_id,
         secondary_item_id: row
@@ -133,6 +161,9 @@ fn public_record(row: &CanonicalRow<'_>, record_id: String, source_order: u64) -
     insert_string(&mut object, "record_type", row.row.record_type.as_str());
     insert_opt_string(&mut object, "time", row_public_time(row.row));
     insert_opt_string(&mut object, "pool_id", row.row.pool_id.clone());
+    if row.row.record_type.as_str() == "monopoly" {
+        insert_opt_string(&mut object, "lottery_id", row.lottery_id.clone());
+    }
     insert_opt_string(&mut object, "banner_id", row.banner_id.clone());
     insert_string(&mut object, "item_id", row.item_id.clone());
     if let Some(rarity) = row.rarity {
@@ -251,7 +282,7 @@ mod tests {
             records[0]["record_id"],
             "02a89041035a12520d0abb8f7d588b5b25b3e946608362b74ac162bf0031a837"
         );
-        assert_eq!(records[0]["banner_id"], "monopoly_limited_Nanali");
+        assert_eq!(records[0]["banner_id"], "Lottery_Nanali");
         assert_eq!(records[0]["rarity"], 5);
         assert_eq!(
             records[1]["record_id"],
@@ -339,6 +370,45 @@ mod tests {
     }
 
     #[test]
+    fn capture_runtime_uses_legacy_time_fallback_only_when_id_is_missing() {
+        let mut row = monopoly_protocol_parsed_row(Some(1), None);
+        row.time = Some("2026-06-09T05:22:09.000000".to_string());
+        let mut builder = CaptureRecordBuilder::new("zh-Hant").unwrap();
+
+        let record = builder.build_record(&row);
+
+        assert_eq!(record.value["lottery_id"], "Lottery_AnHunQu");
+        assert_eq!(record.value["banner_id"], "Lottery_AnHunQu");
+    }
+
+    #[test]
+    fn capture_document_accepts_valid_unknown_and_mismatched_lottery_ids() {
+        for lottery_id in ["Lottery_Unknown", "Lottery_Permanent"] {
+            let mut row = monopoly_protocol_parsed_row(Some(1), None);
+            row.lottery_id = Some(lottery_id.to_string());
+
+            let document = build_capture_document(&[row], "zh-Hant").unwrap();
+            let record = &document["nte"]["list"][0];
+
+            assert_eq!(record["lottery_id"], lottery_id);
+            assert!(record.get("banner_id").is_none());
+        }
+    }
+
+    #[test]
+    fn capture_document_rejects_missing_id_after_ambiguous_legacy_fallback() {
+        let row = monopoly_protocol_parsed_row(Some(1), None);
+
+        let error = build_capture_document(&[row], "zh-Hant").unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains("monopoly rows missing or invalid lottery_id after legacy fallback: 0")
+        );
+    }
+
+    #[test]
     fn monopoly_record_key_includes_non_numeric_roll_label() {
         let without_label_row = monopoly_protocol_parsed_row(None, None);
         let with_label_row =
@@ -355,6 +425,7 @@ mod tests {
             ticks: 639_175_144_000_000_000,
             time: Some("2026-06-20T00:00:00.000000".to_string()),
             pool_id: Some("ForkLottery_Nanali".to_string()),
+            lottery_id: None,
             item_id: "fork_dustbin".to_string(),
             count: 1,
             roll_points: None,
@@ -381,6 +452,7 @@ mod tests {
         CanonicalRow {
             source_index: 0,
             row,
+            lottery_id: None,
             banner_id: None,
             item_id: "fork_dustbin".to_string(),
             rarity: None,
@@ -397,6 +469,7 @@ mod tests {
             ticks: 639_175_144_000_000_000,
             time: Some("2026-06-20T00:00:00.000000".to_string()),
             pool_id: Some("CardPool_Character".to_string()),
+            lottery_id: None,
             item_id: "fork_dustbin".to_string(),
             count: 1,
             roll_points,
@@ -423,6 +496,7 @@ mod tests {
         CanonicalRow {
             source_index: 0,
             row,
+            lottery_id: None,
             banner_id: None,
             item_id: "fork_dustbin".to_string(),
             rarity: None,

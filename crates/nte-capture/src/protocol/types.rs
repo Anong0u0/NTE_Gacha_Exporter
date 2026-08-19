@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
+use nte_core::is_valid_lottery_id;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -64,6 +65,8 @@ pub struct ParsedRow {
     pub ticks: u64,
     pub time: Option<String>,
     pub pool_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lottery_id: Option<String>,
     pub item_id: String,
     pub count: u32,
     pub roll_points: Option<u32>,
@@ -146,6 +149,7 @@ struct ParseContext {
 struct RowSignature(
     RecordType,
     u64,
+    Option<String>,
     Option<String>,
     String,
     u32,
@@ -264,4 +268,3 @@ fn parse_payload_view(
         }
     }
 }
-

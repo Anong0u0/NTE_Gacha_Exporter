@@ -24,6 +24,7 @@ fn row_signature(row: &ParsedRow) -> RowSignature {
         row.record_type,
         row.ticks,
         row.pool_id.clone(),
+        row.lottery_id.clone(),
         row.item_id.clone(),
         row.count,
         row.roll_points,
@@ -230,4 +231,3 @@ fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 fn message(value: impl Into<String>) -> ParseError {
     ParseError::Message(value.into())
 }
-

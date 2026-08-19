@@ -67,16 +67,23 @@ fn parse_protocol_envelope(
 struct Reader<'a> {
     data: &'a [u8],
     pos: usize,
+    end: usize,
 }
 
 impl Reader<'_> {
     fn u32(&mut self) -> Result<u32, ParseError> {
+        if self.pos.checked_add(4).is_none_or(|end| end > self.end) {
+            return Err(message("u32 out of block range"));
+        }
         let value = u32_at(self.data, self.pos)?;
         self.pos += 4;
         Ok(value)
     }
 
     fn u64(&mut self) -> Result<u64, ParseError> {
+        if self.pos.checked_add(8).is_none_or(|end| end > self.end) {
+            return Err(message("u64 out of block range"));
+        }
         let value = u64_at(self.data, self.pos)?;
         self.pos += 8;
         Ok(value)
@@ -93,7 +100,7 @@ impl Reader<'_> {
         let end = self
             .pos
             .checked_add(length)
-            .filter(|end| *end <= self.data.len())
+            .filter(|end| *end <= self.end && *end <= self.data.len())
             .ok_or_else(|| message("string out of payload range"))?;
         let mut raw = &self.data[self.pos..end];
         self.pos = end;
@@ -178,4 +185,3 @@ fn shifted_byte(data: &[u8], byte_off: usize, bit_shift: usize, index: usize) ->
     }
     Some(value)
 }
-
