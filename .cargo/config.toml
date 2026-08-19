@@ -1,5 +1,5 @@
 [build]
-build-dir = "target/cargo-build-cache"
+build-dir = "{cargo-cache-home}/build/nte-gacha-exporter/shared"
 
 [alias]
 agent = "run --manifest-path tools/agent-smoke/Cargo.toml --"
