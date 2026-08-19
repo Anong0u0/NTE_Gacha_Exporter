@@ -89,6 +89,7 @@ mod tests {
             record_type: "monopoly".to_string(),
             time: Some(time.to_string()),
             pool_id: "CardPool_NewRole".to_string(),
+            lottery_id: Some("Lottery_Permanent".to_string()),
             item_id: item_id.to_string(),
             count: Some(1),
             roll_points: Some(6),
@@ -104,6 +105,7 @@ mod tests {
         let mut second = record("new", "2026-06-10 08:11:12", "fork_dustbin");
         first.source_order = 263;
         second.source_order = 643;
+        second.lottery_id = Some("Lottery_Canhong".to_string());
 
         assert_eq!(record_semantic_key(&first), record_semantic_key(&second));
     }

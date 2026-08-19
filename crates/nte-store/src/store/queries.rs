@@ -152,6 +152,7 @@ impl JsonStore {
             };
             self.set_active_profile(&active_profile)?;
         }
+        self.migrate_record_files()?;
         Ok(())
     }
 }

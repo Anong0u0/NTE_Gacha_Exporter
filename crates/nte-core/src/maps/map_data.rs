@@ -74,37 +74,20 @@ impl MapData {
         self.gacha_rules.get(rule_id)
     }
 
-    pub fn pool_label(&self, pool_id: &str, time: Option<&str>) -> String {
-        self.banner_label(pool_id, time)
+    pub fn pool_label(&self, input: BannerResolveInput<'_>) -> String {
+        self.banner_source_label(input)
     }
 
-    pub fn banner_label(&self, pool_id: &str, time: Option<&str>) -> String {
-        let resolved = self.resolve_banner(pool_id, time);
+    pub fn banner_source_label(&self, input: BannerResolveInput<'_>) -> String {
+        let resolved = self.resolve_banner_source(input);
         if resolved.resolution_issue.is_none() {
             if let Some(title) = resolved.title {
                 return title;
             }
         }
-        self.pool_fallback_label(pool_id, time)
-    }
-
-    fn pool_fallback_label(&self, pool_id: &str, time: Option<&str>) -> String {
-        let Some(pool) = self.pools.get(pool_id) else {
-            return pool_id.to_string();
+        let Some(pool) = self.pools.get(input.pool_id) else {
+            return input.pool_id.to_string();
         };
-        if let (Some(record_time), Some(windows)) =
-            (normalize_game_time(time), pool.title_windows.as_ref())
-        {
-            for window in windows {
-                if let Some(end_at) = normalize_game_time(Some(&window.end_at_tz8)) {
-                    if record_time.as_str() <= end_at.as_str() {
-                        return window.title.clone();
-                    }
-                } else if record_time.as_str() <= window.end_at_tz8.as_str() {
-                    return window.title.clone();
-                }
-            }
-        }
         pool.title
             .clone()
             .filter(|value| !value.is_empty())
@@ -145,17 +128,16 @@ impl MapData {
             .is_some_and(|items| items.iter().any(|candidate| candidate == canonical))
     }
 
-    pub fn is_banner_rate_up(
+    pub fn is_banner_source_rate_up(
         &self,
-        pool_id: &str,
-        time: Option<&str>,
+        input: BannerResolveInput<'_>,
         item_id: &str,
         rarity: Option<u8>,
     ) -> bool {
         let canonical = self.canonical_item_id(item_id);
-        let resolved = self.resolve_banner(pool_id, time);
+        let resolved = self.resolve_banner_source(input);
         if resolved.resolution_issue.is_some() {
-            return self.is_pickup_item(pool_id, item_id);
+            return self.is_pickup_item(input.pool_id, item_id);
         }
         match rarity {
             Some(5) => resolved
@@ -170,55 +152,51 @@ impl MapData {
         }
     }
 
-    pub fn resolve_banner(&self, pool_id: &str, time: Option<&str>) -> ResolvedBanner {
-        let Some(pool) = self.pools.get(pool_id) else {
-            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool is not in localization map: {pool_id}"))
-                .unwrap_or_else(|| unresolved(
+    pub fn resolve_banner_source(&self, input: BannerResolveInput<'_>) -> ResolvedBannerSource {
+        if !self.pools.contains_key(input.pool_id) {
+            return synthetic_source(
+                input,
                 BannerResolutionIssue::UnknownPool,
-                format!("pool is not in localization map: {pool_id}"),
-            ));
-        };
-        let Some(banner_ids) = pool.banner_ids.as_ref() else {
-            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool has no linked banners: {pool_id}"))
-                .unwrap_or_else(|| unresolved(
-                BannerResolutionIssue::UnknownPool,
-                format!("pool has no linked banners: {pool_id}"),
-            ));
-        };
-
-        let candidates = banner_ids
-            .iter()
-            .filter_map(|banner_id| self.banners.get(banner_id))
-            .filter(|banner| banner.pool_id == pool_id)
-            .collect::<Vec<_>>();
-        if candidates.is_empty() {
-            return synthetic_unresolved(pool_id, BannerResolutionIssue::UnknownPool, format!("pool has no usable linked banners: {pool_id}"))
-                .unwrap_or_else(|| unresolved(
-                BannerResolutionIssue::UnknownPool,
-                format!("pool has no usable linked banners: {pool_id}"),
-            ));
+                format!("pool is not in localization map: {}", input.pool_id),
+            );
         }
-
-        match pool_id {
-            "CardPool_NewRole" => single_banner(candidates, "standard", "standard"),
-            "CardPool_Character" => resolve_limited_banner(pool_id, candidates, time),
-            value if value.starts_with("ForkLottery_") => {
-                let matching_pool = candidates
-                    .iter()
-                    .copied()
-                    .filter(|banner| banner.banner_id == pool_id)
-                    .collect::<Vec<_>>();
-                if matching_pool.is_empty() {
-                    single_banner(candidates, "fork", "fork").or_synthetic(pool_id)
-                } else {
-                    single_banner(matching_pool, "fork", "fork").or_synthetic(pool_id)
-                }
-            }
-            _ => unresolved(
-                BannerResolutionIssue::UnknownPool,
-                format!("pool has unsupported banner resolution: {pool_id}"),
-            ),
+        if input.pool_id.starts_with("ForkLottery_") {
+            return self.banner_sources.get(input.pool_id).map_or_else(
+                || {
+                    synthetic_source(
+                        input,
+                        BannerResolutionIssue::UnknownPool,
+                        format!("fork banner is not in localization map: {}", input.pool_id),
+                    )
+                },
+                resolved_source,
+            );
         }
+        let Some(lottery_id) = input.lottery_id else {
+            return synthetic_source(
+                input,
+                BannerResolutionIssue::MissingLotteryId,
+                "monopoly record is missing lottery_id",
+            );
+        };
+        let Some(source) = self.banner_sources.get(lottery_id) else {
+            return synthetic_source(
+                input,
+                BannerResolutionIssue::UnknownLotteryId,
+                format!("lottery_id is not in localization map: {lottery_id}"),
+            );
+        };
+        if source.pool_id != input.pool_id {
+            return synthetic_source(
+                input,
+                BannerResolutionIssue::LotteryPoolMismatch,
+                format!(
+                    "lottery_id pool mismatch: {lottery_id} belongs to {}",
+                    source.pool_id
+                ),
+            );
+        }
+        resolved_source(source)
     }
 }
 

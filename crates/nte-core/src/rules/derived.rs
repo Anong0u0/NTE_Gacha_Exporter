@@ -3,6 +3,7 @@ pub fn derive_pool_kind_hits(
     map: &MapData,
     pool_kind: PoolKind,
 ) -> Result<PoolKindDerivedStats, GuiError> {
+    let occurrences = map.resolve_banner_occurrences(records);
     let derived = crate::derive_records(records, map)?;
     let mut five_star_history = Vec::new();
     let mut summary_rule: Option<RuleResolution> = None;
@@ -38,8 +39,20 @@ pub fn derive_pool_kind_hits(
             else {
                 continue;
             };
-            let banner = map.resolve_banner(&source.pool_id, source.time.as_deref());
-            let hit = derived_hit_from_record(source, banner, &record, rarity);
+            let banner_source = map.resolve_banner_source(crate::BannerResolveInput {
+                pool_id: &source.pool_id,
+                lottery_id: source.lottery_id.as_deref(),
+            });
+            let Some(banner_occurrence) = occurrences.get(&record.record_id).cloned() else {
+                continue;
+            };
+            let hit = derived_hit_from_record(
+                source,
+                banner_source,
+                banner_occurrence,
+                &record,
+                rarity,
+            );
             five_star_history.push(hit);
         }
     }
@@ -78,13 +91,15 @@ impl RuleResolution {
 
 fn derived_hit_from_record(
     record: InternalRecord,
-    banner: ResolvedBanner,
+    banner_source: ResolvedBannerSource,
+    banner_occurrence: ResolvedBannerOccurrence,
     derived: &RecordDerived,
     rarity: u8,
 ) -> DerivedHit {
     DerivedHit {
         record,
-        banner,
+        banner_source,
+        banner_occurrence,
         rule: rule_resolution_from_view(&derived.rule),
         rarity,
         pity_distance: match rarity {
@@ -100,7 +115,8 @@ fn derived_hit_from_record(
 pub fn guarantee_state_for(
     state: &std::collections::HashMap<(String, u8), bool>,
     resolution: &RuleResolution,
-    banner: &ResolvedBanner,
+    banner_source: &ResolvedBannerSource,
+    banner_occurrence: &ResolvedBannerOccurrence,
     rarity: u8,
     result: Option<RateUpResult>,
 ) -> (Option<bool>, Option<bool>) {
@@ -108,7 +124,12 @@ pub fn guarantee_state_for(
         Some(false) => (Some(false), Some(false)),
         None => (None, None),
         Some(true) => {
-            let Some(key) = guarantee_key(&resolution.rule, banner, rarity) else {
+            let Some(key) = guarantee_key(
+                &resolution.rule,
+                banner_source,
+                banner_occurrence,
+                rarity,
+            ) else {
                 return (None, None);
             };
             let before = *state.get(&key).unwrap_or(&false);
@@ -125,15 +146,28 @@ pub fn guarantee_state_for(
 pub fn update_guarantee_state_for(
     state: &mut std::collections::HashMap<(String, u8), bool>,
     resolution: &RuleResolution,
-    banner: &ResolvedBanner,
+    banner_source: &ResolvedBannerSource,
+    banner_occurrence: &ResolvedBannerOccurrence,
     rarity: u8,
     result: Option<RateUpResult>,
 ) -> (Option<bool>, Option<bool>) {
-    let values = guarantee_state_for(state, resolution, banner, rarity, result);
+    let values = guarantee_state_for(
+        state,
+        resolution,
+        banner_source,
+        banner_occurrence,
+        rarity,
+        result,
+    );
     if let (Some(_), Some(after), Some(key)) = (
         values.0,
         values.1,
-        guarantee_key(&resolution.rule, banner, rarity),
+        guarantee_key(
+            &resolution.rule,
+            banner_source,
+            banner_occurrence,
+            rarity,
+        ),
     ) {
         if has_guarantee(&resolution.rule, rarity) == Some(true) {
             state.insert(key, after);
@@ -199,13 +233,18 @@ fn has_guarantee(rule: &GachaRule, rarity: u8) -> Option<bool> {
     }
 }
 
-fn guarantee_key(rule: &GachaRule, banner: &ResolvedBanner, rarity: u8) -> Option<(String, u8)> {
+fn guarantee_key(
+    rule: &GachaRule,
+    _banner_source: &ResolvedBannerSource,
+    banner_occurrence: &ResolvedBannerOccurrence,
+    rarity: u8,
+) -> Option<(String, u8)> {
     match rule.carry_scope.as_deref() {
         Some("pool_kind") => Some((rule.pool_kind.as_str().to_string(), rarity)),
-        Some("banner") => banner
-            .banner_id
+        Some("banner") => banner_occurrence
+            .occurrence_id
             .as_ref()
-            .map(|banner_id| (banner_id.clone(), rarity)),
+            .map(|occurrence_id| (occurrence_id.clone(), rarity)),
         _ => None,
     }
 }

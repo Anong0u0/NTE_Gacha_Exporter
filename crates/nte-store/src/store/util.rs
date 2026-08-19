@@ -98,6 +98,86 @@ fn validate_records_against_map(records: &[InternalRecord], map: &MapData) -> Re
     Ok(())
 }
 
+fn migrate_disk_records(
+    mut disk: DiskRecords,
+    map: &MapData,
+) -> Result<DiskRecords, GuiError> {
+    match disk.schema_version {
+        1 => {
+            migrate_legacy_records(&mut disk.records, map)?;
+            disk.schema_version = RECORDS_SCHEMA_VERSION;
+            Ok(disk)
+        }
+        RECORDS_SCHEMA_VERSION => Ok(disk),
+        version => Err(GuiError::InvalidDocument(format!(
+            "unsupported records schema_version: {version}"
+        ))),
+    }
+}
+
+fn migrate_legacy_records(
+    records: &mut [InternalRecord],
+    map: &MapData,
+) -> Result<(), GuiError> {
+    for record in records {
+        if record.record_type != "monopoly" || record.lottery_id.is_some() {
+            continue;
+        }
+        record.lottery_id = map.resolve_legacy_lottery_id(
+            &record.pool_id,
+            record.time.as_deref(),
+            None,
+        )?;
+    }
+    Ok(())
+}
+
+fn merge_record_sets(
+    merged: &mut Vec<InternalRecord>,
+    incoming: impl IntoIterator<Item = InternalRecord>,
+) -> Result<(u64, u64), GuiError> {
+    let mut incoming = incoming.into_iter().collect::<Vec<_>>();
+    incoming.sort_by(compare_records_chronological);
+    let mut existing_indices = BTreeMap::<String, Vec<usize>>::new();
+    for (index, record) in merged.iter().enumerate() {
+        existing_indices
+            .entry(record_semantic_key(record))
+            .or_default()
+            .push(index);
+    }
+    let mut incoming_counts = BTreeMap::<String, u64>::new();
+    let mut inserted = 0_u64;
+    let mut skipped = 0_u64;
+    for mut record in incoming {
+        let key = record_semantic_key(&record);
+        let occurrence = incoming_counts.entry(key.clone()).or_default();
+        if let Some(existing_index) = existing_indices
+            .get(&key)
+            .and_then(|indices| indices.get(*occurrence as usize))
+            .copied()
+        {
+            let existing = &mut merged[existing_index];
+            match (&existing.lottery_id, &record.lottery_id) {
+                (None, Some(_)) => existing.lottery_id = record.lottery_id.clone(),
+                (Some(left), Some(right)) if left != right => {
+                    return Err(GuiError::InvalidDocument(format!(
+                        "lottery_id conflict for record {}: existing={left} incoming={right}",
+                        existing.record_id
+                    )));
+                }
+                _ => {}
+            }
+            skipped += 1;
+        } else {
+            record.record_id = stable_record_id_from_key(&key, *occurrence);
+            merged.push(record);
+            inserted += 1;
+        }
+        *occurrence += 1;
+    }
+    Ok((inserted, skipped))
+}
+
 fn allows_unmapped_pool_id(pool_id: &str) -> bool {
     pool_id == "CardPool_Character" || pool_id.starts_with("ForkLottery_")
 }
@@ -268,6 +348,33 @@ fn remove_profile_dir_known_files_strict(path: PathBuf) -> Result<(), GuiError> 
 }
 
 impl JsonStore {
+    fn migrate_record_files(&self) -> Result<(), GuiError> {
+        let map = load_map(&self.read_settings()?.locale)?;
+        let mut migrations = Vec::new();
+        for profile in self.list_profiles()? {
+            let path = self.records_path(&profile.name);
+            if !path.exists() {
+                continue;
+            }
+            let disk: DiskRecords = read_json(&path)?;
+            if disk.schema_version == RECORDS_SCHEMA_VERSION {
+                continue;
+            }
+            migrations.push((
+                profile.name,
+                migrate_disk_records(disk, &map)?.records,
+            ));
+        }
+        if migrations.is_empty() {
+            return Ok(());
+        }
+        let _backup = self.create_generated_data_backup()?;
+        for (profile_name, records) in migrations {
+            self.write_records(&profile_name, &records)?;
+        }
+        self.cleanup_generated_backups_keep_latest()
+    }
+
     pub fn cleanup_generated_backups_keep_latest(&self) -> Result<(), GuiError> {
         prune_generated_artifacts_keep_latest(&self.root.join("data/backups"), "backup-", ".zip")
     }

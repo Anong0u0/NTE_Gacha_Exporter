@@ -8,19 +8,18 @@ mod tests {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
         let banner = map
-            .banners
+            .banner_sources
             .get("ForkLottery_AnHunQu")
             .expect("fork banner should exist");
-        assert_eq!(banner.banner_id, "ForkLottery_AnHunQu");
+        assert_eq!(banner.source_id, "ForkLottery_AnHunQu");
         assert_eq!(banner.pool_id, "ForkLottery_AnHunQu");
         assert_eq!(banner.rate_up_5, vec!["fork_Rose"]);
         assert_eq!(banner.currency_id.as_deref(), Some("WeaponGacha"));
+        assert!(map.banner_sources.contains_key("Lottery_Nanali"));
         assert!(map
-            .banners
-            .get("monopoly_limited_Nanali")
-            .expect("limited banner should exist")
-            .start_at
-            .is_none());
+            .banner_occurrences
+            .iter()
+            .any(|occurrence| occurrence.occurrence_id == "Lottery_Nanali@2026-08"));
 
         let rule = map
             .gacha_rules
@@ -41,8 +40,8 @@ mod tests {
             )
         );
         assert_eq!(
-            map.banners
-                .get("monopoly_limited_Nanali")
+            map.banner_sources
+                .get("Lottery_Nanali")
                 .and_then(|banner| banner.asset_refs.get("image"))
                 .and_then(|value| value.as_str()),
             Some(
@@ -50,9 +49,22 @@ mod tests {
             )
         );
         assert_eq!(item.color.as_deref(), Some("#F24B7E"));
+        assert_eq!(
+            map.items.get("1036").map(|item| item.name.as_str()),
+            Some("角色·殘虹")
+        );
+        assert_eq!(
+            map.banner_sources
+                .get("Lottery_Canhong")
+                .map(|banner| banner.title.as_str()),
+            Some("惑心譎影")
+        );
 
         assert_eq!(
-            map.pool_label("CardPool_Character", Some("2026-06-04 00:00:00")),
+            map.pool_label(BannerResolveInput {
+                pool_id: "CardPool_Character",
+                lottery_id: Some("Lottery_AnHunQu"),
+            }),
             "久夢初醒時"
         );
         assert!(map.is_pickup_item("ForkLottery_AnHunQu", "fork_Rose"));
@@ -89,85 +101,165 @@ mod tests {
     }
 
     #[test]
-    fn resolve_banner_handles_standard_fork_and_limited_boundaries() {
+    fn resolve_banner_uses_wire_lottery_id() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
-        let standard = map.resolve_banner("CardPool_NewRole", None);
+        let standard = map.resolve_banner_source(BannerResolveInput {
+            pool_id: "CardPool_NewRole",
+            lottery_id: Some("Lottery_Permanent"),
+        });
         assert_eq!(standard.resolution_issue, None);
-        assert_eq!(standard.banner_id.as_deref(), Some("monopoly_standard"));
+        assert_eq!(standard.source_id.as_deref(), Some("Lottery_Permanent"));
         assert_eq!(standard.banner_type.as_deref(), Some("standard"));
-        assert_eq!(standard.version, None);
 
-        let fork = map.resolve_banner("ForkLottery_AnHunQu", None);
+        let fork = map.resolve_banner_source(BannerResolveInput {
+            pool_id: "ForkLottery_AnHunQu",
+            lottery_id: None,
+        });
         assert_eq!(fork.resolution_issue, None);
-        assert_eq!(fork.banner_id.as_deref(), Some("ForkLottery_AnHunQu"));
+        assert_eq!(fork.source_id.as_deref(), Some("ForkLottery_AnHunQu"));
         assert_eq!(fork.rate_up_5, vec!["fork_Rose"]);
 
-        for (record_time, banner_id) in [
-            ("2026-05-13 05:59:00", "monopoly_limited_Nanali"),
-            ("2026-05-13 05:59:01", "monopoly_limited_Xun"),
-            ("2026-06-03 05:59:00", "monopoly_limited_Xun"),
-            ("2026-06-03 05:59:01", "monopoly_limited_AnHunQu"),
-            ("2026-06-24 05:59:00", "monopoly_limited_AnHunQu"),
-            ("2026-06-24 05:59:01", "monopoly_limited_Kaesi"),
-            ("2026-07-08 05:59:00", "monopoly_limited_Kaesi"),
-            ("2026-07-08 05:59:01", "monopoly_limited_ZhenHong"),
-            ("2026-07-29 05:59:00", "monopoly_limited_ZhenHong"),
-            ("2026-07-29 05:59:01", "monopoly_limited_Yiluoyi"),
-            ("2026-08-19 05:59:00", "monopoly_limited_Yiluoyi"),
+        for lottery_id in [
+            "Lottery_Nanali",
+            "Lottery_Xun",
+            "Lottery_AnHunQu",
+            "Lottery_Kaesi",
+            "Lottery_ZhenHong",
+            "Lottery_Yiluoyi",
+            "Lottery_Canhong",
         ] {
-            let resolved = map.resolve_banner("CardPool_Character", Some(record_time));
+            let resolved = map.resolve_banner_source(BannerResolveInput {
+                pool_id: "CardPool_Character",
+                lottery_id: Some(lottery_id),
+            });
             assert_eq!(resolved.resolution_issue, None);
-            assert_eq!(resolved.banner_id.as_deref(), Some(banner_id));
+            assert_eq!(resolved.source_id.as_deref(), Some(lottery_id));
         }
-        let limited = map.resolve_banner("CardPool_Character", Some("2026-05-13 05:59:00"));
-        assert_eq!(limited.version, None);
     }
 
     #[test]
-    fn resolve_banner_reports_limited_unresolved_edges_and_label_fallback() {
+    fn legacy_resolution_prefers_explicit_id_and_uses_unambiguous_time_fallback() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
 
+        for (record_time, lottery_id) in [
+            ("2026-05-01 00:00:00", "Lottery_Nanali"),
+            ("2026-05-20 00:00:00", "Lottery_Xun"),
+            ("2026-06-09 00:00:00", "Lottery_AnHunQu"),
+            ("2026-06-28 00:00:00", "Lottery_Kaesi"),
+            ("2026-07-10 00:00:00", "Lottery_ZhenHong"),
+            ("2026-08-01 00:00:00", "Lottery_Yiluoyi"),
+        ] {
+            assert_eq!(
+                map.resolve_legacy_lottery_id(
+                    "CardPool_Character",
+                    Some(record_time),
+                    None
+                )
+                .unwrap()
+                .as_deref(),
+                Some(lottery_id)
+            );
+        }
         assert_eq!(
-            map.resolve_banner("CardPool_Character", None)
-                .resolution_issue,
-            Some(BannerResolutionIssue::UnknownTime)
+            map.resolve_legacy_lottery_id(
+                "CardPool_Character",
+                Some("2026-08-13 16:11:30"),
+                Some("monopoly_limited_Canhong")
+            )
+            .unwrap()
+            .as_deref(),
+            Some("Lottery_Canhong")
         );
-        assert_eq!(
-            map.resolve_banner("CardPool_Character", Some("not a time"))
-                .resolution_issue,
-            Some(BannerResolutionIssue::UnknownTime)
-        );
-        assert_eq!(
-            map.resolve_banner("CardPool_Character", Some("2026-08-19 05:59:01"))
-                .resolution_issue,
-            Some(BannerResolutionIssue::OutsideKnownWindows)
-        );
-        let unresolved = map.resolve_banner("CardPool_Character", Some("2026-08-19 05:59:01"));
-        assert_eq!(unresolved.banner_id.as_deref(), Some("CardPool_Character"));
-        assert!(unresolved.asset_refs.is_empty());
-        assert_eq!(unresolved.version, None);
-        assert_eq!(
-            map.pool_label("CardPool_Character", Some("2026-08-19 05:59:01")),
-            "限定棋盤"
-        );
+        for ambiguous_time in ["2026-05-10 00:00:00", "2026-08-13 16:11:30"] {
+            assert_eq!(
+                map.resolve_legacy_lottery_id(
+                    "CardPool_Character",
+                    Some(ambiguous_time),
+                    None
+                )
+                .unwrap(),
+                None
+            );
+        }
         assert_eq!(
             normalize_game_time(Some("2026-06-03T05:59:01.341000")).as_deref(),
             Some("2026-06-03 05:59:01")
         );
         assert!(normalize_game_time(Some("2026-06-03T05:59:01+08:00")).is_none());
+
+        let error = map
+            .resolve_legacy_lottery_id(
+                "CardPool_Character",
+                None,
+                Some("monopoly_standard"),
+            )
+            .unwrap_err();
+        assert!(error.to_string().contains("legacy banner conflicts with pool"));
+
+        assert_eq!(
+            map.resolve_legacy_lottery_id(
+                "CardPool_Character",
+                Some("2026-05-01 00:00:00"),
+                Some("monopoly_limited_Unknown")
+            )
+            .unwrap()
+            .as_deref(),
+            Some("Lottery_Unknown")
+        );
+        let error = map
+            .resolve_legacy_lottery_id(
+                "CardPool_NewRole",
+                Some("2026-05-01 00:00:00"),
+                Some("unknown_banner"),
+            )
+            .unwrap_err();
+        assert!(error.to_string().contains("unknown legacy banner_id"));
+    }
+
+    #[test]
+    fn resolve_banner_reports_lottery_id_errors() {
+        let map = load_map("zh-Hant").expect("zh-Hant map should load");
+
+        assert_eq!(
+            map.resolve_banner_source(BannerResolveInput {
+                pool_id: "CardPool_Character",
+                lottery_id: None,
+            })
+            .resolution_issue,
+            Some(BannerResolutionIssue::MissingLotteryId)
+        );
+        assert_eq!(
+            map.resolve_banner_source(BannerResolveInput {
+                pool_id: "CardPool_Character",
+                lottery_id: Some("Lottery_Unknown"),
+            })
+            .resolution_issue,
+            Some(BannerResolutionIssue::UnknownLotteryId)
+        );
+        assert_eq!(
+            map.resolve_banner_source(BannerResolveInput {
+                pool_id: "CardPool_NewRole",
+                lottery_id: Some("Lottery_Nanali"),
+            })
+            .resolution_issue,
+            Some(BannerResolutionIssue::LotteryPoolMismatch)
+        );
     }
 
     #[test]
     fn resolve_banner_returns_synthetic_unknown_fork() {
         let map = load_map("zh-Hant").expect("zh-Hant map should load");
-        let banner = map.resolve_banner("ForkLottery_KaesiNew", Some("2026-08-01 10:00:00"));
+        let banner = map.resolve_banner_source(BannerResolveInput {
+            pool_id: "ForkLottery_KaesiNew",
+            lottery_id: None,
+        });
 
         assert_eq!(
             banner.resolution_issue,
             Some(BannerResolutionIssue::UnknownPool)
         );
-        assert_eq!(banner.banner_id.as_deref(), Some("ForkLottery_KaesiNew"));
+        assert_eq!(banner.source_id.as_deref(), Some("ForkLottery_KaesiNew"));
         assert_eq!(banner.pool_id.as_deref(), Some("ForkLottery_KaesiNew"));
         assert_eq!(banner.pool_kind.as_deref(), Some("fork_lottery"));
         assert_eq!(banner.banner_type.as_deref(), Some("fork"));

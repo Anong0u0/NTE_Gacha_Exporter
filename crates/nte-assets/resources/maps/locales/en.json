@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "en",
+  "csv_headers": {
+    "count": "Quantity",
+    "item_name": "Item Name",
+    "pool_group": "Pool Type",
+    "pool_name": "Pool",
+    "roll_label": "Roll Result",
+    "secondary_count": "Extra Reward Quantity",
+    "secondary_item_name": "Extra Reward",
+    "time": "Acquisition Time"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Completed",
+    "Abyss_GamepadKeys_1": "Switch",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Standard Board",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Board Type",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Limited Board",
+    "BPUI_LotteryModuleEntrance_Title": "Scarborough Fair",
+    "BPUI_LotteryResult_chenmiandi": "Slumberland",
+    "BPUI_LotteryResult_jidianzengli": "Points Gift",
+    "Mall_8_name": "Arc Shop",
+    "TreasureBox_2": "Open",
+    "UI_CloneSystemChallengeFailed_Retry": "Retry",
+    "UI_CloneSystemStaminaTips_Enter": "Enter",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "Dice Roll Records",
+    "UI_Lottery_GachaDetails_title": "Board Details",
+    "UW_LotteryBase_BP_Hupanyanmu": "Arc Research",
+    "W_HTButton_Next_Page": "Next",
+    "W_Vehicle_Button_Choose": "Select",
+    "common_3": "Back",
+    "item_kind_character": "Character",
+    "item_kind_fashion": "Outfit",
+    "item_kind_fork": "Arc",
+    "item_kind_glider": "Glider",
+    "item_kind_inventory": "Item",
+    "item_kind_vehicle_module": "Mod Parts",
+    "ui_appearance_02": "Glider",
+    "ui_forkshop_03": "Arc Research Program",
+    "ui_forkshop_07": "Details",
+    "ui_forkshop_10": "Records"
+  },
+  "items": {
+    "1003": {
+      "name": "Character·Sakiri"
+    },
+    "1004": {
+      "name": "Character·Lacrimosa"
+    },
+    "1008": {
+      "name": "Character·Skia"
+    },
+    "1010": {
+      "name": "Character·Nanally"
+    },
+    "1019": {
+      "name": "Character·Mint"
+    },
+    "1020": {
+      "name": "Character·Haniel"
+    },
+    "1021": {
+      "name": "Character·Edgar"
+    },
+    "1023": {
+      "name": "Character·Baicang"
+    },
+    "1025": {
+      "name": "Character·Hathor"
+    },
+    "1033": {
+      "name": "Character·Adler"
+    },
+    "1036": {
+      "name": "Character·Zankou"
+    },
+    "1039": {
+      "name": "Character·Fadia"
+    },
+    "1052": {
+      "name": "Character·Hotori"
+    },
+    "1054": {
+      "name": "Character·Daffodill"
+    },
+    "1055": {
+      "name": "Character·Jiuyuan"
+    },
+    "1070": {
+      "name": "Character·Aurelia"
+    },
+    "1071": {
+      "name": "Character·Chaos"
+    },
+    "1072": {
+      "name": "Character·Linko"
+    },
+    "1073": {
+      "name": "Character·Chiz"
+    },
+    "1075": {
+      "name": "Character·Iroi"
+    },
+    "1076": {
+      "name": "Character·Shinku"
+    },
+    "DiceNormal": {
+      "name": "Item·Fabricated Dice"
+    },
+    "Dice_ticket_01": {
+      "name": "Item·Warp Piece"
+    },
+    "Dice_ticket_02": {
+      "name": "Item·Lost Piece"
+    },
+    "Dicelimite": {
+      "name": "Item·Solid Dice"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "Outfit·Archmage"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Glider·Tomato Duo"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Glider·Underboss-of-the-Underboss"
+    },
+    "Fashion_Glide_1036": {
+      "name": "Glider·Scarlet Sash"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Glider·Orchid Breeze"
+    },
+    "Fashion_Glide_1071": {
+      "name": "Glider·Skyrider"
+    },
+    "Fashion_Glide_1072": {
+      "name": "Glider·Super Specter"
+    },
+    "Fashion_Glide_1075": {
+      "name": "Glider·Sheepcopter"
+    },
+    "Fashion_Glide_1076": {
+      "name": "Glider·Overcast Canopy"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Outfit·Gilded Rhapsody"
+    },
+    "Fashion_character_1010": {
+      "name": "Outfit·Phoenix Kick"
+    },
+    "Fashion_character_1036_03": {
+      "name": "Outfit·Autumn Vignette"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Outfit·Priceless Orchid"
+    },
+    "Fashion_character_1071_01": {
+      "name": "Outfit·Clear Skies"
+    },
+    "Fashion_character_1072_01": {
+      "name": "Outfit·Surfing Among Stars"
+    },
+    "Fashion_character_1076_01": {
+      "name": "Outfit·Student of Terrasea"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Mod Parts·Golden Breeze - Livery"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Mod Parts·Tomato Cruise - Livery"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Mod Parts·Tiger Incoming! - Livery"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "Mod Parts·Sandy Mirage - Livery"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Mod Parts·Autumn Haze - Livery"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "Mod Parts·Hound Blitz - Livery"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "Mod Parts·Three's Company - Livery"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "Mod Parts·Three's Company - Livery"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "Mod Parts·Hidden Dragon - Livery"
+    },
+    "fork_Arachne": {
+      "name": "Arc·Eternal Waltz"
+    },
+    "fork_BitGame": {
+      "name": "Arc·Blow up the Crowd"
+    },
+    "fork_BitterCake": {
+      "name": "Arc·The Good, The Bad, The Bitter"
+    },
+    "fork_BlackBook": {
+      "name": "Arc·Youthful Fantasy"
+    },
+    "fork_Butterfly": {
+      "name": "Arc·Reality Refuge"
+    },
+    "fork_DemonBlade": {
+      "name": "Arc·Ravenous Blade"
+    },
+    "fork_Door": {
+      "name": "Arc·The Wrong Gate"
+    },
+    "fork_GoldRecord": {
+      "name": "Arc·Voice of the Voyager"
+    },
+    "fork_GoldWool": {
+      "name": "Arc·What's Desired"
+    },
+    "fork_Kite": {
+      "name": "Arc·Watch Your Heads!"
+    },
+    "fork_LunarPhase": {
+      "name": "Arc·Blushing Mirage"
+    },
+    "fork_Nakupeda": {
+      "name": "Arc·Your Happiness is Priceless"
+    },
+    "fork_PaperPlane": {
+      "name": "Arc·Clear Skies"
+    },
+    "fork_PoliceRat": {
+      "name": "Arc·Hethereau's Keeper"
+    },
+    "fork_Prokaryon": {
+      "name": "Arc·Us."
+    },
+    "fork_Rose": {
+      "name": "Arc·The Last Rose"
+    },
+    "fork_TigerTally": {
+      "name": "Arc·Ready-Ready"
+    },
+    "fork_Time": {
+      "name": "Arc·Marching Beyond Time"
+    },
+    "fork_appliance": {
+      "name": "Arc·\"Real Music\""
+    },
+    "fork_bopu": {
+      "name": "Arc·Cosmos Daze, Wild Reverie"
+    },
+    "fork_dustbin": {
+      "name": "Arc·Dangerous Game"
+    },
+    "fork_jiaojuan": {
+      "name": "Arc·Shiny Days"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arc·Camellia Society"
+    },
+    "fork_koinobori": {
+      "name": "Arc·A Time Will Come"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arc·Mind Royale"
+    },
+    "fork_mamen": {
+      "name": "Arc·Contemplative Cat"
+    },
+    "fork_mofeikesi": {
+      "name": "Arc·Good Boy's Grand Adventure"
+    },
+    "fork_nonos": {
+      "name": "Arc·First Step to Success"
+    },
+    "fork_oulaquantao": {
+      "name": "Arc·Oraora!"
+    },
+    "fork_rishi": {
+      "name": "Arc·Day Off"
+    },
+    "fork_spider": {
+      "name": "Arc·Failing You, Heavy in My Heart"
+    },
+    "fork_tuansanlang": {
+      "name": "Arc·The Great Thief"
+    },
+    "fork_vine": {
+      "name": "Arc·Be Happy"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arc·The Forgotten"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arc·Raging Flames"
+    },
+    "fork_yaodao": {
+      "name": "Arc·Drawn Blade"
+    },
+    "fork_yuren": {
+      "name": "Arc·Umbrella"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "Miracle Box"
+    },
+    "CardPool_Character": {
+      "name": "Limited Board",
+      "group_label": "Limited Board"
+    },
+    "CardPool_NewRole": {
+      "name": "Standard Board",
+      "group_label": "Standard Board",
+      "title": "Strange Encounters"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Nocturne Special"
+    },
+    "ForkLottery_Canhong": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Spellbound Special"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Pursuit Special"
+    },
+    "ForkLottery_LingKe": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Soundscape Special"
+    },
+    "ForkLottery_Nanali": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Tiger Special"
+    },
+    "ForkLottery_Xun": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Bright Moon Special"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Dreamgate Special"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Resolve Special"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "Strange Encounters"
+    },
+    "Lottery_Nanali": {
+      "title": "The Ichi-daime"
+    },
+    "Lottery_Xun": {
+      "title": "Misty Tipsy Style"
+    },
+    "Lottery_AnHunQu": {
+      "title": "Fading Reverie"
+    },
+    "Lottery_Kaesi": {
+      "title": "Forsaken Path"
+    },
+    "Lottery_ZhenHong": {
+      "title": "Before the Dawn"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "The Lifeline"
+    },
+    "Lottery_Canhong": {
+      "title": "Alluring Shadows"
+    },
+    "Lottery_LingKe": {
+      "title": "Surfing All Channels!"
+    },
+    "ForkLottery_Nanali": {
+      "title": "Tiger Special"
+    },
+    "ForkLottery_Xun": {
+      "title": "Bright Moon Special"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "Nocturne Special"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "Pursuit Special"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "Resolve Special"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "Dreamgate Special"
+    },
+    "ForkLottery_Canhong": {
+      "title": "Spellbound Special"
+    },
+    "ForkLottery_LingKe": {
+      "title": "Soundscape Special"
+    }
+  }
+}

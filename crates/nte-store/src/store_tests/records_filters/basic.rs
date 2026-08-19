@@ -55,24 +55,27 @@ fn missing_rarity_records_are_retained_but_excluded_from_distribution_denominato
 fn records_list_resolves_limited_banner_boundaries() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record(
+    let document = public_document_v21(vec![
+        record_with_lottery_id(
             "nanali",
             "CardPool_Character",
+            "Lottery_Nanali",
             "Fashion_vehicle_1010_V008",
-            "2026-05-13 05:59:00",
+            Some("2026-05-13 05:59:00"),
         ),
-        record(
+        record_with_lottery_id(
             "xun",
             "CardPool_Character",
+            "Lottery_Xun",
             "Fashion_vehicle_1052_V024",
-            "2026-05-13 05:59:01",
+            Some("2026-05-13 05:59:01"),
         ),
-        record(
+        record_with_lottery_id(
             "after",
             "CardPool_Character",
+            "Lottery_Canhong",
             "fork_dustbin",
-            "2026-08-19 05:59:01",
+            Some("2026-08-19 05:59:01"),
         ),
     ]);
     store
@@ -91,34 +94,152 @@ fn records_list_resolves_limited_banner_boundaries() {
         .unwrap();
 
     assert_eq!(
-        list.records[0].banner.banner_id.as_deref(),
-        Some("monopoly_limited_Nanali")
+        list.records[0].banner_source.source_id.as_deref(),
+        Some("Lottery_Nanali")
     );
     assert_eq!(
-        list.records[0].derived.banner_id.as_deref(),
-        Some("monopoly_limited_Nanali")
+        list.records[0].derived.banner_source_id.as_deref(),
+        Some("Lottery_Nanali")
     );
-    assert_eq!(list.records[0].derived.pull_no_in_banner, Some(1));
+    assert_eq!(
+        list.records[0].derived.pull_no_in_banner_occurrence,
+        Some(1)
+    );
     assert!(list.records[0].item_asset_refs.contains_key("icon"));
     assert_eq!(
-        list.records[1].banner.banner_id.as_deref(),
-        Some("monopoly_limited_Xun")
+        list.records[1].banner_source.source_id.as_deref(),
+        Some("Lottery_Xun")
     );
     assert_eq!(
-        list.records[1].derived.banner_id.as_deref(),
-        Some("monopoly_limited_Xun")
-    );
-    assert_eq!(list.records[1].derived.pull_no_in_banner, Some(1));
-    assert_eq!(
-        list.records[2].banner.resolution_issue,
-        Some(nte_core::BannerResolutionIssue::OutsideKnownWindows)
+        list.records[1].derived.banner_source_id.as_deref(),
+        Some("Lottery_Xun")
     );
     assert_eq!(
-        list.records[2].derived.banner_id.as_deref(),
-        Some("CardPool_Character")
+        list.records[1].derived.pull_no_in_banner_occurrence,
+        Some(1)
     );
-    assert_eq!(list.records[2].derived.pull_no_in_banner, Some(1));
-    assert_eq!(list.records[2].pool_label, "限定棋盤");
+    assert_eq!(list.records[2].banner_source.resolution_issue, None);
+    assert_eq!(
+        list.records[2].derived.banner_source_id.as_deref(),
+        Some("Lottery_Canhong")
+    );
+    assert_eq!(
+        list.records[2].derived.pull_no_in_banner_occurrence,
+        Some(1)
+    );
+}
+
+#[test]
+fn pool_mismatches_stay_visible_but_do_not_join_occurrence_stats_or_filters() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let document = public_document_v21(vec![
+        record_with_lottery_id(
+            "permanent",
+            "CardPool_NewRole",
+            "Lottery_Permanent",
+            "fork_dustbin",
+            Some("2026-08-13 06:00:00"),
+        ),
+        record_with_lottery_id(
+            "limited-with-permanent-id",
+            "CardPool_Character",
+            "Lottery_Permanent",
+            "fork_dustbin",
+            Some("2026-08-13 06:01:00"),
+        ),
+        record_with_lottery_id(
+            "standard-with-limited-id",
+            "CardPool_NewRole",
+            "Lottery_Nanali",
+            "fork_dustbin",
+            Some("2026-08-13 06:02:00"),
+        ),
+    ]);
+    store
+        .import_public_document("default", &document, "json", None)
+        .unwrap();
+
+    let list = store
+        .list_records("default", "zh-Hant", &RecordFilter::default())
+        .unwrap();
+    let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
+    let options = store.record_filter_options("default", "zh-Hant").unwrap();
+    let permanent = list
+        .records
+        .iter()
+        .find(|record| {
+            record.pool_id == "CardPool_NewRole"
+                && record.lottery_id.as_deref() == Some("Lottery_Permanent")
+        })
+        .unwrap();
+    assert_eq!(list.total, 3);
+    assert_eq!(
+        permanent.derived.banner_occurrence_id.as_deref(),
+        Some("Lottery_Permanent@permanent")
+    );
+
+    let mismatches = list
+        .records
+        .iter()
+        .filter(|record| {
+            record.banner_source.resolution_issue
+                == Some(nte_core::BannerResolutionIssue::LotteryPoolMismatch)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(mismatches.len(), 2);
+    assert!(mismatches.iter().all(|record| {
+        record.derived.banner_occurrence_id.is_none()
+            && record.banner_occurrence.occurrence_id.is_none()
+    }));
+    assert!(
+        mismatches.iter().any(|record| {
+            record.derived.banner_source_id.as_deref() == Some("Lottery_Permanent")
+        })
+    );
+    assert!(
+        mismatches
+            .iter()
+            .any(|record| { record.derived.banner_source_id.as_deref() == Some("Lottery_Nanali") })
+    );
+
+    assert_eq!(overview.banner_occurrences.len(), 1);
+    assert_eq!(
+        overview.banner_occurrences[0].occurrence_id,
+        "Lottery_Permanent@permanent"
+    );
+    assert_eq!(overview.banner_occurrences[0].total_pulls, 1);
+    assert_eq!(options.banner_occurrences.len(), 1);
+    assert_eq!(
+        options.banner_occurrences[0].occurrence_id,
+        "Lottery_Permanent@permanent"
+    );
+
+    let filtered = store
+        .list_records(
+            "default",
+            "zh-Hant",
+            &RecordFilter {
+                banner_occurrence_ids: vec!["Lottery_Permanent@permanent".to_string()],
+                ..RecordFilter::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(filtered.total, 1);
+    assert_eq!(filtered.records[0].pool_id, "CardPool_NewRole");
+
+    let limited = overview
+        .pool_kinds
+        .iter()
+        .find(|summary| summary.pool_kind == PoolKind::MonopolyLimited)
+        .unwrap();
+    let standard = overview
+        .pool_kinds
+        .iter()
+        .find(|summary| summary.pool_kind == PoolKind::MonopolyStandard)
+        .unwrap();
+    assert_eq!(limited.total_pulls, 1);
+    assert_eq!(standard.total_pulls, 2);
 }
 
 #[test]
@@ -154,7 +275,9 @@ fn records_list_filters_by_derived_fields() {
             "default",
             "zh-Hant",
             &RecordFilter {
-                banner_ids: vec!["ForkLottery_AnHunQu".to_string()],
+                banner_occurrence_ids: vec![
+                    "ForkLottery_AnHunQu@observed-20260101100000".to_string(),
+                ],
                 focused_rarities: vec![5],
                 sort_direction: Some(SortDirection::Asc),
                 ..RecordFilter::default()

@@ -19,12 +19,14 @@ pub enum ForkResultMark {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordDerived {
     pub record_id: String,
-    pub banner_id: Option<String>,
-    pub banner_version: Option<String>,
+    pub banner_source_id: Option<String>,
+    pub banner_occurrence_id: Option<String>,
+    pub banner_occurrence_version: Option<String>,
     pub counts_as_pull: bool,
     pub global_pull_no: Option<u64>,
     pub pull_no_in_pool_kind: Option<u64>,
-    pub pull_no_in_banner: Option<u64>,
+    pub pull_no_in_banner_source: Option<u64>,
+    pub pull_no_in_banner_occurrence: Option<u64>,
     pub pity_5_before: u64,
     pub pity_5_after: u64,
     pub ten_pull_progress_before: Option<u8>,
@@ -48,8 +50,10 @@ pub struct DisplayRecord {
     pub time: Option<String>,
     pub pool_kind: PoolKind,
     pub pool_id: String,
+    pub lottery_id: Option<String>,
     pub pool_label: String,
-    pub banner: ResolvedBanner,
+    pub banner_source: ResolvedBannerSource,
+    pub banner_occurrence: ResolvedBannerOccurrence,
     pub item_id: String,
     pub item_name: String,
     pub item_asset_refs: BTreeMap<String, serde_json::Value>,
@@ -72,7 +76,7 @@ pub struct DisplayRecord {
 pub struct RecordFilter {
     pub pool_kind: Option<PoolKind>,
     #[serde(default)]
-    pub banner_ids: Vec<String>,
+    pub banner_occurrence_ids: Vec<String>,
     #[serde(default)]
     pub rarities: Vec<u8>,
     #[serde(default)]
@@ -103,18 +107,22 @@ pub struct RecordList {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordFilterOptions {
-    pub banners: Vec<RecordBannerOption>,
+    pub banner_occurrences: Vec<RecordBannerOption>,
     pub roll_buckets: Vec<RecordRollBucketOption>,
     pub item_kinds: Vec<RecordItemKindOption>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RecordBannerOption {
-    pub banner_id: String,
+    pub occurrence_id: String,
+    pub source_id: String,
+    pub resolution_source: BannerOccurrenceResolution,
     pub pool_kind: PoolKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolution_issue: Option<BannerResolutionIssue>,
     pub title: String,
+    pub active_from: Option<String>,
+    pub active_until: Option<String>,
     pub count: u64,
 }
 

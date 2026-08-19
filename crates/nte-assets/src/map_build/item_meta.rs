@@ -13,9 +13,9 @@ fn asset_ref_str<'a>(refs: &'a JsonObject, key: &str) -> Option<&'a str> {
 }
 
 fn same_asset_ref(refs: &JsonObject, left: &str, right: &str) -> bool {
-    asset_ref_str(refs, left).zip(asset_ref_str(refs, right)).is_some_and(
-        |(left, right)| left == right,
-    )
+    asset_ref_str(refs, left)
+        .zip(asset_ref_str(refs, right))
+        .is_some_and(|(left, right)| left == right)
 }
 
 fn business_card_refs(assets_root: &Path) -> Result<BTreeMap<String, String>, GuiError> {
@@ -168,6 +168,151 @@ fn merge_item_meta(meta: &mut BTreeMap<String, JsonObject>, item_id: String, pat
     }
 }
 
+fn item_category<'a>(meta: &'a BTreeMap<String, JsonObject>, item_id: &str) -> Option<&'a str> {
+    meta.get(item_id)
+        .and_then(|item| item.get("category"))
+        .and_then(Value::as_str)
+}
+
+fn linked_appearance_id(row: &JsonObject) -> Option<String> {
+    row.get("ToolDatas")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_object)
+        .filter_map(|tool| tool.get("AppearanceID"))
+        .filter_map(value_to_text)
+        .find(|appearance_id| !appearance_id.is_empty() && appearance_id != "None")
+}
+
+fn v13_character_icon_layout_start() -> NaiveDateTime {
+    NaiveDate::from_ymd_opt(2026, 8, 13)
+        .expect("valid v1.3 start date")
+        .and_hms_opt(6, 30, 0)
+        .expect("valid v1.3 start time")
+}
+
+fn uses_v13_character_icon_layout(
+    character_id: &str,
+    character_show_times: &BTreeMap<String, AssetDateTime>,
+) -> bool {
+    character_show_times
+        .get(character_id)
+        .is_some_and(|show_time| show_time.value >= v13_character_icon_layout_start())
+}
+
+fn uses_v13_fashion_icon_layout(
+    appearance: &JsonObject,
+    character_show_times: &BTreeMap<String, AssetDateTime>,
+) -> bool {
+    appearance
+        .get("CharacterID")
+        .and_then(value_to_text)
+        .is_some_and(|character_id| {
+            uses_v13_character_icon_layout(&character_id, character_show_times)
+        })
+}
+
+fn linked_appearance_refs(appearance: &JsonObject, uses_v13_layout: bool) -> JsonObject {
+    if !uses_v13_layout {
+        return asset_refs_from_fields(
+            appearance,
+            &[
+                ("HeadIconBig", "icon"),
+                ("HeadIcon", "head_icon"),
+                ("SmallPortraitImg", "portrait"),
+            ],
+        );
+    }
+
+    let mut refs = JsonObject::new();
+    let head_icon = asset_path(appearance.get("HeadIcon"));
+    let head_icon_big = asset_path(appearance.get("HeadIconBig"));
+    let distinct_head_icon = head_icon
+        .as_ref()
+        .filter(|head_icon| Some(*head_icon) != head_icon_big.as_ref())
+        .cloned();
+    let icon = distinct_head_icon
+        .or_else(|| head_icon_big.clone())
+        .or_else(|| head_icon.clone());
+    if let Some(icon) = icon {
+        refs.insert("icon".to_string(), Value::String(icon));
+    }
+    if let Some(head_icon) = head_icon_big.or(head_icon) {
+        refs.insert("head_icon".to_string(), Value::String(head_icon));
+    }
+    if let Some(portrait) = asset_path(appearance.get("SmallPortraitImg")) {
+        refs.insert("portrait".to_string(), Value::String(portrait));
+    }
+    refs
+}
+
+fn replace_linked_appearance_refs(
+    meta: &mut BTreeMap<String, JsonObject>,
+    item_id: &str,
+    appearance: &JsonObject,
+    uses_v13_layout: bool,
+) {
+    let refs = linked_appearance_refs(appearance, uses_v13_layout);
+    let item = meta.entry(item_id.to_string()).or_default();
+    let asset_refs = item
+        .entry("asset_refs".to_string())
+        .or_insert_with(|| Value::Object(JsonObject::new()));
+    if !asset_refs.is_object() {
+        *asset_refs = Value::Object(JsonObject::new());
+    }
+    let asset_refs = asset_refs.as_object_mut().expect("asset_refs is an object");
+    for key in ["icon", "head_icon", "portrait"] {
+        asset_refs.remove(key);
+    }
+    asset_refs.extend(refs);
+}
+
+fn add_linked_appearance_meta(
+    meta: &mut BTreeMap<String, JsonObject>,
+    assets_root: &Path,
+    known_ids: &BTreeSet<String>,
+    character_show_times: &BTreeMap<String, AssetDateTime>,
+) -> Result<(), GuiError> {
+    let mut appearances = JsonObject::new();
+    for &(_, rel_path) in APPEARANCE_TABLES {
+        appearances.extend(rows_from_table(&assets_root.join(rel_path))?);
+    }
+    for &(_, rel_path) in TABLES {
+        for (item_id, row) in rows_from_table(&assets_root.join(rel_path))? {
+            if !known_ids.contains(&item_id) || item_category(meta, &item_id) == Some("character") {
+                continue;
+            }
+            let Some(row) = row.as_object() else {
+                continue;
+            };
+            let Some(appearance_id) = linked_appearance_id(row) else {
+                continue;
+            };
+            let Some(appearance) = appearances
+                .get(&appearance_id)
+                .and_then(Value::as_object)
+                .filter(|appearance| {
+                    appearance
+                        .get("AppearanceType")
+                        .and_then(value_to_text)
+                        .as_deref()
+                        == Some("EAppearanceType::Fashion")
+                })
+            else {
+                continue;
+            };
+            replace_linked_appearance_refs(
+                meta,
+                &item_id,
+                appearance,
+                uses_v13_fashion_icon_layout(appearance, character_show_times),
+            );
+        }
+    }
+    Ok(())
+}
+
 fn add_vehicle_module_meta(
     meta: &mut BTreeMap<String, JsonObject>,
     assets_root: &Path,
@@ -214,6 +359,7 @@ fn add_gacha_illustrate_meta(
     assets_root: &Path,
     known_ids: &BTreeSet<String>,
     canonicalizer: &ItemCanonicalizer,
+    character_show_times: &BTreeMap<String, AssetDateTime>,
 ) -> Result<(), GuiError> {
     let path = assets_root.join(GACHA_ILLUSTRATE_TABLE);
     if !path.exists() {
@@ -227,16 +373,21 @@ fn add_gacha_illustrate_meta(
         if !known_ids.contains(&item_id) {
             continue;
         }
+        let is_character = item_category(meta, &item_id) == Some("character");
         let mut patch = JsonObject::new();
-        let refs = asset_refs_from_fields(
+        let mut refs = asset_refs_from_fields(
             row,
             &[
-                ("HeadIcon", "icon"),
                 ("ItemIcon", "portrait"),
                 ("ActivityHeadIcon", "banner"),
                 ("MaterialTexture", "material"),
             ],
         );
+        if !is_character || !uses_v13_character_icon_layout(&item_id, character_show_times) {
+            if let Some(icon) = asset_path(row.get("HeadIcon")) {
+                refs.insert("icon".to_string(), Value::String(icon));
+            }
+        }
         if !refs.is_empty() {
             patch.insert("asset_refs".to_string(), Value::Object(refs));
         }
@@ -274,6 +425,7 @@ fn build_item_meta_rows(
     let known_ids = items.keys().cloned().collect::<BTreeSet<_>>();
     let mut meta = BTreeMap::new();
     let business_cards = business_card_refs(assets_root)?;
+    let character_show_times = character_show_boundaries(assets_root, ScheduleRegion::Mainland)?;
     for &(category, rel_path) in TABLES.iter().chain(APPEARANCE_TABLES.iter()) {
         let path = assets_root.join(rel_path);
         if !path.exists() {
@@ -284,12 +436,28 @@ fn build_item_meta_rows(
                 continue;
             };
             if known_ids.contains(&item_id) {
-                merge_item_meta(&mut meta, item_id.clone(), row_item_meta(&item_id, row, category));
+                merge_item_meta(
+                    &mut meta,
+                    item_id.clone(),
+                    row_item_meta(&item_id, row, category),
+                );
             }
         }
     }
     add_vehicle_module_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
-    add_gacha_illustrate_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
+    add_gacha_illustrate_meta(
+        &mut meta,
+        assets_root,
+        &known_ids,
+        canonicalizer,
+        &character_show_times,
+    )?;
+    add_linked_appearance_meta(
+        &mut meta,
+        assets_root,
+        &known_ids,
+        &character_show_times,
+    )?;
 
     let mut rows = Vec::new();
     for (item_id, item_name) in items {

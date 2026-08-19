@@ -250,5 +250,5 @@ export function createAppRuntime(deps: AppRuntimeDeps) {
 function isSameDashboardScope(left: DashboardSelection, right: DashboardSelection) {
   if (left.kind !== right.kind || left.pool_kind !== right.pool_kind) return false;
   if (left.kind === "pool_kind" || right.kind === "pool_kind") return true;
-  return left.banner_id === right.banner_id;
+  return left.occurrence_id === right.occurrence_id;
 }

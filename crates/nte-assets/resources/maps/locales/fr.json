@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "fr",
+  "csv_headers": {
+    "count": "Quantité",
+    "item_name": "Nom de l’objet",
+    "pool_group": "Bannière Type",
+    "pool_name": "Bannière",
+    "roll_label": "Résultat du lancer",
+    "secondary_count": "Récompense supplémentaire Quantité",
+    "secondary_item_name": "Récompense supplémentaire",
+    "time": "Heure de l’acquisition"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Terminé",
+    "Abyss_GamepadKeys_1": "Échanger",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Plateau standard",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Type de plateau",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Plateau limité",
+    "BPUI_LotteryModuleEntrance_Title": "Foire de Scarborough",
+    "BPUI_LotteryResult_chenmiandi": "Utorpeur",
+    "BPUI_LotteryResult_jidianzengli": "Cadeau de points",
+    "Mall_8_name": "Magasin d’arcs",
+    "TreasureBox_2": "Ouvrir",
+    "UI_CloneSystemChallengeFailed_Retry": "Réessayer",
+    "UI_CloneSystemStaminaTips_Enter": "Entrer",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "Enregistrements des lancers de dés",
+    "UI_Lottery_GachaDetails_title": "Détails du plateau",
+    "UW_LotteryBase_BP_Hupanyanmu": "Recherche d’arc",
+    "W_HTButton_Next_Page": "Suivant",
+    "W_Vehicle_Button_Choose": "Sélectionner",
+    "common_3": "Retour",
+    "item_kind_character": "Personnage",
+    "item_kind_fashion": "Tenue",
+    "item_kind_fork": "Arc",
+    "item_kind_glider": "Deltaplanes",
+    "item_kind_inventory": "Objet",
+    "item_kind_vehicle_module": "Pièces de rechange",
+    "ui_appearance_02": "Deltaplanes",
+    "ui_forkshop_03": "Programme de recherche d’arc",
+    "ui_forkshop_07": "Détails",
+    "ui_forkshop_10": "Enregistrements"
+  },
+  "items": {
+    "1003": {
+      "name": "Personnage·Sakiri"
+    },
+    "1004": {
+      "name": "Personnage·Lacrimosa"
+    },
+    "1008": {
+      "name": "Personnage·Skia"
+    },
+    "1010": {
+      "name": "Personnage·Nanally"
+    },
+    "1019": {
+      "name": "Personnage·Menthe"
+    },
+    "1020": {
+      "name": "Personnage·Haniel"
+    },
+    "1021": {
+      "name": "Personnage·Edgar"
+    },
+    "1023": {
+      "name": "Personnage·Baicang"
+    },
+    "1025": {
+      "name": "Personnage·Hathor"
+    },
+    "1033": {
+      "name": "Personnage·Adler"
+    },
+    "1036": {
+      "name": "Personnage·Zankou"
+    },
+    "1039": {
+      "name": "Personnage·Fadia"
+    },
+    "1052": {
+      "name": "Personnage·Hotori"
+    },
+    "1054": {
+      "name": "Personnage·Jonquille"
+    },
+    "1055": {
+      "name": "Personnage·Jiuyuan"
+    },
+    "1070": {
+      "name": "Personnage·Aurelia"
+    },
+    "1071": {
+      "name": "Personnage·Chaos"
+    },
+    "1072": {
+      "name": "Personnage·Linko"
+    },
+    "1073": {
+      "name": "Personnage·Chiz"
+    },
+    "1075": {
+      "name": "Personnage·Iroi"
+    },
+    "1076": {
+      "name": "Personnage·Shinku"
+    },
+    "DiceNormal": {
+      "name": "Objet·Dé confectionné"
+    },
+    "Dice_ticket_01": {
+      "name": "Objet·Pièce de faille"
+    },
+    "Dice_ticket_02": {
+      "name": "Objet·Pièce perdue"
+    },
+    "Dicelimite": {
+      "name": "Objet·Dé solide"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "Tenue·Archimage"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Deltaplanes·Duo de tomates"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Deltaplanes·Sous-chef du sous-chef"
+    },
+    "Fashion_Glide_1036": {
+      "name": "Deltaplanes·Écharpe écarlate"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Deltaplanes·Brise d’orchidée"
+    },
+    "Fashion_Glide_1071": {
+      "name": "Deltaplanes·Cavalier céleste"
+    },
+    "Fashion_Glide_1072": {
+      "name": "Deltaplanes·Super spectre"
+    },
+    "Fashion_Glide_1075": {
+      "name": "Deltaplanes·Moutoncoptère"
+    },
+    "Fashion_Glide_1076": {
+      "name": "Deltaplanes·Voilure nuageuse"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Tenue·Rhapsodie dorée"
+    },
+    "Fashion_character_1010": {
+      "name": "Tenue·Coup de pied phénix"
+    },
+    "Fashion_character_1036_03": {
+      "name": "Tenue·Vignette d’automne"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Tenue·Orchidée inestimable"
+    },
+    "Fashion_character_1071_01": {
+      "name": "Tenue·Ciel dégagé"
+    },
+    "Fashion_character_1072_01": {
+      "name": "Tenue·Surfer parmi les étoiles"
+    },
+    "Fashion_character_1076_01": {
+      "name": "Tenue·Étudiante de Terra-mare"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Pièces de rechange·Brise dorée - Peinture"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Pièces de rechange·Croisière tomate - Peinture"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Pièces de rechange·Tigre en approche ! - Peinture"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "Pièces de rechange·Mirage des sables - Peinture"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Pièces de rechange·Brume d’automne - Peinture"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "Pièces de rechange·Ruée du molosse - Peinture"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "Pièces de rechange·À trois, c’est mieux - Peinture"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "Pièces de rechange·À trois, c’est mieux - Peinture"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "Pièces de rechange·Dragon caché - Peinture"
+    },
+    "fork_Arachne": {
+      "name": "Arc·Valse éternelle"
+    },
+    "fork_BitGame": {
+      "name": "Arc·Enflammer la foule"
+    },
+    "fork_BitterCake": {
+      "name": "Arc·Le bon, le mauvais, l’amertume"
+    },
+    "fork_BlackBook": {
+      "name": "Arc·Fantaisie juvénile"
+    },
+    "fork_Butterfly": {
+      "name": "Arc·Échappatoire au réel"
+    },
+    "fork_DemonBlade": {
+      "name": "Arc·Lame vorace"
+    },
+    "fork_Door": {
+      "name": "Arc·La mauvaise porte"
+    },
+    "fork_GoldRecord": {
+      "name": "Arc·Voix du voyageur"
+    },
+    "fork_GoldWool": {
+      "name": "Arc·Ce qui est désiré"
+    },
+    "fork_Kite": {
+      "name": "Arc·Attention la tête"
+    },
+    "fork_LunarPhase": {
+      "name": "Arc·Mirage rougissant"
+    },
+    "fork_Nakupeda": {
+      "name": "Arc·Le bonheur n’a pas de prix"
+    },
+    "fork_PaperPlane": {
+      "name": "Arc·Ciel dégagé"
+    },
+    "fork_PoliceRat": {
+      "name": "Arc·Gardien d’Hethereau"
+    },
+    "fork_Prokaryon": {
+      "name": "Arc·Nous."
+    },
+    "fork_Rose": {
+      "name": "Arc·La dernière rose"
+    },
+    "fork_TigerTally": {
+      "name": "Arc·Prépa-prépa"
+    },
+    "fork_Time": {
+      "name": "Arc·Marche au-delà du temps"
+    },
+    "fork_appliance": {
+      "name": "Arc·« Vraie musique »"
+    },
+    "fork_bopu": {
+      "name": "Arc·Confusion du cosmos, Rêverie sauvage"
+    },
+    "fork_dustbin": {
+      "name": "Arc·Jeu dangereux"
+    },
+    "fork_jiaojuan": {
+      "name": "Arc·Journées ensoleillées"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arc·Société des camélias"
+    },
+    "fork_koinobori": {
+      "name": "Arc·L’heure viendra"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arc·Mind Royale"
+    },
+    "fork_mamen": {
+      "name": "Arc·Chat pensif"
+    },
+    "fork_mofeikesi": {
+      "name": "Arc·Grande aventure d’un bon chien"
+    },
+    "fork_nonos": {
+      "name": "Arc·La première étape du succès"
+    },
+    "fork_oulaquantao": {
+      "name": "Arc·Oraora !"
+    },
+    "fork_rishi": {
+      "name": "Arc·Congés"
+    },
+    "fork_spider": {
+      "name": "Arc·Vous ouvrir mon cœur m’est difficile"
+    },
+    "fork_tuansanlang": {
+      "name": "Arc·Le grand voleur"
+    },
+    "fork_vine": {
+      "name": "Arc·La joie de vivre"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arc·Les oubliés"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arc·Flammes déchaînées"
+    },
+    "fork_yaodao": {
+      "name": "Arc·Lame dégainée"
+    },
+    "fork_yuren": {
+      "name": "Arc·Parapluie"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "Boîte miraculeuse"
+    },
+    "CardPool_Character": {
+      "name": "Plateau limité",
+      "group_label": "Plateau limité"
+    },
+    "CardPool_NewRole": {
+      "name": "Plateau standard",
+      "group_label": "Plateau standard",
+      "title": "Rencontres étranges"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Nocturne"
+    },
+    "ForkLottery_Canhong": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial envoûtement"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Poursuite"
+    },
+    "ForkLottery_LingKe": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial symphonie"
+    },
+    "ForkLottery_Nanali": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Tigresse"
+    },
+    "ForkLottery_Xun": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Clair de lune"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Porte des rêves"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Détermination"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "Rencontres étranges"
+    },
+    "Lottery_Nanali": {
+      "title": "L’Ichi-daime"
+    },
+    "Lottery_Xun": {
+      "title": "Style Pompette brumeux"
+    },
+    "Lottery_AnHunQu": {
+      "title": "Rêverie évanescente"
+    },
+    "Lottery_Kaesi": {
+      "title": "Retour impossible"
+    },
+    "Lottery_ZhenHong": {
+      "title": "Avant l’aube"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "Le fil de vie"
+    },
+    "Lottery_Canhong": {
+      "title": "Ombres fascinantes"
+    },
+    "Lottery_LingKe": {
+      "title": "Je zappe à gogo !"
+    },
+    "ForkLottery_Nanali": {
+      "title": "Spécial Tigresse"
+    },
+    "ForkLottery_Xun": {
+      "title": "Spécial Clair de lune"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "Spécial Nocturne"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "Spécial Poursuite"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "Spécial Détermination"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "Spécial Porte des rêves"
+    },
+    "ForkLottery_Canhong": {
+      "title": "Spécial envoûtement"
+    },
+    "ForkLottery_LingKe": {
+      "title": "Spécial symphonie"
+    }
+  }
+}

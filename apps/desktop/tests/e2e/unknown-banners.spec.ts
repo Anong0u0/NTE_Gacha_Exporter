@@ -37,7 +37,7 @@ test("stale synthetic banner filter selection is cleared after maps update", asy
 
   await expect
     .poll(() => page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}").recordBannerIds, prefsKey))
-    .toEqual(["CardPool_Character"]);
+    .toEqual(["Lottery_Unknown@observed-20260801100000"]);
 
   await page.evaluate((key) => window.localStorage.setItem(key, "default"), mockScenarioKey);
   await page.reload();

@@ -1,6 +1,6 @@
 use crate::{
-    GachaRuleView, GuiError, InternalRecord, ItemKind, PoolKind, RateUpResult, RecordDerived,
-    ResolvedBanner, RuleResolutionIssue,
+    BannerResolveInput, GachaRuleView, GuiError, InternalRecord, ItemKind, PoolKind, RateUpResult,
+    RecordDerived, ResolvedBannerOccurrence, ResolvedBannerSource, RuleResolutionIssue,
 };
 use crate::{MapData, MapGachaRule};
 
@@ -26,7 +26,8 @@ pub struct RuleResolution {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DerivedHit {
     pub record: InternalRecord,
-    pub banner: ResolvedBanner,
+    pub banner_source: ResolvedBannerSource,
+    pub banner_occurrence: ResolvedBannerOccurrence,
     pub rule: RuleResolution,
     pub rarity: u8,
     pub pity_distance: u64,
@@ -105,14 +106,17 @@ pub fn fallback_rule_resolution(
 }
 
 pub fn rule_for_record(map: &MapData, record: &InternalRecord) -> Result<RuleResolution, GuiError> {
-    let banner = map.resolve_banner(&record.pool_id, record.time.as_deref());
+    let banner = map.resolve_banner_source(BannerResolveInput {
+        pool_id: &record.pool_id,
+        lottery_id: record.lottery_id.as_deref(),
+    });
     rule_for_resolved_banner(map, record, &banner)
 }
 
 pub fn rule_for_resolved_banner(
     map: &MapData,
     record: &InternalRecord,
-    banner: &ResolvedBanner,
+    banner: &ResolvedBannerSource,
 ) -> Result<RuleResolution, GuiError> {
     let kind = classify_pool_id(&record.pool_id)?;
     if let Some(issue) = banner.resolution_issue {
@@ -158,7 +162,7 @@ pub fn rate_up_result(
     map: &MapData,
     record: &InternalRecord,
     rarity: u8,
-    banner: &ResolvedBanner,
+    banner: &ResolvedBannerSource,
 ) -> RateUpResult {
     if banner.resolution_issue.is_some() {
         return RateUpResult::Unknown;

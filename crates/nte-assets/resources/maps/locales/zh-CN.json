@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "zh-CN",
+  "csv_headers": {
+    "count": "数量",
+    "item_name": "道具名称",
+    "pool_group": "卡池类型",
+    "pool_name": "卡池",
+    "roll_label": "投掷点数",
+    "secondary_count": "额外获得数量",
+    "secondary_item_name": "额外获得",
+    "time": "获得时间"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "已完成",
+    "Abyss_GamepadKeys_1": "切换",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "标准棋盘",
+    "BPUI_LotteryDiceRecord_qipanleixing": "棋盘类型",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "限定棋盘",
+    "BPUI_LotteryModuleEntrance_Title": "斯卡布罗集市",
+    "BPUI_LotteryResult_chenmiandi": "沉眠地",
+    "BPUI_LotteryResult_jidianzengli": "集点赠礼",
+    "Mall_8_name": "弧盘商店",
+    "TreasureBox_2": "开启",
+    "UI_CloneSystemChallengeFailed_Retry": "重试",
+    "UI_CloneSystemStaminaTips_Enter": "进入",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "掷骰记录",
+    "UI_Lottery_GachaDetails_title": "棋盘详情",
+    "UW_LotteryBase_BP_Hupanyanmu": "弧盘研募",
+    "W_HTButton_Next_Page": "下一页",
+    "W_Vehicle_Button_Choose": "选择",
+    "common_3": "返回",
+    "item_kind_character": "角色",
+    "item_kind_fashion": "时装",
+    "item_kind_fork": "弧盘",
+    "item_kind_glider": "滑翔翼",
+    "item_kind_inventory": "道具",
+    "item_kind_vehicle_module": "改装件",
+    "ui_appearance_02": "滑翔翼",
+    "ui_forkshop_03": "弧盘研募计划",
+    "ui_forkshop_07": "研募详情",
+    "ui_forkshop_10": "研募记录"
+  },
+  "items": {
+    "1003": {
+      "name": "角色·早雾"
+    },
+    "1004": {
+      "name": "角色·安魂曲"
+    },
+    "1008": {
+      "name": "角色·翳"
+    },
+    "1010": {
+      "name": "角色·娜娜莉"
+    },
+    "1019": {
+      "name": "角色·薄荷"
+    },
+    "1020": {
+      "name": "角色·哈尼娅"
+    },
+    "1021": {
+      "name": "角色·埃德嘉"
+    },
+    "1023": {
+      "name": "角色·白藏"
+    },
+    "1025": {
+      "name": "角色·哈索尔"
+    },
+    "1033": {
+      "name": "角色·阿德勒"
+    },
+    "1036": {
+      "name": "角色·残虹"
+    },
+    "1039": {
+      "name": "角色·法帝娅"
+    },
+    "1052": {
+      "name": "角色·浔"
+    },
+    "1054": {
+      "name": "角色·达芙蒂尔"
+    },
+    "1055": {
+      "name": "角色·九原"
+    },
+    "1070": {
+      "name": "角色·海月"
+    },
+    "1071": {
+      "name": "角色·卡厄斯"
+    },
+    "1072": {
+      "name": "角色·灵可"
+    },
+    "1073": {
+      "name": "角色·小吱"
+    },
+    "1075": {
+      "name": "角色·伊洛伊"
+    },
+    "1076": {
+      "name": "角色·真红"
+    },
+    "DiceNormal": {
+      "name": "道具·捏造骰子"
+    },
+    "Dice_ticket_01": {
+      "name": "道具·失纬棋子"
+    },
+    "Dice_ticket_02": {
+      "name": "道具·迷迭棋子"
+    },
+    "Dicelimite": {
+      "name": "道具·质实骰子"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "时装·大魔导师"
+    },
+    "Fashion_Glide_1004": {
+      "name": "滑翔翼·好柿成双"
+    },
+    "Fashion_Glide_1010": {
+      "name": "滑翔翼·副手的副手"
+    },
+    "Fashion_Glide_1036": {
+      "name": "滑翔翼·赤练"
+    },
+    "Fashion_Glide_1052": {
+      "name": "滑翔翼·幽兰"
+    },
+    "Fashion_Glide_1071": {
+      "name": "滑翔翼·天际猎手"
+    },
+    "Fashion_Glide_1072": {
+      "name": "滑翔翼·超级恶灵！"
+    },
+    "Fashion_Glide_1075": {
+      "name": "滑翔翼·小羊直升机"
+    },
+    "Fashion_Glide_1076": {
+      "name": "滑翔翼·蔽日之影"
+    },
+    "Fashion_character_1004_01": {
+      "name": "时装·鎏金交响诗"
+    },
+    "Fashion_character_1010": {
+      "name": "时装·华丽飞踢"
+    },
+    "Fashion_character_1036_03": {
+      "name": "时装·秋色闲章"
+    },
+    "Fashion_character_1052_01": {
+      "name": "时装·兰花不菲"
+    },
+    "Fashion_character_1071_01": {
+      "name": "时装·放晴日"
+    },
+    "Fashion_character_1072_01": {
+      "name": "时装·星间漫游"
+    },
+    "Fashion_character_1076_01": {
+      "name": "时装·地海高校生"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "改装件·金风迎客来-涂装"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "改装件·番茄酱巡航-涂装"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "改装件·萌虎来袭-涂装"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "改装件·白沙幻境-涂装"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "改装件·秋色残影-涂装"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "改装件·猎犬奔袭-涂装"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "改装件·我们仨-涂装"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "改装件·我们仨-涂装"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "改装件·赤炎龙影-涂装"
+    },
+    "fork_Arachne": {
+      "name": "弧盘·永恒圆舞曲"
+    },
+    "fork_BitGame": {
+      "name": "弧盘·引爆全场"
+    },
+    "fork_BitterCake": {
+      "name": "弧盘·良药苦口"
+    },
+    "fork_BlackBook": {
+      "name": "弧盘·漆黑青春妄想"
+    },
+    "fork_Butterfly": {
+      "name": "弧盘·现实避难所"
+    },
+    "fork_DemonBlade": {
+      "name": "弧盘·噬心诡刃"
+    },
+    "fork_Door": {
+      "name": "弧盘·错误的门"
+    },
+    "fork_GoldRecord": {
+      "name": "弧盘·远行者之声"
+    },
+    "fork_GoldWool": {
+      "name": "弧盘·众人追寻之物"
+    },
+    "fork_Kite": {
+      "name": "弧盘·当心头顶"
+    },
+    "fork_LunarPhase": {
+      "name": "弧盘·穿过胭红蜃景"
+    },
+    "fork_Nakupeda": {
+      "name": "弧盘·千金难买你开心"
+    },
+    "fork_PaperPlane": {
+      "name": "弧盘·开始净空"
+    },
+    "fork_PoliceRat": {
+      "name": "弧盘·海特洛的安宁"
+    },
+    "fork_Prokaryon": {
+      "name": "弧盘·「我们。」"
+    },
+    "fork_Rose": {
+      "name": "弧盘·「最后一朵玫瑰」"
+    },
+    "fork_TigerTally": {
+      "name": "弧盘·预备备"
+    },
+    "fork_Time": {
+      "name": "弧盘·行进于时间之外"
+    },
+    "fork_appliance": {
+      "name": "弧盘·「电音」狂欢"
+    },
+    "fork_bopu": {
+      "name": "弧盘·光波眩晕，迷走狂欢"
+    },
+    "fork_dustbin": {
+      "name": "弧盘·危险游戏"
+    },
+    "fork_jiaojuan": {
+      "name": "弧盘·闪耀的每一天"
+    },
+    "fork_jingmotingyuan": {
+      "name": "弧盘·茶花会"
+    },
+    "fork_koinobori": {
+      "name": "弧盘·终有时"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "弧盘·灵感大逃杀"
+    },
+    "fork_mamen": {
+      "name": "弧盘·思考喵"
+    },
+    "fork_mofeikesi": {
+      "name": "弧盘·好狗狗走四方"
+    },
+    "fork_nonos": {
+      "name": "弧盘·成功的第一步"
+    },
+    "fork_oulaquantao": {
+      "name": "弧盘·欧拉欧拉！"
+    },
+    "fork_rishi": {
+      "name": "弧盘·休息日"
+    },
+    "fork_spider": {
+      "name": "弧盘·挂你在心口难开"
+    },
+    "fork_tuansanlang": {
+      "name": "弧盘·该死的邂逅"
+    },
+    "fork_vine": {
+      "name": "弧盘·笑口常开"
+    },
+    "fork_wuhuakuang": {
+      "name": "弧盘·被遗忘者"
+    },
+    "fork_wushoutieyu": {
+      "name": "弧盘·焰魂狂飙"
+    },
+    "fork_yaodao": {
+      "name": "弧盘·拔刀"
+    },
+    "fork_yuren": {
+      "name": "弧盘·勿忘伞"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "奇迹盒盒"
+    },
+    "CardPool_Character": {
+      "name": "限定棋盘",
+      "group_label": "限定棋盘"
+    },
+    "CardPool_NewRole": {
+      "name": "标准棋盘",
+      "group_label": "标准棋盘",
+      "title": "世间奇遇"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "夜曲特刊"
+    },
+    "ForkLottery_Canhong": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "摄心特刊"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "追猎特刊"
+    },
+    "ForkLottery_LingKe": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "万籁特刊"
+    },
+    "ForkLottery_Nanali": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "猛虎特刊"
+    },
+    "ForkLottery_Xun": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "名月特刊"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "启门特刊"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "奇迹盒盒",
+      "group_label": "弧盘研募",
+      "title": "决意特刊"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "世间奇遇"
+    },
+    "Lottery_Nanali": {
+      "title": "王牌一代目"
+    },
+    "Lottery_Xun": {
+      "title": "独酌胧月流"
+    },
+    "Lottery_AnHunQu": {
+      "title": "久梦初醒时"
+    },
+    "Lottery_Kaesi": {
+      "title": "无归路"
+    },
+    "Lottery_ZhenHong": {
+      "title": "破晓前"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "生命线"
+    },
+    "Lottery_Canhong": {
+      "title": "惑心谲影"
+    },
+    "Lottery_LingKe": {
+      "title": "全频带漫游中！"
+    },
+    "ForkLottery_Nanali": {
+      "title": "猛虎特刊"
+    },
+    "ForkLottery_Xun": {
+      "title": "名月特刊"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "夜曲特刊"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "追猎特刊"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "决意特刊"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "启门特刊"
+    },
+    "ForkLottery_Canhong": {
+      "title": "摄心特刊"
+    },
+    "ForkLottery_LingKe": {
+      "title": "万籁特刊"
+    }
+  }
+}

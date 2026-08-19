@@ -45,7 +45,7 @@ export function useApp() {
   const activeView = ref<ViewId>("dashboard"), profiles = ref<Profile[]>([]), activeProfileName = ref("default");
   const locale = ref("en"), uiLocale = ref("en"), locales = ref<string[]>(["en"]), uiLocales = ref<string[]>(["en"]), summary = ref<DashboardOverview | null>(null);
   const selectedPoolKind = ref<PoolKind>("monopoly_limited"), selectedDashboardScope = ref<DashboardSelection>({ kind: "pool_kind", pool_kind: "monopoly_limited" }), detail = ref<DashboardSelectionDetail | null>(null), detailLoading = ref(false);
-  const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ banners: [], roll_buckets: [], item_kinds: [] });
+  const records = ref<DisplayRecord[]>([]), recordTotal = ref(0), filterOptions = ref<RecordFilterOptions>({ banner_occurrences: [], roll_buckets: [], item_kinds: [] });
   const importPath = ref(""), importMode = ref<ImportMode>("raw"), exportPath = ref(""), exportMode = ref<ExportMode>("json");
   const backupPath = ref(""), restorePath = ref(""), captureMode = ref<CaptureMode>("live_only");
   const lastReport = ref<ImportReport | null>(null), lastBackup = ref<BackupReport | null>(null), lastRestore = ref<RestoreReport | null>(null);
@@ -493,7 +493,7 @@ export function useApp() {
     const mode = latestFiveStarWallModeForPool(scope.pool_kind);
     withApplyingRecordPrefs(() => {
       recordPoolKind.value = scope.pool_kind;
-      recordBannerIds.value = scope.kind === "banner" ? [scope.banner_id] : [];
+      recordBannerIds.value = scope.kind === "banner_occurrence" ? [scope.occurrence_id] : [];
       itemRarities.value = mode === "all" ? [5] : [];
       focusedRarities.value = mode === "focused" ? [5] : [];
       rateUpResults.value = [];

@@ -49,11 +49,11 @@ export function createAssetTools(options: AssetToolsOptions) {
     return item ? firstAssetUrl(item.item_asset_refs, ["portrait", "icon", "head_icon"]) : "";
   }
 
-  function isForkBanner(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  function isForkBanner(banner?: BannerSummary | DisplayRecord["banner_source"] | null) {
     return banner?.banner_type === "fork" || banner?.pool_kind === "fork_lottery";
   }
 
-  function bannerVisualUrl(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  function bannerVisualUrl(banner?: BannerSummary | DisplayRecord["banner_source"] | null) {
     if (isForkBanner(banner)) return firstAssetUrl(banner?.asset_refs, ["image"]);
     return firstAssetUrl(banner?.asset_refs, ["image", "background", "banner", "icon"]);
   }
@@ -66,7 +66,7 @@ export function createAssetTools(options: AssetToolsOptions) {
     return Boolean(itemVisualUrl(item));
   }
 
-  function hasBannerVisual(banner?: BannerSummary | DisplayRecord["banner"] | null) {
+  function hasBannerVisual(banner?: BannerSummary | DisplayRecord["banner_source"] | null) {
     return Boolean(bannerVisualUrl(banner));
   }
 
@@ -84,7 +84,7 @@ export function createAssetTools(options: AssetToolsOptions) {
     return [
       ...collectAssetRequestsFromRefs(record.item_asset_refs),
       ...collectAssetRequestsFromRefs(record.secondary_item_asset_refs),
-      ...collectAssetRequestsFromRefs(record.banner.asset_refs),
+      ...collectAssetRequestsFromRefs(record.banner_source.asset_refs),
     ];
   }
 

@@ -215,13 +215,13 @@ const app = useAppContext();
               <span v-if="app.isRecordColumnVisible('index')">{{ app.formatPoolKindPullNo(record) }}</span>
               <span v-if="app.isRecordColumnVisible('time')">{{ app.formatTime(record.time) }}</span>
               <span v-if="app.isRecordColumnVisible('banner')" class="history-banner-cell">
-                <span v-if="app.hasBannerVisual(record.banner)" class="banner-row-thumb">
-                  <img :src="app.bannerVisualUrl(record.banner)" alt="" />
+                <span v-if="app.hasBannerVisual(record.banner_source)" class="banner-row-thumb">
+                  <img :src="app.bannerVisualUrl(record.banner_source)" alt="" />
                 </span>
-                <span v-else class="banner-row-thumb empty">{{ app.bannerTitle(record.banner).slice(0, 1) }}</span>
+                <span v-else class="banner-row-thumb empty">{{ app.bannerTitle(record.banner_source).slice(0, 1) }}</span>
                 <span>
-                  <strong>{{ app.bannerTitle(record.banner) }}</strong>
-                  <small v-if="app.bannerMeta(record.banner)">{{ app.bannerMeta(record.banner) }}</small>
+                  <strong>{{ app.bannerTitle(record.banner_source) }}</strong>
+                  <small v-if="app.bannerMeta(record.banner_occurrence)">{{ app.bannerMeta(record.banner_occurrence) }}</small>
                 </span>
               </span>
               <span v-if="app.isRecordColumnVisible('item')" class="history-item-cell">

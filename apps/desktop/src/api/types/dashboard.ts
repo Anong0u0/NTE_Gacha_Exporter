@@ -1,5 +1,12 @@
 import type { AssetRefs, ImportReport, PoolKind, Profile } from "./base";
-import type { BannerResolutionIssue, DisplayRecord, RateUpResult, RecordFilterOptions, RecordList } from "./records";
+import type {
+  BannerOccurrenceResolution,
+  BannerResolutionIssue,
+  DisplayRecord,
+  RateUpResult,
+  RecordFilterOptions,
+  RecordList,
+} from "./records";
 
 export type PoolKindSummary = {
   pool_kind: PoolKind;
@@ -40,15 +47,17 @@ export type PoolKindSummary = {
 };
 
 export type BannerSummary = {
-  banner_id: string;
+  occurrence_id: string;
+  source_id: string;
+  resolution_source: BannerOccurrenceResolution;
   pool_id: string;
   pool_kind: PoolKind;
   banner_type?: string | null;
   resolution_issue?: BannerResolutionIssue | null;
   title: string;
   version?: string | null;
-  start_at?: string | null;
-  end_at?: string | null;
+  active_from?: string | null;
+  active_until?: string | null;
   asset_refs: AssetRefs;
   total_pulls: number;
   roll_points_total: number;
@@ -130,7 +139,7 @@ export type DashboardOverview = {
   last_run?: ImportReport | null;
   total_records: number;
   pool_kinds: PoolKindSummary[];
-  banners: BannerSummary[];
+  banner_occurrences: BannerSummary[];
   time_stats: TimeStats;
   rarity_distribution: RarityBucket[];
   item_ranking: ItemRank[];
@@ -154,7 +163,7 @@ export type PoolKindDetail = {
 
 export type DashboardSelection =
   | { kind: "pool_kind"; pool_kind: PoolKind }
-  | { kind: "banner"; pool_kind: PoolKind; banner_id: string };
+  | { kind: "banner_occurrence"; pool_kind: PoolKind; occurrence_id: string };
 
 export type DashboardSelectionDetail = PoolKindDetail & {
   rarity_distribution: RarityBucket[];

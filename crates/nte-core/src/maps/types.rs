@@ -2,116 +2,110 @@ use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 
-use crate::model::{BannerResolutionIssue, GuiError, ItemKind, PoolKind, ResolvedBanner};
+use crate::model::{BannerResolutionIssue, GuiError, ItemKind, PoolKind, ResolvedBannerSource};
 
-const BUNDLED_MAPS: &[(&str, &str)] = &[
+const BUNDLED_MAP_CORE: &str =
+    include_str!("../../../nte-assets/resources/maps/core.json");
+const BUNDLED_OCCURRENCES: &str =
+    include_str!("../../../nte-assets/resources/maps/banner-occurrences.json");
+const BUNDLED_MAP_LOCALES: &[(&str, &str)] = &[
     (
         "de",
-        include_str!("../../../nte-assets/resources/maps/de.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/de.json"),
     ),
     (
         "en",
-        include_str!("../../../nte-assets/resources/maps/en.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/en.json"),
     ),
     (
         "es",
-        include_str!("../../../nte-assets/resources/maps/es.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/es.json"),
     ),
     (
         "fr",
-        include_str!("../../../nte-assets/resources/maps/fr.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/fr.json"),
     ),
     (
         "ja",
-        include_str!("../../../nte-assets/resources/maps/ja.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/ja.json"),
     ),
     (
         "ko",
-        include_str!("../../../nte-assets/resources/maps/ko.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/ko.json"),
     ),
     (
         "ru",
-        include_str!("../../../nte-assets/resources/maps/ru.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/ru.json"),
     ),
     (
         "zh-CN",
-        include_str!("../../../nte-assets/resources/maps/zh-CN.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/zh-CN.json"),
     ),
     (
         "zh-Hans",
-        include_str!("../../../nte-assets/resources/maps/zh-Hans.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/zh-Hans.json"),
     ),
     (
         "zh-Hant",
-        include_str!("../../../nte-assets/resources/maps/zh-Hant.json"),
+        include_str!("../../../nte-assets/resources/maps/locales/zh-Hant.json"),
     ),
 ];
-const MAP_SCHEMA_VERSION: u64 = 4;
+const MAP_CORE_SCHEMA: &str = "nte-map-core";
+const MAP_CORE_SCHEMA_VERSION: u64 = 1;
+const MAP_LOCALE_SCHEMA: &str = "nte-map-locale";
+const MAP_LOCALE_SCHEMA_VERSION: u64 = 1;
+const BANNER_OCCURRENCES_SCHEMA: &str = "nte-banner-occurrences";
+const BANNER_OCCURRENCES_SCHEMA_VERSION: u64 = 1;
 static MAP_CACHE: OnceLock<Result<BTreeMap<&'static str, MapData>, String>> = OnceLock::new();
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Copy)]
+pub struct BannerResolveInput<'a> {
+    pub pool_id: &'a str,
+    pub lottery_id: Option<&'a str>,
+}
+
+#[derive(Debug, Clone)]
 pub struct MapData {
-    #[serde(default)]
     pub csv_headers: BTreeMap<String, String>,
-    #[serde(default)]
     pub labels: BTreeMap<String, String>,
     pub items: BTreeMap<String, MapItem>,
-    #[serde(default)]
     pub item_aliases: BTreeMap<String, String>,
     pub pools: BTreeMap<String, MapPool>,
-    #[serde(default)]
-    pub banners: BTreeMap<String, MapBanner>,
-    #[serde(default)]
+    pub banner_sources: BTreeMap<String, MapBannerSource>,
+    pub banner_occurrences: Vec<MapBannerOccurrence>,
     pub gacha_rules: BTreeMap<String, MapGachaRule>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MapItem {
     pub name: String,
     pub rarity: u8,
     pub category: Option<String>,
     pub subtype: Option<String>,
-    #[serde(default)]
     pub asset_refs: BTreeMap<String, serde_json::Value>,
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MapPool {
     pub name: String,
     pub group_label: Option<String>,
     pub title: Option<String>,
-    pub title_windows: Option<Vec<PoolTitleWindow>>,
     pub pickup_item_ids: Option<Vec<String>>,
-    pub banner_ids: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct PoolTitleWindow {
-    pub end_at_tz8: String,
-    pub title: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct MapBanner {
-    pub banner_id: String,
+#[derive(Debug, Clone)]
+pub struct MapBannerSource {
+    pub source_id: String,
     pub pool_id: String,
     pub pool_kind: String,
     pub banner_type: String,
     pub title: String,
     pub short_title: Option<String>,
-    pub version: Option<String>,
-    pub start_at: Option<String>,
-    pub end_at: Option<String>,
-    pub timezone: Option<String>,
-    #[serde(default)]
     pub rate_up_5: Vec<String>,
-    #[serde(default)]
     pub rate_up_4: Vec<String>,
     pub rule_id: String,
-    #[serde(default)]
     pub asset_refs: BTreeMap<String, serde_json::Value>,
     pub color: Option<String>,
     pub currency_id: Option<String>,
@@ -119,7 +113,18 @@ pub struct MapBanner {
     pub roll_unit: Option<u64>,
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct MapBannerOccurrence {
+    pub occurrence_id: String,
+    pub source_id: String,
+    pub active_from: Option<String>,
+    pub active_until: Option<String>,
+    pub version: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MapGachaRule {
     pub rule_id: String,
     pub pool_kind: String,
@@ -131,4 +136,99 @@ pub struct MapGachaRule {
     pub carry_scope: Option<String>,
     #[serde(default)]
     pub rule_text_refs: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapCoreDocument {
+    schema: String,
+    schema_version: u64,
+    items: BTreeMap<String, MapItemCore>,
+    #[serde(default)]
+    item_aliases: BTreeMap<String, String>,
+    pools: BTreeMap<String, MapPoolCore>,
+    banner_sources: BTreeMap<String, MapBannerSourceCore>,
+    #[serde(default)]
+    gacha_rules: BTreeMap<String, MapGachaRule>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapItemCore {
+    rarity: u8,
+    category: Option<String>,
+    subtype: Option<String>,
+    #[serde(default)]
+    asset_refs: BTreeMap<String, serde_json::Value>,
+    color: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapPoolCore {
+    pickup_item_ids: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapBannerSourceCore {
+    source_id: String,
+    pool_id: String,
+    pool_kind: String,
+    banner_type: String,
+    #[serde(default)]
+    rate_up_5: Vec<String>,
+    #[serde(default)]
+    rate_up_4: Vec<String>,
+    rule_id: String,
+    #[serde(default)]
+    asset_refs: BTreeMap<String, serde_json::Value>,
+    color: Option<String>,
+    currency_id: Option<String>,
+    currency_count: Option<u64>,
+    roll_unit: Option<u64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapLocaleDocument {
+    schema: String,
+    schema_version: u64,
+    locale: String,
+    #[serde(default)]
+    csv_headers: BTreeMap<String, String>,
+    #[serde(default)]
+    labels: BTreeMap<String, String>,
+    items: BTreeMap<String, MapItemLocale>,
+    pools: BTreeMap<String, MapPoolLocale>,
+    banner_sources: BTreeMap<String, MapBannerSourceLocale>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapItemLocale {
+    name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapPoolLocale {
+    name: String,
+    group_label: Option<String>,
+    title: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MapBannerSourceLocale {
+    title: String,
+    short_title: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BannerOccurrenceDocument {
+    schema: String,
+    schema_version: u64,
+    occurrences: Vec<MapBannerOccurrence>,
 }

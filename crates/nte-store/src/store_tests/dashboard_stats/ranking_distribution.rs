@@ -174,9 +174,9 @@ fn standard_pool_uses_item_quality_for_display_rarity() {
         .unwrap();
     let overview = store.dashboard_overview("default", "zh-Hant").unwrap();
     let standard_banner = overview
-        .banners
+        .banner_occurrences
         .iter()
-        .find(|banner| banner.banner_id == "monopoly_standard")
+        .find(|banner| banner.occurrence_id == "Lottery_Permanent@permanent")
         .unwrap();
     let fork_rank = detail
         .item_ranking

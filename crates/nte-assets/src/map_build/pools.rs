@@ -169,12 +169,9 @@ fn localized_monopoly_pool_title(localization: &Localization, tail: &str) -> Opt
 }
 
 fn monopoly_pool_meta(
-    assets_root: &Path,
-    locale: &str,
     localization: &Localization,
-    canonicalizer: &ItemCanonicalizer,
     pool_id: &str,
-) -> Result<JsonObject, GuiError> {
+) -> JsonObject {
     let mut meta = JsonObject::new();
     if let Some((namespace, key)) = pool_label_key(pool_id) {
         if let Some(group_label) = clean_name(localized_key(localization, namespace, key)) {
@@ -187,42 +184,27 @@ fn monopoly_pool_meta(
         {
             meta.insert("title".to_string(), Value::String(title));
         }
-        return Ok(meta);
+        return meta;
     }
-
-    let mut title_windows = Vec::new();
-    for banner in limited_monopoly_banners(assets_root, locale, localization, canonicalizer, None)?
-    {
-        if let Some(end_at_tz8) = banner.end_at_tz8 {
-            title_windows.push(json!({"end_at_tz8": end_at_tz8, "title": banner.title}));
-        }
-    }
-    if !title_windows.is_empty() {
-        meta.insert("title_windows".to_string(), Value::Array(title_windows));
-    }
-    Ok(meta)
+    meta
 }
 
 fn add_monopoly_pools(
     pools: &mut BTreeMap<String, String>,
     pool_meta: &mut BTreeMap<String, JsonObject>,
-    assets_root: &Path,
-    locale: &str,
     localization: &Localization,
-    canonicalizer: &ItemCanonicalizer,
-) -> Result<(), GuiError> {
+) {
     for pool_id in ["CardPool_NewRole", "CardPool_Character"] {
         if let Some((namespace, key)) = pool_label_key(pool_id) {
             if let Some(name) = clean_name(localized_key(localization, namespace, key)) {
                 add_pool(pools, pool_id.to_string(), name, true);
             }
         }
-        let meta = monopoly_pool_meta(assets_root, locale, localization, canonicalizer, pool_id)?;
+        let meta = monopoly_pool_meta(localization, pool_id);
         if !meta.is_empty() {
             pool_meta.insert(pool_id.to_string(), meta);
         }
     }
-    Ok(())
 }
 
 fn add_fork_pools(
@@ -257,20 +239,12 @@ fn add_fork_pools(
 
 fn build_pools(
     assets_root: &Path,
-    locale: &str,
     localization: &Localization,
     canonicalizer: &ItemCanonicalizer,
 ) -> Result<PoolBuildData, GuiError> {
     let mut pools = BTreeMap::new();
     let mut pool_meta = BTreeMap::new();
-    add_monopoly_pools(
-        &mut pools,
-        &mut pool_meta,
-        assets_root,
-        locale,
-        localization,
-        canonicalizer,
-    )?;
+    add_monopoly_pools(&mut pools, &mut pool_meta, localization);
     add_fork_pools(
         &mut pools,
         &mut pool_meta,

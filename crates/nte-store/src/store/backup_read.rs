@@ -73,8 +73,11 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
                     "duplicate profile name: {canonical_name}"
                 )));
             }
-            let mut records: DiskRecords = read_zip_json(&mut zip, &records_path)?;
             let map = load_map(&settings.locale)?;
+            let mut records = migrate_disk_records(
+                read_zip_json::<DiskRecords>(&mut zip, &records_path)?,
+                &map,
+            )?;
             validate_records_against_map(&records.records, &map)?;
             canonicalize_records_against_map(&mut records.records, &map);
             let last_run_path = format!("profiles/{name}/last-run.json");
@@ -126,23 +129,10 @@ fn read_backup_snapshot(&self, path: &Path) -> Result<BackupSnapshot, GuiError> 
                 canonicalize_records_against_map(&mut old_records, &map);
                 let mut incoming_records = snapshot_profile.records.clone();
                 canonicalize_records_against_map(&mut incoming_records, &map);
-                let old_counts = semantic_counts(&old_records);
-                let mut incoming_counts = BTreeMap::<String, u64>::new();
                 let mut merged = old_records;
-                for record in &incoming_records {
-                    let key = record_semantic_key(record);
-                    let occurrence = incoming_counts.entry(key.clone()).or_default();
-                    let old_count = old_counts.get(&key).copied().unwrap_or_default();
-                    if *occurrence < old_count {
-                        records_skipped += 1;
-                    } else {
-                        let mut record = record.clone();
-                        record.record_id = stable_record_id_from_key(&key, *occurrence);
-                        records_inserted += 1;
-                        merged.push(record);
-                    }
-                    *occurrence += 1;
-                }
+                let (inserted, skipped) = merge_record_sets(&mut merged, incoming_records)?;
+                records_inserted += inserted;
+                records_skipped += skipped;
                 sort_records(&mut merged);
                 self.write_records(&target_name, &merged)?;
                 if let Some(last_run) = snapshot_profile.last_run.as_ref() {

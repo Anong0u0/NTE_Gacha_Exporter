@@ -27,12 +27,46 @@ fn maps_build(args: MapBuildArgs) -> CliResult<()> {
         find_assets_root(args.assets_root.as_deref()).map_err(CliError::from_error)?;
     let out_dir = args.out_dir.unwrap_or_else(default_maps_output_dir);
     fs::create_dir_all(&out_dir).map_err(CliError::from_error)?;
+    let locale_dir = out_dir.join("locales");
+    fs::create_dir_all(&locale_dir).map_err(CliError::from_error)?;
+    let builds =
+        build_asset_maps(&assets_root, args.locale.as_deref()).map_err(CliError::from_error)?;
+    let first = builds
+        .first()
+        .ok_or_else(|| CliError::new(2, "no asset map locales found"))?;
+    let core_path = out_dir.join("core.json");
+    if args.locale.is_some() {
+        let existing = fs::read(&core_path).map_err(|error| {
+            CliError::new(
+                2,
+                format!(
+                    "read existing core before locale-only build: {}: {error}",
+                    core_path.display()
+                ),
+            )
+        })?;
+        let existing: serde_json::Value =
+            serde_json::from_slice(&existing).map_err(CliError::from_error)?;
+        if existing != first.core {
+            return Err(CliError::new(
+                2,
+                "locale common data differs from core; run a full maps build",
+            ));
+        }
+    } else {
+        if builds.iter().any(|build| build.core != first.core) {
+            return Err(CliError::new(
+                2,
+                "generated locale common data is inconsistent",
+            ));
+        }
+        let bytes = serde_json::to_vec_pretty(&first.core).map_err(CliError::from_error)?;
+        fs::write(&core_path, bytes).map_err(CliError::from_error)?;
+    }
 
-    for build in
-        build_asset_maps(&assets_root, args.locale.as_deref()).map_err(CliError::from_error)?
-    {
-        let out = out_dir.join(format!("{}.json", build.locale));
-        let bytes = serde_json::to_vec_pretty(&build.map).map_err(CliError::from_error)?;
+    for build in builds {
+        let out = locale_dir.join(format!("{}.json", build.locale));
+        let bytes = serde_json::to_vec_pretty(&build.overlay).map_err(CliError::from_error)?;
         fs::write(&out, bytes).map_err(CliError::from_error)?;
         println!(
             "{}: items={} pools={} labels={}",

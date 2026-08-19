@@ -266,6 +266,16 @@ test("pool-kind carry drives fork and character distances across banners", async
   });
 });
 
+test("records prefer occurrence pull number over source counter", async ({ page }) => {
+  await useMockScenario(page, "latest-five-cross-banner", [defaultPrefsKey]);
+  await page.goto("/");
+  await page.locator('[data-agent-id="nav-records"]').click();
+
+  const record = page.locator('[data-record-id="mock-cross-fork-new-up"]');
+  await expect(record).toBeVisible();
+  await expect(record.locator(":scope > span").nth(5)).toHaveText("20");
+});
+
 type ExpectedWallGroup = {
   distance: string;
   recordIds: string[];

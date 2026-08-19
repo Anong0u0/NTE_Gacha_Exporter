@@ -39,12 +39,17 @@ fn record_page_from_display_records(
         {
             continue;
         }
-        if !filter.banner_ids.is_empty()
+        if !filter.banner_occurrence_ids.is_empty()
             && !display
                 .derived
-                .banner_id
+                .banner_occurrence_id
                 .as_ref()
-                .is_some_and(|banner_id| filter.banner_ids.iter().any(|id| id == banner_id))
+                .is_some_and(|occurrence_id| {
+                    filter
+                        .banner_occurrence_ids
+                        .iter()
+                        .any(|id| id == occurrence_id)
+                })
         {
             continue;
         }
@@ -114,14 +119,20 @@ fn record_page_from_display_records(
         }
         if let Some(search) = &search {
             let pool_label = display.pool_label.to_ascii_lowercase();
-            let banner_id = display
+            let banner_source_id = display
                 .derived
-                .banner_id
+                .banner_source_id
+                .as_deref()
+                .unwrap_or_default()
+                .to_ascii_lowercase();
+            let banner_occurrence_id = display
+                .derived
+                .banner_occurrence_id
                 .as_deref()
                 .unwrap_or_default()
                 .to_ascii_lowercase();
             let banner_title = display
-                .banner
+                .banner_source
                 .title
                 .as_deref()
                 .unwrap_or_default()
@@ -134,14 +145,15 @@ fn record_page_from_display_records(
                 .unwrap_or_default()
                 .to_ascii_lowercase();
             let haystack = format!(
-                "{} {} {} {} {} {} {} {} {} {}",
+                "{} {} {} {} {} {} {} {} {} {} {}",
                 display.record_id.to_ascii_lowercase(),
                 display.record_type.to_ascii_lowercase(),
                 display.item_id.to_ascii_lowercase(),
                 display.item_name.to_ascii_lowercase(),
                 display.pool_id.to_ascii_lowercase(),
                 pool_label,
-                banner_id,
+                banner_source_id,
+                banner_occurrence_id,
                 banner_title,
                 rate_up_result_key(display.derived.rate_up_result),
                 rule_id
@@ -196,16 +208,16 @@ fn record_filter_options_from_display_records(
         latest_item_time: Option<String>,
     }
 
-    let mut banners: BTreeMap<String, BannerOptionAccumulator> = BTreeMap::new();
+    let mut occurrences: BTreeMap<String, BannerOptionAccumulator> = BTreeMap::new();
     let mut roll_buckets: HashMap<RollBucket, u64> = HashMap::new();
     let mut item_kinds: HashMap<ItemKind, u64> = HashMap::new();
 
     for record in records {
         *roll_buckets.entry(record.roll_bucket).or_default() += 1;
         *item_kinds.entry(record.item_kind).or_default() += 1;
-        if let Some(banner_id) = record.derived.banner_id.as_ref() {
-            banners
-                .entry(banner_id.clone())
+        if let Some(occurrence_id) = record.derived.banner_occurrence_id.as_ref() {
+            occurrences
+                .entry(occurrence_id.clone())
                 .and_modify(|accumulator| {
                     accumulator.option.count += 1;
                     if accumulator.latest_item_time.as_deref() < record.time.as_deref() {
@@ -215,34 +227,38 @@ fn record_filter_options_from_display_records(
                 .or_insert_with(|| BannerOptionAccumulator {
                     latest_item_time: record.time.clone(),
                     option: RecordBannerOption {
-                        banner_id: banner_id.clone(),
-                        pool_kind: record.pool_kind,
-                        resolution_issue: record.banner.resolution_issue,
-                        title: record
-                            .banner
-                            .title
+                        occurrence_id: occurrence_id.clone(),
+                        source_id: record
+                            .derived
+                            .banner_source_id
                             .clone()
-                            .unwrap_or_else(|| banner_id.clone()),
+                            .unwrap_or_default(),
+                        resolution_source: record.banner_occurrence.resolution_source,
+                        pool_kind: record.pool_kind,
+                        resolution_issue: record.banner_source.resolution_issue,
+                        title: banner_occurrence_title(record),
+                        active_from: record.banner_occurrence.active_from.clone(),
+                        active_until: record.banner_occurrence.active_until.clone(),
                         count: 1,
                     },
                 });
         }
     }
 
-    let mut banners = banners.into_values().collect::<Vec<_>>();
-    banners.sort_by(|left, right| {
+    let mut occurrences = occurrences.into_values().collect::<Vec<_>>();
+    occurrences.sort_by(|left, right| {
         compare_latest_item_time_desc(
             left.latest_item_time.as_deref(),
             right.latest_item_time.as_deref(),
         )
     });
-    let banners = banners
+    let banner_occurrences = occurrences
         .into_iter()
         .map(|accumulator| accumulator.option)
         .collect();
 
     RecordFilterOptions {
-        banners,
+        banner_occurrences,
         roll_buckets: roll_bucket_order()
             .iter()
             .map(|bucket| RecordRollBucketOption {
@@ -265,6 +281,7 @@ pub fn display_records(
     records: &[InternalRecord],
     map: &MapData,
 ) -> Result<Vec<DisplayRecord>, GuiError> {
+    let mut occurrences_by_id = map.resolve_banner_occurrences(records);
     let mut derived_by_id = derive_records(records, map)?
         .into_iter()
         .map(|derived| (derived.record_id.clone(), derived))
@@ -278,7 +295,13 @@ pub fn display_records(
                     record.record_id
                 ))
             })?;
-            display_record(record, map, derived)
+            let occurrence = occurrences_by_id.remove(&record.record_id).ok_or_else(|| {
+                GuiError::InvalidDocument(format!(
+                    "record occurrence state missing: {}",
+                    record.record_id
+                ))
+            })?;
+            display_record(record, map, derived, occurrence)
         })
         .collect()
 }
@@ -352,6 +375,7 @@ fn display_record(
     record: &InternalRecord,
     map: &MapData,
     derived: RecordDerived,
+    banner_occurrence: ResolvedBannerOccurrence,
 ) -> Result<DisplayRecord, GuiError> {
     let pool_kind = classify_pool_id(&record.pool_id)?;
     let item_id = map.canonical_item_id(&record.item_id).to_string();
@@ -363,7 +387,11 @@ fn display_record(
         .secondary_item_id
         .as_deref()
         .map(|value| map.canonical_item_id(value).to_string());
-    let banner = map.resolve_banner(&record.pool_id, record.time.as_deref());
+    let resolve_input = crate::BannerResolveInput {
+        pool_id: &record.pool_id,
+        lottery_id: record.lottery_id.as_deref(),
+    };
+    let banner_source = map.resolve_banner_source(resolve_input);
     let item_asset_refs = map
         .item(&item_id)
         .map(|(_, item)| item.asset_refs.clone())
@@ -380,8 +408,10 @@ fn display_record(
         time: record.time.clone(),
         pool_kind,
         pool_id: record.pool_id.clone(),
-        pool_label: map.pool_label(&record.pool_id, record.time.as_deref()),
-        banner,
+        lottery_id: record.lottery_id.clone(),
+        pool_label: map.pool_label(resolve_input),
+        banner_source,
+        banner_occurrence,
         item_id: item_id.clone(),
         item_name: map.item_name(&item_id),
         item_asset_refs,
@@ -401,6 +431,22 @@ fn display_record(
         secondary_count: record.secondary_count,
         derived,
     })
+}
+
+fn banner_occurrence_title(record: &DisplayRecord) -> String {
+    let base = record
+        .banner_source
+        .title
+        .clone()
+        .or_else(|| record.derived.banner_source_id.clone())
+        .or_else(|| record.derived.banner_occurrence_id.clone())
+        .unwrap_or_default();
+    record
+        .banner_occurrence
+        .active_from
+        .as_deref()
+        .and_then(|value| value.get(..10))
+        .map_or(base.clone(), |date| format!("{base} · {date}"))
 }
 
 fn sort_display_records(records: &mut [DisplayRecord], sort_direction: SortDirection) {

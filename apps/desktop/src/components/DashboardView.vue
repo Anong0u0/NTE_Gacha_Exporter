@@ -63,8 +63,8 @@ type FiveWallFrameLayout = {
 };
 
 const dashboardScopeKey = computed(() =>
-  app.selectedDashboardScope.kind === "banner"
-    ? `${app.selectedDashboardScope.pool_kind}:${app.selectedDashboardScope.banner_id}`
+  app.selectedDashboardScope.kind === "banner_occurrence"
+    ? `${app.selectedDashboardScope.pool_kind}:${app.selectedDashboardScope.occurrence_id}`
     : app.selectedDashboardScope.pool_kind,
 );
 const fiveWallShellClasses = computed(() => ({
@@ -384,12 +384,12 @@ watch(
           </button>
           <button
             v-for="banner in app.selectedPoolBannerSummaries"
-            :key="banner.banner_id"
-            :class="{ active: app.isSelectedDashboardBanner(banner.banner_id), 'is-fork-banner': banner.banner_type === 'fork' || banner.pool_kind === 'fork_lottery' }"
+            :key="banner.occurrence_id"
+            :class="{ active: app.isSelectedDashboardBanner(banner.occurrence_id), 'is-fork-banner': banner.banner_type === 'fork' || banner.pool_kind === 'fork_lottery' }"
             type="button"
-            :title="app.bannerTitle(banner)"
-            :aria-label="app.bannerTitle(banner)"
-            :aria-pressed="app.isSelectedDashboardBanner(banner.banner_id)"
+            :title="[app.bannerTitle(banner), app.bannerMeta(banner)].filter(Boolean).join(' · ')"
+            :aria-label="[app.bannerTitle(banner), app.bannerMeta(banner)].filter(Boolean).join(' · ')"
+            :aria-pressed="app.isSelectedDashboardBanner(banner.occurrence_id)"
             @click="app.selectDashboardBanner(banner)"
           >
             <span v-if="app.hasBannerVisual(banner)" class="rail-thumb">
@@ -398,6 +398,7 @@ watch(
             <span v-else class="rail-thumb empty">
               <span>{{ app.bannerTitle(banner) }}</span>
             </span>
+            <small v-if="app.bannerMeta(banner)" class="rail-meta">{{ app.bannerMeta(banner) }}</small>
           </button>
         </section>
 

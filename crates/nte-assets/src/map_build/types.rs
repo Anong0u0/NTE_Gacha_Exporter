@@ -9,9 +9,12 @@ use serde_json::{json, Map, Value};
 
 use nte_core::GuiError;
 
-const MAP_SCHEMA_VERSION: u64 = 4;
+const MAP_CORE_SCHEMA: &str = "nte-map-core";
+const MAP_CORE_SCHEMA_VERSION: u64 = 1;
+const MAP_LOCALE_SCHEMA: &str = "nte-map-locale";
+const MAP_LOCALE_SCHEMA_VERSION: u64 = 1;
 const ASSET_FALLBACK_LOCALE: &str = "en";
-const REMOVED_MAP_LOCALES: &[&str] = &["en-JM"];
+const REMOVED_MAP_LOCALES: &[&str] = &["en-JM", "en-MT"];
 
 const TABLES: &[(&str, &str)] = &[
     ("inventory", INVENTORY_TABLE),
@@ -52,7 +55,8 @@ const FORK_POOL_TABLE: &str = "DataTable/Fork/DT_ForkLotteryPoolData.json";
 #[derive(Debug, Clone)]
 pub struct AssetMapBuild {
     pub locale: String,
-    pub map: Value,
+    pub core: Value,
+    pub overlay: Value,
     pub item_count: usize,
     pub pool_count: usize,
     pub label_count: usize,
@@ -64,6 +68,8 @@ struct LimitedMonopolyBanner {
     title: String,
     start_at_tz8: Option<String>,
     end_at_tz8: Option<String>,
+    mainland_start_at_tz8: Option<String>,
+    mainland_end_at_tz8: Option<String>,
     rate_up_5: Vec<String>,
 }
 

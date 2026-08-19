@@ -26,7 +26,7 @@ fn standard_banner(localization: &Localization) -> Option<JsonObject> {
     let mut banner = JsonObject::new();
     banner.insert(
         "banner_id".to_string(),
-        Value::String("monopoly_standard".to_string()),
+        Value::String("Lottery_Permanent".to_string()),
     );
     banner.insert(
         "pool_id".to_string(),
@@ -120,6 +120,15 @@ fn limited_banners(ctx: LimitedBannerBuildContext<'_>) -> Result<JsonObject, Gui
         if let Some(start_at) = banner.start_at_tz8 {
             entry.insert("start_at".to_string(), Value::String(start_at));
         }
+        if let Some(start_at) = banner.mainland_start_at_tz8 {
+            entry.insert(
+                "mainland_start_at".to_string(),
+                Value::String(start_at),
+            );
+        }
+        if let Some(end_at) = banner.mainland_end_at_tz8 {
+            entry.insert("mainland_end_at".to_string(), Value::String(end_at));
+        }
         if !asset_refs.is_empty() {
             entry.insert("asset_refs".to_string(), Value::Object(asset_refs));
         }
@@ -201,7 +210,7 @@ fn build_banners(
     let known_item_ids = normalized_items.keys().cloned().collect::<BTreeSet<_>>();
     let mut banners = JsonObject::new();
     if let Some(standard) = standard_banner(localization) {
-        banners.insert("monopoly_standard".to_string(), Value::Object(standard));
+        banners.insert("Lottery_Permanent".to_string(), Value::Object(standard));
     }
     banners.extend(limited_banners(LimitedBannerBuildContext {
         assets_root,
@@ -218,28 +227,4 @@ fn build_banners(
         normalized_items,
     )?);
     Ok(banners)
-}
-
-fn attach_banner_ids(pool_meta: &mut BTreeMap<String, JsonObject>, banners: &JsonObject) {
-    let mut banner_ids_by_pool: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for (banner_id, banner) in banners {
-        let Some(pool_id) = banner
-            .as_object()
-            .and_then(|banner| banner.get("pool_id"))
-            .and_then(Value::as_str)
-        else {
-            continue;
-        };
-        banner_ids_by_pool
-            .entry(pool_id.to_string())
-            .or_default()
-            .push(banner_id.clone());
-    }
-    for (pool_id, mut banner_ids) in banner_ids_by_pool {
-        banner_ids.sort();
-        pool_meta
-            .entry(pool_id)
-            .or_default()
-            .insert("banner_ids".to_string(), json!(banner_ids));
-    }
 }

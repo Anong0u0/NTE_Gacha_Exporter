@@ -81,7 +81,7 @@ export function createRecordState(deps: RecordStateDeps) {
   let applyingRecordPrefs = false;
   let normalizingRecordFilters = false;
   let resettingRecordPage = false;
-  let bannersForRecordKind: ComputedRef<RecordFilterOptions["banners"]> | null = null;
+  let bannersForRecordKind: ComputedRef<RecordFilterOptions["banner_occurrences"]> | null = null;
   let recordPageCount: ComputedRef<number> | null = null;
 
   const activeRecordFilterCount = computed(() =>
@@ -112,7 +112,7 @@ export function createRecordState(deps: RecordStateDeps) {
   );
   const recordBannerOptions = computed(() =>
     currentBannersForRecordKind().map((banner) => ({
-      value: banner.banner_id,
+      value: banner.occurrence_id,
       label: bannerTitle(banner, deps.t),
       meta: String(banner.count),
     })),
@@ -163,7 +163,7 @@ export function createRecordState(deps: RecordStateDeps) {
     })),
   );
 
-  function bindBannersForRecordKind(value: ComputedRef<RecordFilterOptions["banners"]>) {
+  function bindBannersForRecordKind(value: ComputedRef<RecordFilterOptions["banner_occurrences"]>) {
     bannersForRecordKind = value;
   }
 
@@ -265,7 +265,9 @@ export function createRecordState(deps: RecordStateDeps) {
   }
 
   function normalizeRecordFilterSelection() {
-    const availableBannerIds = new Set(currentBannersForRecordKind().map((banner) => banner.banner_id));
+    const availableBannerIds = new Set(
+      currentBannersForRecordKind().map((banner) => banner.occurrence_id),
+    );
     const availableRollBuckets = new Set(deps.filterOptions.value.roll_buckets.map((bucket) => bucket.bucket));
     const availableItemKinds = new Set(deps.filterOptions.value.item_kinds.map((itemKind) => itemKind.item_kind));
     recordBannerIds.value = recordBannerIds.value.filter((bannerId) => availableBannerIds.has(bannerId));
@@ -348,7 +350,7 @@ export function createRecordState(deps: RecordStateDeps) {
   function currentRecordFilter(): RecordFilter {
     return {
       pool_kind: recordPoolKind.value === "all" ? null : recordPoolKind.value,
-      banner_ids: recordBannerIds.value,
+      banner_occurrence_ids: recordBannerIds.value,
       rarities: itemRarities.value,
       focused_rarities: focusedRarities.value,
       rate_up_results: rateUpResults.value,

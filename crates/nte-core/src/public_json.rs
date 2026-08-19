@@ -1,10 +1,21 @@
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::classify_pool_id;
-use crate::{GuiError, InternalRecord, assign_stable_record_ids};
+use crate::{
+    GuiError, InternalRecord, MapData, PoolKind, assign_stable_record_ids, classify_pool_id,
+};
 
 pub const PUBLIC_JSON_SCHEMA: &str = "nte-gacha-export";
+pub const PUBLIC_JSON_SCHEMA_VERSION: &str = "2.1";
+
+pub fn is_valid_lottery_id(value: &str) -> bool {
+    value.strip_prefix("Lottery_").is_some_and(|tail| {
+        !tail.is_empty()
+            && tail
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+    })
+}
 
 pub fn public_record_id_from_material(material: &[String]) -> String {
     let mut hasher = Sha256::new();
@@ -12,7 +23,10 @@ pub fn public_record_id_from_material(material: &[String]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>, GuiError> {
+pub fn parse_public_document(
+    document_text: &str,
+    map: &MapData,
+) -> Result<Vec<InternalRecord>, GuiError> {
     let document: Value = serde_json::from_str(document_text)?;
     let info = document
         .get("info")
@@ -29,8 +43,7 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
         .ok_or_else(|| {
             GuiError::InvalidDocument("info.schema_version must be a string".to_string())
         })?;
-    let schema_major = schema_version.split('.').next();
-    if schema_major != Some("2") {
+    if !matches!(schema_version, "2.0" | PUBLIC_JSON_SCHEMA_VERSION) {
         return Err(GuiError::InvalidDocument(format!(
             "unsupported schema_version: {schema_version}"
         )));
@@ -44,20 +57,51 @@ pub fn parse_public_document(document_text: &str) -> Result<Vec<InternalRecord>,
 
     let mut result = Vec::with_capacity(records.len());
     for record in records {
-        result.push(parse_record(record)?);
+        result.push(parse_record(record, schema_version, map)?);
     }
     assign_stable_record_ids(&mut result);
     Ok(result)
 }
 
-fn parse_record(value: &Value) -> Result<InternalRecord, GuiError> {
+fn parse_record(
+    value: &Value,
+    schema_version: &str,
+    map: &MapData,
+) -> Result<InternalRecord, GuiError> {
     value
         .as_object()
         .ok_or_else(|| GuiError::InvalidDocument("record must be an object".to_string()))?;
     let record_id = required_text(value, "record_id")?;
     let pool_id = required_text(value, "pool_id")?;
-    classify_pool_id(&pool_id)?;
+    let pool_kind = classify_pool_id(&pool_id)?;
     let record_type = required_text(value, "record_type")?;
+    let expected_record_type = match pool_kind {
+        PoolKind::MonopolyLimited | PoolKind::MonopolyStandard => "monopoly",
+        PoolKind::ForkLottery => "fork",
+    };
+    if record_type != expected_record_type {
+        return Err(GuiError::InvalidDocument(format!(
+            "record_type {record_type} does not match pool_id {pool_id}"
+        )));
+    }
+    let time = optional_text(value, "time");
+    let lottery_id = if schema_version == "2.0" {
+        map.resolve_legacy_lottery_id(
+            &pool_id,
+            time.as_deref(),
+            optional_text(value, "banner_id").as_deref(),
+        )?
+    } else if expected_record_type == "monopoly" {
+        let lottery_id = required_text(value, "lottery_id")?;
+        if !is_valid_lottery_id(&lottery_id) {
+            return Err(GuiError::InvalidDocument(format!(
+                "invalid lottery_id: {lottery_id}"
+            )));
+        }
+        Some(lottery_id)
+    } else {
+        None
+    };
     let item_id = required_text(value, "item_id")?;
     let count = optional_i64(value, "count");
     let roll_points = optional_roll_points(value, "roll_points");
@@ -68,8 +112,9 @@ fn parse_record(value: &Value) -> Result<InternalRecord, GuiError> {
         record_id,
         source_order: required_u64(value, "source_order")?,
         record_type,
-        time: optional_text(value, "time"),
+        time,
         pool_id,
+        lottery_id,
         item_id,
         count,
         roll_points,
@@ -81,7 +126,7 @@ fn parse_record(value: &Value) -> Result<InternalRecord, GuiError> {
 
 fn required_text(value: &Value, key: &str) -> Result<String, GuiError> {
     optional_text(value, key)
-        .filter(|text| !text.is_empty())
+        .filter(|text| !text.trim().is_empty())
         .ok_or_else(|| GuiError::InvalidDocument(format!("record missing string field: {key}")))
 }
 

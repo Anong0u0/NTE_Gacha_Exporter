@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "es",
+  "csv_headers": {
+    "count": "Cantidad",
+    "item_name": "Nombre de objeto",
+    "pool_group": "Banner Tipo",
+    "pool_name": "Banner",
+    "roll_label": "Resultado de tirada",
+    "secondary_count": "Recompensa extra Cantidad",
+    "secondary_item_name": "Recompensa extra",
+    "time": "Hora de adquisición"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Completado",
+    "Abyss_GamepadKeys_1": "Cambiar",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Tablero estándar",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Tipo de tablero",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Tablero limitado",
+    "BPUI_LotteryModuleEntrance_Title": "Feria de Scarborough",
+    "BPUI_LotteryResult_chenmiandi": "Sueñolandia",
+    "BPUI_LotteryResult_jidianzengli": "Regalo de puntos",
+    "Mall_8_name": "Tienda de discos",
+    "TreasureBox_2": "Abrir",
+    "UI_CloneSystemChallengeFailed_Retry": "Volver a intentar",
+    "UI_CloneSystemStaminaTips_Enter": "Entrar",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "Registros de tiradas",
+    "UI_Lottery_GachaDetails_title": "Detalles del tablero",
+    "UW_LotteryBase_BP_Hupanyanmu": "Investigación de discos",
+    "W_HTButton_Next_Page": "Siguiente",
+    "W_Vehicle_Button_Choose": "Seleccionar",
+    "common_3": "Atrás",
+    "item_kind_character": "Personaje",
+    "item_kind_fashion": "Atuendo",
+    "item_kind_fork": "Disco",
+    "item_kind_glider": "Planeador",
+    "item_kind_inventory": "Objeto",
+    "item_kind_vehicle_module": "Piezas de modificación",
+    "ui_appearance_02": "Planeador",
+    "ui_forkshop_03": "Programas de investigación de discos",
+    "ui_forkshop_07": "Detalles",
+    "ui_forkshop_10": "Registros"
+  },
+  "items": {
+    "1003": {
+      "name": "Personaje·Sakiri"
+    },
+    "1004": {
+      "name": "Personaje·Lacrimosa"
+    },
+    "1008": {
+      "name": "Personaje·Skia"
+    },
+    "1010": {
+      "name": "Personaje·Nanally"
+    },
+    "1019": {
+      "name": "Personaje·Mint"
+    },
+    "1020": {
+      "name": "Personaje·Haniel"
+    },
+    "1021": {
+      "name": "Personaje·Edgar"
+    },
+    "1023": {
+      "name": "Personaje·Baicang"
+    },
+    "1025": {
+      "name": "Personaje·Hathor"
+    },
+    "1033": {
+      "name": "Personaje·Adler"
+    },
+    "1036": {
+      "name": "Personaje·Zankou"
+    },
+    "1039": {
+      "name": "Personaje·Fadia"
+    },
+    "1052": {
+      "name": "Personaje·Hotori"
+    },
+    "1054": {
+      "name": "Personaje·Daffodill"
+    },
+    "1055": {
+      "name": "Personaje·Jiuyuan"
+    },
+    "1070": {
+      "name": "Personaje·Aurelia"
+    },
+    "1071": {
+      "name": "Personaje·Caos"
+    },
+    "1072": {
+      "name": "Personaje·Linko"
+    },
+    "1073": {
+      "name": "Personaje·Chiz"
+    },
+    "1075": {
+      "name": "Personaje·Iroi"
+    },
+    "1076": {
+      "name": "Personaje·Shinku"
+    },
+    "DiceNormal": {
+      "name": "Objeto·Dado fabricado"
+    },
+    "Dice_ticket_01": {
+      "name": "Objeto·Pieza deformada"
+    },
+    "Dice_ticket_02": {
+      "name": "Objeto·Pieza perdida"
+    },
+    "Dicelimite": {
+      "name": "Objeto·Dado sólido"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "Atuendo·Archimaga"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Planeador·Dúo tomate"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Planeador·El subjefe de los subjefes"
+    },
+    "Fashion_Glide_1036": {
+      "name": "Planeador·Listón escarlata"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Planeador·Brisa de orquídea"
+    },
+    "Fashion_Glide_1071": {
+      "name": "Planeador·Cazador celeste"
+    },
+    "Fashion_Glide_1072": {
+      "name": "Planeador·Faja escarlata"
+    },
+    "Fashion_Glide_1075": {
+      "name": "Planeador·Ovejacóptero"
+    },
+    "Fashion_Glide_1076": {
+      "name": "Planeador·Sombras aladas"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Atuendo·Rapsodia dorada"
+    },
+    "Fashion_character_1010": {
+      "name": "Atuendo·Patada del Fénix"
+    },
+    "Fashion_character_1036_03": {
+      "name": "Atuendo·Viñeta otoñal"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Atuendo·Orquídea invaluable"
+    },
+    "Fashion_character_1071_01": {
+      "name": "Atuendo·Cielo azul"
+    },
+    "Fashion_character_1072_01": {
+      "name": "Atuendo·Surcando las estrellas"
+    },
+    "Fashion_character_1076_01": {
+      "name": "Atuendo·Estudiante de Terramar"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Piezas de modificación·Brisa dorada: Esquema de colores"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Piezas de modificación·Crucero tomate: Esquema de colores"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Piezas de modificación·¡Tigre en camino!: Esquema de colores"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "Piezas de modificación·Espejismo arenoso: Esquema de colores"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Piezas de modificación·Neblina de otoño: Esquema de colores"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "Piezas de modificación·Arremetida del sabueso: Esquema de colores"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "Piezas de modificación·Nosotras tres: Esquema de colores"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "Piezas de modificación·Nosotras tres: Esquema de colores"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "Piezas de modificación·Dragón oculto: Esquema de colores"
+    },
+    "fork_Arachne": {
+      "name": "Disco·Vals eterno"
+    },
+    "fork_BitGame": {
+      "name": "Disco·Impresionar al público"
+    },
+    "fork_BitterCake": {
+      "name": "Disco·El bueno, el malo y el amargo"
+    },
+    "fork_BlackBook": {
+      "name": "Disco·Fantasía juvenil"
+    },
+    "fork_Butterfly": {
+      "name": "Disco·Refugio de la realidad"
+    },
+    "fork_DemonBlade": {
+      "name": "Disco·Hoja insaciable"
+    },
+    "fork_Door": {
+      "name": "Disco·La puerta equivocada"
+    },
+    "fork_GoldRecord": {
+      "name": "Disco·Voz del viajero"
+    },
+    "fork_GoldWool": {
+      "name": "Disco·Lo que todos buscan"
+    },
+    "fork_Kite": {
+      "name": "Disco·¡Cuidado con la cabeza!"
+    },
+    "fork_LunarPhase": {
+      "name": "Disco·Espejismo sonrojado"
+    },
+    "fork_Nakupeda": {
+      "name": "Disco·Tu felicidad no tiene precio"
+    },
+    "fork_PaperPlane": {
+      "name": "Disco·Cielos despejados"
+    },
+    "fork_PoliceRat": {
+      "name": "Disco·Guardián de Hethereau"
+    },
+    "fork_Prokaryon": {
+      "name": "Disco·Nosotros"
+    },
+    "fork_Rose": {
+      "name": "Disco·La última rosa"
+    },
+    "fork_TigerTally": {
+      "name": "Disco·Listo, listo"
+    },
+    "fork_Time": {
+      "name": "Disco·Marchando más allá del tiempo"
+    },
+    "fork_appliance": {
+      "name": "Disco·\"Música de verdad\""
+    },
+    "fork_bopu": {
+      "name": "Disco·Aturdimiento de cosmos, Ensoñación salvaje"
+    },
+    "fork_dustbin": {
+      "name": "Disco·Juego peligroso"
+    },
+    "fork_jiaojuan": {
+      "name": "Disco·Días brillantes"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Disco·Sociedad de la camelia"
+    },
+    "fork_koinobori": {
+      "name": "Disco·Llegará la hora"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Disco·Reino mental"
+    },
+    "fork_mamen": {
+      "name": "Disco·Gato contemplativo"
+    },
+    "fork_mofeikesi": {
+      "name": "Disco·Gran aventura del buen chico"
+    },
+    "fork_nonos": {
+      "name": "Disco·Primer paso al éxito"
+    },
+    "fork_oulaquantao": {
+      "name": "Disco·¡Oraora!"
+    },
+    "fork_rishi": {
+      "name": "Disco·Día libre"
+    },
+    "fork_spider": {
+      "name": "Disco·Te he fallado, con pesar en el corazón"
+    },
+    "fork_tuansanlang": {
+      "name": "Disco·El gran ladrón"
+    },
+    "fork_vine": {
+      "name": "Disco·Sé feliz"
+    },
+    "fork_wuhuakuang": {
+      "name": "Disco·Los olvidados"
+    },
+    "fork_wushoutieyu": {
+      "name": "Disco·Llamas furiosas"
+    },
+    "fork_yaodao": {
+      "name": "Disco·Espada desenvainada"
+    },
+    "fork_yuren": {
+      "name": "Disco·Paraguas"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "Caja milagrosa"
+    },
+    "CardPool_Character": {
+      "name": "Tablero limitado",
+      "group_label": "Tablero limitado"
+    },
+    "CardPool_NewRole": {
+      "name": "Tablero estándar",
+      "group_label": "Tablero estándar",
+      "title": "Encuentros misteriosos"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Nocturne"
+    },
+    "ForkLottery_Canhong": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Hechizo"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de persecución"
+    },
+    "ForkLottery_LingKe": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Sinfonía"
+    },
+    "ForkLottery_Nanali": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de tigre"
+    },
+    "ForkLottery_Xun": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de luna brillante"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Portal de los Sueños"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de determinación"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "Encuentros misteriosos"
+    },
+    "Lottery_Nanali": {
+      "title": "La Fundadora"
+    },
+    "Lottery_Xun": {
+      "title": "Estilo de embriaguez brumosa"
+    },
+    "Lottery_AnHunQu": {
+      "title": "Sueño desvanecido"
+    },
+    "Lottery_Kaesi": {
+      "title": "Camino abandonado"
+    },
+    "Lottery_ZhenHong": {
+      "title": "Antes del Alba"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "Hilo de vida"
+    },
+    "Lottery_Canhong": {
+      "title": "Sombras seductoras"
+    },
+    "Lottery_LingKe": {
+      "title": "¡Recorriendo todos los canales!"
+    },
+    "ForkLottery_Nanali": {
+      "title": "Especial de tigre"
+    },
+    "ForkLottery_Xun": {
+      "title": "Especial de luna brillante"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "Especial de Nocturne"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "Especial de persecución"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "Especial de determinación"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "Especial de Portal de los Sueños"
+    },
+    "ForkLottery_Canhong": {
+      "title": "Especial de Hechizo"
+    },
+    "ForkLottery_LingKe": {
+      "title": "Especial de Sinfonía"
+    }
+  }
+}

@@ -8,8 +8,12 @@ fn text_ref_source_text(value: Option<&Value>, localization: &Localization) -> O
             "LocalizedString",
         ]
         .into_iter()
-        .find_map(|field| text_ref.get(field).and_then(value_to_text))
-        .filter(|value| !value.is_empty())
+        .find_map(|field| {
+            text_ref
+                .get(field)
+                .and_then(value_to_text)
+                .filter(|value| !value.trim().is_empty())
+        })
         .or_else(|| localized_text(Some(value), localization)),
         _ => None,
     }
@@ -99,6 +103,7 @@ fn localization_key_node(namespace: &str, key: &str) -> Option<String> {
 
 #[derive(Debug, Clone)]
 struct LimitedPoolSource {
+    lottery_id: String,
     tail: String,
     identity_tails: Vec<String>,
 }
@@ -181,7 +186,7 @@ fn limited_monopoly_pool_sources(assets_root: &Path) -> Result<Vec<LimitedPoolSo
     if !path.exists() {
         return Ok(Vec::new());
     }
-    let mut expected_order: Option<Vec<String>> = None;
+    let mut expected_order: Option<Vec<LimitedPoolSource>> = None;
     let mut map_tail_counts: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
     for (row_id, row) in rows_from_datatable(&path)? {
         let Some(row) = row.as_object() else {
@@ -193,14 +198,17 @@ fn limited_monopoly_pool_sources(assets_root: &Path) -> Result<Vec<LimitedPoolSo
         let mut row_sources = Vec::new();
         let mut seen_tails = BTreeSet::new();
         for entry in drop_data.iter().filter_map(Value::as_object) {
-            let Some(tail) = entry
+            let Some(lottery_id) = entry
                 .get("Key")
                 .and_then(value_to_text)
-                .and_then(|key| key.strip_prefix("Lottery_").map(ToString::to_string))
-                .filter(|tail| tail != "Permanent")
+                .filter(|key| key.starts_with("Lottery_") && key != "Lottery_Permanent")
             else {
                 continue;
             };
+            let tail = lottery_id
+                .strip_prefix("Lottery_")
+                .expect("validated lottery prefix")
+                .to_string();
             let mut identity_tails = Vec::new();
             if let Some(map_drop_datas) = entry
                 .get("Value")
@@ -227,6 +235,7 @@ fn limited_monopoly_pool_sources(assets_root: &Path) -> Result<Vec<LimitedPoolSo
                 &mut row_sources,
                 &mut seen_tails,
                 LimitedPoolSource {
+                    lottery_id,
                     tail,
                     identity_tails: Vec::new(),
                 },
@@ -240,21 +249,25 @@ fn limited_monopoly_pool_sources(assets_root: &Path) -> Result<Vec<LimitedPoolSo
             .map(|source| source.tail.clone())
             .collect::<Vec<_>>();
         if let Some(expected_order) = &expected_order {
-            if &row_order != expected_order {
+            let expected = expected_order
+                .iter()
+                .map(|source| source.tail.clone())
+                .collect::<Vec<_>>();
+            if row_order != expected {
                 return Err(invalid(format!(
                     "inconsistent monopoly limited pool order in {MONOPOLY_CELL_TABLE}: row {row_id}"
                 )));
             }
         } else {
-            expected_order = Some(row_order);
+            expected_order = Some(row_sources);
         }
     }
     Ok(expected_order
         .unwrap_or_default()
         .into_iter()
-        .map(|tail| {
-            let mut identity_tails = vec![tail.clone()];
-            if let Some(counts) = map_tail_counts.get(&tail) {
+        .map(|mut source| {
+            let mut identity_tails = vec![source.tail.clone()];
+            if let Some(counts) = map_tail_counts.get(&source.tail) {
                 let max_count = counts.values().copied().max().unwrap_or(0);
                 identity_tails.extend(
                     counts
@@ -264,10 +277,8 @@ fn limited_monopoly_pool_sources(assets_root: &Path) -> Result<Vec<LimitedPoolSo
                 );
             }
             dedupe_strings(&mut identity_tails);
-            LimitedPoolSource {
-                tail,
-                identity_tails,
-            }
+            source.identity_tails = identity_tails;
+            source
         })
         .collect())
 }
@@ -496,6 +507,12 @@ struct AssetDateTime {
     value: NaiveDateTime,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ScheduleRegion {
+    Mainland,
+    Oversea,
+}
+
 impl AssetDateTime {
     fn from_value(value: &Value) -> Option<Self> {
         let object = value.as_object()?;
@@ -510,16 +527,18 @@ impl AssetDateTime {
         })
     }
 
-    fn from_schedule(value: Option<&Value>) -> Option<Self> {
+    fn from_schedule(value: Option<&Value>, region: ScheduleRegion) -> Option<Self> {
         let object = value?.as_object()?;
-        let mut date_time = object
-            .get("OverseaTime")
-            .and_then(Self::from_value)
-            .or_else(|| object.get("MainlandTime").and_then(Self::from_value))?;
-        if object
-            .get("OverseaUseUTCTime")
-            .and_then(Value::as_bool)
-            .unwrap_or(false)
+        let field = match region {
+            ScheduleRegion::Mainland => "MainlandTime",
+            ScheduleRegion::Oversea => "OverseaTime",
+        };
+        let mut date_time = object.get(field).and_then(Self::from_value)?;
+        if matches!(region, ScheduleRegion::Oversea)
+            && object
+                .get("OverseaUseUTCTime")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
         {
             date_time.value += Duration::hours(8);
         }
@@ -559,6 +578,7 @@ impl AssetDateTime {
 
 fn character_show_boundaries(
     assets_root: &Path,
+    region: ScheduleRegion,
 ) -> Result<BTreeMap<String, AssetDateTime>, GuiError> {
     let path = assets_root.join(CHARACTER_TABLE);
     if !path.exists() {
@@ -572,14 +592,18 @@ fn character_show_boundaries(
         let Some(element_data) = row.get("ElementData").and_then(Value::as_object) else {
             continue;
         };
-        if let Some(show_time) = AssetDateTime::from_schedule(element_data.get("ShowTime")) {
+        if let Some(show_time) = AssetDateTime::from_schedule(element_data.get("ShowTime"), region)
+        {
             boundaries.insert(character_id, show_time);
         }
     }
     Ok(boundaries)
 }
 
-fn combat_award_start_boundaries(assets_root: &Path) -> Result<Vec<AssetDateTime>, GuiError> {
+fn combat_award_start_boundaries(
+    assets_root: &Path,
+    region: ScheduleRegion,
+) -> Result<Vec<AssetDateTime>, GuiError> {
     let path = assets_root.join(COMBAT_AWARD_TABLE);
     if !path.exists() {
         return Ok(Vec::new());
@@ -587,7 +611,7 @@ fn combat_award_start_boundaries(assets_root: &Path) -> Result<Vec<AssetDateTime
     let mut boundaries = rows_from_datatable(&path)?
         .values()
         .filter_map(Value::as_object)
-        .filter_map(|row| AssetDateTime::from_schedule(row.get("StartDateTime")))
+        .filter_map(|row| AssetDateTime::from_schedule(row.get("StartDateTime"), region))
         .filter(|date_time| date_time.value.year() >= 2024)
         .collect::<Vec<_>>();
     boundaries.sort();
@@ -633,6 +657,30 @@ fn assign_limited_end_boundaries(
         }
     }
     end_boundaries
+}
+
+fn fill_regular_limited_boundary_gaps(end_boundaries: &mut [Option<AssetDateTime>]) {
+    let mut left = 0;
+    while left < end_boundaries.len() {
+        let Some(left_boundary) = end_boundaries[left] else {
+            left += 1;
+            continue;
+        };
+        let Some(right) = (left + 1..end_boundaries.len())
+            .find(|index| end_boundaries[*index].is_some())
+        else {
+            break;
+        };
+        let right_boundary = end_boundaries[right].expect("located populated boundary");
+        let intervals = (right - left) as i64;
+        if right_boundary.value - left_boundary.value == Duration::days(21 * intervals) {
+            for offset in 1..intervals {
+                end_boundaries[left + offset as usize] =
+                    Some(left_boundary.plus_days(21 * offset));
+            }
+        }
+        left = right;
+    }
 }
 
 fn add_character_identity_edges(
@@ -827,6 +875,28 @@ fn infer_last_end_boundary(
     }
 }
 
+fn limited_end_boundaries(
+    role_ids_by_pool: &[Vec<String>],
+    character_boundaries: &BTreeMap<String, AssetDateTime>,
+    combat_boundaries: &[AssetDateTime],
+) -> Vec<Option<AssetDateTime>> {
+    let mut end_boundaries = assign_limited_end_boundaries(
+        role_ids_by_pool,
+        character_boundaries,
+        combat_boundaries,
+    );
+    fill_regular_limited_boundary_gaps(&mut end_boundaries);
+    if !end_boundaries.is_empty() {
+        infer_last_end_boundary(
+            end_boundaries.len() - 1,
+            &mut end_boundaries,
+            role_ids_by_pool,
+            character_boundaries,
+        );
+    }
+    end_boundaries
+}
+
 fn limited_monopoly_banners(
     assets_root: &Path,
     locale: &str,
@@ -847,43 +917,54 @@ fn limited_monopoly_banners(
         known_item_ids,
     )?;
     let role_ids_by_pool = role_ids_by_pool(&mut graph, &sources, &roles)?;
-    let character_boundaries = character_show_boundaries(assets_root)?;
-    let mut end_boundaries = assign_limited_end_boundaries(
+    let oversea_character_boundaries =
+        character_show_boundaries(assets_root, ScheduleRegion::Oversea)?;
+    let oversea_end_boundaries = limited_end_boundaries(
         &role_ids_by_pool,
-        &character_boundaries,
-        &combat_award_start_boundaries(assets_root)?,
+        &oversea_character_boundaries,
+        &combat_award_start_boundaries(assets_root, ScheduleRegion::Oversea)?,
     );
-    if !end_boundaries.is_empty() {
-        infer_last_end_boundary(
-            end_boundaries.len() - 1,
-            &mut end_boundaries,
-            &role_ids_by_pool,
-            &character_boundaries,
-        );
-    }
+    let mainland_character_boundaries =
+        character_show_boundaries(assets_root, ScheduleRegion::Mainland)?;
+    let mainland_end_boundaries = limited_end_boundaries(
+        &role_ids_by_pool,
+        &mainland_character_boundaries,
+        &combat_award_start_boundaries(assets_root, ScheduleRegion::Mainland)?,
+    );
 
     let mut banners = Vec::new();
-    let mut previous_end = None;
-    for ((source, rate_up_5), end_boundary) in sources
+    let mut previous_oversea_end = None;
+    let mut previous_mainland_end = None;
+    for (((source, rate_up_5), oversea_end_boundary), mainland_end_boundary) in sources
         .into_iter()
         .zip(role_ids_by_pool)
-        .zip(end_boundaries)
+        .zip(oversea_end_boundaries)
+        .zip(mainland_end_boundaries)
     {
-        let end_at = end_boundary.map(AssetDateTime::banner_end_at);
-        let title = limited_banner_title(assets_root, locale, localization, &source.tail)?;
-        if let Some(title) = title {
-            if !rate_up_5.is_empty() {
-                banners.push(LimitedMonopolyBanner {
-                    banner_id: format!("monopoly_limited_{}", source.tail),
-                    title,
-                    start_at_tz8: previous_end.clone(),
-                    end_at_tz8: end_at.clone(),
-                    rate_up_5,
-                });
-            }
+        let oversea_end_at = oversea_end_boundary.map(AssetDateTime::banner_end_at);
+        let mainland_end_at = mainland_end_boundary.map(AssetDateTime::banner_end_at);
+        let title = limited_banner_title(assets_root, locale, localization, &source.tail)?
+            .ok_or_else(|| invalid(format!("missing title for {}", source.lottery_id)))?;
+        if rate_up_5.is_empty() {
+            return Err(invalid(format!(
+                "missing rate-up item for {}",
+                source.lottery_id
+            )));
         }
-        if let Some(end_at) = end_at {
-            previous_end = Some(end_at);
+        banners.push(LimitedMonopolyBanner {
+            banner_id: source.lottery_id,
+            title,
+            start_at_tz8: previous_oversea_end.clone(),
+            end_at_tz8: oversea_end_at.clone(),
+            mainland_start_at_tz8: previous_mainland_end.clone(),
+            mainland_end_at_tz8: mainland_end_at.clone(),
+            rate_up_5,
+        });
+        if let Some(end_at) = oversea_end_at {
+            previous_oversea_end = Some(end_at);
+        }
+        if let Some(end_at) = mainland_end_at {
+            previous_mainland_end = Some(end_at);
         }
     }
     Ok(banners)

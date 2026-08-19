@@ -194,9 +194,9 @@ pub enum PoolKind {
 #[serde(rename_all = "snake_case")]
 pub enum BannerResolutionIssue {
     UnknownPool,
-    UnknownTime,
-    OutsideKnownWindows,
-    Ambiguous,
+    MissingLotteryId,
+    UnknownLotteryId,
+    LotteryPoolMismatch,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -250,24 +250,40 @@ pub enum ItemKind {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ResolvedBanner {
+pub struct ResolvedBannerSource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolution_issue: Option<BannerResolutionIssue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    pub banner_id: Option<String>,
+    pub source_id: Option<String>,
     pub pool_id: Option<String>,
     pub pool_kind: Option<String>,
     pub banner_type: Option<String>,
     pub title: Option<String>,
-    pub version: Option<String>,
-    pub start_at: Option<String>,
-    pub end_at: Option<String>,
-    pub timezone: Option<String>,
     pub rate_up_5: Vec<String>,
     pub rate_up_4: Vec<String>,
     pub rule_id: Option<String>,
     pub asset_refs: BTreeMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum BannerOccurrenceResolution {
+    Catalog,
+    ObservedGap,
+    Unresolved,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ResolvedBannerOccurrence {
+    pub occurrence_id: Option<String>,
+    pub source_id: Option<String>,
+    pub resolution_source: BannerOccurrenceResolution,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    pub version: Option<String>,
+    pub active_from: Option<String>,
+    pub active_until: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

@@ -4,14 +4,15 @@ use super::*;
 fn export_public_json_and_csv_from_store() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let input = record(
+    let input = record_with_lottery_id(
         "c1",
         "CardPool_Character",
+        "Lottery_Nanali",
         "Fashion_vehicle_1010_V008",
-        "2026-05-13 05:59:00",
+        Some("2026-05-13 05:59:00"),
     );
     let expected_id = expected_record_id(&input);
-    let document = public_document(vec![input]);
+    let document = public_document_v21(vec![input]);
     store
         .import_public_document("default", &document, "json", None)
         .unwrap();
@@ -26,10 +27,14 @@ fn export_public_json_and_csv_from_store() {
     let exported_json: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(json_path).unwrap()).unwrap();
     let first = &exported_json["nte"]["list"][0];
-    assert_eq!(exported_json["info"]["schema_version"], "2.0");
+    assert_eq!(
+        exported_json["info"]["schema_version"],
+        nte_core::PUBLIC_JSON_SCHEMA_VERSION
+    );
     assert_eq!(first["record_id"], expected_id);
     assert_eq!(first["source_order"], 0);
-    assert_eq!(first["banner_id"], "monopoly_limited_Nanali");
+    assert_eq!(first["lottery_id"], "Lottery_Nanali");
+    assert_eq!(first["banner_id"], "Lottery_Nanali");
     assert_eq!(first["pool_name"], "王牌一代目");
     assert_eq!(first["item_name"], "改裝件·萌虎來襲-塗裝");
     assert_eq!(first["rarity"], 5);
@@ -39,6 +44,7 @@ fn export_public_json_and_csv_from_store() {
         "record_type",
         "time",
         "pool_id",
+        "lottery_id",
         "pool_name",
         "banner_id",
         "item_id",
@@ -75,7 +81,8 @@ fn export_public_json_and_csv_from_store() {
     assert!(csv.contains("pull_no"));
     assert!(csv.contains("pity_5_before"));
     assert!(csv.contains("rate_up_result"));
-    assert!(csv.contains("monopoly_limited_Nanali"));
+    assert!(csv.contains("lottery_id"));
+    assert!(csv.contains("Lottery_Nanali"));
     assert!(csv.contains(",not_applicable,"));
 }
 
@@ -107,8 +114,126 @@ fn export_synthetic_banner_omits_public_banner_id_and_blanks_csv_name() {
 
     let csv = std::fs::read_to_string(csv_path).unwrap();
     let row = csv.lines().nth(1).unwrap().split(',').collect::<Vec<_>>();
-    assert_eq!(row[9], "ForkLottery_KaesiNew");
-    assert_eq!(row[10], "");
+    assert_eq!(row[9], "");
+    assert_eq!(row[10], "ForkLottery_KaesiNew");
+    assert_eq!(row[11], "");
+}
+
+#[test]
+fn export_v21_rejects_monopoly_records_missing_lottery_id() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    std::fs::write(
+        tmp.path().join("data/profiles/default/records.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema_version": 2,
+            "records": [{
+                "record_id": "unresolved-id",
+                "source_order": 0,
+                "record_type": "monopoly",
+                "pool_id": "CardPool_Character",
+                "item_id": "fork_dustbin"
+            }]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let path = tmp.path().join("exports/unresolved.json");
+
+    let error = store
+        .export_public_json("default", "zh-Hant", &path)
+        .unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("monopoly records missing or invalid lottery_id")
+    );
+    assert!(error.to_string().contains("unresolved-id"));
+    assert!(!path.exists());
+}
+
+#[test]
+fn export_v21_rejects_invalid_monopoly_lottery_id() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    std::fs::write(
+        tmp.path().join("data/profiles/default/records.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema_version": 2,
+            "records": [{
+                "record_id": "invalid-id",
+                "source_order": 0,
+                "record_type": "monopoly",
+                "pool_id": "CardPool_Character",
+                "lottery_id": "Lottery_",
+                "item_id": "fork_dustbin"
+            }]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let path = tmp.path().join("exports/invalid.json");
+
+    let error = store
+        .export_public_json("default", "zh-Hant", &path)
+        .unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("monopoly records missing or invalid lottery_id")
+    );
+    assert!(error.to_string().contains("invalid-id"));
+    assert!(!path.exists());
+}
+
+#[test]
+fn export_v21_preserves_unknown_and_mismatched_monopoly_lottery_ids() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    std::fs::write(
+        tmp.path().join("data/profiles/default/records.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema_version": 2,
+            "records": [
+                {
+                    "record_id": "unknown-id",
+                    "source_order": 0,
+                    "record_type": "monopoly",
+                    "pool_id": "CardPool_Character",
+                    "lottery_id": "Lottery_Unknown",
+                    "item_id": "fork_dustbin"
+                },
+                {
+                    "record_id": "mismatch-id",
+                    "source_order": 1,
+                    "record_type": "monopoly",
+                    "pool_id": "CardPool_Character",
+                    "lottery_id": "Lottery_Permanent",
+                    "item_id": "fork_dustbin"
+                }
+            ]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let path = tmp.path().join("exports/unresolved.json");
+
+    store
+        .export_public_json("default", "zh-Hant", &path)
+        .unwrap();
+
+    let exported: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let records = exported["nte"]["list"].as_array().unwrap();
+    assert_eq!(records[0]["lottery_id"], "Lottery_Permanent");
+    assert_eq!(records[1]["lottery_id"], "Lottery_Unknown");
+    assert!(
+        records
+            .iter()
+            .all(|record| record.get("banner_id").is_none())
+    );
 }
 
 #[test]

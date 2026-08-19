@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "de",
+  "csv_headers": {
+    "count": "Menge",
+    "item_name": "Gegenstand-Name",
+    "pool_group": "Pool Typ",
+    "pool_name": "Pool",
+    "roll_label": "Würfelergebnis",
+    "secondary_count": "Extrabelohnung Menge",
+    "secondary_item_name": "Extrabelohnung",
+    "time": "Erwerbszeit"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Abgeschlossen",
+    "Abyss_GamepadKeys_1": "Wechseln",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Standard-Spielbrett",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Spielbretttyp",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Limitiertes Spielbrett",
+    "BPUI_LotteryModuleEntrance_Title": "Salhowk-Messe",
+    "BPUI_LotteryResult_chenmiandi": "Schlummerland",
+    "BPUI_LotteryResult_jidianzengli": "Punktegeschenk",
+    "Mall_8_name": "Arkus-Laden",
+    "TreasureBox_2": "Öffnen",
+    "UI_CloneSystemChallengeFailed_Retry": "Erneut versuchen",
+    "UI_CloneSystemStaminaTips_Enter": "Betreten",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "Würfelwurf-Aufzeichnungen",
+    "UI_Lottery_GachaDetails_title": "Spielbrett-Details",
+    "UW_LotteryBase_BP_Hupanyanmu": "Arkus-Forschung",
+    "W_HTButton_Next_Page": "Weiter",
+    "W_Vehicle_Button_Choose": "Auswählen",
+    "common_3": "Zurück",
+    "item_kind_character": "Charakter",
+    "item_kind_fashion": "Outfit",
+    "item_kind_fork": "Arkus",
+    "item_kind_glider": "Gleiter",
+    "item_kind_inventory": "Gegenstand",
+    "item_kind_vehicle_module": "Mod-Teile",
+    "ui_appearance_02": "Gleiter",
+    "ui_forkshop_03": "Arkus-Forschungsprogramm",
+    "ui_forkshop_07": "Details",
+    "ui_forkshop_10": "Aufzeichnungen"
+  },
+  "items": {
+    "1003": {
+      "name": "Charakter·Sakiri"
+    },
+    "1004": {
+      "name": "Charakter·Lacrimosa"
+    },
+    "1008": {
+      "name": "Charakter·Skia"
+    },
+    "1010": {
+      "name": "Charakter·Nanally"
+    },
+    "1019": {
+      "name": "Charakter·Mint"
+    },
+    "1020": {
+      "name": "Charakter·Haniel"
+    },
+    "1021": {
+      "name": "Charakter·Edgar"
+    },
+    "1023": {
+      "name": "Charakter·Baicang"
+    },
+    "1025": {
+      "name": "Charakter·Hathor"
+    },
+    "1033": {
+      "name": "Charakter·Adler"
+    },
+    "1036": {
+      "name": "Charakter·Zankou"
+    },
+    "1039": {
+      "name": "Charakter·Fadia"
+    },
+    "1052": {
+      "name": "Charakter·Hotori"
+    },
+    "1054": {
+      "name": "Charakter·Daffodill"
+    },
+    "1055": {
+      "name": "Charakter·Jiuyuan"
+    },
+    "1070": {
+      "name": "Charakter·Aurelia"
+    },
+    "1071": {
+      "name": "Charakter·Chaos"
+    },
+    "1072": {
+      "name": "Charakter·Linko"
+    },
+    "1073": {
+      "name": "Charakter·Chiz"
+    },
+    "1075": {
+      "name": "Charakter·Iroi"
+    },
+    "1076": {
+      "name": "Charakter·Shinku"
+    },
+    "DiceNormal": {
+      "name": "Gegenstand·Zinkwürfel"
+    },
+    "Dice_ticket_01": {
+      "name": "Gegenstand·Warp-Figur"
+    },
+    "Dice_ticket_02": {
+      "name": "Gegenstand·Verlorene Figur"
+    },
+    "Dicelimite": {
+      "name": "Gegenstand·Festwürfel"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "Outfit·Erzmagierin"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Gleiter·Tomaten-Duo"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Gleiter·Unterboss der Unterbosse"
+    },
+    "Fashion_Glide_1036": {
+      "name": "Gleiter·Scharlachrote Schärpe"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Gleiter·Orchideenbrise"
+    },
+    "Fashion_Glide_1071": {
+      "name": "Gleiter·Himmelsreiter"
+    },
+    "Fashion_Glide_1072": {
+      "name": "Gleiter·Supergeist"
+    },
+    "Fashion_Glide_1075": {
+      "name": "Gleiter·Schafikopter"
+    },
+    "Fashion_Glide_1076": {
+      "name": "Gleiter·Wolken-Baldachin"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Outfit·Vergoldete Rhapsodie"
+    },
+    "Fashion_character_1010": {
+      "name": "Outfit·Phönix-Kick"
+    },
+    "Fashion_character_1036_03": {
+      "name": "Outfit·Herbstvignette"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Outfit·Unbezahlbare Orchidee"
+    },
+    "Fashion_character_1071_01": {
+      "name": "Outfit·Klarer Himmel"
+    },
+    "Fashion_character_1072_01": {
+      "name": "Outfit·Surfen zwischen den Sternen"
+    },
+    "Fashion_character_1076_01": {
+      "name": "Outfit·Terrasea-Schüler"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Mod-Teile·Goldene Brise - Lackierung"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Mod-Teile·Tomatenreise – Lackierung"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Mod-Teile·Tiger kommt! - Lackierung"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "Mod-Teile·Sand-Illusion – Lackierung"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Mod-Teile·Herbstnebel - Lackierung"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "Mod-Teile·Hundeblitz - Lackierung"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "Mod-Teile·Unser Trio – Lackierung"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "Mod-Teile·Unser Trio – Lackierung"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "Mod-Teile·Versteckter Drache – Lackierung"
+    },
+    "fork_Arachne": {
+      "name": "Arkus·Ewiger Walzer"
+    },
+    "fork_BitGame": {
+      "name": "Arkus·Publikumsbeben"
+    },
+    "fork_BitterCake": {
+      "name": "Arkus·Die Guten, die Schlechten und die Bitteren"
+    },
+    "fork_BlackBook": {
+      "name": "Arkus·Jugendliche Fantasie"
+    },
+    "fork_Butterfly": {
+      "name": "Arkus·Zuflucht der Realität"
+    },
+    "fork_DemonBlade": {
+      "name": "Arkus·Hungrige Klinge"
+    },
+    "fork_Door": {
+      "name": "Arkus·Das falsche Tor"
+    },
+    "fork_GoldRecord": {
+      "name": "Arkus·Stimme des Reisenden"
+    },
+    "fork_GoldWool": {
+      "name": "Arkus·Das Begehrte"
+    },
+    "fork_Kite": {
+      "name": "Arkus·Vorsicht, Kopf einziehen!"
+    },
+    "fork_LunarPhase": {
+      "name": "Arkus·Errötende Fata Morgana"
+    },
+    "fork_Nakupeda": {
+      "name": "Arkus·Dein Glück ist unbezahlbar"
+    },
+    "fork_PaperPlane": {
+      "name": "Arkus·Klarer Himmel"
+    },
+    "fork_PoliceRat": {
+      "name": "Arkus·Hethereaus Hüter"
+    },
+    "fork_Prokaryon": {
+      "name": "Arkus·Wir."
+    },
+    "fork_Rose": {
+      "name": "Arkus·Die letzte Rose"
+    },
+    "fork_TigerTally": {
+      "name": "Arkus·Immer bereit"
+    },
+    "fork_Time": {
+      "name": "Arkus·Marschieren jenseits der Zeit"
+    },
+    "fork_appliance": {
+      "name": "Arkus·„Echte Musik“"
+    },
+    "fork_bopu": {
+      "name": "Arkus·Kosmosrausch, wilde Träumerei"
+    },
+    "fork_dustbin": {
+      "name": "Arkus·Gefährliches Spiel"
+    },
+    "fork_jiaojuan": {
+      "name": "Arkus·Strahlende Tage"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Arkus·Kamelienfest"
+    },
+    "fork_koinobori": {
+      "name": "Arkus·Eine Zeit wird kommen"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Arkus·Schlacht des Verstandes"
+    },
+    "fork_mamen": {
+      "name": "Arkus·Nachdenkliche Katze"
+    },
+    "fork_mofeikesi": {
+      "name": "Arkus·Das Abenteuer des braven Hundes"
+    },
+    "fork_nonos": {
+      "name": "Arkus·Erste Schritte zum Erfolg"
+    },
+    "fork_oulaquantao": {
+      "name": "Arkus·Oraora!"
+    },
+    "fork_rishi": {
+      "name": "Arkus·Freier Tag"
+    },
+    "fork_spider": {
+      "name": "Arkus·Es ist schwer, dich loszulassen"
+    },
+    "fork_tuansanlang": {
+      "name": "Arkus·Verdammte Begegnung"
+    },
+    "fork_vine": {
+      "name": "Arkus·Glücklich sein"
+    },
+    "fork_wuhuakuang": {
+      "name": "Arkus·Die Vergessenen"
+    },
+    "fork_wushoutieyu": {
+      "name": "Arkus·Wütende Flammen"
+    },
+    "fork_yaodao": {
+      "name": "Arkus·Gezogene Klinge"
+    },
+    "fork_yuren": {
+      "name": "Arkus·Regenschirm"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "Sensationskiste"
+    },
+    "CardPool_Character": {
+      "name": "Limitiertes Spielbrett",
+      "group_label": "Limitiertes Spielbrett"
+    },
+    "CardPool_NewRole": {
+      "name": "Standard-Spielbrett",
+      "group_label": "Standard-Spielbrett",
+      "title": "Sonderbare Begegnungen"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Nacht-Spezialausgabe"
+    },
+    "ForkLottery_Canhong": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Verzauberung-Spezialausgabe"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Jagd-Spezialausgabe"
+    },
+    "ForkLottery_LingKe": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Symphonie-Spezialausgabe"
+    },
+    "ForkLottery_Nanali": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Tiger-Spezialausgabe"
+    },
+    "ForkLottery_Xun": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Leuchtmond-Spezialausgabe"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Traumtor-Spezial"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Entschlossenheits-Spezial"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "Sonderbare Begegnungen"
+    },
+    "Lottery_Nanali": {
+      "title": "Die Ichi-daime"
+    },
+    "Lottery_Xun": {
+      "title": "Nebeldunst-Stil"
+    },
+    "Lottery_AnHunQu": {
+      "title": "Verblassender Traum"
+    },
+    "Lottery_Kaesi": {
+      "title": "Verlassener Pfad"
+    },
+    "Lottery_ZhenHong": {
+      "title": "Vor Tagesanbruch"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "Lebenslinie"
+    },
+    "Lottery_Canhong": {
+      "title": "Verlockende Schatten"
+    },
+    "Lottery_LingKe": {
+      "title": "Auf allen Kanälen!"
+    },
+    "ForkLottery_Nanali": {
+      "title": "Tiger-Spezialausgabe"
+    },
+    "ForkLottery_Xun": {
+      "title": "Leuchtmond-Spezialausgabe"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "Nacht-Spezialausgabe"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "Jagd-Spezialausgabe"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "Entschlossenheits-Spezial"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "Traumtor-Spezial"
+    },
+    "ForkLottery_Canhong": {
+      "title": "Verzauberung-Spezialausgabe"
+    },
+    "ForkLottery_LingKe": {
+      "title": "Symphonie-Spezialausgabe"
+    }
+  }
+}

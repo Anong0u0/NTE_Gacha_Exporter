@@ -12,6 +12,11 @@ fn record(record_id: &str, pool_id: &str, item_id: &str, time: &str) -> Internal
         },
         time: Some(time.to_string()),
         pool_id: pool_id.to_string(),
+        lottery_id: match pool_id {
+            "CardPool_Character" => Some("Lottery_Nanali".to_string()),
+            "CardPool_NewRole" => Some("Lottery_Permanent".to_string()),
+            _ => None,
+        },
         item_id: item_id.to_string(),
         count: Some(1),
         roll_points: Some(1),
@@ -411,7 +416,7 @@ fn same_timestamp_uses_source_order_tiebreaker() {
 }
 
 #[test]
-fn limited_boundaries_have_independent_banner_pull_numbers() {
+fn banner_sources_and_occurrences_have_independent_pull_numbers() {
     let map = load_map("zh-Hant").expect("map should load");
     let records = vec![
         record(
@@ -420,48 +425,81 @@ fn limited_boundaries_have_independent_banner_pull_numbers() {
             "Fashion_vehicle_1010_V008",
             "2026-05-13 05:59:00",
         ),
-        record(
-            "xun",
-            "CardPool_Character",
-            "Fashion_vehicle_1052_V024",
-            "2026-05-13 05:59:01",
-        ),
+        {
+            let mut record = record(
+                "xun",
+                "CardPool_Character",
+                "Fashion_vehicle_1052_V024",
+                "2026-05-13 05:59:01",
+            );
+            record.lottery_id = Some("Lottery_Xun".to_string());
+            record
+        },
     ];
 
     let derived = derive_records(&records, &map).expect("records should derive");
 
     assert_eq!(
-        derived[0].banner_id.as_deref(),
-        Some("monopoly_limited_Nanali")
+        derived[0].banner_source_id.as_deref(),
+        Some("Lottery_Nanali")
     );
-    assert_eq!(derived[0].pull_no_in_banner, Some(1));
-    assert_eq!(
-        derived[1].banner_id.as_deref(),
-        Some("monopoly_limited_Xun")
-    );
-    assert_eq!(derived[1].pull_no_in_banner, Some(1));
+    assert_eq!(derived[0].pull_no_in_banner_source, Some(1));
+    assert_eq!(derived[0].pull_no_in_banner_occurrence, Some(1));
+    assert_eq!(derived[1].banner_source_id.as_deref(), Some("Lottery_Xun"));
+    assert_eq!(derived[1].pull_no_in_banner_source, Some(1));
+    assert_eq!(derived[1].pull_no_in_banner_occurrence, Some(1));
 }
 
 #[test]
-fn outside_known_limited_window_uses_synthetic_banner() {
+fn rerun_resets_occurrence_counter_but_keeps_source_counter() {
     let map = load_map("zh-Hant").expect("map should load");
-    let records = vec![record(
+    let records = vec![
+        record("first", "CardPool_Character", "1003", "2026-04-30 06:00:00"),
+        record("rerun", "CardPool_Character", "1003", "2026-08-13 06:00:00"),
+    ];
+
+    let derived = derive_records(&records, &map).expect("records should derive");
+
+    assert_eq!(
+        derived[0].banner_source_id.as_deref(),
+        Some("Lottery_Nanali")
+    );
+    assert_eq!(
+        derived[1].banner_source_id.as_deref(),
+        Some("Lottery_Nanali")
+    );
+    assert_ne!(
+        derived[0].banner_occurrence_id,
+        derived[1].banner_occurrence_id
+    );
+    assert_eq!(derived[0].pull_no_in_banner_source, Some(1));
+    assert_eq!(derived[1].pull_no_in_banner_source, Some(2));
+    assert_eq!(derived[0].pull_no_in_banner_occurrence, Some(1));
+    assert_eq!(derived[1].pull_no_in_banner_occurrence, Some(1));
+}
+
+#[test]
+fn missing_lottery_id_uses_synthetic_banner_even_with_known_time() {
+    let map = load_map("zh-Hant").expect("map should load");
+    let mut record = record(
         "outside",
         "CardPool_Character",
         "fork_dustbin",
         "2026-08-19 05:59:01",
-    )];
+    );
+    record.lottery_id = None;
+    let records = vec![record];
 
     let derived = derive_records(&records, &map).expect("records should derive");
 
-    assert_eq!(derived[0].banner_id.as_deref(), Some("CardPool_Character"));
-    assert_eq!(derived[0].pull_no_in_banner, Some(1));
+    assert_eq!(derived[0].banner_source_id, None);
+    assert_eq!(derived[0].pull_no_in_banner_occurrence, None);
     assert_eq!(derived[0].pull_no_in_pool_kind, Some(1));
     assert_eq!(derived[0].pity_5_after, 1);
 }
 
 #[test]
-fn unknown_time_limited_window_uses_synthetic_banner() {
+fn missing_lottery_id_uses_synthetic_banner_without_time() {
     let map = load_map("zh-Hant").expect("map should load");
     let mut record = record(
         "unknown-time",
@@ -470,10 +508,11 @@ fn unknown_time_limited_window_uses_synthetic_banner() {
         "not a time",
     );
     record.time = None;
+    record.lottery_id = None;
     let derived = derive_records(&[record], &map).expect("records should derive");
 
-    assert_eq!(derived[0].banner_id.as_deref(), Some("CardPool_Character"));
-    assert_eq!(derived[0].pull_no_in_banner, Some(1));
+    assert_eq!(derived[0].banner_source_id, None);
+    assert_eq!(derived[0].pull_no_in_banner_occurrence, None);
     assert_eq!(derived[0].rate_up_result, RateUpResult::Unknown);
 }
 
@@ -502,7 +541,7 @@ fn sentinel_rows_stay_visible_but_do_not_advance_pull_state() {
     assert_eq!(derived[1].record_id, "sentinel");
     assert!(!derived[1].counts_as_pull);
     assert_eq!(derived[1].pull_no_in_pool_kind, None);
-    assert_eq!(derived[1].pull_no_in_banner, None);
+    assert_eq!(derived[1].pull_no_in_banner_occurrence, None);
     assert_eq!(derived[1].hit_rarity, None);
     assert_eq!(derived[1].pity_5_before, 0);
     assert_eq!(derived[1].pity_5_after, 0);

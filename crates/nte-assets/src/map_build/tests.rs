@@ -7,9 +7,8 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         write_minimal_assets(tmp.path());
 
-        let map = build_asset_map(tmp.path(), "zh-Hant").unwrap();
+        let map = build_full_asset_map(tmp.path(), "zh-Hant").unwrap();
 
-        assert_eq!(map["schema_version"], 4);
         let map_text = serde_json::to_string(&map).unwrap();
         assert!(!map_text.contains("\"source\""));
         assert!(!map_text.contains("\"domain_type\""));
@@ -20,7 +19,14 @@ mod tests {
         assert_eq!(map["items"]["201"]["name"], "Arc·Forgotten");
         assert_eq!(map["items"]["201"]["rarity"], 4);
         let nanali_refs = map["items"]["1010"]["asset_refs"].as_object().unwrap();
-        assert_eq!(nanali_refs.get("head_icon"), Some(&json!("/Game/SmallIcon")));
+        assert_eq!(
+            nanali_refs.get("head_icon"),
+            Some(&json!("/Game/SmallIcon"))
+        );
+        assert_eq!(
+            nanali_refs.get("icon"),
+            Some(&json!("/Game/LegacyCharacterIcon256"))
+        );
         assert_eq!(
             nanali_refs.get("banner"),
             Some(&json!(
@@ -28,20 +34,22 @@ mod tests {
             ))
         );
         assert!(!nanali_refs.contains_key("portrait"));
-        assert!(!nanali_refs.contains_key("icon"));
         assert!(!nanali_refs.contains_key("material"));
         assert_eq!(
-            map["banners"]["monopoly_limited_Nanali"]["asset_refs"]["image"],
+            map["banners"]["Lottery_Nanali"]["asset_refs"]["image"],
             "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
         );
-        assert!(map["banners"]["monopoly_limited_Nanali"]["asset_refs"]["featured_portraits"].is_null());
+        assert!(map["banners"]["Lottery_Nanali"]["asset_refs"]["featured_portraits"].is_null());
         let forgotten_refs = map["items"]["201"]["asset_refs"].as_object().unwrap();
         assert_eq!(forgotten_refs.get("icon"), Some(&json!("/Game/ForkIcon")));
         assert_eq!(
             forgotten_refs.get("head_icon"),
             Some(&json!("/Game/ForkSmallIcon"))
         );
-        assert_eq!(forgotten_refs.get("banner"), Some(&json!("/Game/ForkBanner")));
+        assert_eq!(
+            forgotten_refs.get("banner"),
+            Some(&json!("/Game/ForkBanner"))
+        );
         assert_eq!(
             forgotten_refs.get("material"),
             Some(&json!("/Game/ForkMaterial"))
@@ -49,13 +57,79 @@ mod tests {
         let glide_refs = map["items"]["Fashion_Glide_1010"]["asset_refs"]
             .as_object()
             .unwrap();
-        assert_eq!(map["items"]["Fashion_Glide_1010"]["name"], "滑翔翼·Nanali Glide");
+        assert_eq!(
+            map["items"]["Fashion_Glide_1010"]["name"],
+            "滑翔翼·Nanali Glide"
+        );
         assert_eq!(map["items"]["Fashion_Glide_1010"]["category"], "glider");
         assert_eq!(glide_refs.get("icon"), Some(&json!("/Game/GlideIcon")));
         assert!(!glide_refs.contains_key("portrait"));
         assert!(!glide_refs.contains_key("banner"));
-        assert_eq!(map["items"]["Fashion_character_1010"]["name"], "時裝·Nanali Fashion");
-        assert_eq!(map["items"]["Fashion_character_1010"]["category"], "fashion");
+        assert_eq!(
+            map["items"]["Fashion_character_1010"]["name"],
+            "時裝·Nanali Fashion"
+        );
+        assert_eq!(
+            map["items"]["Fashion_character_1010"]["category"],
+            "fashion"
+        );
+        let fashion_refs = map["items"]["Fashion_character_1010"]["asset_refs"]
+            .as_object()
+            .unwrap();
+        assert_eq!(
+            fashion_refs.get("icon"),
+            Some(&json!("/Game/LinkedFashionIcon"))
+        );
+        assert_eq!(
+            fashion_refs.get("head_icon"),
+            Some(&json!("/Game/LinkedFashionHead"))
+        );
+        assert_eq!(
+            fashion_refs.get("portrait"),
+            Some(&json!("/Game/LinkedFashionPortrait"))
+        );
+        assert_eq!(
+            fashion_refs.get("banner"),
+            Some(&json!("/Game/FashionBanner"))
+        );
+        let v13_distinct_refs = map["items"]["Fashion_character_1036_03"]["asset_refs"]
+            .as_object()
+            .unwrap();
+        assert_eq!(
+            v13_distinct_refs.get("icon"),
+            Some(&json!("/Game/V13FashionIcon200"))
+        );
+        assert_eq!(
+            v13_distinct_refs.get("head_icon"),
+            Some(&json!("/Game/V13FashionIcon256"))
+        );
+        assert_eq!(
+            v13_distinct_refs.get("portrait"),
+            Some(&json!("/Game/V13FashionPortrait"))
+        );
+        let v13_missing_200_refs =
+            map["items"]["Fashion_character_1072_01"]["asset_refs"]
+                .as_object()
+                .unwrap();
+        assert_eq!(
+            v13_missing_200_refs.get("icon"),
+            Some(&json!("/Game/V13FashionRound256"))
+        );
+        assert!(!v13_missing_200_refs.contains_key("head_icon"));
+        assert_eq!(
+            v13_missing_200_refs.get("portrait"),
+            Some(&json!("/Game/V13FashionPortrait1072"))
+        );
+        let character_refs = map["items"]["1036"]["asset_refs"].as_object().unwrap();
+        assert_eq!(
+            character_refs.get("icon"),
+            Some(&json!("/Game/CharacterIcon"))
+        );
+        assert_eq!(
+            character_refs.get("head_icon"),
+            Some(&json!("/Game/CharacterHead"))
+        );
+        assert!(!character_refs.contains_key("portrait"));
         assert_eq!(map["labels"]["item_kind_fashion"], "時裝");
         assert_eq!(map["labels"]["item_kind_glider"], "滑翔翼");
         let vehicle_refs = map["items"]["Fashion_vehicle_1010_V008"]["asset_refs"]
@@ -76,10 +150,6 @@ mod tests {
         );
         assert!(!vehicle_skin_refs.contains_key("portrait"));
         assert_eq!(map["pools"]["CardPool_NewRole"]["title"], "Standard Title");
-        assert_eq!(
-            map["pools"]["ForkLottery_Test"]["banner_ids"][0],
-            "ForkLottery_Test"
-        );
         assert!(map["pools"]["ForkLottery_Test"]["asset_refs"].is_null());
         assert_eq!(
             map["banners"]["ForkLottery_Test"]["asset_refs"]["image"],
@@ -88,92 +158,77 @@ mod tests {
         assert!(map["banners"]["ForkLottery_Test"]["asset_refs"]["background"].is_null());
         assert!(map["banners"]["ForkLottery_Test"]["asset_refs"]["icon"].is_null());
         assert_eq!(
-            map["banners"]["monopoly_limited_Nanali"]["end_at"],
+            map["banners"]["Lottery_Nanali"]["end_at"],
             json!("2026-05-13 05:59:00")
         );
-        assert!(map["banners"]["monopoly_limited_Nanali"]["start_at"].is_null());
         assert_eq!(
-            map["banners"]["monopoly_limited_Nanali"]["rate_up_5"],
+            map["banners"]["Lottery_Nanali"]["mainland_end_at"],
+            json!("2026-05-12 22:30:00")
+        );
+        assert!(map["banners"]["Lottery_Nanali"]["start_at"].is_null());
+        assert!(map["banners"]["Lottery_Nanali"]["mainland_start_at"].is_null());
+        assert_eq!(
+            map["banners"]["Lottery_Nanali"]["rate_up_5"],
             json!(["1010"])
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Xun"]["start_at"],
+            map["banners"]["Lottery_Xun"]["start_at"],
             json!("2026-05-13 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Xun"]["end_at"],
+            map["banners"]["Lottery_Xun"]["end_at"],
+            json!("2026-06-03 05:59:00")
+        );
+        assert_eq!(map["banners"]["Lottery_Xun"]["rate_up_5"], json!(["1052"]));
+        assert_eq!(
+            map["banners"]["Lottery_AnHunQu"]["start_at"],
             json!("2026-06-03 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Xun"]["rate_up_5"],
-            json!(["1052"])
-        );
-        assert_eq!(
-            map["banners"]["monopoly_limited_AnHunQu"]["start_at"],
-            json!("2026-06-03 05:59:00")
-        );
-        assert_eq!(
-            map["banners"]["monopoly_limited_AnHunQu"]["end_at"],
+            map["banners"]["Lottery_AnHunQu"]["end_at"],
             json!("2026-06-24 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_AnHunQu"]["rate_up_5"],
+            map["banners"]["Lottery_AnHunQu"]["rate_up_5"],
             json!(["1004"])
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Kaesi"]["start_at"],
+            map["banners"]["Lottery_Kaesi"]["start_at"],
             json!("2026-06-24 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Kaesi"]["end_at"],
+            map["banners"]["Lottery_Kaesi"]["end_at"],
             json!("2026-07-08 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Kaesi"]["rate_up_5"],
+            map["banners"]["Lottery_Kaesi"]["rate_up_5"],
             json!(["1071"])
         );
+        assert_eq!(map["banners"]["Lottery_ZhenHong"]["title"], json!("破晓前"));
         assert_eq!(
-            map["banners"]["monopoly_limited_ZhenHong"]["title"],
-            json!("破晓前")
-        );
-        assert_eq!(
-            map["banners"]["monopoly_limited_ZhenHong"]["start_at"],
+            map["banners"]["Lottery_ZhenHong"]["start_at"],
             json!("2026-07-08 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_ZhenHong"]["end_at"],
+            map["banners"]["Lottery_ZhenHong"]["end_at"],
             json!("2026-07-29 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_ZhenHong"]["rate_up_5"],
+            map["banners"]["Lottery_ZhenHong"]["rate_up_5"],
             json!(["1076"])
         );
+        assert_eq!(map["banners"]["Lottery_Yiluoyi"]["title"], json!("生命线"));
         assert_eq!(
-            map["banners"]["monopoly_limited_Yiluoyi"]["title"],
-            json!("生命线")
-        );
-        assert_eq!(
-            map["banners"]["monopoly_limited_Yiluoyi"]["start_at"],
+            map["banners"]["Lottery_Yiluoyi"]["start_at"],
             json!("2026-07-29 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Yiluoyi"]["end_at"],
+            map["banners"]["Lottery_Yiluoyi"]["end_at"],
             json!("2026-08-19 05:59:00")
         );
         assert_eq!(
-            map["banners"]["monopoly_limited_Yiluoyi"]["rate_up_5"],
+            map["banners"]["Lottery_Yiluoyi"]["rate_up_5"],
             json!(["1075"])
-        );
-        assert_eq!(
-            map["pools"]["CardPool_Character"]["title_windows"],
-            json!([
-                {"end_at_tz8": "2026-05-13 05:59:00", "title": "Nanali Banner"},
-                {"end_at_tz8": "2026-06-03 05:59:00", "title": "Xun Banner"},
-                {"end_at_tz8": "2026-06-24 05:59:00", "title": "久夢初醒時"},
-                {"end_at_tz8": "2026-07-08 05:59:00", "title": "Kaesi Banner"},
-                {"end_at_tz8": "2026-07-29 05:59:00", "title": "破晓前"},
-                {"end_at_tz8": "2026-08-19 05:59:00", "title": "生命线"}
-            ])
         );
         assert_eq!(
             map["gacha_rules"]["fork_lottery_s"]["hard_pity_5"],
@@ -184,6 +239,72 @@ mod tests {
             json!(80)
         );
         assert_eq!(map["labels"]["UW_LotteryBase_BP_Hupanyanmu"], "Fork Group");
+
+        let (core, overlay) = split_asset_map(&map, "zh-Hant").unwrap();
+        assert_eq!(core["schema"], MAP_CORE_SCHEMA);
+        assert_eq!(core["schema_version"], MAP_CORE_SCHEMA_VERSION);
+        assert_eq!(overlay["schema"], MAP_LOCALE_SCHEMA);
+        assert_eq!(overlay["schema_version"], MAP_LOCALE_SCHEMA_VERSION);
+        assert_eq!(overlay["locale"], "zh-Hant");
+        assert_eq!(overlay["items"]["1010"]["name"], "Character·Nanali");
+        assert!(core["items"]["1010"].get("name").is_none());
+        assert_eq!(
+            overlay["banner_sources"]["Lottery_Nanali"]["title"],
+            "Nanali Banner"
+        );
+        assert_eq!(
+            core["banner_sources"]["Lottery_Nanali"]["source_id"],
+            "Lottery_Nanali"
+        );
+        assert!(
+            core["banner_sources"]["Lottery_Nanali"]
+                .get("end_at")
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn localization_fallback_skips_whitespace_values() {
+        let localization = BTreeMap::from([(
+            "ST_Test".to_string(),
+            BTreeMap::from([("name".to_string(), "   ".to_string())]),
+        )]);
+        let value = json!({
+            "Key": "name",
+            "TableId": "ST_Test",
+            "SourceString": "Source fallback"
+        });
+        let layered_fallback = json!({
+            "SourceString": " \t ",
+            "LocalizedString": "Localized fallback"
+        });
+
+        assert_eq!(
+            localized_text(Some(&value), &localization).as_deref(),
+            Some("Source fallback")
+        );
+        assert_eq!(
+            text_ref_source_text(Some(&layered_fallback), &localization).as_deref(),
+            Some("Localized fallback")
+        );
+    }
+
+    #[test]
+    fn fills_only_exact_twenty_one_day_limited_boundary_gaps() {
+        let boundary = |month, day| AssetDateTime {
+            value: NaiveDate::from_ymd_opt(2026, month, day)
+                .unwrap()
+                .and_hms_opt(6, 30, 0)
+                .unwrap(),
+        };
+        let mut exact = vec![Some(boundary(7, 8)), None, Some(boundary(8, 19))];
+        let mut irregular = vec![Some(boundary(7, 8)), None, Some(boundary(8, 18))];
+
+        fill_regular_limited_boundary_gaps(&mut exact);
+        fill_regular_limited_boundary_gaps(&mut irregular);
+
+        assert_eq!(exact[1], Some(boundary(7, 29)));
+        assert_eq!(irregular[1], None);
     }
 
     #[test]
@@ -211,31 +332,37 @@ mod tests {
             }}),
         );
 
-        let error = build_asset_map(tmp.path(), "zh-Hant").unwrap_err();
+        let error = build_full_asset_map(tmp.path(), "zh-Hant").unwrap_err();
 
-        assert!(error
-            .to_string()
-            .contains("inconsistent monopoly limited pool order"));
+        assert!(
+            error
+                .to_string()
+                .contains("inconsistent monopoly limited pool order")
+        );
     }
 
     #[test]
     fn rejects_case_folded_duplicate_item_ids() {
         let map = json!({
-            "schema_version": 4,
+            "schema": MAP_CORE_SCHEMA,
+            "schema_version": MAP_CORE_SCHEMA_VERSION,
             "items": {
-                "Foo": {"name": "Foo", "rarity": 3},
-                "foo": {"name": "foo", "rarity": 4}
+                "Foo": {"rarity": 3},
+                "foo": {"rarity": 4}
             },
+            "item_aliases": {},
             "pools": {},
-            "banners": {},
+            "banner_sources": {},
             "gacha_rules": {}
         });
 
-        let error = validate_map_source(&map, "test.json").unwrap_err();
+        let error = validate_core_source(&map, "test.json").unwrap_err();
 
-        assert!(error
-            .to_string()
-            .contains("case-insensitive duplicate item_id"));
+        assert!(
+            error
+                .to_string()
+                .contains("case-insensitive duplicate item_id")
+        );
     }
 
     #[test]
@@ -243,7 +370,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         write_json(tmp.path().join("DataTable/.keep"), json!({}));
         fs::create_dir_all(tmp.path().join("DataTable")).unwrap();
-        for locale in ["en", "zh-Hant", "en-JM"] {
+        for locale in ["en", "zh-Hant", "en-JM", "en-MT"] {
             write_json(
                 tmp.path()
                     .join("Localization")
@@ -331,10 +458,14 @@ mod tests {
                     "char_1071": "Kaesi",
                     "char_1075": "Yiluoyi",
                     "char_1076": "ZhenHong",
+                    "char_1036": "Canhong",
+                    "char_1072": "Linko",
                     "Dicelimite_lacrimosa_usedesc": "僅可在限定棋盤「久夢初醒時」中進行投擲獲得所需物品。",
                     "fork_200": "Fork Weapon",
                     "fork_201": "Forgotten",
                     "fashion_1010": "Nanali Fashion",
+                    "fashion_1036_v13": "Canhong V1.3 Fashion",
+                    "fashion_1072_v13": "Linko V1.3 Fashion",
                     "glide_1010": "Nanali Glide",
                     "vehicle_1010": "Nanali Vehicle",
                     "vehicle_skin_1010": "Nanali Vehicle Skin"
@@ -372,7 +503,21 @@ mod tests {
                     "char_1076",
                     "/Game/ZhenHongPortrait",
                     schedule(2026, 7, 7, 22, 30, true)
-                )
+                ),
+                "1036": {
+                    "ItemName": {"Key": "char_1036", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                    "ItemIcon": {"AssetPathName": "/Game/CharacterIcon"},
+                    "ItemIconSmall": {"AssetPathName": "/Game/CharacterHead"},
+                    "ItemIconBig": {"AssetPathName": "/Game/CharacterBig"},
+                    "ToolDatas": [{"AppearanceID": "Fashion_1036_1"}],
+                    "ElementData": {"ShowTime": schedule(2026, 8, 13, 6, 30, true)}
+                },
+                "1072": {
+                    "ItemName": {"Key": "char_1072", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                    "ElementData": {"ShowTime": schedule(2026, 9, 3, 6, 30, true)}
+                }
             }}),
         );
         write_json(
@@ -433,7 +578,20 @@ mod tests {
                 },
                 "Fashion_character_1010": {
                     "ItemName": {"Key": "fashion_1010", "TableId": "ST_Item"},
-                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE"
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                    "ItemIcon": {"AssetPathName": "/Game/WrongFashionIcon"},
+                    "ItemIconSmall": {"AssetPathName": "/Game/WrongFashionHead"},
+                    "ToolDatas": [{"AppearanceID": "Fashion_1010_2"}]
+                },
+                "Fashion_character_1036_03": {
+                    "ItemName": {"Key": "fashion_1036_v13", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                    "ToolDatas": [{"AppearanceID": "Fashion_1036_3"}]
+                },
+                "Fashion_character_1072_01": {
+                    "ItemName": {"Key": "fashion_1072_v13", "TableId": "ST_Item"},
+                    "ItemQuality": "EItemQuality::ITEM_QUALITY_ORANGE",
+                    "ToolDatas": [{"AppearanceID": "Fashion_1072_space"}]
                 },
                 "Fashion_vehicleSkin_1010_V001": {
                     "ItemName": {"Key": "vehicle_skin_1010", "TableId": "ST_Item"},
@@ -487,6 +645,36 @@ mod tests {
                     "DisplayIcon": {"AssetPathName": "/Game/GlideIcon"},
                     "HeadIconBig": {"AssetPathName": "/Game/GlidePortrait"},
                     "PortraitImg": {"AssetPathName": "/Game/GlideBanner"}
+                },
+                "Fashion_1010_2": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1010",
+                    "HeadIconBig": {"AssetPathName": "/Game/LinkedFashionIcon"},
+                    "HeadIcon": {"AssetPathName": "/Game/LinkedFashionHead"},
+                    "SmallPortraitImg": {"AssetPathName": "/Game/LinkedFashionPortrait"}
+                },
+                "Fashion_1036_1": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1036",
+                    "HeadIconBig": {"AssetPathName": "/Game/LinkedCharacterIcon"},
+                    "HeadIcon": {"AssetPathName": "/Game/LinkedCharacterHead"},
+                    "SmallPortraitImg": {"AssetPathName": "/Game/LinkedCharacterPortrait"}
+                },
+                "Fashion_1036_3": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1036",
+                    "HeadIconBig": {"AssetPathName": "/Game/V13FashionIcon256"},
+                    "HeadIcon": {"AssetPathName": "/Game/V13FashionIcon200"},
+                    "DisplayIcon": {"AssetPathName": "/Game/V13FashionDisplay1036"},
+                    "SmallPortraitImg": {"AssetPathName": "/Game/V13FashionPortrait"}
+                },
+                "Fashion_1072_space": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1072",
+                    "HeadIconBig": {"AssetPathName": "/Game/V13FashionRound256"},
+                    "HeadIcon": {"AssetPathName": "/Game/V13FashionRound256"},
+                    "DisplayIcon": {"AssetPathName": "/Game/V13FashionDisplay"},
+                    "SmallPortraitImg": {"AssetPathName": "/Game/V13FashionPortrait1072"}
                 }
             }}),
         );
@@ -520,6 +708,7 @@ mod tests {
             root.join("DataTable/Gacha/GachaIllustrate.json"),
             json!({"Rows": {
                 "1010": {
+                    "HeadIcon": {"AssetPathName": "/Game/LegacyCharacterIcon256"},
                     "ItemIcon": {"AssetPathName": "/Game/Portrait"},
                     "ActivityHeadIcon": {"AssetPathName": "/Game/Banner"},
                     "MaterialTexture": {"AssetPathName": "/Game/Banner"},
@@ -529,7 +718,23 @@ mod tests {
                     "ActivityHeadIcon": {"AssetPathName": "/Game/ForkBanner"},
                     "MaterialTexture": {"AssetPathName": "/Game/ForkMaterial"}
                 },
-                "Fashion_character_1010": {},
+                "Fashion_character_1010": {
+                    "HeadIcon": {"AssetPathName": "/Game/WrongGachaFashionIcon"},
+                    "ItemIcon": {"AssetPathName": "/Game/WrongGachaFashionPortrait"},
+                    "ActivityHeadIcon": {"AssetPathName": "/Game/FashionBanner"}
+                },
+                "Fashion_character_1036_03": {
+                    "HeadIcon": {"AssetPathName": "/Game/WrongV13GachaIcon"},
+                    "ItemIcon": {"AssetPathName": "/Game/WrongV13GachaPortrait"}
+                },
+                "Fashion_character_1072_01": {
+                    "HeadIcon": {"AssetPathName": "/Game/WrongV13GachaIcon1072"},
+                    "ItemIcon": {"AssetPathName": "/Game/WrongV13GachaPortrait1072"}
+                },
+                "1036": {
+                    "HeadIcon": {"AssetPathName": "/Game/WrongGachaCharacterIcon"},
+                    "ItemIcon": {"AssetPathName": "/Game/WrongGachaCharacterPortrait"}
+                },
                 "Fashion_Glide_1010": {},
                 "Fashion_vehicle_1010_V008": {},
                 "Fashion_vehicleSkin_1010_V001": {}

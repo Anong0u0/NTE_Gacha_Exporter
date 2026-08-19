@@ -200,7 +200,7 @@ fn dashboard_five_wall_distance_uses_effective_pull_intervals() {
 }
 
 #[test]
-fn stats_include_synthetic_limited_banner_for_banner_summary() {
+fn legacy_time_resolution_stays_unresolved_when_current_banners_overlap() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
     let document = public_document(vec![record_with_options(
@@ -221,18 +221,7 @@ fn stats_include_synthetic_limited_banner_for_banner_summary() {
         .find(|summary| summary.pool_kind == PoolKind::MonopolyLimited)
         .unwrap();
 
-    let banner = overview
-        .banners
-        .iter()
-        .find(|banner| banner.banner_id == "CardPool_Character")
-        .unwrap();
-    assert_eq!(
-        banner.resolution_issue,
-        Some(nte_core::BannerResolutionIssue::OutsideKnownWindows)
-    );
-    assert_eq!(banner.pool_kind, PoolKind::MonopolyLimited);
-    assert!(banner.asset_refs.is_empty());
-    assert_eq!(banner.total_pulls, 1);
+    assert!(overview.banner_occurrences.is_empty());
     assert_eq!(limited.total_pulls, 1);
     assert_eq!(limited.roll_points_total, 6);
     assert!(

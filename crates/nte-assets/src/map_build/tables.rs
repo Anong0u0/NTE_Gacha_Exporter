@@ -70,25 +70,28 @@ fn namespace_from_table_id(table_id: Option<&Value>) -> Option<String> {
 
 fn localized_text(value: Option<&Value>, localization: &Localization) -> Option<String> {
     match value? {
-        Value::String(text) => Some(text.clone()),
+        Value::String(text) => (!text.trim().is_empty()).then(|| text.clone()),
         Value::Object(text_ref) => {
             if let Some(text) = text_ref
                 .get("CultureInvariantString")
                 .and_then(value_to_text)
-                .filter(|value| !value.is_empty())
+                .filter(|value| !value.trim().is_empty())
             {
                 return Some(text);
             }
             let key = text_ref.get("Key").and_then(value_to_text);
             let namespace = namespace_from_table_id(text_ref.get("TableId"));
             if let (Some(key), Some(namespace)) = (&key, namespace) {
-                if let Some(text) = localized_key(localization, &namespace, key) {
+                if let Some(text) = localized_key(localization, &namespace, key)
+                    .filter(|value| !value.trim().is_empty())
+                {
                     return Some(text);
                 }
             }
             if let Some(key) = key {
                 if let Some(text) = localized_key(localization, "", &key)
                     .or_else(|| unique_localized_key(localization, &key))
+                    .filter(|value| !value.trim().is_empty())
                 {
                     return Some(text);
                 }
@@ -102,8 +105,12 @@ fn localized_text(value: Option<&Value>, localization: &Localization) -> Option<
 fn text_ref_fallback(text_ref: &JsonObject) -> Option<String> {
     ["SourceString", "LocalizedString"]
         .into_iter()
-        .find_map(|field| text_ref.get(field).and_then(value_to_text))
-        .filter(|value| !value.is_empty())
+        .find_map(|field| {
+            text_ref
+                .get(field)
+                .and_then(value_to_text)
+                .filter(|value| !value.trim().is_empty())
+        })
 }
 
 fn text_ref_key(text_ref: Option<&Value>) -> Option<String> {
@@ -135,4 +142,3 @@ fn clean_name(value: Option<String>) -> Option<String> {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
 }
-

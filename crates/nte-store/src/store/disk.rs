@@ -66,7 +66,8 @@ fn replace_data_from_backup(&self, backup: &DataBackup) -> Result<(), GuiError> 
         if !path.exists() {
             return Ok(Vec::new());
         }
-        let mut disk: DiskRecords = read_json(&path)?;
+        let map = load_map(&self.read_settings()?.locale)?;
+        let mut disk = migrate_disk_records(read_json(&path)?, &map)?;
         normalize_records(&mut disk.records);
         sort_records(&mut disk.records);
         Ok(disk.records)
@@ -82,7 +83,7 @@ fn replace_data_from_backup(&self, backup: &DataBackup) -> Result<(), GuiError> 
         write_json(
             &self.records_path(profile_name),
             &DiskRecords {
-                schema_version: 1,
+                schema_version: RECORDS_SCHEMA_VERSION,
                 records,
             },
         )

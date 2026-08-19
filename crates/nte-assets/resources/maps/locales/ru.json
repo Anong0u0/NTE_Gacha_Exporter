@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "ru",
+  "csv_headers": {
+    "count": "Количество",
+    "item_name": "Название предмета",
+    "pool_group": "Баннер Тип",
+    "pool_name": "Баннер",
+    "roll_label": "Результат броска",
+    "secondary_count": "Дополнительная награда Количество",
+    "secondary_item_name": "Дополнительная награда",
+    "time": "Время получения"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "Завершено",
+    "Abyss_GamepadKeys_1": "Сменить",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "Стандартная доска",
+    "BPUI_LotteryDiceRecord_qipanleixing": "Тип доски",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "Эксклюзивная доска",
+    "BPUI_LotteryModuleEntrance_Title": "Ярмарка в Скарборо",
+    "BPUI_LotteryResult_chenmiandi": "Страна Сна",
+    "BPUI_LotteryResult_jidianzengli": "Подарок за очки",
+    "Mall_8_name": "Магазин дуг",
+    "TreasureBox_2": "Открыть",
+    "UI_CloneSystemChallengeFailed_Retry": "Заново",
+    "UI_CloneSystemStaminaTips_Enter": "Войти",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "История бросков",
+    "UI_Lottery_GachaDetails_title": "Подробности доски",
+    "UW_LotteryBase_BP_Hupanyanmu": "Исследование дуги",
+    "W_HTButton_Next_Page": "Далее",
+    "W_Vehicle_Button_Choose": "Выбрать",
+    "common_3": "Назад",
+    "item_kind_character": "Персонаж",
+    "item_kind_fashion": "Костюм",
+    "item_kind_fork": "Дуга",
+    "item_kind_glider": "Планер",
+    "item_kind_inventory": "Предмет",
+    "item_kind_vehicle_module": "Детали модификации",
+    "ui_appearance_02": "Планер",
+    "ui_forkshop_03": "План исследования дуги",
+    "ui_forkshop_07": "Подробности",
+    "ui_forkshop_10": "Записи"
+  },
+  "items": {
+    "1003": {
+      "name": "Персонаж·Сакири"
+    },
+    "1004": {
+      "name": "Персонаж·Лакримоза"
+    },
+    "1008": {
+      "name": "Персонаж·Ския"
+    },
+    "1010": {
+      "name": "Персонаж·Наналли"
+    },
+    "1019": {
+      "name": "Персонаж·Минт"
+    },
+    "1020": {
+      "name": "Персонаж·Ханиэль"
+    },
+    "1021": {
+      "name": "Персонаж·Эдгар"
+    },
+    "1023": {
+      "name": "Персонаж·Байканг"
+    },
+    "1025": {
+      "name": "Персонаж·Хатор"
+    },
+    "1033": {
+      "name": "Персонаж·Адлер"
+    },
+    "1036": {
+      "name": "Персонаж·Занку"
+    },
+    "1039": {
+      "name": "Персонаж·Фадия"
+    },
+    "1052": {
+      "name": "Персонаж·Хотори"
+    },
+    "1054": {
+      "name": "Персонаж·Даффодил"
+    },
+    "1055": {
+      "name": "Персонаж·Цзююань"
+    },
+    "1070": {
+      "name": "Персонаж·Аурелия"
+    },
+    "1071": {
+      "name": "Персонаж·Хаос"
+    },
+    "1072": {
+      "name": "Персонаж·Линко"
+    },
+    "1073": {
+      "name": "Персонаж·Чиз"
+    },
+    "1075": {
+      "name": "Персонаж·Ирой"
+    },
+    "1076": {
+      "name": "Персонаж·Шинку"
+    },
+    "DiceNormal": {
+      "name": "Предмет·Шулерские кубики"
+    },
+    "Dice_ticket_01": {
+      "name": "Предмет·Фрагмент искривления"
+    },
+    "Dice_ticket_02": {
+      "name": "Предмет·Потерянный фрагмент"
+    },
+    "Dicelimite": {
+      "name": "Предмет·Твердый кубик"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "Костюм·Архимаг"
+    },
+    "Fashion_Glide_1004": {
+      "name": "Планер·Томатный дуэт"
+    },
+    "Fashion_Glide_1010": {
+      "name": "Планер·Заместитель младшего босса"
+    },
+    "Fashion_Glide_1036": {
+      "name": "Планер·Алая лента"
+    },
+    "Fashion_Glide_1052": {
+      "name": "Планер·Орхидеевый бриз"
+    },
+    "Fashion_Glide_1071": {
+      "name": "Планер·Небесный всадник"
+    },
+    "Fashion_Glide_1072": {
+      "name": "Планер·Суперпризрак"
+    },
+    "Fashion_Glide_1075": {
+      "name": "Планер·Овцелёт"
+    },
+    "Fashion_Glide_1076": {
+      "name": "Планер·Пасмурный навес"
+    },
+    "Fashion_character_1004_01": {
+      "name": "Костюм·Позолоченная рапсодия"
+    },
+    "Fashion_character_1010": {
+      "name": "Костюм·Удар Феникса"
+    },
+    "Fashion_character_1036_03": {
+      "name": "Костюм·Осенняя виньетка"
+    },
+    "Fashion_character_1052_01": {
+      "name": "Костюм·Бесценная орхидея"
+    },
+    "Fashion_character_1071_01": {
+      "name": "Костюм·Чистое небо"
+    },
+    "Fashion_character_1072_01": {
+      "name": "Костюм·Сёрфинг среди звёзд"
+    },
+    "Fashion_character_1076_01": {
+      "name": "Костюм·Ученица Терраси"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "Детали модификации·Окраска «Золотой бриз»"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "Детали модификации·Окраска «Томатный круиз»"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "Детали модификации·Окраска «Атакующий тигр!»"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "Детали модификации·Окраска «Песчаный мираж»"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "Детали модификации·Окраска «Осенняя дымка»"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "Детали модификации·Окраска «Гончий блиц»"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "Детали модификации·Окраска «Нас трое»"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "Детали модификации·Окраска «Нас трое»"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "Детали модификации·Окраска «Затаившийся дракон»"
+    },
+    "fork_Arachne": {
+      "name": "Дуга·Вечный вальс"
+    },
+    "fork_BitGame": {
+      "name": "Дуга·Взорвать толпу"
+    },
+    "fork_BitterCake": {
+      "name": "Дуга·Хороший, плохой, горький"
+    },
+    "fork_BlackBook": {
+      "name": "Дуга·Ребяческая фантазия"
+    },
+    "fork_Butterfly": {
+      "name": "Дуга·Убежище реальности"
+    },
+    "fork_DemonBlade": {
+      "name": "Дуга·Ненасытный клинок"
+    },
+    "fork_Door": {
+      "name": "Дуга·Неверные врата"
+    },
+    "fork_GoldRecord": {
+      "name": "Дуга·Голос странника"
+    },
+    "fork_GoldWool": {
+      "name": "Дуга·Заветное желание"
+    },
+    "fork_Kite": {
+      "name": "Дуга·Берегите головы!"
+    },
+    "fork_LunarPhase": {
+      "name": "Дуга·Алеющий мираж"
+    },
+    "fork_Nakupeda": {
+      "name": "Дуга·Твое счастье бесценно"
+    },
+    "fork_PaperPlane": {
+      "name": "Дуга·Чистое небо"
+    },
+    "fork_PoliceRat": {
+      "name": "Дуга·Хранитель Этеро"
+    },
+    "fork_Prokaryon": {
+      "name": "Дуга·Мы."
+    },
+    "fork_Rose": {
+      "name": "Дуга·Последняя роза"
+    },
+    "fork_TigerTally": {
+      "name": "Дуга·Полная готовность"
+    },
+    "fork_Time": {
+      "name": "Дуга·За пределы времени"
+    },
+    "fork_appliance": {
+      "name": "Дуга·«Настоящая музыка»"
+    },
+    "fork_bopu": {
+      "name": "Дуга·Космический восторг, дикая греза"
+    },
+    "fork_dustbin": {
+      "name": "Дуга·Опасная игра"
+    },
+    "fork_jiaojuan": {
+      "name": "Дуга·Блестящие дни"
+    },
+    "fork_jingmotingyuan": {
+      "name": "Дуга·Сообщество Камелии"
+    },
+    "fork_koinobori": {
+      "name": "Дуга·Время придет"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "Дуга·Королевский разум"
+    },
+    "fork_mamen": {
+      "name": "Дуга·Созерцательная кошка"
+    },
+    "fork_mofeikesi": {
+      "name": "Дуга·Большой квест хорошего мальчика"
+    },
+    "fork_nonos": {
+      "name": "Дуга·Первый шаг к успеху"
+    },
+    "fork_oulaquantao": {
+      "name": "Дуга·Ора-ора!"
+    },
+    "fork_rishi": {
+      "name": "Дуга·Выходной"
+    },
+    "fork_spider": {
+      "name": "Дуга·Я подвожу тебя с тяжестью в сердце"
+    },
+    "fork_tuansanlang": {
+      "name": "Дуга·Великий вор"
+    },
+    "fork_vine": {
+      "name": "Дуга·Будь счастлив"
+    },
+    "fork_wuhuakuang": {
+      "name": "Дуга·Забытое"
+    },
+    "fork_wushoutieyu": {
+      "name": "Дуга·Бушующее пламя"
+    },
+    "fork_yaodao": {
+      "name": "Дуга·Обнаженный клинок"
+    },
+    "fork_yuren": {
+      "name": "Дуга·Зонтик"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "Чудо-коробка"
+    },
+    "CardPool_Character": {
+      "name": "Эксклюзивная доска",
+      "group_label": "Эксклюзивная доска"
+    },
+    "CardPool_NewRole": {
+      "name": "Стандартная доска",
+      "group_label": "Стандартная доска",
+      "title": "Странные встречи"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Особый фонд Ноктюрна"
+    },
+    "ForkLottery_Canhong": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Спецвыпуск «Зачарование»"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Спецвыпуск «Погоня»"
+    },
+    "ForkLottery_LingKe": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Спецвыпуск «Симфония»"
+    },
+    "ForkLottery_Nanali": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Особый фонд Тигра"
+    },
+    "ForkLottery_Xun": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Спецвыпуск «Сияющая луна»"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Особый фонд Врат грёз"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "Чудо-коробка",
+      "group_label": "Исследование дуги",
+      "title": "Особый фонд Решимости"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "Странные встречи"
+    },
+    "Lottery_Nanali": {
+      "title": "Ити-дайме"
+    },
+    "Lottery_Xun": {
+      "title": "Пьяный стиль Мисти"
+    },
+    "Lottery_AnHunQu": {
+      "title": "Угасающие грёзы"
+    },
+    "Lottery_Kaesi": {
+      "title": "Забытый путь"
+    },
+    "Lottery_ZhenHong": {
+      "title": "Перед рассветом"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "Путь к спасению"
+    },
+    "Lottery_Canhong": {
+      "title": "Соблазнительные тени"
+    },
+    "Lottery_LingKe": {
+      "title": "На волне всех каналов!"
+    },
+    "ForkLottery_Nanali": {
+      "title": "Особый фонд Тигра"
+    },
+    "ForkLottery_Xun": {
+      "title": "Спецвыпуск «Сияющая луна»"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "Особый фонд Ноктюрна"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "Спецвыпуск «Погоня»"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "Особый фонд Решимости"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "Особый фонд Врат грёз"
+    },
+    "ForkLottery_Canhong": {
+      "title": "Спецвыпуск «Зачарование»"
+    },
+    "ForkLottery_LingKe": {
+      "title": "Спецвыпуск «Симфония»"
+    }
+  }
+}

@@ -239,6 +239,30 @@
   grid-template-rows: minmax(0, 1fr);
   padding: 6px;
   text-align: center;
+  position: relative;
+}
+
+.banner-thumb-rail .rail-meta {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  overflow: hidden;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 62%);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.banner-thumb-rail button:hover .rail-meta {
+  opacity: 1;
 }
 
 .banner-thumb-rail button.active {
@@ -305,4 +329,3 @@
   object-fit: cover;
   display: block;
 }
-

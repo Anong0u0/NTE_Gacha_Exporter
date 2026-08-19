@@ -48,7 +48,10 @@ fn compare_time_desc(left: Option<&str>, right: Option<&str>) -> Ordering {
 mod tests {
     use std::collections::BTreeMap;
 
-    use crate::{DisplayRecord, GachaRuleView, InternalRecord, RecordDerived, ResolvedBanner};
+    use crate::{
+        BannerOccurrenceResolution, DisplayRecord, GachaRuleView, InternalRecord, RecordDerived,
+        ResolvedBannerOccurrence, ResolvedBannerSource,
+    };
 
     use super::{
         compare_display_chronological, compare_display_newest_first, compare_records_chronological,
@@ -62,6 +65,7 @@ mod tests {
             record_type: "monopoly".to_string(),
             time: Some(time.to_string()),
             pool_id: "CardPool_Character".to_string(),
+            lottery_id: Some("Lottery_Nanali".to_string()),
             item_id: "1004".to_string(),
             count: Some(1),
             roll_points: Some(1),
@@ -78,9 +82,11 @@ mod tests {
             record_type: "monopoly".to_string(),
             time: Some(time.to_string()),
             pool_id: "CardPool_Character".to_string(),
+            lottery_id: Some("Lottery_Nanali".to_string()),
             pool_kind: crate::PoolKind::MonopolyLimited,
             pool_label: "pool".to_string(),
-            banner: resolved_banner(),
+            banner_source: resolved_banner_source(),
+            banner_occurrence: resolved_banner_occurrence(),
             item_id: "1004".to_string(),
             item_name: "item".to_string(),
             item_asset_refs: BTreeMap::new(),
@@ -100,19 +106,15 @@ mod tests {
         }
     }
 
-    fn resolved_banner() -> ResolvedBanner {
-        ResolvedBanner {
+    fn resolved_banner_source() -> ResolvedBannerSource {
+        ResolvedBannerSource {
             resolution_issue: None,
             reason: None,
-            banner_id: None,
+            source_id: None,
             pool_id: Some("CardPool_Character".to_string()),
             pool_kind: Some("monopoly_limited".to_string()),
             banner_type: None,
             title: None,
-            version: None,
-            start_at: None,
-            end_at: None,
-            timezone: None,
             rate_up_5: Vec::new(),
             rate_up_4: Vec::new(),
             rule_id: None,
@@ -120,15 +122,29 @@ mod tests {
         }
     }
 
+    fn resolved_banner_occurrence() -> ResolvedBannerOccurrence {
+        ResolvedBannerOccurrence {
+            occurrence_id: None,
+            source_id: None,
+            resolution_source: BannerOccurrenceResolution::Unresolved,
+            reason: None,
+            version: None,
+            active_from: None,
+            active_until: None,
+        }
+    }
+
     fn derived(record_id: &str) -> RecordDerived {
         RecordDerived {
             record_id: record_id.to_string(),
-            banner_id: None,
-            banner_version: None,
+            banner_source_id: None,
+            banner_occurrence_id: None,
+            banner_occurrence_version: None,
             counts_as_pull: true,
             global_pull_no: None,
             pull_no_in_pool_kind: None,
-            pull_no_in_banner: None,
+            pull_no_in_banner_source: None,
+            pull_no_in_banner_occurrence: None,
             pity_5_before: 0,
             pity_5_after: 1,
             ten_pull_progress_before: None,

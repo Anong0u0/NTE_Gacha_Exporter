@@ -281,12 +281,9 @@ fn record_filter_options_count_banners_roll_buckets_and_item_kinds() {
 
     let options = store.record_filter_options("default", "zh-Hant").unwrap();
 
-    assert!(
-        options
-            .banners
-            .iter()
-            .any(|banner| banner.banner_id == "ForkLottery_AnHunQu" && banner.count == 1)
-    );
+    assert!(options.banner_occurrences.iter().any(|banner| {
+        banner.occurrence_id == "ForkLottery_AnHunQu@observed-20260102100000" && banner.count == 1
+    }));
     assert!(
         options
             .roll_buckets

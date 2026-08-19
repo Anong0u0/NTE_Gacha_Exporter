@@ -9,7 +9,8 @@ use crate::{
     ForkResultMark, ItemKind, ItemRank, PoolKind, PoolKindDetail, PoolKindSummary, Profile,
     ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket, RateUpResult,
     RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions, RecordItemKindOption,
-    RecordList, RecordRollBucketOption, RollBucket, SortDirection, TimeBucketSummary, TimeStats,
+    RecordList, RecordRollBucketOption, ResolvedBannerOccurrence, RollBucket, SortDirection,
+    TimeBucketSummary, TimeStats,
 };
 use crate::{classify_pool_id, fallback_rule_for, fallback_rule_resolution};
 use crate::{compare_display_chronological, compare_display_newest_first};
@@ -100,7 +101,7 @@ impl<'a> AnalysisSnapshot<'a> {
             last_run,
             total_records: self.records.len() as u64,
             pool_kinds,
-            banners: banner_summaries(&self.records),
+            banner_occurrences: banner_summaries(&self.records),
             time_stats: time_stats(&self.records),
             rarity_distribution: rarity_distribution_from_display_refs(self.records.iter()),
             item_ranking: item_ranking_from_display_refs(self.records.iter(), self.map),
@@ -123,22 +124,25 @@ impl<'a> AnalysisSnapshot<'a> {
     ) -> DashboardSelectionDetail {
         match selection {
             DashboardSelection::PoolKind { pool_kind } => self.pool_kind_detail(*pool_kind),
-            DashboardSelection::Banner {
+            DashboardSelection::BannerOccurrence {
                 pool_kind,
-                banner_id,
+                occurrence_id,
             } => {
                 let label = self
                     .records
                     .iter()
-                    .find(|record| record.derived.banner_id.as_deref() == Some(banner_id.as_str()))
-                    .and_then(|record| record.banner.title.clone())
-                    .unwrap_or_else(|| banner_id.clone());
+                    .find(|record| {
+                        record.derived.banner_occurrence_id.as_deref()
+                            == Some(occurrence_id.as_str())
+                    })
+                    .map(banner_occurrence_title)
+                    .unwrap_or_else(|| occurrence_id.clone());
                 selection_detail_from_display_records(
                     &self.records,
                     self.map,
                     *pool_kind,
                     label,
-                    Some(banner_id.as_str()),
+                    Some(occurrence_id.as_str()),
                 )
             }
         }
@@ -168,7 +172,7 @@ fn selection_detail_from_display_records(
     map: &MapData,
     pool_kind: PoolKind,
     label: String,
-    banner_id: Option<&str>,
+    occurrence_id: Option<&str>,
 ) -> DashboardSelectionDetail {
     let pool_kind_records = records
         .iter()
@@ -178,7 +182,9 @@ fn selection_detail_from_display_records(
         .iter()
         .copied()
         .filter(|record| {
-            banner_id.is_none_or(|banner_id| record.derived.banner_id.as_deref() == Some(banner_id))
+            occurrence_id.is_none_or(|occurrence_id| {
+                record.derived.banner_occurrence_id.as_deref() == Some(occurrence_id)
+            })
         })
         .collect::<Vec<_>>();
     let five_star_distances = five_star_distances_by_record_id(&pool_kind_records, pool_kind);
@@ -188,7 +194,9 @@ fn selection_detail_from_display_records(
         .copied()
         .filter(|record| record.derived.hit_rarity == Some(5))
         .collect::<Vec<_>>();
-    five_star_records.sort_by(|left, right| compare_scoped_analysis(left, right, banner_id));
+    five_star_records.sort_by(|left, right| {
+        compare_scoped_analysis(left, right, occurrence_id)
+    });
     let five_star_history = five_star_records
         .into_iter()
         .map(|record| five_star_record(record, five_star_distances.get(&record.record_id).copied()))
@@ -213,7 +221,7 @@ fn selection_detail_from_display_records(
     let average_5star_pity = (!pity_distances.is_empty())
         .then(|| pity_distances.iter().sum::<u64>() as f64 / pity_distances.len() as f64);
     let average_4star_pity =
-        average_4star_pity_from_display_refs(pool_records.iter().copied(), banner_id);
+        average_4star_pity_from_display_refs(pool_records.iter().copied(), occurrence_id);
     let min_5star_pity = pity_distances.iter().min().copied();
     let max_5star_pity = pity_distances.iter().max().copied();
 
@@ -254,9 +262,9 @@ fn selection_detail_from_display_records(
     let latest_5star_any = five_star_wall_history
         .first()
         .map(|hit| hit.record.clone());
-    let latest = latest_countable_record(&pool_records, banner_id);
+    let latest = latest_countable_record(&pool_records, occurrence_id);
     let resource = resource_counters(pool_records.iter().copied());
-    let roll_point_costs = roll_point_costs_to_5star(pool_records.iter().copied(), banner_id);
+    let roll_point_costs = roll_point_costs_to_5star(pool_records.iter().copied(), occurrence_id);
 
     DashboardSelectionDetail {
         summary: PoolKindSummary {

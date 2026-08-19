@@ -11,16 +11,18 @@ import {
 
 function mockSyntheticBannerSummary(record: DisplayRecord, title: string): BannerSummary {
   return {
-    banner_id: record.derived.banner_id ?? "",
+    occurrence_id: record.derived.banner_occurrence_id ?? "",
+    source_id: record.derived.banner_source_id ?? "",
+    resolution_source: record.banner_occurrence.resolution_source,
     pool_id: record.pool_id,
     pool_kind: record.pool_kind,
-    banner_type: record.banner.banner_type,
-    resolution_issue: record.banner.resolution_issue,
+    banner_type: record.banner_source.banner_type,
+    resolution_issue: record.banner_source.resolution_issue,
     title,
     version: null,
-    start_at: null,
-    end_at: null,
-    asset_refs: record.banner.asset_refs,
+    active_from: record.banner_occurrence.active_from,
+    active_until: record.banner_occurrence.active_until,
+    asset_refs: record.banner_source.asset_refs,
     total_pulls: 1,
     roll_points_total: record.roll_points ?? 0,
     known_roll_point_records: record.roll_points == null ? 0 : 1,
@@ -49,7 +51,7 @@ function mockSyntheticBannerSummary(record: DisplayRecord, title: string): Banne
 
 const mockUnknownBanners: BannerSummary[] = [
   mockSyntheticBannerSummary(mockUnknownForkRecord, "KaesiNew"),
-  mockSyntheticBannerSummary(mockUnknownLimitedRecord, "CardPool_Character"),
+  mockSyntheticBannerSummary(mockUnknownLimitedRecord, "Lottery_Unknown"),
 ];
 
 export function mockBannersForScenario(scenario: MockScenario = mockScenario()) {
@@ -101,7 +103,7 @@ function mockLatestFiveCrossBannerBanners(): BannerSummary[] {
 }
 
 function mockCrossBannerSummary(
-  bannerId: string,
+  occurrenceId: string,
   poolKind: BannerSummary["pool_kind"],
   bannerType: "limited" | "fork",
   title: string,
@@ -109,16 +111,19 @@ function mockCrossBannerSummary(
   latestHit: DisplayRecord | null,
   fiveStarCount: number,
 ): BannerSummary {
+  const sourceId = occurrenceId.startsWith("fork_") ? "fork_cross" : "limited_cross";
   return {
-    banner_id: bannerId,
-    pool_id: bannerId,
+    occurrence_id: occurrenceId,
+    source_id: sourceId,
+    resolution_source: "catalog",
+    pool_id: sourceId,
     pool_kind: poolKind,
     banner_type: bannerType,
     title,
     version: null,
-    start_at: null,
-    end_at: null,
-    asset_refs: mockBanner(bannerId, poolKind, bannerType, title).asset_refs,
+    active_from: "2026-02-01 00:00:00",
+    active_until: null,
+    asset_refs: mockBanner(sourceId, poolKind, bannerType, title).asset_refs,
     total_pulls: totalPulls,
     roll_points_total: totalPulls,
     known_roll_point_records: totalPulls,
@@ -147,14 +152,16 @@ function mockCrossBannerSummary(
 
 const mockBanners: BannerSummary[] = [
   {
-    banner_id: "limited_mock",
+    occurrence_id: "limited_mock@2026-01",
+    source_id: "limited_mock",
+    resolution_source: "catalog",
     pool_id: "CardPool_Character",
     pool_kind: "monopoly_limited",
     banner_type: "limited",
     title: "Limited Board",
     version: null,
-    start_at: null,
-    end_at: null,
+    active_from: "2026-01-01 00:00:00",
+    active_until: null,
     asset_refs: mockBanner("limited_mock", "monopoly_limited", "limited", "Limited Board").asset_refs,
     total_pulls: 147,
     roll_points_total: 10806,
@@ -181,14 +188,16 @@ const mockBanners: BannerSummary[] = [
     latest_hit: mockRecords[1],
   },
   {
-    banner_id: "ForkLottery_AnHunQu",
+    occurrence_id: "ForkLottery_AnHunQu@2026-01",
+    source_id: "ForkLottery_AnHunQu",
+    resolution_source: "catalog",
     pool_id: "ForkLottery_AnHunQu",
     pool_kind: "fork_lottery",
     banner_type: "fork",
     title: "Arc Research",
     version: null,
-    start_at: null,
-    end_at: null,
+    active_from: "2026-01-01 00:00:00",
+    active_until: null,
     asset_refs: mockBanner("ForkLottery_AnHunQu", "fork_lottery", "fork", "Arc Research").asset_refs,
     total_pulls: 36,
     roll_points_total: 666,

@@ -14,6 +14,11 @@ mod tests {
             },
             time: Some(time.to_string()),
             pool_id: pool_id.to_string(),
+            lottery_id: match pool_id {
+                "CardPool_Character" => Some("Lottery_Nanali".to_string()),
+                "CardPool_NewRole" => Some("Lottery_Permanent".to_string()),
+                _ => None,
+            },
             item_id: item_id.to_string(),
             count: Some(1),
             roll_points: Some(1),
@@ -76,15 +81,14 @@ mod tests {
     fn rule_for_record_falls_back_when_banner_is_unresolved() {
         let map = load_map("zh-Hant").expect("map should load");
 
-        let resolution = rule_for_record(
-            &map,
-            &record(
+        let mut source = record(
                 "outside",
                 "CardPool_Character",
                 "fork_dustbin",
                 "2026-08-19 05:59:01",
-            ),
-        )
+            );
+        source.lottery_id = None;
+        let resolution = rule_for_record(&map, &source)
         .expect("fallback rule should resolve");
 
         assert_eq!(
@@ -98,7 +102,7 @@ mod tests {
     #[test]
     fn rule_for_record_falls_back_when_rule_id_is_missing() {
         let mut map = load_map("zh-Hant").expect("map should load");
-        map.banners
+        map.banner_sources
             .get_mut("ForkLottery_AnHunQu")
             .expect("fork banner should exist")
             .rule_id = "missing_rule".to_string();
@@ -126,7 +130,10 @@ mod tests {
     #[test]
     fn standard_five_star_result_uses_item_kind() {
         let map = load_map("zh-Hant").expect("map should load");
-        let banner = map.resolve_banner("CardPool_NewRole", None);
+        let banner = map.resolve_banner_source(BannerResolveInput {
+            pool_id: "CardPool_NewRole",
+            lottery_id: Some("Lottery_Permanent"),
+        });
 
         for item_id in ["1003", "1023", "1054", "1055"] {
             assert_eq!(

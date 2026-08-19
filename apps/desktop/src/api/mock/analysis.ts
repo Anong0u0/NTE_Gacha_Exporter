@@ -64,7 +64,7 @@ export async function mockOverview() {
         roll_point_cost_samples_5star: 0,
       },
     ],
-    banners,
+    banner_occurrences: banners,
     time_stats: mockTimeStats,
     rarity_distribution: [
       { rarity: 5, count: 3, percent: 0.016 },
@@ -86,16 +86,16 @@ export function mockSelectionDetail(selection: DashboardSelection): DashboardSel
   const records = poolKindRecords.filter((record) =>
     selection.kind === "pool_kind"
       ? true
-      : record.derived.banner_id === selection.banner_id,
+      : record.derived.banner_occurrence_id === selection.occurrence_id,
   );
   const baseSummary =
     selection.kind === "pool_kind"
       ? poolSummaries.find((item) => item.pool_kind === selection.pool_kind)
-      : banners.find((banner) => banner.banner_id === selection.banner_id);
+      : banners.find((banner) => banner.occurrence_id === selection.occurrence_id);
   const label =
     selection.kind === "pool_kind"
       ? (baseSummary as PoolKindSummary | undefined)?.label
-      : banners.find((banner) => banner.banner_id === selection.banner_id)?.title;
+      : banners.find((banner) => banner.occurrence_id === selection.occurrence_id)?.title;
   const poolKind = selection.pool_kind;
   const fallback = poolSummaries.find((item) => item.pool_kind === poolKind) ?? poolSummaries[0];
   const countableRecords = records.filter((record) => record.derived.counts_as_pull);
@@ -304,7 +304,11 @@ function mockPullRarityBucketRarity(key: PullRarityBucketKey) {
 function mockAverage4StarPity(records: MockRecord[]) {
   const intervals: number[] = [];
   let current = 0;
-  for (const record of [...records].sort((left, right) => (left.derived.pull_no_in_banner ?? 0) - (right.derived.pull_no_in_banner ?? 0))) {
+  for (const record of [...records].sort(
+    (left, right) =>
+      (left.derived.pull_no_in_banner_occurrence ?? 0)
+      - (right.derived.pull_no_in_banner_occurrence ?? 0),
+  )) {
     current += 1;
     if (record.derived.hit_rarity === 4 || record.derived.hit_rarity === 5) {
       intervals.push(current);
@@ -318,7 +322,13 @@ export function mockRecordPage(filter: RecordFilter) {
   const search = filter.search?.toLowerCase().trim();
   let records = mockRecordsForScenario().filter((record) => {
     if (filter.pool_kind && record.pool_kind !== filter.pool_kind) return false;
-    if (filter.banner_ids?.length && (!record.derived.banner_id || !filter.banner_ids.includes(record.derived.banner_id))) return false;
+    if (
+      filter.banner_occurrence_ids?.length
+      && (
+        !record.derived.banner_occurrence_id
+        || !filter.banner_occurrence_ids.includes(record.derived.banner_occurrence_id)
+      )
+    ) return false;
     if (filter.rarities?.length && (record.rarity == null || !filter.rarities.includes(record.rarity))) return false;
     if (filter.focused_rarities?.length && !filter.focused_rarities.some((rarity) => mockMatchesFocusedRarity(record, rarity))) return false;
     if (filter.rate_up_results?.length && !filter.rate_up_results.includes(record.derived.rate_up_result)) return false;

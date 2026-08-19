@@ -3,12 +3,14 @@ import type { I18nKey } from "./i18n";
 
 type Translator = (key: I18nKey, params?: Record<string, string | number | boolean | null | undefined>) => string;
 type BannerLike = {
-  banner_id?: string | null;
+  source_id?: string | null;
   pool_kind?: string | null;
   banner_type?: string | null;
   resolution_issue?: string | null;
   title?: string | null;
   version?: string | null;
+  active_from?: string | null;
+  active_until?: string | null;
 };
 
 export function percent(value?: number | null) {
@@ -70,22 +72,19 @@ export function formatRollBucket(value: RollBucket, t: Translator) {
 export function bannerTitle(banner: BannerLike | null | undefined, t: Translator) {
   if (isSyntheticLimitedBanner(banner)) return t("banner.unmappedLimited");
   const title = banner?.title?.trim();
-  const bannerId = banner?.banner_id?.trim();
+  const bannerId = banner?.source_id?.trim();
   const fallback = `${t("common.unknown")} ${t("common.banner").toLowerCase()}`;
   if (isForkBanner(banner)) return stripForkPrefix(title || bannerId || fallback);
   return title || bannerId || fallback;
 }
 
 export function bannerMeta(banner?: BannerLike | null) {
-  const parts = [banner?.version].filter(Boolean);
-  if (parts.length) return parts.join(" · ");
-  return "";
+  return banner?.version ?? "";
 }
 
 function isSyntheticLimitedBanner(banner?: BannerLike | null) {
   return Boolean(
     banner?.resolution_issue &&
-      banner.banner_id === "CardPool_Character" &&
       banner.pool_kind === "monopoly_limited",
   );
 }
@@ -94,7 +93,7 @@ function isForkBanner(banner?: BannerLike | null) {
   return Boolean(
     banner?.banner_type === "fork" ||
       banner?.pool_kind === "fork_lottery" ||
-      banner?.banner_id?.startsWith("ForkLottery_"),
+      banner?.source_id?.startsWith("ForkLottery_"),
   );
 }
 
@@ -108,7 +107,10 @@ export function formatBannerWindow(start: string | null | undefined, end: string
 }
 
 export function formatPullNo(record: DisplayRecord) {
-  return record.derived.pull_no_in_banner ?? record.derived.pull_no_in_pool_kind ?? "-";
+  return record.derived.pull_no_in_banner_occurrence
+    ?? record.derived.pull_no_in_banner_source
+    ?? record.derived.pull_no_in_pool_kind
+    ?? "-";
 }
 
 export function formatPoolKindPullNo(record: DisplayRecord) {

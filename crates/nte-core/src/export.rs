@@ -10,10 +10,10 @@ use crate::MapData;
 use crate::classify_pool_id;
 use crate::compare_display_newest_first;
 use crate::display_records;
-use crate::public_json::PUBLIC_JSON_SCHEMA;
-use crate::{DisplayRecord, GuiError, InternalRecord};
+use crate::public_json::{PUBLIC_JSON_SCHEMA, PUBLIC_JSON_SCHEMA_VERSION};
+use crate::{DisplayRecord, GuiError, InternalRecord, is_valid_lottery_id};
 
-const CSV_FIELDS: [&str; 21] = [
+const CSV_FIELDS: [&str; 22] = [
     "time",
     "global_pull_no",
     "pool_group",
@@ -23,6 +23,7 @@ const CSV_FIELDS: [&str; 21] = [
     "roll_label",
     "secondary_item_name",
     "secondary_count",
+    "lottery_id",
     "banner_id",
     "banner_name",
     "pull_no",
@@ -45,6 +46,23 @@ pub fn export_public_json(
 ) -> Result<(), GuiError> {
     let mut display_records = display_records(records, map)?;
     display_records.sort_by(compare_display_newest_first);
+    let invalid_lottery_ids = display_records
+        .iter()
+        .filter(|record| {
+            record.record_type == "monopoly"
+                && record
+                    .lottery_id
+                    .as_deref()
+                    .is_none_or(|lottery_id| !is_valid_lottery_id(lottery_id))
+        })
+        .map(|record| record.record_id.clone())
+        .collect::<Vec<_>>();
+    if !invalid_lottery_ids.is_empty() {
+        return Err(GuiError::InvalidDocument(format!(
+            "cannot export {PUBLIC_JSON_SCHEMA_VERSION}: monopoly records missing or invalid lottery_id: {}",
+            invalid_lottery_ids.join(",")
+        )));
+    }
     let public_records = display_records
         .iter()
         .map(public_record)
@@ -52,7 +70,7 @@ pub fn export_public_json(
     let document = json!({
         "info": {
             "schema": PUBLIC_JSON_SCHEMA,
-            "schema_version": "2.0",
+            "schema_version": PUBLIC_JSON_SCHEMA_VERSION,
             "export_app": "nte-gacha-exporter",
             "export_app_version": env!("CARGO_PKG_VERSION"),
             "export_timestamp": now_stamp(),
@@ -104,11 +122,16 @@ fn public_record(display: &DisplayRecord) -> Value {
         object.insert("time".to_string(), json!(time));
     }
     object.insert("pool_id".to_string(), json!(display.pool_id));
-    object.insert("pool_name".to_string(), json!(display.pool_label));
-    if display.banner.resolution_issue.is_none()
-        && let Some(banner_id) = display.derived.banner_id.as_ref()
+    if display.record_type == "monopoly"
+        && let Some(lottery_id) = display.lottery_id.as_ref()
     {
-        object.insert("banner_id".to_string(), json!(banner_id));
+        object.insert("lottery_id".to_string(), json!(lottery_id));
+    }
+    object.insert("pool_name".to_string(), json!(display.pool_label));
+    if display.banner_source.resolution_issue.is_none()
+        && let Some(source_id) = display.derived.banner_source_id.as_ref()
+    {
+        object.insert("banner_id".to_string(), json!(source_id));
     }
     object.insert("item_id".to_string(), json!(display.item_id));
     object.insert("item_name".to_string(), json!(display.item_name));
@@ -152,6 +175,7 @@ struct CsvRow {
     roll_label: String,
     secondary_item_name: String,
     secondary_count: String,
+    lottery_id: String,
     banner_id: String,
     banner_name: String,
     pull_no: String,
@@ -187,15 +211,16 @@ fn csv_row(record: &DisplayRecord, map: &MapData) -> Result<CsvRow, GuiError> {
             .secondary_count
             .map(|value| value.to_string())
             .unwrap_or_default(),
-        banner_id: record.derived.banner_id.clone().unwrap_or_default(),
-        banner_name: if record.banner.resolution_issue.is_some() {
+        lottery_id: record.lottery_id.clone().unwrap_or_default(),
+        banner_id: record.derived.banner_source_id.clone().unwrap_or_default(),
+        banner_name: if record.banner_source.resolution_issue.is_some() {
             String::new()
         } else {
-            record.banner.title.clone().unwrap_or_default()
+            record.banner_source.title.clone().unwrap_or_default()
         },
         pull_no: record
             .derived
-            .pull_no_in_banner
+            .pull_no_in_banner_source
             .or(record.derived.pull_no_in_pool_kind)
             .map(|value| value.to_string())
             .unwrap_or_default(),
@@ -243,6 +268,7 @@ fn row_value<'a>(row: &'a CsvRow, field: &str) -> &'a str {
         "roll_label" => &row.roll_label,
         "secondary_item_name" => &row.secondary_item_name,
         "secondary_count" => &row.secondary_count,
+        "lottery_id" => &row.lottery_id,
         "banner_id" => &row.banner_id,
         "banner_name" => &row.banner_name,
         "pull_no" => &row.pull_no,

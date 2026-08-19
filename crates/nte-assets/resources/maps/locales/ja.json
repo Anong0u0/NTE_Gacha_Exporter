@@ -1,0 +1,415 @@
+{
+  "schema": "nte-map-locale",
+  "schema_version": 1,
+  "locale": "ja",
+  "csv_headers": {
+    "count": "数量",
+    "item_name": "アイテム名",
+    "pool_group": "ガチャタイプ",
+    "pool_name": "ガチャ",
+    "roll_label": "サイコロポイント",
+    "secondary_count": "ボーナス数量",
+    "secondary_item_name": "ボーナス",
+    "time": "獲得時間"
+  },
+  "labels": {
+    "AbyssClone_Award_02": "クリア",
+    "Abyss_GamepadKeys_1": "切り替え",
+    "BPUI_LotteryDiceRecord_biaozhunqipan": "標準ボード",
+    "BPUI_LotteryDiceRecord_qipanleixing": "ボードタイプ",
+    "BPUI_LotteryDiceRecord_xiandingqipan": "限定ボード",
+    "BPUI_LotteryModuleEntrance_Title": "スカボロー市場",
+    "BPUI_LotteryResult_chenmiandi": "スリープゾーン",
+    "BPUI_LotteryResult_jidianzengli": "ポイントギフト",
+    "Mall_8_name": "弧盤ストア",
+    "TreasureBox_2": "開ける",
+    "UI_CloneSystemChallengeFailed_Retry": "リトライ",
+    "UI_CloneSystemStaminaTips_Enter": "入る",
+    "UI_Lottery_GachaDetails_Zhitoujilu": "サイコロ履歴",
+    "UI_Lottery_GachaDetails_title": "ボード詳細",
+    "UW_LotteryBase_BP_Hupanyanmu": "弧盤研究プロジェクト",
+    "W_HTButton_Next_Page": "次のページ",
+    "W_Vehicle_Button_Choose": "選択",
+    "common_3": "戻る",
+    "item_kind_character": "キャラ",
+    "item_kind_fashion": "コスチューム",
+    "item_kind_fork": "弧盤",
+    "item_kind_glider": "グライダー",
+    "item_kind_inventory": "アイテム",
+    "item_kind_vehicle_module": "改造パーツ",
+    "ui_appearance_02": "グライダー",
+    "ui_forkshop_03": "弧盤研究プロジェクト",
+    "ui_forkshop_07": "研究募集詳細",
+    "ui_forkshop_10": "研究募集記録"
+  },
+  "items": {
+    "1003": {
+      "name": "キャラ·早霧"
+    },
+    "1004": {
+      "name": "キャラ·レクイエム"
+    },
+    "1008": {
+      "name": "キャラ·翳"
+    },
+    "1010": {
+      "name": "キャラ·ナナリ"
+    },
+    "1019": {
+      "name": "キャラ·ミント"
+    },
+    "1020": {
+      "name": "キャラ·ハニア"
+    },
+    "1021": {
+      "name": "キャラ·エドガー"
+    },
+    "1023": {
+      "name": "キャラ·白蔵"
+    },
+    "1025": {
+      "name": "キャラ·ハソール"
+    },
+    "1033": {
+      "name": "キャラ·アドレー"
+    },
+    "1036": {
+      "name": "キャラ·残虹"
+    },
+    "1039": {
+      "name": "キャラ·ファルディーヤ"
+    },
+    "1052": {
+      "name": "キャラ·潯"
+    },
+    "1054": {
+      "name": "キャラ·ダフォディール"
+    },
+    "1055": {
+      "name": "キャラ·九原"
+    },
+    "1070": {
+      "name": "キャラ·海月"
+    },
+    "1071": {
+      "name": "キャラ·カオス"
+    },
+    "1072": {
+      "name": "キャラ·リンコ"
+    },
+    "1073": {
+      "name": "キャラ·ちぃちゃん"
+    },
+    "1075": {
+      "name": "キャラ·イロヒ"
+    },
+    "1076": {
+      "name": "キャラ·真紅"
+    },
+    "DiceNormal": {
+      "name": "アイテム·虚質サイコロ"
+    },
+    "Dice_ticket_01": {
+      "name": "アイテム·次元ピース"
+    },
+    "Dice_ticket_02": {
+      "name": "アイテム·迷走ピース"
+    },
+    "Dicelimite": {
+      "name": "アイテム·本質サイコロ"
+    },
+    "Fashion_1075_rpg_level2_Base": {
+      "name": "コスチューム·アークメイジ"
+    },
+    "Fashion_Glide_1004": {
+      "name": "グライダー·ハッピートマト"
+    },
+    "Fashion_Glide_1010": {
+      "name": "グライダー·相棒の相棒"
+    },
+    "Fashion_Glide_1036": {
+      "name": "グライダー·緋妄"
+    },
+    "Fashion_Glide_1052": {
+      "name": "グライダー·幽蘭"
+    },
+    "Fashion_Glide_1071": {
+      "name": "グライダー·ダークチェイサー"
+    },
+    "Fashion_Glide_1072": {
+      "name": "グライダー·スーパー悪霊！"
+    },
+    "Fashion_Glide_1075": {
+      "name": "グライダー·子羊ヘリ"
+    },
+    "Fashion_Glide_1076": {
+      "name": "グライダー·ダークフレア"
+    },
+    "Fashion_character_1004_01": {
+      "name": "コスチューム·デビルズ・ビート"
+    },
+    "Fashion_character_1010": {
+      "name": "コスチューム·華麗なるキック"
+    },
+    "Fashion_character_1036_03": {
+      "name": "コスチューム·秋色ルージュ"
+    },
+    "Fashion_character_1052_01": {
+      "name": "コスチューム·万金の蘭"
+    },
+    "Fashion_character_1071_01": {
+      "name": "コスチューム·サニーデイズ"
+    },
+    "Fashion_character_1072_01": {
+      "name": "コスチューム·アストロ・ダイバー"
+    },
+    "Fashion_character_1076_01": {
+      "name": "コスチューム·放課後セーラー"
+    },
+    "Fashion_vehicleSkin_1052_V016": {
+      "name": "改造パーツ·金風の招客"
+    },
+    "Fashion_vehicle_1004_V021": {
+      "name": "改造パーツ·トマトクルーズ"
+    },
+    "Fashion_vehicle_1010_V008": {
+      "name": "改造パーツ·萌え虎襲来"
+    },
+    "Fashion_vehicle_1036_V043": {
+      "name": "改造パーツ·白砂の幻影 - 塗装"
+    },
+    "Fashion_vehicle_1052_V024": {
+      "name": "改造パーツ·秋色の残影"
+    },
+    "Fashion_vehicle_1071_V010": {
+      "name": "改造パーツ·ハウンドラッシュ"
+    },
+    "Fashion_vehicle_1072_V013": {
+      "name": "改造パーツ·乗り物スキン「トリプル・メイツ」"
+    },
+    "Fashion_vehicle_1075_V006": {
+      "name": "改造パーツ·乗り物スキン「トリプル・メイツ」"
+    },
+    "Fashion_vehicle_1076_V024": {
+      "name": "改造パーツ·ドラグーン-塗装"
+    },
+    "fork_Arachne": {
+      "name": "弧盤·永遠のワルツ"
+    },
+    "fork_BitGame": {
+      "name": "弧盤·熱狂の渦"
+    },
+    "fork_BitterCake": {
+      "name": "弧盤·良薬は口に苦し"
+    },
+    "fork_BlackBook": {
+      "name": "弧盤·漆黒の青春妄想"
+    },
+    "fork_Butterfly": {
+      "name": "弧盤·現実の避難所"
+    },
+    "fork_DemonBlade": {
+      "name": "弧盤·喰心刃"
+    },
+    "fork_Door": {
+      "name": "弧盤·偽りの門"
+    },
+    "fork_GoldRecord": {
+      "name": "弧盤·アストロ・コーラー"
+    },
+    "fork_GoldWool": {
+      "name": "弧盤·オムニ・デザイア"
+    },
+    "fork_Kite": {
+      "name": "弧盤·頭上に注意！"
+    },
+    "fork_LunarPhase": {
+      "name": "弧盤·紅き蜃気楼"
+    },
+    "fork_Nakupeda": {
+      "name": "弧盤·コインより笑顔"
+    },
+    "fork_PaperPlane": {
+      "name": "弧盤·空域確保開始"
+    },
+    "fork_PoliceRat": {
+      "name": "弧盤·ヘテロシティの平穏"
+    },
+    "fork_Prokaryon": {
+      "name": "弧盤·「私たち」"
+    },
+    "fork_Rose": {
+      "name": "弧盤·「ラスト・ローズ」"
+    },
+    "fork_TigerTally": {
+      "name": "弧盤·プリペア"
+    },
+    "fork_Time": {
+      "name": "弧盤·時間外を行く"
+    },
+    "fork_appliance": {
+      "name": "弧盤·「電音」カーニバル"
+    },
+    "fork_bopu": {
+      "name": "弧盤·光のカーニバル"
+    },
+    "fork_dustbin": {
+      "name": "弧盤·危険なゲーム"
+    },
+    "fork_jiaojuan": {
+      "name": "弧盤·輝かしい日々"
+    },
+    "fork_jingmotingyuan": {
+      "name": "弧盤·椿会"
+    },
+    "fork_koinobori": {
+      "name": "弧盤·いつかは終わる"
+    },
+    "fork_lingganzhongjiezhe": {
+      "name": "弧盤·ひらめきデスゲーム"
+    },
+    "fork_mamen": {
+      "name": "弧盤·思考ニャン"
+    },
+    "fork_mofeikesi": {
+      "name": "弧盤·お散歩ワンワン"
+    },
+    "fork_nonos": {
+      "name": "弧盤·成功への第一歩"
+    },
+    "fork_oulaquantao": {
+      "name": "弧盤·オラオラ！"
+    },
+    "fork_rishi": {
+      "name": "弧盤·休息日"
+    },
+    "fork_spider": {
+      "name": "弧盤·言葉にできない"
+    },
+    "fork_tuansanlang": {
+      "name": "弧盤·呪われた出会い"
+    },
+    "fork_vine": {
+      "name": "弧盤·いつも笑顔で"
+    },
+    "fork_wuhuakuang": {
+      "name": "弧盤·忘れられし者"
+    },
+    "fork_wushoutieyu": {
+      "name": "弧盤·炎魂ハリケーン"
+    },
+    "fork_yaodao": {
+      "name": "弧盤·抜刀"
+    },
+    "fork_yuren": {
+      "name": "弧盤·忘れな傘"
+    }
+  },
+  "pools": {
+    "1": {
+      "name": "奇跡ボックス"
+    },
+    "CardPool_Character": {
+      "name": "限定ボード",
+      "group_label": "限定ボード"
+    },
+    "CardPool_NewRole": {
+      "name": "標準ボード",
+      "group_label": "標準ボード",
+      "title": "奇縁物語"
+    },
+    "ForkLottery_AnHunQu": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "夜曲特別号"
+    },
+    "ForkLottery_Canhong": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "蠱惑特別号"
+    },
+    "ForkLottery_Kaesi": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "追猟特別号"
+    },
+    "ForkLottery_LingKe": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "万波特別号"
+    },
+    "ForkLottery_Nanali": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "猛虎特別号"
+    },
+    "ForkLottery_Xun": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "名月特別号"
+    },
+    "ForkLottery_Yiluoyi": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "羊夢特別号"
+    },
+    "ForkLottery_Zhenhong": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "反逆特別号"
+    }
+  },
+  "banner_sources": {
+    "Lottery_Permanent": {
+      "title": "奇縁物語"
+    },
+    "Lottery_Nanali": {
+      "title": "エース・一代目"
+    },
+    "Lottery_Xun": {
+      "title": "独り酔い朧月流"
+    },
+    "Lottery_AnHunQu": {
+      "title": "永き夢の目覚め"
+    },
+    "Lottery_Kaesi": {
+      "title": "還らざる路"
+    },
+    "Lottery_ZhenHong": {
+      "title": "夜明けの刻"
+    },
+    "Lottery_Yiluoyi": {
+      "title": "ラスト・リゾート"
+    },
+    "Lottery_Canhong": {
+      "title": "惑心の影"
+    },
+    "Lottery_LingKe": {
+      "title": "全帯域ローミング中"
+    },
+    "ForkLottery_Nanali": {
+      "title": "猛虎特別号"
+    },
+    "ForkLottery_Xun": {
+      "title": "名月特別号"
+    },
+    "ForkLottery_AnHunQu": {
+      "title": "夜曲特別号"
+    },
+    "ForkLottery_Kaesi": {
+      "title": "追猟特別号"
+    },
+    "ForkLottery_Zhenhong": {
+      "title": "反逆特別号"
+    },
+    "ForkLottery_Yiluoyi": {
+      "title": "羊夢特別号"
+    },
+    "ForkLottery_Canhong": {
+      "title": "蠱惑特別号"
+    },
+    "ForkLottery_LingKe": {
+      "title": "万波特別号"
+    }
+  }
+}

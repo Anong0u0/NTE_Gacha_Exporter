@@ -4,6 +4,14 @@ use nte_core::{RecordIdentityInput, record_semantic_key_from_parts, stable_recor
 use serde_json::json;
 
 pub(super) fn public_document(mut records: Vec<serde_json::Value>) -> String {
+    public_document_with_version(&mut records, "2.0")
+}
+
+pub(super) fn public_document_v21(mut records: Vec<serde_json::Value>) -> String {
+    public_document_with_version(&mut records, nte_core::PUBLIC_JSON_SCHEMA_VERSION)
+}
+
+fn public_document_with_version(records: &mut [serde_json::Value], version: &str) -> String {
     for (index, record) in records.iter_mut().enumerate() {
         if let Some(object) = record.as_object_mut() {
             object
@@ -14,13 +22,25 @@ pub(super) fn public_document(mut records: Vec<serde_json::Value>) -> String {
     json!({
         "info": {
             "schema": nte_core::PUBLIC_JSON_SCHEMA,
-            "schema_version": "2.0"
+            "schema_version": version
         },
         "nte": {
             "list": records
         }
     })
     .to_string()
+}
+
+pub(super) fn record_with_lottery_id(
+    record_id: &str,
+    pool_id: &str,
+    lottery_id: &str,
+    item_id: &str,
+    time: Option<&str>,
+) -> serde_json::Value {
+    let mut value = record_with_options(record_id, pool_id, item_id, time, Some(1));
+    value["lottery_id"] = json!(lottery_id);
+    value
 }
 
 pub(super) fn record(

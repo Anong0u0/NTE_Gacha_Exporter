@@ -68,8 +68,10 @@ export function createDashboardUi(deps: DashboardUiDeps) {
   );
   const selectedScopeLabel = computed(() => {
     const scope = deps.selectedDashboardScope.value;
-    if (scope.kind === "banner") {
-      const banner = deps.bannerSummaries.value.find((banner) => banner.banner_id === scope.banner_id);
+    if (scope.kind === "banner_occurrence") {
+      const banner = deps.bannerSummaries.value.find(
+        (banner) => banner.occurrence_id === scope.occurrence_id,
+      );
       return banner ? bannerTitle(banner, deps.t) : undefined;
     }
     return deps.selectedPoolSummary.value?.label;
@@ -293,17 +295,22 @@ export function createDashboardUi(deps: DashboardUiDeps) {
 
   function fiveWallBannerBreakdown(hits: FiveStarRecord[], displayDistance: number, distanceMode: FiveStarDistanceMode) {
     const scope = deps.selectedDashboardScope.value;
-    if (scope.kind !== "banner") return null;
+    if (scope.kind !== "banner_occurrence") return null;
 
     const terminalHit = hits.reduce<FiveStarRecord | null>((latest, hit) => {
       const pullNo = finitePositiveNumber(hit.record.derived.pull_no_in_pool_kind);
       const latestPullNo = finitePositiveNumber(latest?.record.derived.pull_no_in_pool_kind);
       return pullNo != null && (latestPullNo == null || pullNo > latestPullNo) ? hit : latest;
     }, null);
-    if (!terminalHit || terminalHit.record.derived.banner_id !== scope.banner_id) return null;
+    if (
+      !terminalHit
+      || terminalHit.record.derived.banner_occurrence_id !== scope.occurrence_id
+    ) return null;
 
     const poolPull = finitePositiveNumber(terminalHit.record.derived.pull_no_in_pool_kind);
-    const bannerPull = finitePositiveNumber(terminalHit.record.derived.pull_no_in_banner);
+    const bannerPull = finitePositiveNumber(
+      terminalHit.record.derived.pull_no_in_banner_occurrence,
+    );
     if (poolPull == null || bannerPull == null || bannerPull > poolPull) return null;
 
     const pullsBeforeBanner = poolPull - bannerPull;

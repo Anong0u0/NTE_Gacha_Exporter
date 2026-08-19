@@ -36,7 +36,7 @@ export function createAppComputed(deps: ComputedDeps) {
     deps.profiles.value.find((profile) => profile.name === deps.activeProfileName.value),
   );
   const allPoolSummaries = computed(() => deps.summary.value?.pool_kinds ?? []);
-  const bannerSummaries = computed(() => deps.summary.value?.banners ?? []);
+  const bannerSummaries = computed(() => deps.summary.value?.banner_occurrences ?? []);
   const selectedPoolBannerSummaries = computed(() =>
     bannerSummaries.value.filter((banner) => banner.pool_kind === deps.selectedPoolKind.value),
   );
@@ -57,7 +57,7 @@ export function createAppComputed(deps: ComputedDeps) {
   const canFirstPage = computed(() => canPrevPage.value);
   const canLastPage = computed(() => canNextPage.value);
   const bannersForRecordKind = computed(() =>
-    deps.filterOptions.value.banners.filter(
+    deps.filterOptions.value.banner_occurrences.filter(
       (banner) => deps.recordPoolKind.value === "all" || banner.pool_kind === deps.recordPoolKind.value,
     ),
   );

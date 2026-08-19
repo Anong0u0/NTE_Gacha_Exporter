@@ -4,21 +4,25 @@ use super::super::*;
 fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
     let tmp = tempfile::tempdir().unwrap();
     let store = JsonStore::open(tmp.path()).unwrap();
-    let document = public_document(vec![
-        record_with_options(
-            "nanali",
-            "CardPool_Character",
-            "Fashion_vehicle_1010_V008",
-            Some("2026-05-13 05:59:00"),
-            Some(10),
-        ),
-        record_with_options(
-            "xun",
-            "CardPool_Character",
-            "Fashion_vehicle_1052_V024",
-            Some("2026-05-13 05:59:01"),
-            Some(20),
-        ),
+    let mut nanali = record_with_lottery_id(
+        "nanali",
+        "CardPool_Character",
+        "Lottery_Nanali",
+        "Fashion_vehicle_1010_V008",
+        Some("2026-05-13 05:59:00"),
+    );
+    nanali["roll_points"] = serde_json::json!(10);
+    let mut xun = record_with_lottery_id(
+        "xun",
+        "CardPool_Character",
+        "Lottery_Xun",
+        "Fashion_vehicle_1052_V024",
+        Some("2026-05-13 05:59:01"),
+    );
+    xun["roll_points"] = serde_json::json!(20);
+    let document = public_document_v21(vec![
+        nanali,
+        xun,
         record_with_options(
             "fork-5",
             "ForkLottery_AnHunQu",
@@ -44,9 +48,9 @@ fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
         .dashboard_selection_detail(
             "default",
             "zh-Hant",
-            &DashboardSelection::Banner {
+            &DashboardSelection::BannerOccurrence {
                 pool_kind: PoolKind::MonopolyLimited,
-                banner_id: "monopoly_limited_Nanali".to_string(),
+                occurrence_id: "Lottery_Nanali@2026-04".to_string(),
             },
         )
         .unwrap();
@@ -57,7 +61,7 @@ fn dashboard_selection_detail_switches_between_pool_and_banner_scope() {
     assert_eq!(pool.rarity_distribution[0].count, 2);
     assert_eq!(pool.item_ranking.len(), 2);
 
-    assert_eq!(banner.summary.label, "王牌一代目");
+    assert_eq!(banner.summary.label, "王牌一代目 · 2026-04-23");
     assert_eq!(banner.summary.total_pulls, 1);
     assert_eq!(banner.summary.roll_points_total, 10);
     assert_eq!(banner.five_star_history.len(), 0);
@@ -123,9 +127,9 @@ fn banner_scope_keeps_focused_wall_distance_from_pool_kind_history() {
         .dashboard_selection_detail(
             "default",
             "zh-Hant",
-            &DashboardSelection::Banner {
+            &DashboardSelection::BannerOccurrence {
                 pool_kind: PoolKind::MonopolyLimited,
-                banner_id: "monopoly_limited_AnHunQu".to_string(),
+                occurrence_id: "Lottery_AnHunQu@2026-05".to_string(),
             },
         )
         .unwrap();
@@ -186,9 +190,9 @@ fn fork_banner_scope_keeps_no_hit_pulls_from_pool_kind_history() {
         .dashboard_selection_detail(
             "default",
             "zh-Hant",
-            &DashboardSelection::Banner {
+            &DashboardSelection::BannerOccurrence {
                 pool_kind: PoolKind::ForkLottery,
-                banner_id: "ForkLottery_Zhenhong".to_string(),
+                occurrence_id: "ForkLottery_Zhenhong@observed-20260102000000".to_string(),
             },
         )
         .unwrap();
@@ -198,7 +202,7 @@ fn fork_banner_scope_keeps_no_hit_pulls_from_pool_kind_history() {
     let hit = &detail.five_star_wall_history[0];
     assert_eq!(hit.record.item_id, "fork_LunarPhase");
     assert_eq!(hit.record.derived.pull_no_in_pool_kind, Some(60));
-    assert_eq!(hit.record.derived.pull_no_in_banner, Some(20));
+    assert_eq!(hit.record.derived.pull_no_in_banner_occurrence, Some(20));
     assert_eq!(hit.pity_distance, 60);
     assert_eq!(hit.five_star_distance, 60);
     assert_eq!(hit.focused_distance, Some(60));
@@ -253,9 +257,9 @@ fn fork_banner_scope_keeps_off_rate_and_paid_boundary_history() {
         .dashboard_selection_detail(
             "default",
             "zh-Hant",
-            &DashboardSelection::Banner {
+            &DashboardSelection::BannerOccurrence {
                 pool_kind: PoolKind::ForkLottery,
-                banner_id: "ForkLottery_Zhenhong".to_string(),
+                occurrence_id: "ForkLottery_Zhenhong@observed-20260102000000".to_string(),
             },
         )
         .unwrap();

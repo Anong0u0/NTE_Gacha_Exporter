@@ -7,8 +7,10 @@ export type DisplayRecord = {
   time?: string | null;
   pool_kind: PoolKind;
   pool_id: string;
+  lottery_id?: string | null;
   pool_label: string;
-  banner: ResolvedBanner;
+  banner_source: ResolvedBannerSource;
+  banner_occurrence: ResolvedBannerOccurrence;
   item_id: string;
   item_name: string;
   item_asset_refs: AssetRefs;
@@ -29,9 +31,9 @@ export type DisplayRecord = {
 
 export type BannerResolutionIssue =
   | "unknown_pool"
-  | "unknown_time"
-  | "outside_known_windows"
-  | "ambiguous";
+  | "missing_lottery_id"
+  | "unknown_lottery_id"
+  | "lottery_pool_mismatch";
 
 type RuleResolutionIssue =
   | "fallback_pool_kind"
@@ -45,22 +47,30 @@ export type ForkResultMark = "win" | "guaranteed" | "lose";
 export type RollBucket = "gift" | "sleep" | "1" | "2" | "3" | "4" | "5" | "6" | "not_applicable";
 export type ItemKind = "character" | "fork" | "fashion" | "glider" | "inventory" | "vehicle_module" | "unknown";
 
-export type ResolvedBanner = {
+export type ResolvedBannerSource = {
   resolution_issue?: BannerResolutionIssue | null;
   reason?: string | null;
-  banner_id?: string | null;
+  source_id?: string | null;
   pool_id?: string | null;
   pool_kind?: PoolKind | string | null;
   banner_type?: "limited" | "standard" | "fork" | string | null;
   title?: string | null;
-  version?: string | null;
-  start_at?: string | null;
-  end_at?: string | null;
-  timezone?: string | null;
   rate_up_5: string[];
   rate_up_4: string[];
   rule_id?: string | null;
   asset_refs: AssetRefs;
+};
+
+export type BannerOccurrenceResolution = "catalog" | "observed_gap" | "unresolved";
+
+export type ResolvedBannerOccurrence = {
+  occurrence_id?: string | null;
+  source_id?: string | null;
+  resolution_source: BannerOccurrenceResolution;
+  reason?: string | null;
+  version?: string | null;
+  active_from?: string | null;
+  active_until?: string | null;
 };
 
 export type GachaRuleView = {
@@ -78,12 +88,14 @@ export type GachaRuleView = {
 
 export type RecordDerived = {
   record_id: string;
-  banner_id?: string | null;
-  banner_version?: string | null;
+  banner_source_id?: string | null;
+  banner_occurrence_id?: string | null;
+  banner_occurrence_version?: string | null;
   counts_as_pull: boolean;
   global_pull_no?: number | null;
   pull_no_in_pool_kind?: number | null;
-  pull_no_in_banner?: number | null;
+  pull_no_in_banner_source?: number | null;
+  pull_no_in_banner_occurrence?: number | null;
   pity_5_before: number;
   pity_5_after: number;
   ten_pull_progress_before?: number | null;
@@ -101,7 +113,7 @@ export type RecordDerived = {
 
 export type RecordFilter = {
   pool_kind?: PoolKind | null;
-  banner_ids?: string[] | null;
+  banner_occurrence_ids?: string[] | null;
   rarities?: number[] | null;
   focused_rarities?: number[] | null;
   rate_up_results?: RateUpResult[] | null;
@@ -123,10 +135,14 @@ export type RecordList = {
 };
 
 type RecordBannerOption = {
-  banner_id: string;
+  occurrence_id: string;
+  source_id: string;
+  resolution_source: BannerOccurrenceResolution;
   pool_kind: PoolKind;
   resolution_issue?: BannerResolutionIssue | null;
   title: string;
+  active_from?: string | null;
+  active_until?: string | null;
   count: number;
 };
 
@@ -142,7 +158,7 @@ type RecordItemKindOption = {
 };
 
 export type RecordFilterOptions = {
-  banners: RecordBannerOption[];
+  banner_occurrences: RecordBannerOption[];
   roll_buckets: RecordRollBucketOption[];
   item_kinds: RecordItemKindOption[];
 };

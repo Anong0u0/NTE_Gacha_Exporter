@@ -5,6 +5,8 @@ pub struct InternalRecord {
     pub record_type: String,
     pub time: Option<String>,
     pub pool_id: String,
+    #[serde(default)]
+    pub lottery_id: Option<String>,
     pub item_id: String,
     pub count: Option<i64>,
     pub roll_points: Option<i64>,
@@ -20,7 +22,7 @@ pub struct DashboardOverview {
     pub last_run: Option<ImportReport>,
     pub total_records: u64,
     pub pool_kinds: Vec<PoolKindSummary>,
-    pub banners: Vec<BannerSummary>,
+    pub banner_occurrences: Vec<BannerSummary>,
     pub time_stats: TimeStats,
     pub rarity_distribution: Vec<RarityBucket>,
     pub item_ranking: Vec<ItemRank>,
@@ -36,7 +38,9 @@ pub struct ProfileAnalysisView {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BannerSummary {
-    pub banner_id: String,
+    pub occurrence_id: String,
+    pub source_id: String,
+    pub resolution_source: BannerOccurrenceResolution,
     pub pool_id: String,
     pub pool_kind: PoolKind,
     pub banner_type: Option<String>,
@@ -44,8 +48,8 @@ pub struct BannerSummary {
     pub resolution_issue: Option<BannerResolutionIssue>,
     pub title: String,
     pub version: Option<String>,
-    pub start_at: Option<String>,
-    pub end_at: Option<String>,
+    pub active_from: Option<String>,
+    pub active_until: Option<String>,
     pub asset_refs: BTreeMap<String, serde_json::Value>,
     pub total_pulls: u64,
     pub roll_points_total: i64,
@@ -149,9 +153,9 @@ pub struct PoolKindDetail {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum DashboardSelection {
     PoolKind { pool_kind: PoolKind },
-    Banner {
+    BannerOccurrence {
         pool_kind: PoolKind,
-        banner_id: String,
+        occurrence_id: String,
     },
 }
 

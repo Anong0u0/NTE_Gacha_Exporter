@@ -27,11 +27,17 @@ export function createDashboardActions(deps: DashboardActionDeps) {
 
   function normalizeDashboardScope(fallbackPoolKind?: PoolKind) {
     const scope = deps.selectedDashboardScope.value;
-    if (scope.kind === "banner") {
-      const banner = deps.summary.value?.banners.find((item) => item.banner_id === scope.banner_id);
+    if (scope.kind === "banner_occurrence") {
+      const banner = deps.summary.value?.banner_occurrences.find(
+        (item) => item.occurrence_id === scope.occurrence_id,
+      );
       if (banner) {
         deps.selectedPoolKind.value = banner.pool_kind;
-        deps.selectedDashboardScope.value = { kind: "banner", pool_kind: banner.pool_kind, banner_id: banner.banner_id };
+        deps.selectedDashboardScope.value = {
+          kind: "banner_occurrence",
+          pool_kind: banner.pool_kind,
+          occurrence_id: banner.occurrence_id,
+        };
         return;
       }
     }
@@ -50,7 +56,11 @@ export function createDashboardActions(deps: DashboardActionDeps) {
 
   function selectDashboardBanner(banner: BannerSummary) {
     deps.selectedPoolKind.value = banner.pool_kind;
-    deps.selectedDashboardScope.value = { kind: "banner", pool_kind: banner.pool_kind, banner_id: banner.banner_id };
+    deps.selectedDashboardScope.value = {
+      kind: "banner_occurrence",
+      pool_kind: banner.pool_kind,
+      occurrence_id: banner.occurrence_id,
+    };
     void loadDetail().catch(handleDetailError);
   }
 
@@ -59,15 +69,15 @@ export function createDashboardActions(deps: DashboardActionDeps) {
     return scope.pool_kind === poolKind;
   }
 
-  function isSelectedDashboardBanner(bannerId: string) {
+  function isSelectedDashboardBanner(occurrenceId: string) {
     const scope = deps.selectedDashboardScope.value;
-    return scope.kind === "banner" && scope.banner_id === bannerId;
+    return scope.kind === "banner_occurrence" && scope.occurrence_id === occurrenceId;
   }
 
   function isSameDashboardScope(left: DashboardSelection, right: DashboardSelection) {
     if (left.kind !== right.kind || left.pool_kind !== right.pool_kind) return false;
     if (left.kind === "pool_kind" || right.kind === "pool_kind") return true;
-    return left.banner_id === right.banner_id;
+    return left.occurrence_id === right.occurrence_id;
   }
 
   function handleDetailError(error: unknown) {

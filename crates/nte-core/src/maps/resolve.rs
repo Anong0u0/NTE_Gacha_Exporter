@@ -25,212 +25,154 @@ fn normalize_game_time(value: Option<&str>) -> Option<String> {
         }
     }
     text.truncate(19);
+    chrono::NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S").ok()?;
     Some(text)
 }
 
-trait SyntheticBannerFallback {
-    fn or_synthetic(self, pool_id: &str) -> Self;
-}
-
-impl SyntheticBannerFallback for ResolvedBanner {
-    fn or_synthetic(self, pool_id: &str) -> Self {
-        if self.resolution_issue == Some(BannerResolutionIssue::Ambiguous) {
-            return self;
-        }
-        if let Some(issue) = self.resolution_issue {
-            let reason = self.reason.clone().unwrap_or_else(|| "banner is unresolved".to_string());
-            synthetic_unresolved(pool_id, issue, reason).unwrap_or(self)
-        } else {
-            self
-        }
-    }
-}
-
-fn resolve_limited_banner(
-    pool_id: &str,
-    candidates: Vec<&MapBanner>,
-    time: Option<&str>,
-) -> ResolvedBanner {
-    let record_time = match normalize_game_time(time) {
-        Some(value) => value,
-        None => {
-            return synthetic_unresolved(
-                pool_id,
-                BannerResolutionIssue::UnknownTime,
-                "limited banner resolution requires valid record time",
-            )
-            .unwrap_or_else(|| {
-                unresolved(
-                    BannerResolutionIssue::UnknownTime,
-                    "limited banner resolution requires valid record time",
-                )
-            });
-        }
-    };
-    let mut windows = candidates
-        .into_iter()
-        .filter(|banner| banner.banner_type == "limited")
-        .filter_map(|banner| {
-            normalize_game_time(banner.end_at.as_deref()).map(|end_at| {
-                (
-                    normalize_game_time(banner.start_at.as_deref()),
-                    end_at,
-                    banner,
-                )
-            })
+fn legacy_limited_source_id_by_time(map: &MapData, time: Option<&str>) -> Option<String> {
+    let time = normalize_game_time(time)?;
+    let mut matches = map
+        .banner_occurrences
+        .iter()
+        .filter(|occurrence| occurrence_matches_time(occurrence, &time))
+        .filter_map(|occurrence| {
+            map.banner_sources
+                .get(&occurrence.source_id)
+                .filter(|source| source.pool_id == "CardPool_Character")
+                .map(|_| occurrence.source_id.clone())
         })
         .collect::<Vec<_>>();
-    windows.sort_by(|left, right| left.1.cmp(&right.1));
+    matches.sort();
+    matches.dedup();
+    (matches.len() == 1).then(|| matches.remove(0))
+}
 
-    if windows.is_empty() {
-        return synthetic_unresolved(
-            pool_id,
-            BannerResolutionIssue::UnknownPool,
-            "pool has no linked limited banners",
-        )
-        .unwrap_or_else(|| {
-            unresolved(
-                BannerResolutionIssue::UnknownPool,
-                "pool has no linked limited banners",
-            )
-        });
+fn legacy_banner_id(value: Option<&str>) -> Result<Option<String>, GuiError> {
+    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(None);
+    };
+    let canonical = if value == "monopoly_standard" {
+        "Lottery_Permanent".to_string()
+    } else if value.starts_with("Lottery_") {
+        value.to_string()
+    } else if let Some(tail) = value.strip_prefix("monopoly_limited_") {
+        format!("Lottery_{tail}")
+    } else {
+        return Err(GuiError::InvalidDocument(format!(
+            "unknown legacy banner_id: {value}"
+        )));
+    };
+    if !crate::is_valid_lottery_id(&canonical) {
+        return Err(GuiError::InvalidDocument(format!(
+            "invalid legacy banner_id: {value}"
+        )));
     }
+    Ok(Some(canonical))
+}
 
-    let mut matches = Vec::new();
-    let mut previous_end: Option<String> = None;
-    for (start_at, end_at, banner) in windows {
-        let effective_start = start_at.as_ref().or(previous_end.as_ref());
-        let in_window = match effective_start {
-            Some(start) => {
-                start.as_str() < record_time.as_str() && record_time.as_str() <= end_at.as_str()
+impl MapData {
+    pub fn resolve_legacy_lottery_id(
+        &self,
+        pool_id: &str,
+        time: Option<&str>,
+        old_banner_id: Option<&str>,
+    ) -> Result<Option<String>, GuiError> {
+        if pool_id == "CardPool_NewRole" {
+            if let Some(id) = legacy_banner_id(old_banner_id)?
+                && id != "Lottery_Permanent"
+            {
+                return Err(GuiError::InvalidDocument(format!(
+                    "legacy banner conflicts with standard pool: {id}"
+                )));
             }
-            None => record_time.as_str() <= end_at.as_str(),
-        };
-        if in_window {
-            matches.push(banner);
+            return Ok(Some("Lottery_Permanent".to_string()));
         }
-        previous_end = Some(end_at);
-    }
-
-    match matches.len() {
-        1 => resolved(matches[0]),
-        0 => synthetic_unresolved(
-            pool_id,
-            BannerResolutionIssue::OutsideKnownWindows,
-            "record time is outside known limited banner windows",
-        )
-        .unwrap_or_else(|| {
-            unresolved(
-                BannerResolutionIssue::OutsideKnownWindows,
-                "record time is outside known limited banner windows",
-            )
-        }),
-        _ => unresolved(
-            BannerResolutionIssue::Ambiguous,
-            "multiple limited banners match record time",
-        ),
+        if pool_id != "CardPool_Character" {
+            return Ok(None);
+        }
+        if let Some(id) = legacy_banner_id(old_banner_id)? {
+            if self
+                .banner_sources
+                .get(&id)
+                .is_some_and(|source| source.pool_id != pool_id)
+            {
+                return Err(GuiError::InvalidDocument(format!(
+                    "legacy banner conflicts with pool: banner={id} pool={pool_id}"
+                )));
+            }
+            return Ok(Some(id));
+        }
+        Ok(legacy_limited_source_id_by_time(self, time))
     }
 }
 
-fn single_banner(
-    candidates: Vec<&MapBanner>,
-    banner_type: &str,
-    reason_label: &str,
-) -> ResolvedBanner {
-    let matches = candidates
-        .into_iter()
-        .filter(|banner| banner.banner_type == banner_type)
-        .collect::<Vec<_>>();
-    match matches.len() {
-        1 => resolved(matches[0]),
-        0 => unresolved(
-            BannerResolutionIssue::UnknownPool,
-            format!("pool has no linked {reason_label} banner"),
-        ),
-        _ => unresolved(
-            BannerResolutionIssue::Ambiguous,
-            format!("multiple {reason_label} banners are linked"),
-        ),
-    }
-}
-
-fn resolved(banner: &MapBanner) -> ResolvedBanner {
-    ResolvedBanner {
+fn resolved_source(source: &MapBannerSource) -> ResolvedBannerSource {
+    ResolvedBannerSource {
         resolution_issue: None,
         reason: None,
-        banner_id: Some(banner.banner_id.clone()),
-        pool_id: Some(banner.pool_id.clone()),
-        pool_kind: Some(banner.pool_kind.clone()),
-        banner_type: Some(banner.banner_type.clone()),
-        title: Some(banner.title.clone()),
-        version: banner.version.clone(),
-        start_at: banner.start_at.clone(),
-        end_at: banner.end_at.clone(),
-        timezone: banner.timezone.clone(),
-        rate_up_5: banner.rate_up_5.clone(),
-        rate_up_4: banner.rate_up_4.clone(),
-        rule_id: Some(banner.rule_id.clone()),
-        asset_refs: banner.asset_refs.clone(),
+        source_id: Some(source.source_id.clone()),
+        pool_id: Some(source.pool_id.clone()),
+        pool_kind: Some(source.pool_kind.clone()),
+        banner_type: Some(source.banner_type.clone()),
+        title: Some(source.title.clone()),
+        rate_up_5: source.rate_up_5.clone(),
+        rate_up_4: source.rate_up_4.clone(),
+        rule_id: Some(source.rule_id.clone()),
+        asset_refs: source.asset_refs.clone(),
     }
 }
 
-fn synthetic_unresolved(
-    pool_id: &str,
+fn synthetic_source(
+    input: BannerResolveInput<'_>,
     issue: BannerResolutionIssue,
     reason: impl Into<String>,
-) -> Option<ResolvedBanner> {
-    let (banner_id, pool_kind, banner_type, title) = if pool_id == "CardPool_Character" {
+) -> ResolvedBannerSource {
+    let (source_id, pool_kind, banner_type, title) = if input.pool_id == "CardPool_Character" {
         (
-            "CardPool_Character".to_string(),
-            "monopoly_limited".to_string(),
-            "limited".to_string(),
+            input.lottery_id.map(ToOwned::to_owned),
+            Some("monopoly_limited".to_string()),
+            Some("limited".to_string()),
             None,
         )
-    } else {
-        let title = pool_id.strip_prefix("ForkLottery_")?;
+    } else if input.pool_id == "CardPool_NewRole" {
         (
-            pool_id.to_string(),
-            "fork_lottery".to_string(),
-            "fork".to_string(),
+            input.lottery_id.map(ToOwned::to_owned),
+            Some("monopoly_standard".to_string()),
+            Some("standard".to_string()),
+            None,
+        )
+    } else if let Some(title) = input.pool_id.strip_prefix("ForkLottery_") {
+        (
+            Some(input.pool_id.to_string()),
+            Some("fork_lottery".to_string()),
+            Some("fork".to_string()),
             Some(title.to_string()),
         )
+    } else {
+        (None, None, None, None)
     };
-
-    Some(ResolvedBanner {
+    ResolvedBannerSource {
         resolution_issue: Some(issue),
         reason: Some(reason.into()),
-        banner_id: Some(banner_id),
-        pool_id: Some(pool_id.to_string()),
-        pool_kind: Some(pool_kind),
-        banner_type: Some(banner_type),
+        source_id,
+        pool_id: Some(input.pool_id.to_string()),
+        pool_kind,
+        banner_type,
         title,
-        version: None,
-        start_at: None,
-        end_at: None,
-        timezone: None,
-        rate_up_5: Vec::new(),
-        rate_up_4: Vec::new(),
-        rule_id: None,
-        asset_refs: BTreeMap::new(),
-    })
-}
-
-fn unresolved(issue: BannerResolutionIssue, reason: impl Into<String>) -> ResolvedBanner {
-    ResolvedBanner {
-        resolution_issue: Some(issue),
-        reason: Some(reason.into()),
-        banner_id: None,
-        pool_id: None,
-        pool_kind: None,
-        banner_type: None,
-        title: None,
-        version: None,
-        start_at: None,
-        end_at: None,
-        timezone: None,
         rate_up_5: Vec::new(),
         rate_up_4: Vec::new(),
         rule_id: None,
         asset_refs: BTreeMap::new(),
     }
+}
+
+fn occurrence_matches_time(occurrence: &MapBannerOccurrence, time: &str) -> bool {
+    occurrence
+        .active_from
+        .as_deref()
+        .is_none_or(|start| start <= time)
+        && occurrence
+            .active_until
+            .as_deref()
+            .is_none_or(|end| time < end)
 }

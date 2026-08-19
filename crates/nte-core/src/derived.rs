@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    GuiError, InternalRecord, MapData, MapItem, PityBadge, PoolKind, RateUpResult, RecordDerived,
+    BannerResolveInput, GuiError, InternalRecord, MapData, MapItem, PityBadge, PoolKind,
+    RateUpResult, RecordDerived,
 };
 use crate::{
     classify_pool_id, compare_records_for_analysis, rate_up_result, rule_for_resolved_banner,
@@ -17,11 +18,13 @@ pub fn derive_records(
     records: &[InternalRecord],
     map: &MapData,
 ) -> Result<Vec<RecordDerived>, GuiError> {
+    let occurrences = map.resolve_banner_occurrences(records);
     let mut ordered = records.iter().collect::<Vec<_>>();
     ordered.sort_by(|left, right| compare_records_for_analysis(left, right));
 
     let mut pull_no_by_pool_kind: HashMap<PoolKind, u64> = HashMap::new();
-    let mut pull_no_by_banner: HashMap<String, u64> = HashMap::new();
+    let mut pull_no_by_banner_source: HashMap<String, u64> = HashMap::new();
+    let mut pull_no_by_banner_occurrence: HashMap<String, u64> = HashMap::new();
     let mut global_pull_no = 0_u64;
     let mut pity_5_by_pool_kind: HashMap<PoolKind, u64> = HashMap::new();
     let mut fork_4_pity = 0_u64;
@@ -31,8 +34,14 @@ pub fn derive_records(
 
     for record in ordered {
         let pool_kind = classify_pool_id(&record.pool_id)?;
-        let banner = map.resolve_banner(&record.pool_id, record.time.as_deref());
-        let rule = rule_for_resolved_banner(map, record, &banner)?;
+        let banner_source = map.resolve_banner_source(BannerResolveInput {
+            pool_id: &record.pool_id,
+            lottery_id: record.lottery_id.as_deref(),
+        });
+        let banner_occurrence = occurrences.get(&record.record_id).ok_or_else(|| {
+            GuiError::InvalidDocument(format!("banner occurrence missing: {}", record.record_id))
+        })?;
+        let rule = rule_for_resolved_banner(map, record, &banner_source)?;
         let counts_as_pull = counts_as_pull(record);
         let item = map.item(&record.item_id).map(|(_, item)| item);
         let rarity = item.map(|item| item.rarity);
@@ -40,23 +49,37 @@ pub fn derive_records(
             .then(|| hit_rarity_for_pity(item, pool_kind))
             .flatten();
 
-        let banner_id = banner.banner_id.clone();
-        let (global_pull_no, pull_no_in_pool_kind, pull_no_in_banner) = if counts_as_pull {
+        let banner_source_id = banner_source.source_id.clone();
+        let banner_occurrence_id = banner_occurrence.occurrence_id.clone();
+        let (
+            global_pull_no,
+            pull_no_in_pool_kind,
+            pull_no_in_banner_source,
+            pull_no_in_banner_occurrence,
+        ) = if counts_as_pull {
             global_pull_no += 1;
             let pool_pull_no = next_counter(&mut pull_no_by_pool_kind, pool_kind);
-            let banner_pull_no = banner_id
+            let source_pull_no = banner_source_id
                 .as_ref()
-                .map(|banner_id| next_counter(&mut pull_no_by_banner, banner_id.clone()));
-            (Some(global_pull_no), Some(pool_pull_no), banner_pull_no)
+                .map(|source_id| next_counter(&mut pull_no_by_banner_source, source_id.clone()));
+            let occurrence_pull_no = banner_occurrence_id.as_ref().map(|occurrence_id| {
+                next_counter(&mut pull_no_by_banner_occurrence, occurrence_id.clone())
+            });
+            (
+                Some(global_pull_no),
+                Some(pool_pull_no),
+                source_pull_no,
+                occurrence_pull_no,
+            )
         } else {
-            (None, None, None)
+            (None, None, None, None)
         };
 
         let pity_5_before = *pity_5_by_pool_kind.get(&pool_kind).unwrap_or(&0);
         let rate_up = if counts_as_pull {
             rarity
                 .filter(|rarity| matches!(rarity, 4 | 5))
-                .map(|rarity| rate_up_result(map, record, rarity, &banner))
+                .map(|rarity| rate_up_result(map, record, rarity, &banner_source))
                 .unwrap_or(RateUpResult::Unknown)
         } else {
             RateUpResult::Unknown
@@ -64,7 +87,14 @@ pub fn derive_records(
 
         let (guarantee_5_before, guarantee_5_after) = if counts_as_pull {
             let result_5 = (hit_rarity == Some(5)).then_some(rate_up);
-            update_guarantee_state_for(&mut guarantee_state, &rule, &banner, 5, result_5)
+            update_guarantee_state_for(
+                &mut guarantee_state,
+                &rule,
+                &banner_source,
+                banner_occurrence,
+                5,
+                result_5,
+            )
         } else {
             (None, None)
         };
@@ -151,12 +181,14 @@ pub fn derive_records(
 
         derived.push(RecordDerived {
             record_id: record.record_id.clone(),
-            banner_id,
-            banner_version: banner.version.clone(),
+            banner_source_id,
+            banner_occurrence_id,
+            banner_occurrence_version: banner_occurrence.version.clone(),
             counts_as_pull,
             global_pull_no,
             pull_no_in_pool_kind,
-            pull_no_in_banner,
+            pull_no_in_banner_source,
+            pull_no_in_banner_occurrence,
             pity_5_before,
             pity_5_after,
             ten_pull_progress_before,

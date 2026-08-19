@@ -60,13 +60,15 @@ pub fn build_asset_maps(
         .into_iter()
         .filter(|locale| !REMOVED_MAP_LOCALES.contains(&locale.as_str()))
         .map(|locale| {
-            let map = build_asset_map(assets_root, &locale)?;
+            let map = build_full_asset_map(assets_root, &locale)?;
             let item_count = section_len(&map, "items");
             let pool_count = section_len(&map, "pools");
             let label_count = section_len(&map, "labels");
+            let (core, overlay) = split_asset_map(&map, &locale)?;
             Ok(AssetMapBuild {
                 locale,
-                map,
+                core,
+                overlay,
                 item_count,
                 pool_count,
                 label_count,
@@ -75,11 +77,11 @@ pub fn build_asset_maps(
         .collect()
 }
 
-pub fn build_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiError> {
+fn build_full_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiError> {
     let localization = load_localization(assets_root, locale)?;
     let (items, item_ctx) = build_item_data(assets_root, localization)?;
-    let (pools, mut pool_meta) =
-        build_pools(assets_root, locale, &item_ctx.localization, &item_ctx.canonicalizer)?;
+    let (pools, pool_meta) =
+        build_pools(assets_root, &item_ctx.localization, &item_ctx.canonicalizer)?;
     let item_meta = build_item_meta_rows(assets_root, &items, &item_ctx.canonicalizer)?;
     let normalized_items = normalized_items(&items, &item_meta);
     let banners = build_banners(
@@ -89,10 +91,7 @@ pub fn build_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiErr
         &item_ctx.canonicalizer,
         &normalized_items,
     )?;
-    attach_banner_ids(&mut pool_meta, &banners);
-
     let mut map = JsonObject::new();
-    map.insert("schema_version".to_string(), json!(MAP_SCHEMA_VERSION));
     map.insert(
         "csv_headers".to_string(),
         Value::Object(csv_headers(&item_ctx.localization, locale)),
@@ -120,6 +119,123 @@ pub fn build_asset_map(assets_root: &Path, locale: &str) -> Result<Value, GuiErr
         Value::Object(string_map_value(build_labels(&item_ctx.localization))),
     );
     let value = Value::Object(map);
-    validate_map_source(&value, &format!("{locale}.json"))?;
+    validate_full_map_source(&value, &format!("{locale}.json"))?;
     Ok(value)
+}
+
+fn split_asset_map(map: &Value, locale: &str) -> Result<(Value, Value), GuiError> {
+    let object = map
+        .as_object()
+        .ok_or_else(|| invalid(format!("generated map must be an object: {locale}")))?;
+    let items = required_section(object, locale, "items")?;
+    let pools = required_section(object, locale, "pools")?;
+    let banners = required_section(object, locale, "banners")?;
+
+    let mut core_items = JsonObject::new();
+    let mut locale_items = JsonObject::new();
+    for (item_id, value) in items {
+        let mut item = value
+            .as_object()
+            .cloned()
+            .ok_or_else(|| invalid(format!("item must be object: {locale}:items.{item_id}")))?;
+        let name = item
+            .remove("name")
+            .ok_or_else(|| invalid(format!("item name missing: {locale}:items.{item_id}")))?;
+        core_items.insert(item_id.clone(), Value::Object(item));
+        locale_items.insert(item_id.clone(), Value::Object(map_from_pairs([("name", name)])));
+    }
+
+    let mut core_pools = JsonObject::new();
+    let mut locale_pools = JsonObject::new();
+    for (pool_id, value) in pools {
+        let mut pool = value
+            .as_object()
+            .cloned()
+            .ok_or_else(|| invalid(format!("pool must be object: {locale}:pools.{pool_id}")))?;
+        let mut localized = JsonObject::new();
+        for key in ["name", "group_label", "title"] {
+            if let Some(value) = pool.remove(key) {
+                localized.insert(key.to_string(), value);
+            }
+        }
+        core_pools.insert(pool_id.clone(), Value::Object(pool));
+        locale_pools.insert(pool_id.clone(), Value::Object(localized));
+    }
+
+    let mut core_banners = JsonObject::new();
+    let mut locale_banners = JsonObject::new();
+    for (source_id, value) in banners {
+        let mut banner = value.as_object().cloned().ok_or_else(|| {
+            invalid(format!(
+                "banner must be object: {locale}:banners.{source_id}"
+            ))
+        })?;
+        let mut localized = JsonObject::new();
+        for key in ["title", "short_title"] {
+            if let Some(value) = banner.remove(key) {
+                localized.insert(key.to_string(), value);
+            }
+        }
+        for key in [
+            "version",
+            "start_at",
+            "end_at",
+            "mainland_start_at",
+            "mainland_end_at",
+            "timezone",
+        ] {
+            banner.remove(key);
+        }
+        banner.remove("banner_id");
+        banner.insert("source_id".to_string(), Value::String(source_id.clone()));
+        core_banners.insert(source_id.clone(), Value::Object(banner));
+        locale_banners.insert(source_id.clone(), Value::Object(localized));
+    }
+
+    let core = Value::Object(map_from_pairs([
+        ("schema", json!(MAP_CORE_SCHEMA)),
+        ("schema_version", json!(MAP_CORE_SCHEMA_VERSION)),
+        ("items", Value::Object(core_items)),
+        (
+            "item_aliases",
+            object
+                .get("item_aliases")
+                .cloned()
+                .unwrap_or_else(|| json!({})),
+        ),
+        ("pools", Value::Object(core_pools)),
+        ("banner_sources", Value::Object(core_banners)),
+        (
+            "gacha_rules",
+            object
+                .get("gacha_rules")
+                .cloned()
+                .unwrap_or_else(|| json!({})),
+        ),
+    ]));
+    let overlay = Value::Object(map_from_pairs([
+        ("schema", json!(MAP_LOCALE_SCHEMA)),
+        ("schema_version", json!(MAP_LOCALE_SCHEMA_VERSION)),
+        ("locale", json!(locale)),
+        (
+            "csv_headers",
+            object
+                .get("csv_headers")
+                .cloned()
+                .unwrap_or_else(|| json!({})),
+        ),
+        (
+            "labels",
+            object
+                .get("labels")
+                .cloned()
+                .unwrap_or_else(|| json!({})),
+        ),
+        ("items", Value::Object(locale_items)),
+        ("pools", Value::Object(locale_pools)),
+        ("banner_sources", Value::Object(locale_banners)),
+    ]));
+    validate_core_source(&core, "generated core")?;
+    validate_locale_source(&overlay, &core, locale)?;
+    Ok((core, overlay))
 }

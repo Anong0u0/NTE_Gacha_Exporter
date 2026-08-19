@@ -116,13 +116,34 @@ fn capture_help_exposes_windivert_flags() {
 }
 
 #[test]
-fn maps_build_writes_locale_map() {
+fn maps_build_writes_core_and_locale_overlay_without_touching_catalog() {
     let tmp = tempfile::tempdir().unwrap();
     let assets = tmp.path().join("NTE_Assets");
     let out_dir = tmp.path().join("maps");
     write_minimal_assets(&assets);
+    std::fs::create_dir_all(&out_dir).unwrap();
+    let catalog_path = out_dir.join("banner-occurrences.json");
+    std::fs::write(&catalog_path, "maintained catalog").unwrap();
 
-    let output = Command::new(bin())
+    let full_build = Command::new(bin())
+        .args([
+            "maps",
+            "build",
+            "--assets-root",
+            assets.to_str().unwrap(),
+            "--out-dir",
+            out_dir.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert!(
+        full_build.status.success(),
+        "stdout={}\nstderr={}",
+        String::from_utf8_lossy(&full_build.stdout),
+        String::from_utf8_lossy(&full_build.stderr)
+    );
+    let locale_build = Command::new(bin())
         .args([
             "maps",
             "build",
@@ -135,23 +156,34 @@ fn maps_build_writes_locale_map() {
         ])
         .output()
         .unwrap();
-
     assert!(
-        output.status.success(),
+        locale_build.status.success(),
         "stdout={}\nstderr={}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        String::from_utf8_lossy(&locale_build.stdout),
+        String::from_utf8_lossy(&locale_build.stderr)
     );
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&locale_build.stdout);
     assert!(stdout.contains("zh-Hant: items=1 pools=2 labels=4"));
-    let map: Value =
-        serde_json::from_str(&std::fs::read_to_string(out_dir.join("zh-Hant.json")).unwrap())
-            .unwrap();
-    assert_eq!(map["schema_version"], 4);
-    assert_eq!(map["items"]["1010"]["name"], "Character·Nanali");
+
+    let core: Value =
+        serde_json::from_str(&std::fs::read_to_string(out_dir.join("core.json")).unwrap()).unwrap();
+    let overlay: Value = serde_json::from_str(
+        &std::fs::read_to_string(out_dir.join("locales/zh-Hant.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(core["schema"], "nte-map-core");
+    assert_eq!(core["schema_version"], 1);
+    assert!(core["items"]["1010"].get("name").is_none());
+    assert_eq!(overlay["schema"], "nte-map-locale");
+    assert_eq!(overlay["schema_version"], 1);
+    assert_eq!(overlay["items"]["1010"]["name"], "Character·Nanali");
     assert_eq!(
-        map["banners"]["monopoly_standard"]["banner_type"],
+        core["banner_sources"]["Lottery_Permanent"]["banner_type"],
         "standard"
+    );
+    assert_eq!(
+        std::fs::read_to_string(catalog_path).unwrap(),
+        "maintained catalog"
     );
 }
 

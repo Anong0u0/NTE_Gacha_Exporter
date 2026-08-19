@@ -28,6 +28,7 @@ const DEFAULT_LOCALE: &str = "en";
 const DEFAULT_UI_LOCALE: &str = "en";
 const DEFAULT_UPDATE_CHANNEL: &str = "stable";
 const DEFAULT_CHECK_UPDATES_ON_STARTUP: bool = true;
+const RECORDS_SCHEMA_VERSION: u32 = 2;
 static UNIQUE_STAMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub struct JsonStore {

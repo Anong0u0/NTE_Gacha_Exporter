@@ -5,7 +5,8 @@ import type {
   Profile,
   RateUpResult,
   RecordDerived,
-  ResolvedBanner,
+  ResolvedBannerOccurrence,
+  ResolvedBannerSource,
 } from "../types";
 
 export const mockProfile: Profile = {
@@ -38,11 +39,11 @@ export type MockScenario =
 const MOCK_SCENARIO_KEY = "nte.mockScenario";
 
 export function mockBanner(
-  bannerId: string,
+  sourceId: string,
   poolKind: PoolKind,
   bannerType: "limited" | "standard" | "fork",
   title: string,
-): ResolvedBanner {
+): ResolvedBannerSource {
   const limitedAssetRefs: AssetRefs = {
     image: "/Game/UI/UI/Gacha/Activityillustate/YH_UI_choukahuodong_xinzheng03.YH_UI_choukahuodong_xinzheng03",
     featured_portraits: ["/Game/UI/UI/Gacha/YH_lihui_character_anhunqu.YH_lihui_character_anhunqu"],
@@ -52,7 +53,7 @@ export function mockBanner(
     icon: "/Game/UI/UI_Icon/Fork/1024/fork_Rose.fork_Rose",
   };
   return {
-    banner_id: bannerId,
+    source_id: sourceId,
     pool_kind: poolKind,
     banner_type: bannerType,
     title,
@@ -60,6 +61,21 @@ export function mockBanner(
     rate_up_4: [],
     rule_id: poolKind === "fork_lottery" ? "fork_lottery_s" : poolKind,
     asset_refs: bannerType === "fork" ? forkAssetRefs : limitedAssetRefs,
+  };
+}
+
+export function mockBannerOccurrence(
+  sourceId: string,
+  occurrenceId = sourceId,
+  activeFrom: string | null = null,
+): ResolvedBannerOccurrence {
+  return {
+    occurrence_id: occurrenceId,
+    source_id: sourceId,
+    resolution_source: "catalog",
+    version: null,
+    active_from: activeFrom,
+    active_until: null,
   };
 }
 
@@ -79,12 +95,14 @@ function mockRule(poolKind: PoolKind, ruleId: string): GachaRuleView {
 export function mockDerived(
   recordId: string,
   options: {
-    bannerId: string;
+    sourceId: string;
+    occurrenceId?: string;
     poolKind: PoolKind;
     countsAsPull?: boolean;
     globalPullNo?: number | null;
     pullNoInPoolKind: number | null;
-    pullNoInBanner: number | null;
+    pullNoInSource: number | null;
+    pullNoInOccurrence?: number | null;
     pity5Before: number;
     pity5After: number;
     tenPullProgressBefore?: number | null;
@@ -99,12 +117,14 @@ export function mockDerived(
 ): RecordDerived {
   return {
     record_id: recordId,
-    banner_id: options.bannerId,
-    banner_version: null,
+    banner_source_id: options.sourceId,
+    banner_occurrence_id: options.occurrenceId ?? options.sourceId,
+    banner_occurrence_version: null,
     counts_as_pull: options.countsAsPull ?? true,
     global_pull_no: options.countsAsPull === false ? null : (options.globalPullNo ?? options.pullNoInPoolKind),
     pull_no_in_pool_kind: options.pullNoInPoolKind,
-    pull_no_in_banner: options.pullNoInBanner,
+    pull_no_in_banner_source: options.pullNoInSource,
+    pull_no_in_banner_occurrence: options.pullNoInOccurrence ?? options.pullNoInSource,
     pity_5_before: options.pity5Before,
     pity_5_after: options.pity5After,
     ten_pull_progress_before: options.tenPullProgressBefore ?? options.tenPullProgressAfter,
@@ -122,17 +142,17 @@ export function mockDerived(
 }
 
 export function mockSyntheticBanner(
-  bannerId: string,
+  sourceId: string | null,
   poolId: string,
   poolKind: PoolKind,
   bannerType: "limited" | "fork",
   title: string | null,
-  resolutionIssue: NonNullable<ResolvedBanner["resolution_issue"]>,
-): ResolvedBanner {
+  resolutionIssue: NonNullable<ResolvedBannerSource["resolution_issue"]>,
+): ResolvedBannerSource {
   return {
     resolution_issue: resolutionIssue,
     reason: "mock synthetic banner",
-    banner_id: bannerId,
+    source_id: sourceId,
     pool_id: poolId,
     pool_kind: poolKind,
     banner_type: bannerType,

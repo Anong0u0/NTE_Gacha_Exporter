@@ -115,7 +115,7 @@ fn analysis_computes_pity_distribution_and_fork_guarantee() {
         fork.five_star_history[1]
             .record
             .derived
-            .banner_id
+            .banner_source_id
             .as_deref(),
         Some("ForkLottery_AnHunQu")
     );
@@ -206,7 +206,7 @@ fn dashboard_overview_empty_profile_returns_empty_stats() {
     assert_eq!(overview.pool_kinds.len(), 3);
     assert_eq!(limited.total_pulls, 0);
     assert_eq!(limited.roll_points_total, 0);
-    assert!(overview.banners.is_empty());
+    assert!(overview.banner_occurrences.is_empty());
     assert_eq!(
         overview
             .pool_kinds
@@ -379,35 +379,33 @@ fn banner_lists_sort_by_latest_item_time_desc() {
 
     assert_eq!(
         overview
-            .banners
+            .banner_occurrences
             .iter()
-            .map(|banner| banner.banner_id.as_str())
+            .map(|banner| banner.occurrence_id.as_str())
             .collect::<Vec<_>>(),
         vec![
-            "ForkLottery_Xun",
-            "ForkLottery_Kaesi",
-            "ForkLottery_AnHunQu",
-            "ForkLottery_Nanali",
+            "ForkLottery_Xun@observed-20260101100000",
+            "ForkLottery_Kaesi@observed-20260103100000",
+            "ForkLottery_AnHunQu@observed-20260102100000",
         ]
     );
     assert_eq!(
         options
-            .banners
+            .banner_occurrences
             .iter()
-            .map(|banner| banner.banner_id.as_str())
+            .map(|banner| banner.occurrence_id.as_str())
             .collect::<Vec<_>>(),
         vec![
-            "ForkLottery_Xun",
-            "ForkLottery_Kaesi",
-            "ForkLottery_AnHunQu",
-            "ForkLottery_Nanali",
+            "ForkLottery_Xun@observed-20260101100000",
+            "ForkLottery_Kaesi@observed-20260103100000",
+            "ForkLottery_AnHunQu@observed-20260102100000",
         ]
     );
     assert_eq!(
         overview
-            .banners
+            .banner_occurrences
             .iter()
-            .find(|banner| banner.banner_id == "ForkLottery_Xun")
+            .find(|banner| { banner.occurrence_id == "ForkLottery_Xun@observed-20260101100000" })
             .unwrap()
             .total_pulls,
         1
@@ -465,9 +463,9 @@ fn fork_stats_separate_twenty_five_seventy_five_wins_losses_and_forced_up() {
         .find(|summary| summary.pool_kind == PoolKind::ForkLottery)
         .unwrap();
     let banner = overview
-        .banners
+        .banner_occurrences
         .iter()
-        .find(|banner| banner.banner_id == "ForkLottery_AnHunQu")
+        .find(|banner| banner.occurrence_id == "ForkLottery_AnHunQu@observed-20260101000100")
         .unwrap();
     let detail = store
         .pool_kind_detail("default", "zh-Hant", PoolKind::ForkLottery)

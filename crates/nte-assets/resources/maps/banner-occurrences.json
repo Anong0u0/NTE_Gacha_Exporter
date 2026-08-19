@@ -1,0 +1,66 @@
+{
+  "schema": "nte-banner-occurrences",
+  "schema_version": 1,
+  "occurrences": [
+    {
+      "occurrence_id": "Lottery_Permanent@permanent",
+      "source_id": "Lottery_Permanent"
+    },
+    {
+      "occurrence_id": "Lottery_Nanali@2026-04",
+      "source_id": "Lottery_Nanali",
+      "active_from": "2026-04-23 06:00:00",
+      "active_until": "2026-05-13 06:00:00",
+      "version": "1.0"
+    },
+    {
+      "occurrence_id": "Lottery_Xun@2026-05",
+      "source_id": "Lottery_Xun",
+      "active_from": "2026-05-07 06:00:00",
+      "active_until": "2026-06-03 06:00:00",
+      "version": "1.0"
+    },
+    {
+      "occurrence_id": "Lottery_AnHunQu@2026-05",
+      "source_id": "Lottery_AnHunQu",
+      "active_from": "2026-05-28 06:00:00",
+      "active_until": "2026-06-24 06:00:00",
+      "version": "1.1"
+    },
+    {
+      "occurrence_id": "Lottery_Kaesi@2026-06",
+      "source_id": "Lottery_Kaesi",
+      "active_from": "2026-06-18 06:00:00",
+      "active_until": "2026-07-08 06:00:00",
+      "version": "1.1"
+    },
+    {
+      "occurrence_id": "Lottery_ZhenHong@2026-07",
+      "source_id": "Lottery_ZhenHong",
+      "active_from": "2026-07-02 06:00:00",
+      "active_until": "2026-07-29 06:00:00",
+      "version": "1.2"
+    },
+    {
+      "occurrence_id": "Lottery_Yiluoyi@2026-07",
+      "source_id": "Lottery_Yiluoyi",
+      "active_from": "2026-07-23 06:00:00",
+      "active_until": "2026-08-19 06:00:00",
+      "version": "1.2"
+    },
+    {
+      "occurrence_id": "Lottery_Canhong@2026-08",
+      "source_id": "Lottery_Canhong",
+      "active_from": "2026-08-13 06:00:00",
+      "active_until": "2026-09-09 06:00:00",
+      "version": "1.3"
+    },
+    {
+      "occurrence_id": "Lottery_Nanali@2026-08",
+      "source_id": "Lottery_Nanali",
+      "active_from": "2026-08-13 06:00:00",
+      "active_until": "2026-09-09 06:00:00",
+      "version": "1.3"
+    }
+  ]
+}

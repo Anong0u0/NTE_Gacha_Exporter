@@ -6,16 +6,19 @@ struct BannerSummarySortRow {
 fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
     let mut grouped: BTreeMap<String, Vec<&DisplayRecord>> = BTreeMap::new();
     for record in records {
-        if let Some(banner_id) = record.derived.banner_id.as_ref() {
-            grouped.entry(banner_id.clone()).or_default().push(record);
+        if let Some(occurrence_id) = record.derived.banner_occurrence_id.as_ref() {
+            grouped
+                .entry(occurrence_id.clone())
+                .or_default()
+                .push(record);
         }
     }
 
     let mut summaries = grouped
         .into_iter()
-        .filter_map(|(banner_id, banner_records)| {
+        .filter_map(|(occurrence_id, banner_records)| {
             let first = banner_records.first().copied()?;
-            let latest = latest_countable_record(&banner_records, Some(&banner_id));
+            let latest = latest_countable_record(&banner_records, Some(&occurrence_id));
             let latest_item_time = latest_item_time(&banner_records);
             let resource = resource_counters(banner_records.iter().copied());
             let five_star_pity = banner_records
@@ -23,32 +26,40 @@ fn banner_summaries(records: &[DisplayRecord]) -> Vec<BannerSummary> {
                 .filter_map(|record| hit_pity_distance(record, 5))
                 .collect::<Vec<_>>();
             let roll_point_costs =
-                roll_point_costs_to_5star(banner_records.iter().copied(), Some(&banner_id));
+                roll_point_costs_to_5star(banner_records.iter().copied(), Some(&occurrence_id));
             let fork_win_stats = fork_win_stats(banner_records.iter().copied());
             let latest_hit = banner_records
                 .iter()
                 .copied()
                 .filter(|record| matches!(record.derived.hit_rarity, Some(5 | 4)))
-                .max_by(|left, right| compare_scoped_analysis(left, right, Some(&banner_id)))
+                .max_by(|left, right| {
+                    compare_scoped_analysis(left, right, Some(&occurrence_id))
+                })
                 .cloned();
 
             Some(BannerSummarySortRow {
                 latest_item_time,
                 summary: BannerSummary {
-                    banner_id: banner_id.clone(),
+                    occurrence_id: occurrence_id.clone(),
+                    source_id: first
+                        .derived
+                        .banner_source_id
+                        .clone()
+                        .unwrap_or_default(),
+                    resolution_source: first.banner_occurrence.resolution_source,
                     pool_id: first.pool_id.clone(),
                     pool_kind: first.pool_kind,
-                    banner_type: first.banner.banner_type.clone(),
-                    resolution_issue: first.banner.resolution_issue,
+                    banner_type: first.banner_source.banner_type.clone(),
+                    resolution_issue: first.banner_source.resolution_issue,
                     title: first
-                        .banner
+                        .banner_source
                         .title
                         .clone()
-                        .unwrap_or_else(|| banner_id.clone()),
-                    version: first.derived.banner_version.clone(),
-                    start_at: first.banner.start_at.clone(),
-                    end_at: first.banner.end_at.clone(),
-                    asset_refs: first.banner.asset_refs.clone(),
+                        .unwrap_or_else(|| occurrence_id.clone()),
+                    version: first.derived.banner_occurrence_version.clone(),
+                    active_from: first.banner_occurrence.active_from.clone(),
+                    active_until: first.banner_occurrence.active_until.clone(),
+                    asset_refs: first.banner_source.asset_refs.clone(),
                     total_pulls: count_pulls(&banner_records),
                     roll_points_total: resource.total,
                     known_roll_point_records: resource.known,
@@ -377,7 +388,7 @@ fn latest_countable_record<'a>(
         .copied()
         .filter(|record| record.derived.counts_as_pull)
         .max_by_key(|record| match banner_id {
-            Some(_) => record.derived.pull_no_in_banner,
+            Some(_) => record.derived.pull_no_in_banner_occurrence,
             None => record.derived.pull_no_in_pool_kind,
         })
 }
@@ -398,8 +409,8 @@ fn compare_scoped_analysis(
     match banner_id {
         Some(_) => left
             .derived
-            .pull_no_in_banner
-            .cmp(&right.derived.pull_no_in_banner),
+            .pull_no_in_banner_occurrence
+            .cmp(&right.derived.pull_no_in_banner_occurrence),
         None => left
             .derived
             .pull_no_in_pool_kind

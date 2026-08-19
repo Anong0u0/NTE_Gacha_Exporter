@@ -21,27 +21,31 @@ pub use identity::{
     record_semantic_key_from_parts, stable_record_id_from_key,
 };
 pub use maps::{
-    MapBanner, MapData, MapGachaRule, MapItem, MapPool, PoolTitleWindow, available_locales,
-    bundled_maps_hash, load_map,
+    BannerResolveInput, MapBannerOccurrence, MapBannerSource, MapData, MapGachaRule, MapItem,
+    MapPool, available_locales, load_map,
 };
 pub use model::{
     ASSETS_PACK_SCHEMA, ASSETS_PACK_SCHEMA_VERSION, AssetsPackAsset, AssetsPackManifest,
-    BackupReport, BannerResolutionIssue, BannerSummary,
+    BackupReport, BannerOccurrenceResolution, BannerResolutionIssue, BannerSummary,
     DashboardOverview, DashboardSelection, DashboardSelectionDetail, DisplayRecord, FiveStarRecord,
     FiveStarResult, ForkResultMark, GachaRuleView, GuiError, ImportReport, InternalRecord,
     ItemKind, ItemRank, MapLocaleList, PityBadge, PoolKind, PoolKindDetail, PoolKindSummary,
     Profile, ProfileAnalysisView, PullRarityBucket, PullRarityBucketKey, RarityBucket,
     RateUpResult, RecordBannerOption, RecordDerived, RecordFilter, RecordFilterOptions,
-    RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport,
-    RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary,
-    TimeStats, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus, validate_assets_pack_manifest,
+    RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBannerOccurrence,
+    ResolvedBannerSource, RestoreReport, RollBucket, RuleResolutionIssue, Settings, SettingsPatch,
+    SortDirection, TimeBucketSummary, TimeStats, UpdateChangelogEntry, UpdateChannel,
+    UpdateCheckReport, UpdateInstallPlan, UpdateManifest, UpdatePackage, UpdateStageReport,
+    UpdateStatus, validate_assets_pack_manifest,
 };
 pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,
     compare_records_for_analysis, compare_time_asc,
 };
-pub use public_json::{PUBLIC_JSON_SCHEMA, parse_public_document, public_record_id_from_material};
+pub use public_json::{
+    PUBLIC_JSON_SCHEMA, PUBLIC_JSON_SCHEMA_VERSION, is_valid_lottery_id, parse_public_document,
+    public_record_id_from_material,
+};
 pub use rules::{
     DerivedHit, GachaRule, PoolKindDerivedStats, RuleResolution, classify_pool_id,
     derive_pool_kind_hits, fallback_rule_for, fallback_rule_resolution, rate_up_result, rule_for,
