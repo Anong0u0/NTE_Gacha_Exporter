@@ -1,6 +1,6 @@
 {
   "schema": "nte-gacha-auto-profile",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "profile": "default",
   "baseClientSize": {
     "width": 1920,
@@ -12,14 +12,6 @@
     "className": "UnrealWindow"
   },
   "points": {
-    "homeBoardFile": {
-      "x": 450,
-      "y": 1000
-    },
-    "homeForkEntry": {
-      "x": 120,
-      "y": 970
-    },
     "boardRecordTab": {
       "x": 1345,
       "y": 298
@@ -39,14 +31,6 @@
     "boardNextButton": {
       "x": 1230,
       "y": 890
-    },
-    "forkDetailFile": {
-      "x": 1738,
-      "y": 293
-    },
-    "forkActivityCard": {
-      "x": 420,
-      "y": 560
     },
     "forkRecordTab": {
       "x": 1345,
@@ -131,8 +115,8 @@
     "forkActivityTimeIcon": {
       "file": "templates/fork_activity_time_icon.png",
       "rect": {
-        "x": 407,
-        "y": 546,
+        "x": 406,
+        "y": 490,
         "width": 26,
         "height": 28
       },
@@ -159,8 +143,8 @@
   },
   "workflow": [
     {
-      "action": "verifyTemplate",
-      "status": "verifyMarketHome",
+      "action": "clickTemplate",
+      "status": "boardDetails",
       "point": null,
       "pointSequence": [],
       "template": "homeBoardFileIcon",
@@ -168,17 +152,6 @@
       "nextButton": null,
       "pool": null,
       "settle": 0.5
-    },
-    {
-      "action": "click",
-      "status": "boardDetails",
-      "point": "homeBoardFile",
-      "pointSequence": [],
-      "template": null,
-      "pageRect": null,
-      "nextButton": null,
-      "pool": null,
-      "settle": null
     },
     {
       "action": "click",
@@ -280,13 +253,12 @@
       "settle": null
     },
     {
-      "action": "clickUntilTemplate",
+      "action": "clickTemplateUntilTemplate",
       "status": "arcShop",
       "point": null,
-      "pointSequence": [
-        "homeForkEntry"
-      ],
-      "template": "forkShopSelectedIcon",
+      "pointSequence": [],
+      "template": "homeForkEntryIcon",
+      "targetTemplate": "forkShopSelectedIcon",
       "pageRect": null,
       "nextButton": null,
       "pool": null,
@@ -295,7 +267,7 @@
     {
       "action": "clickTemplateUntilTemplate",
       "status": "arcResearch",
-      "point": "forkActivityCard",
+      "point": null,
       "pointSequence": [],
       "template": "forkActivityTimeIcon",
       "targetTemplate": "forkDetailFileIcon",
@@ -305,11 +277,11 @@
       "settle": 0.2
     },
     {
-      "action": "click",
+      "action": "clickTemplate",
       "status": "arcResearchDetails",
-      "point": "forkDetailFile",
+      "point": null,
       "pointSequence": [],
-      "template": null,
+      "template": "forkDetailFileIcon",
       "pageRect": null,
       "nextButton": null,
       "pool": null,

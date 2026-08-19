@@ -424,6 +424,54 @@ mod tests {
     }
 
     #[test]
+    fn matcher_finds_v13_fork_activity_in_bounded_search_rect() {
+        let profile = load_profile().unwrap();
+        let matcher = ImageTemplateMatcher::new(profile);
+        let client_size = Size {
+            width: 1920,
+            height: 1080,
+        };
+        let search_rect = matcher
+            .search_rect("forkActivityTimeIcon", client_size)
+            .unwrap();
+        let crop = image::load_from_memory(include_bytes!(
+            "../../tests/fixtures/templates/fork_activity_v13.png"
+        ))
+        .unwrap()
+        .to_rgba8();
+
+        let matched = matcher
+            .find_in_rect("forkActivityTimeIcon", &crop, search_rect)
+            .unwrap();
+
+        assert_eq!(
+            search_rect,
+            Rect {
+                x: 326,
+                y: 410,
+                width: 186,
+                height: 188,
+            }
+        );
+        assert_eq!(matched.searched_rect, search_rect);
+        assert_eq!(matched.point, Point { x: 406, y: 490 });
+        assert_eq!(
+            matched.size,
+            Size {
+                width: 26,
+                height: 28
+            }
+        );
+        assert_eq!(
+            Point {
+                x: matched.point.x + matched.size.width as i32 / 2,
+                y: matched.point.y + matched.size.height as i32 / 2,
+            },
+            Point { x: 419, y: 504 }
+        );
+    }
+
+    #[test]
     fn matcher_finds_scaled_4k_template_from_1080_asset() {
         let profile = load_profile().unwrap();
         let scaled = profile

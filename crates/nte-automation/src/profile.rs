@@ -6,7 +6,7 @@ use crate::error::{AutomationError, AutomationResult};
 use crate::model::{Point, Rect, Size};
 
 const PROFILE_SCHEMA: &str = "nte-gacha-auto-profile";
-const PROFILE_SCHEMA_VERSION: u32 = 2;
+const PROFILE_SCHEMA_VERSION: u32 = 3;
 const SUPPORTED_ASPECT_RATIO: &str = "16:9";
 const ASPECT_RATIO_TOLERANCE: f64 = 0.01;
 const DEFAULT_PROFILE_JSON: &str = include_str!("../assets/default.json");
@@ -242,6 +242,16 @@ fn validate_workflow_step(
             errors,
         ),
         "click" => validate_ref(&step.point, &profile.points, "point", &prefix, errors),
+        "clickTemplate" => {
+            validate_ref(
+                &step.template,
+                &profile.templates,
+                "template",
+                &prefix,
+                errors,
+            );
+            reject_point_override(step, &prefix, errors);
+        }
         "clickUntilTemplate" => {
             validate_ref(
                 &step.template,
@@ -276,11 +286,7 @@ fn validate_workflow_step(
                 &prefix,
                 errors,
             );
-            if let Some(point) = &step.point {
-                if !profile.points.contains_key(point) {
-                    errors.push(format!("{prefix}.point references missing point {point}"));
-                }
-            }
+            reject_point_override(step, &prefix, errors);
         }
         "pressEsc" => {}
         "page" => {
@@ -300,6 +306,14 @@ fn validate_workflow_step(
     }
     if step.settle.is_some_and(|value| value < 0.0) {
         errors.push(format!("{prefix}.settle must be non-negative"));
+    }
+}
+
+fn reject_point_override(step: &WorkflowStep, prefix: &str, errors: &mut Vec<String>) {
+    if step.point.is_some() {
+        errors.push(format!(
+            "{prefix}.point is not allowed for template click actions"
+        ));
     }
 }
 
@@ -365,6 +379,7 @@ mod tests {
     #[test]
     fn profile_loads_and_scales_16_9_sizes() {
         let profile = load_profile().unwrap();
+        assert_eq!(profile.schema_version, 3);
         assert_eq!(profile.base_client_size.width, 1920);
         let scaled = profile
             .scaled(Size {
@@ -372,9 +387,62 @@ mod tests {
                 height: 2160,
             })
             .unwrap();
-        assert_eq!(scaled.points["homeBoardFile"].x, 900);
+        assert_eq!(scaled.points["boardRecordTab"].x, 2690);
         assert_eq!(scaled.rects["boardPageNumber"].width, 280);
         assert!(scaled.templates["recordTabSelectedCap"].rect.width >= 176);
+    }
+
+    #[test]
+    fn profile_rejects_click_template_without_template() {
+        let mut profile = load_profile().unwrap();
+        let step = profile
+            .workflow
+            .iter_mut()
+            .find(|step| step.action == "clickTemplate")
+            .unwrap();
+        step.template = None;
+
+        let error = validate_profile(&profile).unwrap_err();
+
+        assert!(error.to_string().contains(".template is required"));
+    }
+
+    #[test]
+    fn profile_rejects_template_click_point_override() {
+        for action in ["clickTemplate", "clickTemplateUntilTemplate"] {
+            let mut profile = load_profile().unwrap();
+            let step = profile
+                .workflow
+                .iter_mut()
+                .find(|step| step.action == action)
+                .unwrap();
+            step.point = Some("boardRecordTab".to_string());
+
+            let error = validate_profile(&profile).unwrap_err();
+
+            assert!(
+                error
+                    .to_string()
+                    .contains(".point is not allowed for template click actions")
+            );
+        }
+    }
+
+    #[test]
+    fn profile_has_no_fixed_points_for_template_backed_clicks() {
+        let profile = load_profile().unwrap();
+        for removed in [
+            "homeBoardFile",
+            "homeForkEntry",
+            "forkActivityCard",
+            "forkDetailFile",
+        ] {
+            assert!(!profile.points.contains_key(removed));
+            assert!(profile.workflow.iter().all(|step| {
+                step.point.as_deref() != Some(removed)
+                    && !step.point_sequence.iter().any(|point| point == removed)
+            }));
+        }
     }
 
     #[test]

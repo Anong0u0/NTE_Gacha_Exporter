@@ -87,6 +87,10 @@ impl AutoPager {
                 self.click(point, step.settle)?;
                 Ok(None)
             }
+            "clickTemplate" => {
+                self.click_template(step)?;
+                Ok(None)
+            }
             "clickUntilTemplate" => {
                 self.click_until_template(step)?;
                 Ok(None)
@@ -154,6 +158,31 @@ impl AutoPager {
         Err(AutomationError::message(format!(
             "screen template not found after wait: {name}{detail}"
         )))
+    }
+
+    fn click_template(&mut self, step: &WorkflowStep) -> AutomationResult<()> {
+        let template = required(step.template.as_deref(), "template")?;
+        let started = Instant::now();
+        let (matched, attempts) = self.wait_for_template(template)?;
+        let click_point = template_match_center(&matched);
+        self.click(click_point, step.settle)?;
+        self.status(
+            StatusEvent::new("template clicked", "template")
+                .step(&step.status)
+                .technical_detail(&format!(
+                    "{template} edge={:.3} gray={:.3} at={},{} size={}x{} click={},{} wait={:.2}s tries={attempts}",
+                    matched.edge_score,
+                    matched.gray_score,
+                    matched.point.x,
+                    matched.point.y,
+                    matched.size.width,
+                    matched.size.height,
+                    click_point.x,
+                    click_point.y,
+                    started.elapsed().as_secs_f64()
+                )),
+        );
+        Ok(())
     }
 
     fn click_until_template(&mut self, step: &WorkflowStep) -> AutomationResult<()> {
@@ -236,9 +265,15 @@ impl AutoPager {
                     let source_detail = source.as_ref().map_or_else(
                         || format!("{source_template} already resolved "),
                         |source| {
+                            let click_point = template_match_center(source);
                             format!(
-                                "{source_template} at={},{} ",
-                                source.point.x, source.point.y
+                                "{source_template} at={},{} size={}x{} click={},{} ",
+                                source.point.x,
+                                source.point.y,
+                                source.size.width,
+                                source.size.height,
+                                click_point.x,
+                                click_point.y
                             )
                         },
                     );
@@ -264,11 +299,7 @@ impl AutoPager {
             }
             match self.find_template(source_template) {
                 Ok(matched) => {
-                    let click_point = if let Some(point_name) = step.point.as_deref() {
-                        self.point(point_name)?
-                    } else {
-                        self.template_center(source_template, matched.point)?
-                    };
+                    let click_point = template_match_center(&matched);
                     self.click(click_point, Some(settle))?;
                     clicks += 1;
                     source = Some(matched);
@@ -281,14 +312,25 @@ impl AutoPager {
                 }
             }
         }
-        let detail = last_target_error
-            .or(last_source_error)
+        let (failure_template, failure_error) = if source.is_some() {
+            (target_template, last_target_error.or(last_source_error))
+        } else {
+            (source_template, last_source_error.or(last_target_error))
+        };
+        let detail = failure_error
             .map(|error| format!(": {error}"))
             .unwrap_or_default();
-        self.record_template_failure(target_template);
+        self.record_template_failure(failure_template);
         let error = AutomationError::message(format!(
             "screen template not found after template click sequence: {source_template}->{target_template}{detail}"
         ));
         Err(error)
+    }
+}
+
+fn template_match_center(matched: &TemplateMatch) -> Point {
+    Point {
+        x: matched.point.x + matched.size.width as i32 / 2,
+        y: matched.point.y + matched.size.height as i32 / 2,
     }
 }

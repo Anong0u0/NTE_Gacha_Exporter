@@ -86,6 +86,31 @@ mod tests {
     }
 
     #[test]
+    fn template_match_center_uses_actual_matched_size() {
+        let matched = TemplateMatch {
+            name: "scaled".to_string(),
+            matched: true,
+            edge_score: 1.0,
+            gray_score: 1.0,
+            point: Point { x: 100, y: 200 },
+            size: Size {
+                width: 39,
+                height: 45,
+            },
+            scale: 1.25,
+            searched_rect: crate::model::Rect {
+                x: 80,
+                y: 180,
+                width: 100,
+                height: 100,
+            },
+            candidate_count: 1,
+        };
+
+        assert_eq!(template_match_center(&matched), Point { x: 119, y: 222 });
+    }
+
+    #[test]
     fn status_message_uses_label_when_available() {
         let labels = BTreeMap::from([(
             "ui_forkshop_03".to_string(),

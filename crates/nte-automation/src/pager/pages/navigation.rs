@@ -233,19 +233,6 @@ impl AutoPager {
         Ok(matched)
     }
 
-    fn template_center(&self, name: &str, top_left: Point) -> AutomationResult<Point> {
-        let rect = self
-            .profile
-            .templates
-            .get(name)
-            .ok_or_else(|| AutomationError::message(format!("unknown template: {name}")))?
-            .rect;
-        Ok(Point {
-            x: top_left.x + rect.width as i32 / 2,
-            y: top_left.y + rect.height as i32 / 2,
-        })
-    }
-
     fn read_page_with_hint(
         &mut self,
         page_rect: crate::model::Rect,
