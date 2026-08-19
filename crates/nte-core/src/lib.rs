@@ -25,7 +25,8 @@ pub use maps::{
     bundled_maps_hash, load_map,
 };
 pub use model::{
-    AssetsPackAsset, AssetsPackManifest, BackupReport, BannerResolutionIssue, BannerSummary,
+    ASSETS_PACK_SCHEMA, ASSETS_PACK_SCHEMA_VERSION, AssetsPackAsset, AssetsPackManifest,
+    BackupReport, BannerResolutionIssue, BannerSummary,
     DashboardOverview, DashboardSelection, DashboardSelectionDetail, DisplayRecord, FiveStarRecord,
     FiveStarResult, ForkResultMark, GachaRuleView, GuiError, ImportReport, InternalRecord,
     ItemKind, ItemRank, MapLocaleList, PityBadge, PoolKind, PoolKindDetail, PoolKindSummary,
@@ -34,7 +35,7 @@ pub use model::{
     RecordItemKindOption, RecordList, RecordRollBucketOption, ResolvedBanner, RestoreReport,
     RollBucket, RuleResolutionIssue, Settings, SettingsPatch, SortDirection, TimeBucketSummary,
     TimeStats, UpdateChangelogEntry, UpdateChannel, UpdateCheckReport, UpdateInstallPlan,
-    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus,
+    UpdateManifest, UpdatePackage, UpdateStageReport, UpdateStatus, validate_assets_pack_manifest,
 };
 pub use order::{
     compare_display_chronological, compare_display_newest_first, compare_records_chronological,

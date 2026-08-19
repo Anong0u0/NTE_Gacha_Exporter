@@ -57,7 +57,6 @@ fn assets_pack_build(args: AssetsPackBuildArgs) -> CliResult<()> {
     })
     .map_err(CliError::from_error)?;
     println!("assets={}", build.manifest.file_count);
-    println!("map_hash={}", build.manifest.map_hash);
     println!("source_commit={}", build.manifest.source_commit);
     println!("pack={}", build.out_path.display());
     Ok(())

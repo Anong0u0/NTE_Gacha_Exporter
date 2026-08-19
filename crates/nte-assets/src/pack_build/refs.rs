@@ -22,17 +22,15 @@ pub fn normalize_asset_ref(asset_ref: &str) -> Option<String> {
 
 pub fn collect_asset_pack_refs(maps_dir: &Path) -> Result<Vec<AssetPackRef>, GuiError> {
     let mut refs: BTreeMap<(String, String), AssetPackRef> = BTreeMap::new();
-    for entry in fs::read_dir(maps_dir)? {
-        let entry = entry?;
-        if !entry.file_type()?.is_file()
-            || entry.path().extension().and_then(|value| value.to_str()) != Some("json")
-        {
-            continue;
-        }
-        let text = fs::read_to_string(entry.path())?;
-        let value: Value = serde_json::from_str(&text)?;
-        collect_asset_refs_from_value(&value, &mut refs);
-    }
+    let core_path = maps_dir.join("core.json");
+    let text = fs::read_to_string(&core_path).map_err(|error| {
+        GuiError::InvalidAssetsPack(format!(
+            "read map core for asset refs: {}: {error}",
+            core_path.display()
+        ))
+    })?;
+    let value: Value = serde_json::from_str(&text)?;
+    collect_asset_refs_from_value(&value, &mut refs);
     let max_edges_by_ref = refs
         .values()
         .map(|asset| (asset.asset_ref.clone(), asset.max_edge))

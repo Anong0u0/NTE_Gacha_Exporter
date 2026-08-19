@@ -12,7 +12,6 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
         return Err(invalid_pack("assets pack source fields must be non-empty"));
     }
 
-    let map_hash = maps_hash_from_dir(&options.maps_dir)?;
     let refs = collect_asset_pack_refs(&options.maps_dir)?;
     let missing = refs
         .iter()
@@ -58,7 +57,6 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
                 pack_path,
                 width: encoded.width,
                 height: encoded.height,
-                sha256,
             };
             encoded_refs.insert(asset.asset_ref.clone(), encoded.clone());
             encoded
@@ -70,15 +68,13 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
             pack_path: encoded.pack_path,
             width: encoded.width,
             height: encoded.height,
-            sha256: encoded.sha256,
         });
     }
 
     let manifest = AssetsPackManifest {
-        schema: PACK_SCHEMA.to_string(),
-        schema_version: PACK_SCHEMA_VERSION,
+        schema: ASSETS_PACK_SCHEMA.to_string(),
+        schema_version: ASSETS_PACK_SCHEMA_VERSION,
         app_version: options.app_version.clone(),
-        map_hash,
         source_repo: options.source.repo.clone(),
         source_commit: options.source.commit.clone(),
         format: "webp".to_string(),
@@ -86,6 +82,7 @@ pub fn build_assets_pack(options: &AssetPackBuildOptions) -> Result<AssetPackBui
         file_count: manifest_assets.len() as u64,
         assets: manifest_assets,
     };
+    validate_assets_pack_manifest(&manifest)?;
     zip.start_file("manifest.json", options_zip)?;
     zip.write_all(&serde_json::to_vec_pretty(&manifest)?)?;
     zip.write_all(b"\n")?;

@@ -6,13 +6,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use image::{GenericImageView, imageops};
-use nte_core::{AssetsPackAsset, AssetsPackManifest, GuiError};
+use nte_core::{
+    ASSETS_PACK_SCHEMA, ASSETS_PACK_SCHEMA_VERSION, AssetsPackAsset, AssetsPackManifest, GuiError,
+    validate_assets_pack_manifest,
+};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use zip::{ZipWriter, write::FileOptions};
 
-const PACK_SCHEMA: &str = "nte-gacha-exporter-assets-pack";
-const PACK_SCHEMA_VERSION: u32 = 1;
 pub const DEFAULT_WEBP_QUALITY: u8 = 82;
 
 #[derive(Debug, Clone)]
@@ -51,12 +52,10 @@ struct EncodedAssetUse {
     pack_path: String,
     width: u32,
     height: u32,
-    sha256: String,
 }
 
 include!("pack_build/build.rs");
 include!("pack_build/refs.rs");
 include!("pack_build/encode.rs");
-include!("pack_build/map_hash.rs");
 include!("pack_build/manifest.rs");
 include!("pack_build/tests.rs");

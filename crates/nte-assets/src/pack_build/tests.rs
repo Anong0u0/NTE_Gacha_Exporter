@@ -21,10 +21,9 @@ mod tests {
     #[test]
     fn manifest_shape_rejects_invalid_pack_paths() {
         let manifest = AssetsPackManifest {
-            schema: PACK_SCHEMA.to_string(),
-            schema_version: PACK_SCHEMA_VERSION,
+            schema: ASSETS_PACK_SCHEMA.to_string(),
+            schema_version: ASSETS_PACK_SCHEMA_VERSION,
             app_version: "0.1.0".to_string(),
-            map_hash: "hash".to_string(),
             source_repo: "https://example.invalid/assets".to_string(),
             source_commit: "commit".to_string(),
             format: "webp".to_string(),
@@ -37,20 +36,31 @@ mod tests {
                 pack_path: "../bad.webp".to_string(),
                 width: 1,
                 height: 1,
-                sha256: "hash".to_string(),
             }],
         };
 
-        assert!(validate_manifest_shape(&manifest).is_err());
+        assert!(validate_assets_pack_manifest(&manifest).is_err());
     }
 
     #[test]
-    fn directory_map_hash_matches_bundled_map_hash() {
-        let maps_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/maps");
-        assert_eq!(
-            maps_hash_from_dir(&maps_dir).unwrap(),
-            nte_core::bundled_maps_hash()
-        );
+    fn manifest_shape_accepts_only_schema_v2() {
+        let mut manifest = AssetsPackManifest {
+            schema: ASSETS_PACK_SCHEMA.to_string(),
+            schema_version: ASSETS_PACK_SCHEMA_VERSION,
+            app_version: "0.1.0".to_string(),
+            source_repo: "https://example.invalid/assets".to_string(),
+            source_commit: "commit".to_string(),
+            format: "webp".to_string(),
+            quality: DEFAULT_WEBP_QUALITY,
+            file_count: 0,
+            assets: Vec::new(),
+        };
+
+        validate_assets_pack_manifest(&manifest).unwrap();
+        manifest.schema_version = 1;
+        assert!(validate_assets_pack_manifest(&manifest).is_err());
+        manifest.schema_version = ASSETS_PACK_SCHEMA_VERSION + 1;
+        assert!(validate_assets_pack_manifest(&manifest).is_err());
     }
 
     #[test]
@@ -78,7 +88,7 @@ mod tests {
             )
             .unwrap();
         fs::write(
-            maps_dir.join("en.json"),
+            maps_dir.join("core.json"),
             r#"{
               "items": {
                 "rose": {
@@ -113,8 +123,6 @@ mod tests {
             repo: "https://example.invalid/assets".to_string(),
             commit: "test-source".to_string(),
         };
-        let expected_map_hash = maps_hash_from_dir(&maps_dir).unwrap();
-
         let out_path = temp.path().join("pack.zip");
         let build = build_assets_pack(&AssetPackBuildOptions {
             assets_root,
@@ -127,8 +135,9 @@ mod tests {
         .unwrap();
 
         assert_eq!(build.manifest.file_count, 6);
+        assert_eq!(build.manifest.schema, ASSETS_PACK_SCHEMA);
+        assert_eq!(build.manifest.schema_version, ASSETS_PACK_SCHEMA_VERSION);
         assert_eq!(build.manifest.source_commit, "test-source");
-        assert_eq!(build.manifest.map_hash, expected_map_hash);
         let mut zip = zip::ZipArchive::new(fs::File::open(out_path).unwrap()).unwrap();
         let manifest = read_zip_manifest(&mut zip).unwrap();
         assert_eq!(manifest.assets.len(), 6);

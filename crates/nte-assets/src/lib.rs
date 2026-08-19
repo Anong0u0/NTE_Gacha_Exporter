@@ -6,6 +6,6 @@ pub use map_build::{
 };
 pub use pack_build::{
     AssetPackBuild, AssetPackBuildOptions, AssetPackRef, AssetPackSource, DEFAULT_WEBP_QUALITY,
-    asset_pack_source_from_git, build_assets_pack, collect_asset_pack_refs, maps_hash_from_dir,
-    normalize_asset_ref, read_zip_manifest, validate_manifest_shape,
+    asset_pack_source_from_git, build_assets_pack, collect_asset_pack_refs, normalize_asset_ref,
+    read_zip_manifest,
 };

@@ -141,7 +141,6 @@ pub struct AssetsPackManifest {
     pub schema: String,
     pub schema_version: u32,
     pub app_version: String,
-    pub map_hash: String,
     pub source_repo: String,
     pub source_commit: String,
     pub format: String,
@@ -158,5 +157,49 @@ pub struct AssetsPackAsset {
     pub pack_path: String,
     pub width: u32,
     pub height: u32,
-    pub sha256: String,
+}
+
+pub const ASSETS_PACK_SCHEMA: &str = "nte-gacha-exporter-assets-pack";
+pub const ASSETS_PACK_SCHEMA_VERSION: u32 = 2;
+
+pub fn validate_assets_pack_manifest(manifest: &AssetsPackManifest) -> Result<(), GuiError> {
+    if manifest.schema != ASSETS_PACK_SCHEMA
+        || manifest.schema_version != ASSETS_PACK_SCHEMA_VERSION
+    {
+        return Err(GuiError::InvalidAssetsPack(format!(
+            "assets pack manifest schema must be {ASSETS_PACK_SCHEMA} v{ASSETS_PACK_SCHEMA_VERSION}"
+        )));
+    }
+    if manifest.format != "webp" {
+        return Err(GuiError::InvalidAssetsPack(
+            "assets pack format must be webp".to_string(),
+        ));
+    }
+    if manifest.file_count != manifest.assets.len() as u64 {
+        return Err(GuiError::InvalidAssetsPack(
+            "assets pack file_count mismatch".to_string(),
+        ));
+    }
+    for asset in &manifest.assets {
+        if asset.asset_ref.trim().is_empty()
+            || asset.kind.trim().is_empty()
+            || asset.source_path.trim().is_empty()
+            || asset.pack_path.trim().is_empty()
+        {
+            return Err(GuiError::InvalidAssetsPack(
+                "assets pack asset fields must be non-empty".to_string(),
+            ));
+        }
+        if !asset.pack_path.starts_with("assets/")
+            || !asset.pack_path.ends_with(".webp")
+            || asset.pack_path.contains('\\')
+            || asset.pack_path.contains("..")
+        {
+            return Err(GuiError::InvalidAssetsPack(format!(
+                "assets pack contains invalid asset path: {}",
+                asset.pack_path
+            )));
+        }
+    }
+    Ok(())
 }
