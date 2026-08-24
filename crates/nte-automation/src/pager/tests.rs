@@ -75,10 +75,25 @@ mod tests {
         result.diagnostics.context_png = Some(vec![1, 2, 3, 4]);
         result.diagnostics.raw_page_png = Some(vec![5, 6, 7, 8]);
         result.diagnostics.failure_kind = Some("fresh_page_number_unreadable".to_string());
+        result.diagnostics.visual.template_transition = Some(TemplateTransitionDiagnostics {
+            source_template: "homeBoardFileIcon".to_string(),
+            target_template: None,
+            verification: "source_gone".to_string(),
+            click_point: Some(Point { x: 448, y: 995 }),
+            first_click_settle: 0.5,
+            post_click_settle: 0.5,
+            click_attempts: 2,
+            checks: 4,
+            verified: false,
+        });
 
         let text = serde_json::to_string(&result).unwrap();
 
         assert!(text.contains("fresh_page_number_unreadable"));
+        assert!(text.contains("homeBoardFileIcon"));
+        assert!(text.contains("source_gone"));
+        assert!(text.contains("\"click_attempts\":2"));
+        assert!(text.contains("\"first_click_settle\":0.5"));
         assert!(!text.contains("context_png"));
         assert!(!text.contains("raw_page_png"));
         assert!(!text.contains("[1,2,3,4]"));
@@ -108,6 +123,145 @@ mod tests {
         };
 
         assert_eq!(template_match_center(&matched), Point { x: 119, y: 222 });
+    }
+
+    #[test]
+    fn template_transition_accepts_target_without_extra_click() {
+        let mut state = TemplateTransitionState::default();
+
+        let decision = state.observe(true, true, TemplatePresence::Unavailable);
+
+        assert_eq!(
+            decision,
+            TemplateTransitionDecision::Complete(TemplateTransitionVerification::Target)
+        );
+        assert_eq!(state.clicks, 0);
+    }
+
+    #[test]
+    fn template_transition_requires_stable_source_absence() {
+        let mut state = TemplateTransitionState::default();
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Present),
+            TemplateTransitionDecision::ClickSource {
+                first_attempt: true
+            }
+        );
+        state.clicked();
+
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Wait
+        );
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Complete(TemplateTransitionVerification::SourceGone)
+        );
+    }
+
+    #[test]
+    fn template_transition_retries_when_source_remains_visible() {
+        let mut state = TemplateTransitionState::default();
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Present),
+            TemplateTransitionDecision::ClickSource {
+                first_attempt: true
+            }
+        );
+        state.clicked();
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Wait
+        );
+
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Present),
+            TemplateTransitionDecision::ClickSource {
+                first_attempt: false
+            }
+        );
+        assert_eq!(state.source_absence_samples, 0);
+    }
+
+    #[test]
+    fn template_transition_waits_for_required_target_when_source_disappears() {
+        let mut state = TemplateTransitionState::default();
+        assert_eq!(
+            state.observe(true, false, TemplatePresence::Present),
+            TemplateTransitionDecision::ClickSource {
+                first_attempt: true
+            }
+        );
+        state.clicked();
+
+        assert_eq!(
+            state.observe(true, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Wait
+        );
+        assert_eq!(
+            state.observe(true, true, TemplatePresence::Absent),
+            TemplateTransitionDecision::Complete(TemplateTransitionVerification::Target)
+        );
+    }
+
+    #[test]
+    fn template_transition_unavailable_breaks_absence_stability() {
+        let mut state = TemplateTransitionState::default();
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Present),
+            TemplateTransitionDecision::ClickSource {
+                first_attempt: true
+            }
+        );
+        state.clicked();
+
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Wait
+        );
+        assert_eq!(state.source_absence_samples, 1);
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Unavailable),
+            TemplateTransitionDecision::Wait
+        );
+        assert_eq!(state.source_absence_samples, 0);
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Wait
+        );
+        assert_eq!(
+            state.observe(false, false, TemplatePresence::Absent),
+            TemplateTransitionDecision::Complete(TemplateTransitionVerification::SourceGone)
+        );
+    }
+
+    #[test]
+    fn template_transition_retries_unavailable_observations_without_clicking() {
+        let mut state = TemplateTransitionState::default();
+
+        for _ in 0..3 {
+            assert_eq!(
+                state.observe(false, false, TemplatePresence::Unavailable),
+                TemplateTransitionDecision::Wait
+            );
+        }
+
+        assert_eq!(state.clicks, 0);
+        assert_eq!(state.source_absence_samples, 0);
+    }
+
+    #[test]
+    fn template_transition_accepts_target_after_unavailable_observation() {
+        let mut state = TemplateTransitionState::default();
+        assert_eq!(
+            state.observe(true, false, TemplatePresence::Unavailable),
+            TemplateTransitionDecision::Wait
+        );
+
+        assert_eq!(
+            state.observe(true, true, TemplatePresence::Unavailable),
+            TemplateTransitionDecision::Complete(TemplateTransitionVerification::Target)
+        );
     }
 
     #[test]

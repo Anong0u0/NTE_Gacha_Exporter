@@ -6,7 +6,7 @@ use crate::error::{AutomationError, AutomationResult};
 use crate::model::{Point, Rect, Size};
 
 const PROFILE_SCHEMA: &str = "nte-gacha-auto-profile";
-const PROFILE_SCHEMA_VERSION: u32 = 3;
+const PROFILE_SCHEMA_VERSION: u32 = 4;
 const SUPPORTED_ASPECT_RATIO: &str = "16:9";
 const ASPECT_RATIO_TOLERANCE: f64 = 0.01;
 const DEFAULT_PROFILE_JSON: &str = include_str!("../assets/default.json");
@@ -60,6 +60,7 @@ pub struct WorkflowStep {
     pub page_rect: Option<String>,
     pub next_button: Option<String>,
     pub pool: Option<String>,
+    pub first_click_settle: Option<f64>,
     pub settle: Option<f64>,
 }
 
@@ -250,6 +251,13 @@ fn validate_workflow_step(
                 &prefix,
                 errors,
             );
+            validate_optional_ref(
+                &step.target_template,
+                &profile.templates,
+                "targetTemplate",
+                &prefix,
+                errors,
+            );
             reject_point_override(step, &prefix, errors);
         }
         "clickUntilTemplate" => {
@@ -307,6 +315,9 @@ fn validate_workflow_step(
     if step.settle.is_some_and(|value| value < 0.0) {
         errors.push(format!("{prefix}.settle must be non-negative"));
     }
+    if step.first_click_settle.is_some_and(|value| value < 0.0) {
+        errors.push(format!("{prefix}.firstClickSettle must be non-negative"));
+    }
 }
 
 fn reject_point_override(step: &WorkflowStep, prefix: &str, errors: &mut Vec<String>) {
@@ -328,6 +339,20 @@ fn validate_ref<T>(
         Some(value) if map.contains_key(value) => {}
         Some(value) => errors.push(format!("{prefix}.{field} references missing id {value}")),
         None => errors.push(format!("{prefix}.{field} is required")),
+    }
+}
+
+fn validate_optional_ref<T>(
+    value: &Option<String>,
+    map: &BTreeMap<String, T>,
+    field: &str,
+    prefix: &str,
+    errors: &mut Vec<String>,
+) {
+    if let Some(value) = value
+        && !map.contains_key(value)
+    {
+        errors.push(format!("{prefix}.{field} references missing id {value}"));
     }
 }
 
@@ -379,7 +404,7 @@ mod tests {
     #[test]
     fn profile_loads_and_scales_16_9_sizes() {
         let profile = load_profile().unwrap();
-        assert_eq!(profile.schema_version, 3);
+        assert_eq!(profile.schema_version, 4);
         assert_eq!(profile.base_client_size.width, 1920);
         let scaled = profile
             .scaled(Size {
@@ -425,6 +450,59 @@ mod tests {
                     .to_string()
                     .contains(".point is not allowed for template click actions")
             );
+        }
+    }
+
+    #[test]
+    fn profile_rejects_negative_template_first_click_settle() {
+        let mut profile = load_profile().unwrap();
+        let step = profile
+            .workflow
+            .iter_mut()
+            .find(|step| step.action == "clickTemplate")
+            .unwrap();
+        step.first_click_settle = Some(-0.1);
+
+        let error = validate_profile(&profile).unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains(".firstClickSettle must be non-negative")
+        );
+    }
+
+    #[test]
+    fn profile_rejects_missing_optional_click_template_target() {
+        let mut profile = load_profile().unwrap();
+        let step = profile
+            .workflow
+            .iter_mut()
+            .find(|step| step.action == "clickTemplate")
+            .unwrap();
+        step.target_template = Some("missingTarget".to_string());
+
+        let error = validate_profile(&profile).unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains(".targetTemplate references missing id missingTarget")
+        );
+    }
+
+    #[test]
+    fn only_board_details_defines_first_click_settle() {
+        let profile = load_profile().unwrap();
+
+        for step in profile.workflow.iter().filter(|step| {
+            matches!(
+                step.action.as_str(),
+                "clickTemplate" | "clickTemplateUntilTemplate"
+            )
+        }) {
+            let expected = (step.status == "boardDetails").then_some(0.5);
+            assert_eq!(step.first_click_settle, expected, "{}", step.status);
         }
     }
 

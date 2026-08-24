@@ -9,7 +9,7 @@ use crate::model::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions, AutoPageResult, AutoPageStatus,
     AutoPageWindowDiagnostics, MouseClickDiagnostics, PageNumber, Point, RecordSnapshot, Size,
-    TemplateMatch,
+    TemplateMatch, TemplateTransitionDiagnostics,
 };
 use crate::ocr::{PageNumberReader, PageReadHint};
 use crate::profile::{AutomationProfile, WorkflowStep, load_profile};

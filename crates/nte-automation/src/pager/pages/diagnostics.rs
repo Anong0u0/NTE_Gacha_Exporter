@@ -23,6 +23,15 @@ impl AutoPager {
 
     fn record_template_failure(&mut self, name: &str) {
         self.diagnostics.failure_kind = Some("template_not_found".to_string());
+        self.record_template_failure_context(name);
+    }
+
+    fn record_template_transition_failure(&mut self, name: &str) {
+        self.diagnostics.failure_kind = Some("template_transition_not_observed".to_string());
+        self.record_template_failure_context(name);
+    }
+
+    fn record_template_failure_context(&mut self, name: &str) {
         if self.diagnostics.context_png.is_some() {
             return;
         }

@@ -6,7 +6,7 @@ impl AutoPager {
         let previous = request.previous;
         for attempt in 1..=2 {
             let clicked_at = Instant::now();
-            self.click(request.point, Some(0.0))?;
+            self.click(request.point, Duration::ZERO, Some(0.0))?;
             match self.wait_for_page(
                 request.page_rect,
                 request.pool,
@@ -208,8 +208,13 @@ impl AutoPager {
         )))
     }
 
-    fn click(&mut self, point: Point, settle: Option<f64>) -> AutomationResult<()> {
-        let click = window::foreground_click(&self.window, point)?;
+    fn click(
+        &mut self,
+        point: Point,
+        foreground_settle: Duration,
+        settle: Option<f64>,
+    ) -> AutomationResult<()> {
+        let click = window::foreground_click(&self.window, point, foreground_settle)?;
         self.record_click(click);
         thread::sleep(Duration::from_secs_f64(settle.unwrap_or(0.1)));
         Ok(())
@@ -224,12 +229,14 @@ impl AutoPager {
         Ok(matched)
     }
 
-    fn find_template(&mut self, name: &str) -> AutomationResult<TemplateMatch> {
+    fn observe_template(&mut self, name: &str) -> AutomationResult<Option<TemplateMatch>> {
         self.focus_window()?;
         let search_rect = self.matcher.search_rect(name, self.window.client_size())?;
         let image = self.capture.capture_rect(search_rect)?;
-        let matched = self.matcher.find_in_rect(name, &image, search_rect)?;
-        self.record_template_match(matched.clone());
+        let matched = self.matcher.observe_in_rect(name, &image, search_rect)?;
+        if let Some(matched) = &matched {
+            self.record_template_match(matched.clone());
+        }
         Ok(matched)
     }
 

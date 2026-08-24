@@ -81,6 +81,30 @@ impl ImageTemplateMatcher {
     ) -> AutomationResult<TemplateMatch> {
         self.match_template_in_rect(name, screen_image, screen_rect)
     }
+    pub fn observe_in_rect(
+        &self,
+        name: &str,
+        screen_image: &RgbaImage,
+        screen_rect: Rect,
+    ) -> AutomationResult<Option<TemplateMatch>> {
+        let local_search_rect = Rect {
+            x: 0,
+            y: 0,
+            width: screen_image.width(),
+            height: screen_image.height(),
+        };
+        let matched = self.best_match_template_with_search(
+            name,
+            screen_image,
+            Point {
+                x: screen_rect.x,
+                y: screen_rect.y,
+            },
+            local_search_rect,
+            screen_rect,
+        )?;
+        Ok(matched.matched.then_some(matched))
+    }
 
     fn match_template(
         &self,
@@ -126,6 +150,35 @@ impl ImageTemplateMatcher {
     }
 
     fn match_template_with_search(
+        &self,
+        name: &str,
+        screen_image: &RgbaImage,
+        screen_origin: Point,
+        search_rect: Rect,
+        searched_rect: Rect,
+    ) -> AutomationResult<TemplateMatch> {
+        let match_result = self.best_match_template_with_search(
+            name,
+            screen_image,
+            screen_origin,
+            search_rect,
+            searched_rect,
+        )?;
+        if match_result.matched {
+            Ok(match_result)
+        } else {
+            Err(AutomationError::message(format!(
+                "screen template not found: {name} edge={:.3} gray={:.3} at={},{} scale={:.2}",
+                match_result.edge_score,
+                match_result.gray_score,
+                match_result.point.x,
+                match_result.point.y,
+                match_result.scale
+            )))
+        }
+    }
+
+    fn best_match_template_with_search(
         &self,
         name: &str,
         screen_image: &RgbaImage,
@@ -192,23 +245,11 @@ impl ImageTemplateMatcher {
             }
         }
 
-        let Some(match_result) = best else {
-            return Err(AutomationError::message(format!(
+        best.ok_or_else(|| {
+            AutomationError::message(format!(
                 "template search area is smaller than template: {name}"
-            )));
-        };
-        if match_result.matched {
-            Ok(match_result)
-        } else {
-            Err(AutomationError::message(format!(
-                "screen template not found: {name} edge={:.3} gray={:.3} at={},{} scale={:.2}",
-                match_result.edge_score,
-                match_result.gray_score,
-                match_result.point.x,
-                match_result.point.y,
-                match_result.scale
-            )))
-        }
+            ))
+        })
     }
 }
 
@@ -421,6 +462,51 @@ mod tests {
         assert!(matched.matched);
         assert_eq!(matched.point, expected);
         assert_eq!(matched.searched_rect, search_rect);
+    }
+
+    #[test]
+    fn matcher_observation_distinguishes_missing_template() {
+        let profile = load_profile().unwrap();
+        let spec = &profile.templates["homeBoardFileIcon"];
+        let search_rect = spec.rect.expand(spec.search_padding).clamp(Size {
+            width: 1920,
+            height: 1080,
+        });
+        let crop = RgbaImage::from_pixel(
+            search_rect.width,
+            search_rect.height,
+            Rgba([24, 28, 30, 255]),
+        );
+        let matcher = ImageTemplateMatcher::new(profile);
+
+        let observed = matcher
+            .observe_in_rect("homeBoardFileIcon", &crop, search_rect)
+            .unwrap();
+
+        assert!(observed.is_none());
+    }
+
+    #[test]
+    fn matcher_observation_keeps_invalid_search_as_error() {
+        let profile = load_profile().unwrap();
+        let matcher = ImageTemplateMatcher::new(profile);
+        let crop = RgbaImage::from_pixel(1, 1, Rgba([24, 28, 30, 255]));
+        let search_rect = Rect {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        };
+
+        let error = matcher
+            .observe_in_rect("homeBoardFileIcon", &crop, search_rect)
+            .unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains("template search area is smaller than template")
+        );
     }
 
     #[test]

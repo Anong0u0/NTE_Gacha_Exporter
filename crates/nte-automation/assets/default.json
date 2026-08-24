@@ -1,6 +1,6 @@
 {
   "schema": "nte-gacha-auto-profile",
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "profile": "default",
   "baseClientSize": {
     "width": 1920,
@@ -151,6 +151,7 @@
       "pageRect": null,
       "nextButton": null,
       "pool": null,
+      "firstClickSettle": 0.5,
       "settle": 0.5
     },
     {

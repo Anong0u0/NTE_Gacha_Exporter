@@ -15,7 +15,7 @@ pub use model::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageInputDiagnostics, AutoPageOptions,
     AutoPageResult, AutoPageStatus, MouseButton, MouseClickDiagnostics, PageNumber, Point,
-    RecordSnapshot, Rect, Size, TemplateMatch,
+    RecordSnapshot, Rect, Size, TemplateMatch, TemplateTransitionDiagnostics,
 };
 pub use pager::run_auto_page;
 pub use profile::{AutomationProfile, load_profile};

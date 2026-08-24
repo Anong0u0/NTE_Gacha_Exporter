@@ -1,6 +1,5 @@
 #[cfg(windows)]
 use std::thread;
-#[cfg(windows)]
 use std::time::Duration;
 
 use crate::error::{AutomationError, AutomationResult};
@@ -191,6 +190,7 @@ pub fn primary_mouse_button(mouse_buttons_swapped: bool) -> MouseButton {
 pub fn foreground_click(
     _window: &GameWindow,
     _point: Point,
+    _foreground_settle: Duration,
 ) -> AutomationResult<MouseClickDiagnostics> {
     require_windows()?;
     unreachable!()
@@ -200,12 +200,16 @@ pub fn foreground_click(
 pub fn foreground_click(
     window: &GameWindow,
     point: Point,
+    foreground_settle: Duration,
 ) -> AutomationResult<MouseClickDiagnostics> {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
         MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
     };
 
     force_foreground(window)?;
+    if !foreground_settle.is_zero() {
+        thread::sleep(foreground_settle);
+    }
     let screen_point = client_to_screen(window.hwnd, point)?;
     let mouse_buttons_swapped = mouse_buttons_swapped();
     let physical_button = primary_mouse_button(mouse_buttons_swapped);

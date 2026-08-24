@@ -167,6 +167,20 @@ pub struct AutoPageVisualDiagnostics {
     pub cursor_in_context: Option<bool>,
     pub next_button: Option<Point>,
     pub last_template_matches: Vec<TemplateMatch>,
+    pub template_transition: Option<TemplateTransitionDiagnostics>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemplateTransitionDiagnostics {
+    pub source_template: String,
+    pub target_template: Option<String>,
+    pub verification: String,
+    pub click_point: Option<Point>,
+    pub first_click_settle: f64,
+    pub post_click_settle: f64,
+    pub click_attempts: u32,
+    pub checks: u32,
+    pub verified: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
