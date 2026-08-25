@@ -1,6 +1,12 @@
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        mpsc,
+    };
+
 
     #[test]
     fn record_pool_maps_capture_records_to_workflow_pools() {
@@ -98,6 +104,89 @@ mod tests {
         assert!(!text.contains("raw_page_png"));
         assert!(!text.contains("[1,2,3,4]"));
         assert!(!text.contains("[5,6,7,8]"));
+    }
+
+    #[test]
+    fn capture_window_stalled_message_keeps_page_window_format() {
+        assert_eq!(
+            capture_window_stalled_message("standard", 8, 1, 7, false),
+            "capture window stalled: pool=standard visited_pages=8 decoded_pages=1 max_visited_pages=7"
+        );
+    }
+
+    #[test]
+    fn capture_window_stalled_message_marks_pool_completion() {
+        assert_eq!(
+            capture_window_stalled_message("standard", 59, 55, 55, true),
+            "capture window stalled: pool=standard phase=pool_complete visited_pages=59 decoded_pages=55 max_visited_pages=55"
+        );
+    }
+    #[test]
+    fn pool_completion_waits_for_capture_before_emitting_completed_status() {
+        let (event_tx, event_rx) = mpsc::channel();
+        let control_calls = Arc::new(AtomicUsize::new(0));
+        let mut options = AutoPageOptions::new(42, Arc::new(AtomicBool::new(false)));
+        options.click_poll_interval = 0.0;
+        options.control = Some({
+            let event_tx = event_tx.clone();
+            let control_calls = Arc::clone(&control_calls);
+            Arc::new(move |context| {
+                assert!(context.pool_complete);
+                assert_eq!(context.pool, "standard");
+                assert_eq!(context.visited_pages, 59);
+                let call = control_calls.fetch_add(1, Ordering::SeqCst);
+                event_tx
+                    .send(if call == 0 {
+                        "control:wait"
+                    } else {
+                        "control:continue"
+                    })
+                    .unwrap();
+                if call == 0 {
+                    AutoPageControlDecision::WaitCapture {
+                        decoded_pages: 55,
+                        max_visited_pages: 55,
+                    }
+                } else {
+                    AutoPageControlDecision::Continue
+                }
+            })
+        });
+        options.on_status = Some({
+            let event_tx = event_tx.clone();
+            Arc::new(move |status| {
+                let event = match status.kind.as_str() {
+                    "diagnostic" => "status:diagnostic",
+                    "pool_completed" => "status:pool_completed",
+                    other => panic!("unexpected status: {other}"),
+                };
+                event_tx.send(event).unwrap();
+            })
+        });
+        let mut pager = control_test_pager(options);
+
+        pager
+            .complete_pool(
+                "standard",
+                "standardStep",
+                &PageNumber {
+                    current: 59,
+                    total: 59,
+                    text: "59/59".to_string(),
+                },
+                59,
+            )
+            .unwrap();
+
+        assert_eq!(
+            event_rx.try_iter().collect::<Vec<_>>(),
+            [
+                "control:wait",
+                "status:diagnostic",
+                "control:continue",
+                "status:pool_completed",
+            ]
+        );
     }
 
     #[test]
@@ -411,6 +500,35 @@ mod tests {
         assert_eq!(*image.get_pixel(0, 4), color);
         assert_eq!(*image.get_pixel(4, 0), color);
         assert_eq!(image.dimensions(), (24, 24));
+    }
+
+    fn control_test_pager(options: AutoPageOptions) -> AutoPager {
+        let profile = load_profile().unwrap();
+        let window = GameWindow {
+            hwnd: 0,
+            pid: options.pid,
+            class_name: "test".to_string(),
+            title: "test".to_string(),
+            client_rect: crate::window::ClientRect {
+                left: 0,
+                top: 0,
+                right: profile.base_client_size.width as i32,
+                bottom: profile.base_client_size.height as i32,
+            },
+        };
+        let capture = WindowCaptureClient::new(window.hwnd);
+        let matcher = ImageTemplateMatcher::new(profile.clone());
+        AutoPager {
+            options,
+            window,
+            profile,
+            capture,
+            page_reader: PageNumberReader::default(),
+            matcher,
+            tooltip: AutomationTooltip::new(false),
+            started_at: Instant::now(),
+            diagnostics: AutoPageDiagnostics::default(),
+        }
     }
 
     fn snapshot(record_id: &str, pool_id: &str, record_type: &str) -> RecordSnapshot {

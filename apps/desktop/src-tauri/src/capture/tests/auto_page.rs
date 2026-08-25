@@ -49,9 +49,64 @@ fn auto_page_coordinator_blocks_when_pager_exceeds_capture_window() {
 }
 
 #[test]
+fn auto_page_coordinator_requires_exact_count_when_pool_completes() {
+    let coordinator = AutoPageCoordinator::new(true, &[]);
+    coordinator.add_progress(
+        &progress_with_rows(
+            (0..55)
+                .map(|index| parsed_row("CardPool_NewRole", index))
+                .collect(),
+        ),
+        None,
+    );
+
+    assert_eq!(
+        coordinator.decision(pool_complete_context("standard", 59)),
+        AutoPageControlDecision::WaitCapture {
+            decoded_pages: 55,
+            max_visited_pages: 55,
+        }
+    );
+    assert_eq!(
+        coordinator.decision(pool_complete_context("standard", 55)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
+fn auto_page_coordinator_does_not_skip_completed_pool() {
+    let known = (1..=6)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let records = known
+        .iter()
+        .map(|key| automation_record(key, "CardPool_NewRole", "monopoly"))
+        .collect::<Vec<_>>();
+    coordinator.add_progress(
+        &progress_with_rows(vec![parsed_row("CardPool_NewRole", 0)]),
+        Some(&records),
+    );
+
+    assert_eq!(
+        coordinator.decision(pool_complete_context("standard", 1)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
 fn auto_page_capture_window_stalled_has_specific_error_code() {
     let error = auto_page_runtime_error(
         "capture window stalled: pool=standard visited_pages=8 decoded_pages=1 max_visited_pages=7",
+    );
+
+    assert_eq!(error.code, AUTO_PAGE_CAPTURE_WINDOW_STALLED_CODE);
+}
+
+#[test]
+fn pool_complete_stall_reuses_capture_window_error_code() {
+    let error = auto_page_runtime_error(
+        "capture window stalled: pool=standard phase=pool_complete visited_pages=59 decoded_pages=55 max_visited_pages=55",
     );
 
     assert_eq!(error.code, AUTO_PAGE_CAPTURE_WINDOW_STALLED_CODE);

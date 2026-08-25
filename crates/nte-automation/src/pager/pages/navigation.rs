@@ -60,7 +60,7 @@ impl AutoPager {
             if self.should_stop() {
                 return Err(AutomationError::message("auto page stopped"));
             }
-            match self.capture_control_decision(pool, step, previous, visited_pages) {
+            match self.capture_control_decision(pool, step, previous, visited_pages, false) {
                 AutoPageControlDecision::Continue => {}
                 AutoPageControlDecision::SkipPool { duplicate_records } => {
                     self.status(
@@ -77,8 +77,12 @@ impl AutoPager {
                     max_visited_pages,
                 } => {
                     if Instant::now() >= capture_deadline {
-                        return Err(AutomationError::message(format!(
-                            "capture window stalled: pool={pool} visited_pages={visited_pages} decoded_pages={decoded_pages} max_visited_pages={max_visited_pages}"
+                        return Err(AutomationError::message(capture_window_stalled_message(
+                            pool,
+                            visited_pages,
+                            decoded_pages,
+                            max_visited_pages,
+                            false,
                         )));
                     }
                     self.status(

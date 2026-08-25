@@ -83,6 +83,14 @@ fn control_context(pool: &str, visited_pages: u32) -> AutoPageControlContext {
         current_page: visited_pages,
         total_pages: 50,
         visited_pages,
+        pool_complete: false,
+    }
+}
+
+fn pool_complete_context(pool: &str, visited_pages: u32) -> AutoPageControlContext {
+    AutoPageControlContext {
+        pool_complete: true,
+        ..control_context(pool, visited_pages)
     }
 }
 

@@ -246,20 +246,27 @@ impl AutoPageCoordinator {
         state: &mut AutoPageCoordinatorState,
         context: &AutoPageControlContext,
     ) -> AutoPageControlDecision {
-        let duplicate_records = state
-            .duplicate_counts_by_pool
-            .get(&context.pool)
-            .copied()
-            .unwrap_or_default();
-        if !self.full_update
-            && duplicate_records >= AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD
-        {
-            state.skipped_pools.insert(context.pool.clone());
-            return AutoPageControlDecision::SkipPool { duplicate_records };
+        if !context.pool_complete {
+            let duplicate_records = state
+                .duplicate_counts_by_pool
+                .get(&context.pool)
+                .copied()
+                .unwrap_or_default();
+            if !self.full_update
+                && duplicate_records >= AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD
+            {
+                state.skipped_pools.insert(context.pool.clone());
+                return AutoPageControlDecision::SkipPool { duplicate_records };
+            }
         }
 
         let decoded_pages = state.page_tracker.count(&context.pool);
-        let max_visited_pages = decoded_pages as u32 + self.max_window_pages;
+        let max_visited_pages = decoded_pages as u32
+            + if context.pool_complete {
+                0
+            } else {
+                self.max_window_pages
+            };
         if context.visited_pages > max_visited_pages {
             return AutoPageControlDecision::WaitCapture {
                 decoded_pages,

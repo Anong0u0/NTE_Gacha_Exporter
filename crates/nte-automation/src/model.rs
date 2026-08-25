@@ -230,6 +230,7 @@ pub struct AutoPageControlContext {
     pub current_page: u32,
     pub total_pages: u32,
     pub visited_pages: u32,
+    pub pool_complete: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
