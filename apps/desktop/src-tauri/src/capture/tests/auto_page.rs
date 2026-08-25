@@ -1,21 +1,29 @@
 #[test]
-fn auto_page_coordinator_skips_when_snapshot_has_known_run() {
+fn auto_page_coordinator_skips_at_six_known_records_in_safe_prefix() {
     let known = (1..=6)
         .map(|index| format!("old-{index}"))
         .collect::<Vec<_>>();
     let coordinator = AutoPageCoordinator::new(false, &known);
-    let records = vec![
-        automation_record("new", "CardPool_NewRole", "monopoly"),
-        automation_record("old-1", "CardPool_NewRole", "monopoly"),
-        automation_record("old-2", "CardPool_NewRole", "monopoly"),
-        automation_record("old-3", "CardPool_NewRole", "monopoly"),
-        automation_record("old-4", "CardPool_NewRole", "monopoly"),
-        automation_record("old-5", "CardPool_NewRole", "monopoly"),
-        automation_record("old-6", "CardPool_NewRole", "monopoly"),
-    ];
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        ["new-1", "new-2", "new-3", "new-4", "old-1"],
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        ["old-2", "old-3", "old-4", "old-5", "old-6"],
+    ));
 
     coordinator.add_progress(
-        &progress_with_rows(vec![parsed_row("CardPool_NewRole", 0)]),
+        &progress_with_rows(vec![
+            parsed_row("CardPool_NewRole", 0),
+            parsed_row("CardPool_NewRole", 1),
+        ]),
         Some(&records),
     );
 
@@ -24,6 +32,406 @@ fn auto_page_coordinator_skips_when_snapshot_has_known_run() {
         AutoPageControlDecision::SkipPool {
             duplicate_records: 6,
         }
+    );
+}
+
+#[test]
+fn auto_page_coordinator_waits_for_third_page_after_five_new_records() {
+    let known = (1..=10)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        ["new-1", "new-2", "new-3", "new-4", "new-5"],
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().take(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
+    );
+
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        2,
+        known.iter().skip(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 3)),
+        AutoPageControlDecision::SkipPool {
+            duplicate_records: 10,
+        }
+    );
+}
+
+#[test]
+fn auto_page_coordinator_skips_when_first_two_pages_are_known() {
+    let known = (1..=10)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().skip(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::SkipPool {
+            duplicate_records: 10,
+        }
+    );
+}
+
+#[test]
+fn auto_page_coordinator_ignores_known_pages_before_segment_zero() {
+    let known = (1..=10)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        4,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        5,
+        known.iter().skip(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 6)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
+fn auto_page_coordinator_excludes_records_after_gap_until_filled() {
+    let known = (1..=15)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        2,
+        known.iter().skip(10),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 3)),
+        AutoPageControlDecision::Continue
+    );
+
+    records.splice(
+        5..5,
+        capture_page(
+            "standard",
+            "monopoly:standard",
+            0,
+            1,
+            known.iter().skip(5).take(5),
+        ),
+    );
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 3)),
+        AutoPageControlDecision::SkipPool {
+            duplicate_records: 15,
+        }
+    );
+}
+
+#[test]
+fn auto_page_coordinator_waits_for_segment_zero_before_counting() {
+    let known = (1..=5)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let page_two = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        &known,
+    );
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&page_two));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
+    );
+
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        ["new-1", "new-2", "new-3", "new-4", "new-5"],
+    );
+    records.extend(page_two);
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
+fn auto_page_coordinator_uses_only_latest_generation() {
+    let known = (1..=15)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().skip(5).take(5),
+    ));
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        1,
+        2,
+        known.iter().skip(10),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 3)),
+        AutoPageControlDecision::Continue
+    );
+
+    records.truncate(10);
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        1,
+        0,
+        ["new-1", "new-2", "new-3", "new-4", "old-5"],
+    ));
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        1,
+        1,
+        ["old-6", "old-7", "old-8", "old-9", "old-10"],
+    ));
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        1,
+        2,
+        known.iter().skip(10),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 3)),
+        AutoPageControlDecision::SkipPool {
+            duplicate_records: 11,
+        }
+    );
+}
+
+#[test]
+fn auto_page_coordinator_does_not_join_known_runs_across_streams() {
+    let known = (1..=10)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard:a",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard:b",
+        0,
+        0,
+        known.iter().skip(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
+fn auto_page_coordinator_never_early_skips_full_update() {
+    let known = (1..=10)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(true, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().skip(5),
+    ));
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
+    );
+}
+
+#[test]
+fn capture_record_snapshot_preserves_missing_source_metadata() {
+    let record = nte_capture::CapturePublicRecord {
+        record_id: "record-id".to_string(),
+        record_key: "record-key".to_string(),
+        record_type: "monopoly".to_string(),
+        pool_id: Some("CardPool_NewRole".to_string()),
+        value: json!({}),
+    };
+    let mut row = parsed_row("CardPool_NewRole", 0);
+    row.source.stream_key = None;
+
+    let snapshot = capture_record_snapshot(&record, &row).expect("supported pool");
+    assert_eq!(snapshot.stream_key, None);
+
+    row.source.stream_key = Some("monopoly:standard".to_string());
+    row.source.generation_index = None;
+    let snapshot = capture_record_snapshot(&record, &row).expect("supported pool");
+    assert_eq!(snapshot.generation_index, None);
+
+    row.source.generation_index = Some(0);
+    row.source.segment_index = None;
+    let snapshot = capture_record_snapshot(&record, &row).expect("supported pool");
+    assert_eq!(snapshot.segment_index, None);
+}
+
+#[test]
+fn legacy_record_is_retained_as_unsafe_metadata() {
+    let records = vec![
+        nte_capture::CapturePublicRecord {
+            record_id: "valid-id".to_string(),
+            record_key: "valid-key".to_string(),
+            record_type: "monopoly".to_string(),
+            pool_id: Some("CardPool_NewRole".to_string()),
+            value: json!({}),
+        },
+        nte_capture::CapturePublicRecord {
+            record_id: "legacy-id".to_string(),
+            record_key: "legacy-key".to_string(),
+            record_type: "monopoly".to_string(),
+            pool_id: Some("CardPool_NewRole".to_string()),
+            value: json!({}),
+        },
+    ];
+    let valid = parsed_row("CardPool_NewRole", 0);
+    let mut legacy = parsed_row("CardPool_NewRole", 1);
+    legacy.source.stream_key = None;
+    legacy.source.generation_index = None;
+    legacy.source.segment_index = None;
+
+    let snapshots = capture_record_snapshots(&records, &[valid, legacy]);
+
+    assert_eq!(snapshots.len(), 2);
+    assert_eq!(snapshots[1].stream_key, None);
+    assert_eq!(snapshots[1].generation_index, None);
+    assert_eq!(snapshots[1].segment_index, None);
+}
+
+#[test]
+fn auto_page_coordinator_rejects_pool_with_missing_metadata() {
+    let known = (1..=6)
+        .map(|index| format!("old-{index}"))
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known);
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().skip(5),
+    ));
+    records.push(CaptureRecordSnapshot {
+        record_key: "legacy".to_string(),
+        pool: "standard".to_string(),
+        stream_key: None,
+        generation_index: None,
+        segment_index: None,
+    });
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&records));
+
+    assert_eq!(
+        coordinator.decision(control_context("standard", 2)),
+        AutoPageControlDecision::Continue
     );
 }
 
@@ -79,10 +487,20 @@ fn auto_page_coordinator_does_not_skip_completed_pool() {
         .map(|index| format!("old-{index}"))
         .collect::<Vec<_>>();
     let coordinator = AutoPageCoordinator::new(false, &known);
-    let records = known
-        .iter()
-        .map(|key| automation_record(key, "CardPool_NewRole", "monopoly"))
-        .collect::<Vec<_>>();
+    let mut records = capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        0,
+        known.iter().take(5),
+    );
+    records.extend(capture_page(
+        "standard",
+        "monopoly:standard",
+        0,
+        1,
+        known.iter().skip(5),
+    ));
     coordinator.add_progress(
         &progress_with_rows(vec![parsed_row("CardPool_NewRole", 0)]),
         Some(&records),

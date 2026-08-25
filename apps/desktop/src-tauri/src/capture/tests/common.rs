@@ -63,17 +63,45 @@ fn test_meta() -> CaptureSessionMeta {
     }
 }
 
-fn automation_record(
+fn capture_record(
     record_key: &str,
-    pool_id: &str,
-    record_type: &str,
-) -> AutomationRecordSnapshot {
-    AutomationRecordSnapshot {
-        record_id: record_key.to_string(),
+    pool: &str,
+    stream_key: &str,
+    generation_index: u32,
+    segment_index: u32,
+) -> CaptureRecordSnapshot {
+    CaptureRecordSnapshot {
         record_key: record_key.to_string(),
-        pool_id: pool_id.to_string(),
-        record_type: record_type.to_string(),
+        pool: pool.to_string(),
+        stream_key: Some(stream_key.to_string()),
+        generation_index: Some(generation_index),
+        segment_index: Some(segment_index),
     }
+}
+
+fn capture_page<I, S>(
+    pool: &str,
+    stream_key: &str,
+    generation_index: u32,
+    segment_index: u32,
+    record_keys: I,
+) -> Vec<CaptureRecordSnapshot>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    record_keys
+        .into_iter()
+        .map(|record_key| {
+            capture_record(
+                record_key.as_ref(),
+                pool,
+                stream_key,
+                generation_index,
+                segment_index,
+            )
+        })
+        .collect()
 }
 
 fn control_context(pool: &str, visited_pages: u32) -> AutoPageControlContext {

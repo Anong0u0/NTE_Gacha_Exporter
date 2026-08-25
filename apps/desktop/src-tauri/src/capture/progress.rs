@@ -37,25 +37,28 @@ impl LiveProgressState {
     fn automation_snapshot(
         &self,
         progress: &nte_capture::CaptureProgress,
-    ) -> Option<Vec<AutomationRecordSnapshot>> {
+    ) -> Option<Vec<CaptureRecordSnapshot>> {
         if !progress.rows_snapshot.is_empty() || progress.row_count == 0 {
             let mut builder = CaptureRecordBuilder::new(&self.locale).ok()?;
             let records = builder.build_records(&progress.rows_snapshot);
-            return Some(records.iter().filter_map(automation_snapshot).collect());
+            return Some(capture_record_snapshots(
+                &records,
+                &progress.rows_snapshot,
+            ));
         }
         if progress.new_rows.is_empty() {
             return None;
         }
         let mut builder = CaptureRecordBuilder::new(&self.locale).ok()?;
         let records = builder.build_records(&progress.new_rows);
-        Some(records.iter().filter_map(automation_snapshot).collect())
+        Some(capture_record_snapshots(&records, &progress.new_rows))
     }
 }
 
 struct LiveProgressUpdate {
     records_count: u64,
     latest: Vec<Value>,
-    automation_snapshot: Option<Vec<AutomationRecordSnapshot>>,
+    automation_snapshot: Option<Vec<CaptureRecordSnapshot>>,
 }
 
 fn finish_capture_result(
@@ -283,15 +286,28 @@ fn zero_decode_runtime_error(result: &nte_capture::CaptureResult) -> Option<Runt
     ))
 }
 
-fn automation_snapshot(
+fn capture_record_snapshot(
     record: &nte_capture::CapturePublicRecord,
-) -> Option<AutomationRecordSnapshot> {
-    Some(AutomationRecordSnapshot {
-        record_id: record.record_id.clone(),
+    row: &nte_capture::ParsedRow,
+) -> Option<CaptureRecordSnapshot> {
+    Some(CaptureRecordSnapshot {
         record_key: record.record_key.clone(),
-        record_type: record.record_type.clone(),
-        pool_id: record.pool_id.clone()?,
+        pool: capture_pool(record.record_type.as_str(), record.pool_id.as_deref())?.to_string(),
+        stream_key: row.source.stream_key.clone(),
+        generation_index: row.source.generation_index,
+        segment_index: row.source.segment_index,
     })
+}
+
+fn capture_record_snapshots(
+    records: &[nte_capture::CapturePublicRecord],
+    rows: &[nte_capture::ParsedRow],
+) -> Vec<CaptureRecordSnapshot> {
+    records
+        .iter()
+        .zip(rows)
+        .filter_map(|(record, row)| capture_record_snapshot(record, row))
+        .collect()
 }
 
 fn latest_records(records: &[Value]) -> Vec<Value> {

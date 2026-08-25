@@ -11,8 +11,7 @@ use std::time::{Duration, Instant};
 use nte_automation::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions as AutomationOptions,
-    AutoPageResult as AutoPageRunResult, AutoPageStatus as AutomationStatus,
-    RecordSnapshot as AutomationRecordSnapshot, run_auto_page,
+    AutoPageResult as AutoPageRunResult, AutoPageStatus as AutomationStatus, run_auto_page,
 };
 use nte_capture::{
     CaptureAttemptSummary, CaptureBackend, CaptureOptions, CaptureRecordBuilder, CaptureStrategy,
@@ -130,6 +129,15 @@ struct CapturePageTracker {
     last_decoded_at: Option<f64>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CaptureRecordSnapshot {
+    record_key: String,
+    pool: String,
+    stream_key: Option<String>,
+    generation_index: Option<u32>,
+    segment_index: Option<u32>,
+}
+
 impl CapturePageTracker {
     fn add_progress(&mut self, progress: &nte_capture::CaptureProgress) {
         if !progress.rows_snapshot.is_empty() || progress.row_count == 0 {
@@ -187,7 +195,6 @@ struct AutoPageCoordinator {
 #[derive(Debug, Default)]
 struct AutoPageCoordinatorState {
     page_tracker: CapturePageTracker,
-    records_by_pool: BTreeMap<String, Vec<AutomationRecordSnapshot>>,
     duplicate_counts_by_pool: BTreeMap<String, usize>,
     skipped_pools: BTreeSet<String>,
 }
@@ -206,22 +213,13 @@ impl AutoPageCoordinator {
     fn add_progress(
         &self,
         progress: &nte_capture::CaptureProgress,
-        records_snapshot: Option<&[AutomationRecordSnapshot]>,
+        records_snapshot: Option<&[CaptureRecordSnapshot]>,
     ) {
         if let Ok(mut state) = self.state.lock() {
             state.page_tracker.add_progress(progress);
             if let Some(records) = records_snapshot {
-                state.records_by_pool = records_by_pool(records);
-                state.duplicate_counts_by_pool = state
-                    .records_by_pool
-                    .iter()
-                    .map(|(pool, records)| {
-                        (
-                            pool.clone(),
-                            consecutive_known_record_count(records, &self.known_counts),
-                        )
-                    })
-                    .collect();
+                state.duplicate_counts_by_pool =
+                    safe_duplicate_counts_by_pool(records, &self.known_counts);
             }
             self.changed.notify_all();
         }
@@ -317,24 +315,80 @@ fn capture_page_key(row: &nte_capture::ParsedRow) -> Option<(String, CapturePage
     ))
 }
 
-fn records_by_pool(
-    records: &[AutomationRecordSnapshot],
-) -> BTreeMap<String, Vec<AutomationRecordSnapshot>> {
-    let mut by_pool = BTreeMap::<String, Vec<AutomationRecordSnapshot>>::new();
+fn safe_duplicate_counts_by_pool(
+    records: &[CaptureRecordSnapshot],
+    known_counts: &BTreeMap<String, u64>,
+) -> BTreeMap<String, usize> {
+    let mut unsafe_pools = BTreeSet::<String>::new();
+    let mut records_by_stream = BTreeMap::<
+        (String, String),
+        Vec<(&CaptureRecordSnapshot, u32, u32)>,
+    >::new();
     for record in records {
-        if let Some(pool) = capture_pool(record.record_type.as_str(), Some(record.pool_id.as_str()))
-        {
-            by_pool
-                .entry(pool.to_string())
-                .or_default()
-                .push(record.clone());
-        }
+        let (Some(stream_key), Some(generation_index), Some(segment_index)) = (
+            record.stream_key.as_ref(),
+            record.generation_index,
+            record.segment_index,
+        ) else {
+            unsafe_pools.insert(record.pool.clone());
+            continue;
+        };
+        records_by_stream
+            .entry((record.pool.clone(), stream_key.clone()))
+            .or_default()
+            .push((record, generation_index, segment_index));
     }
-    by_pool
+
+    let mut duplicate_counts_by_pool = BTreeMap::<String, usize>::new();
+    for ((pool, _), stream_records) in records_by_stream {
+        if unsafe_pools.contains(&pool) {
+            continue;
+        }
+        let Some(latest_generation) = stream_records
+            .iter()
+            .map(|(_, generation_index, _)| *generation_index)
+            .max()
+        else {
+            continue;
+        };
+        let segments = stream_records
+            .iter()
+            .filter(|(_, generation_index, _)| *generation_index == latest_generation)
+            .map(|(_, _, segment_index)| *segment_index)
+            .collect::<BTreeSet<_>>();
+        if !segments.contains(&0) {
+            continue;
+        }
+
+        let mut frontier = 0_u32;
+        while let Some(next) = frontier
+            .checked_add(1)
+            .filter(|next| segments.contains(next))
+        {
+            frontier = next;
+        }
+
+        let safe_records = stream_records
+            .into_iter()
+            .filter_map(|(record, generation_index, segment_index)| {
+                (generation_index == latest_generation && segment_index <= frontier)
+                    .then_some(record)
+            })
+            .collect::<Vec<_>>();
+        let duplicate_count = consecutive_known_record_count(&safe_records, known_counts);
+        duplicate_counts_by_pool
+            .entry(pool)
+            .and_modify(|count| *count = (*count).max(duplicate_count))
+            .or_insert(duplicate_count);
+    }
+    for pool in unsafe_pools {
+        duplicate_counts_by_pool.insert(pool, 0);
+    }
+    duplicate_counts_by_pool
 }
 
 fn consecutive_known_record_count(
-    records: &[AutomationRecordSnapshot],
+    records: &[&CaptureRecordSnapshot],
     known_counts: &BTreeMap<String, u64>,
 ) -> usize {
     let mut remaining = known_counts.clone();
