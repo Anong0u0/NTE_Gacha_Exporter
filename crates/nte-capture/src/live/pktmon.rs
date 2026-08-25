@@ -55,91 +55,103 @@ pub(super) fn capture_live_pktmon(
     let mut attempts = Vec::new();
     loop_state.emit_initial_progress(&options, &target);
 
-    while !stop.load(Ordering::SeqCst) {
-        target.capture_strategy = strategy.kind.as_str().to_string();
-        target.strategy_reason = strategy.reason.as_str().to_string();
-        target.bpf = bpf(strategy.kind, &ports);
-        let attempt_started_at = now_seconds();
-        let attempt_start_counters = loop_state.counters().clone();
-        let mut capture = pktmon::Capture::new()?;
-        if strategy.kind == CaptureStrategyKind::PortFiltered {
-            add_port_filters(&mut capture, &ports)?;
-        }
-        capture.start()?;
-
-        let mut restart_for_ports = false;
-        let mut idle_ticks = 0_u32;
-        loop {
-            if stop.load(Ordering::SeqCst) {
-                break;
-            }
-            if max_reached(
-                loop_state.counters(),
-                options.max_packets,
-                options.max_decoded,
-            ) {
-                stop.store(true, Ordering::SeqCst);
-                break;
-            }
-
-            match capture.next_packet_timeout(Duration::from_secs(1)) {
-                Ok(packet) => {
-                    idle_ticks = 0;
-                    loop_state.counters_mut().packets_seen += 1;
-                    let kind = packet_kind(&packet.payload);
-                    let bytes = packet.payload.to_vec();
-                    let Some(parsed_packet) =
-                        parse_packet_bytes(bytes, kind, RawPacketSource::Pktmon)
-                    else {
-                        loop_state.record_parse_drop();
-                        continue;
-                    };
-                    loop_state.handle_packet(
-                        &options,
-                        &target,
-                        parsed_packet,
-                        &ports,
-                        strategy.kind,
-                        now_seconds(),
-                    )?;
+    let capture_result = (|| -> Result<()> {
+        while !stop.load(Ordering::SeqCst) {
+            target.capture_strategy = strategy.kind.as_str().to_string();
+            target.strategy_reason = strategy.reason.as_str().to_string();
+            target.bpf = bpf(strategy.kind, &ports);
+            let attempt_started_at = now_seconds();
+            let attempt_start_counters = loop_state.counters().clone();
+            let restart_for_ports = with_pktmon_capture(|capture| {
+                if strategy.kind == CaptureStrategyKind::PortFiltered {
+                    add_port_filters(capture, &ports)?;
                 }
-                Err(error) if is_timeout(&error) => {
-                    idle_ticks += 1;
-                    if idle_ticks >= 3 {
-                        idle_ticks = 0;
-                        let latest = net::limited_filter_ports(&net::candidate_ports(options.pid)?);
-                        if latest.iter().any(|port| !ports.contains(port)) {
-                            ports = latest;
-                            target.ports = ports.clone();
-                            target.bpf = bpf(strategy.kind, &ports);
-                            if strategy.kind == CaptureStrategyKind::PortFiltered {
-                                loop_state.counters_mut().filter_restarts += 1;
-                                restart_for_ports = true;
-                                break;
+                capture.start()?;
+
+                let mut restart_for_ports = false;
+                let mut idle_ticks = 0_u32;
+                loop {
+                    if stop.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    if max_reached(
+                        loop_state.counters(),
+                        options.max_packets,
+                        options.max_decoded,
+                    ) {
+                        stop.store(true, Ordering::SeqCst);
+                        break;
+                    }
+
+                    match capture.next_packet_timeout(Duration::from_secs(1)) {
+                        Ok(packet) => {
+                            idle_ticks = 0;
+                            loop_state.counters_mut().packets_seen += 1;
+                            let kind = packet_kind(&packet.payload);
+                            let bytes = packet.payload.to_vec();
+                            let Some(parsed_packet) =
+                                parse_packet_bytes(bytes, kind, RawPacketSource::Pktmon)
+                            else {
+                                loop_state.record_parse_drop();
+                                continue;
+                            };
+                            loop_state.handle_packet(
+                                &options,
+                                &target,
+                                parsed_packet,
+                                &ports,
+                                strategy.kind,
+                                now_seconds(),
+                            )?;
+                        }
+                        Err(error) if is_timeout(&error) => {
+                            idle_ticks += 1;
+                            if idle_ticks >= 3 {
+                                idle_ticks = 0;
+                                let latest =
+                                    net::limited_filter_ports(&net::candidate_ports(options.pid)?);
+                                if latest.iter().any(|port| !ports.contains(port)) {
+                                    ports = latest;
+                                    target.ports = ports.clone();
+                                    target.bpf = bpf(strategy.kind, &ports);
+                                    if strategy.kind == CaptureStrategyKind::PortFiltered {
+                                        loop_state.counters_mut().filter_restarts += 1;
+                                        restart_for_ports = true;
+                                        break;
+                                    }
+                                }
                             }
                         }
+                        Err(error) => return Err(error.into()),
                     }
                 }
-                Err(error) => return Err(error.into()),
+                Ok(restart_for_ports)
+            })?;
+            attempts.push(CaptureAttemptSummary {
+                attempt_index: attempts.len() as u32,
+                capture_strategy: target.capture_strategy.clone(),
+                strategy_reason: target.strategy_reason.clone(),
+                started_at: attempt_started_at,
+                ended_at: now_seconds(),
+                counters: counters_delta(&attempt_start_counters, loop_state.counters()),
+            });
+            target.attempts = attempts.clone();
+            if !restart_for_ports {
+                break;
             }
         }
-        let _ = capture.stop();
-        let _ = capture.unload();
-        attempts.push(CaptureAttemptSummary {
-            attempt_index: attempts.len() as u32,
-            capture_strategy: target.capture_strategy.clone(),
-            strategy_reason: target.strategy_reason.clone(),
-            started_at: attempt_started_at,
-            ended_at: now_seconds(),
-            counters: counters_delta(&attempt_start_counters, loop_state.counters()),
-        });
-        target.attempts = attempts.clone();
-        if !restart_for_ports {
-            break;
-        }
-    }
+        Ok(())
+    })();
 
-    let finish = loop_state.finish(&options, &target)?;
+    let finish_result = loop_state.finish(&options, &target);
+    let finish = match (capture_result, finish_result) {
+        (Ok(()), Ok(finish)) => finish,
+        (Err(error), Ok(_)) => return Err(error),
+        (Ok(()), Err(error)) => return Err(error),
+        (Err(error), Err(finish_error)) => {
+            anyhow::bail!("{error:#}; raw finalize failed: {finish_error:#}")
+        }
+    };
     Ok(CaptureResult {
         target,
         counters: finish.counters,
@@ -147,6 +159,30 @@ pub(super) fn capture_live_pktmon(
         rows: finish.rows,
         warnings: finish.warnings,
     })
+}
+
+pub(crate) fn with_pktmon_capture<T>(
+    operation: impl FnOnce(&mut pktmon::Capture) -> Result<T>,
+) -> Result<T> {
+    let mut capture = pktmon::Capture::new()?;
+    let operation_result = operation(&mut capture);
+    let stop_result = capture.stop();
+    let unload_result = capture.unload();
+    let cleanup_error = match (stop_result, unload_result) {
+        (Ok(()), Ok(())) => None,
+        (Err(error), Ok(())) => Some(format!("pktmon stop failed: {error}")),
+        (Ok(()), Err(error)) => Some(format!("pktmon unload failed: {error}")),
+        (Err(stop_error), Err(unload_error)) => Some(format!(
+            "pktmon stop failed: {stop_error}; pktmon unload failed: {unload_error}"
+        )),
+    };
+
+    match (operation_result, cleanup_error) {
+        (Ok(value), None) => Ok(value),
+        (Err(error), None) => Err(error),
+        (Ok(_), Some(cleanup_error)) => Err(anyhow::anyhow!(cleanup_error)),
+        (Err(error), Some(cleanup_error)) => Err(anyhow::anyhow!("{error:#}; {cleanup_error}")),
+    }
 }
 
 fn add_port_filters(capture: &mut pktmon::Capture, ports: &[u16]) -> Result<()> {

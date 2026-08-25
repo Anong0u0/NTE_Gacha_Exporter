@@ -70,23 +70,50 @@ pub(crate) fn capture_stop(
     session_id: String,
 ) -> Result<CaptureStatus, ApiError> {
     let session = capture_runtime_session(&state, &session_id)?;
+    request_capture_stop(&session);
+    capture_status_with_merge(&state, &session_id)
+}
+
+fn request_capture_stop(session: &CaptureRuntimeSession) {
     session.stop.store(true, Ordering::SeqCst);
-    if let Ok(guard) = session.attempt_stop.lock() {
-        if let Some(stop) = guard.as_ref() {
-            stop.store(true, Ordering::SeqCst);
-        }
+    let guard = session
+        .attempt_stop
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(stop) = guard.as_ref() {
+        stop.store(true, Ordering::SeqCst);
     }
+    drop(guard);
     {
         let mut status = session
             .status
             .lock()
-            .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if crate::lifecycle::is_active_state(&status.state) {
             crate::lifecycle::set_stopping(&mut status.state);
             status.updated_at = now_seconds();
         }
     }
-    capture_status_with_merge(&state, &session_id)
+}
+
+pub(crate) fn request_capture_shutdown(state: &AppState) -> Vec<Arc<CaptureRuntimeSession>> {
+    let sessions = state
+        .capture_sessions
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .values()
+        .cloned()
+        .collect::<Vec<_>>();
+    for session in &sessions {
+        request_capture_stop(session);
+    }
+    sessions
+}
+
+pub(crate) fn join_capture_shutdown(sessions: &[Arc<CaptureRuntimeSession>]) {
+    for session in sessions {
+        crate::lifecycle::join_thread(&session.handle);
+    }
 }
 
 fn capture_raw_output_path(store: &nte_store::JsonStore) -> String {

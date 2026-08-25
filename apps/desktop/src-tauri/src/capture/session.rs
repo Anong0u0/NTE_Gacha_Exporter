@@ -64,6 +64,9 @@ fn start_rust_capture_session(
         attempt_stop: Mutex::new(None),
         handle: Mutex::new(None),
     });
+    let _registration = state.session_registration().ok_or_else(|| {
+        api_error_message("app_shutting_down", "application is shutting down")
+    })?;
     state
         .capture_sessions
         .lock()
@@ -372,9 +375,16 @@ fn capture_bpf(backend: CaptureBackend, strategy: CaptureStrategyKind, ports: &[
 }
 
 fn set_attempt_stop(runtime: &Arc<CaptureRuntimeSession>, stop: Option<Arc<AtomicBool>>) {
-    if let Ok(mut guard) = runtime.attempt_stop.lock() {
-        *guard = stop;
+    let mut guard = runtime
+        .attempt_stop
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(stop) = stop.as_ref()
+        && runtime.stop.load(Ordering::SeqCst)
+    {
+        stop.store(true, Ordering::SeqCst);
     }
+    *guard = stop;
 }
 
 fn extend_attempts_from_result(

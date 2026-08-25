@@ -9,6 +9,7 @@ use serde::Serialize;
 #[cfg(windows)]
 use crate::live::{
     CaptureAttemptSummary, CaptureCounters, CaptureStrategyKind, bpf, should_write_raw_packet,
+    with_pktmon_capture,
 };
 use crate::live::{CaptureStrategy, CaptureTarget};
 use crate::protocol::ParseWarning;

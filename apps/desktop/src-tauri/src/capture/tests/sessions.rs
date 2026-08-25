@@ -54,7 +54,11 @@ fn prune_capture_session_maps_retains_latest_terminal_limit() {
 fn prune_capture_session_maps_treats_cancelled_as_terminal() {
     let mut sessions = HashMap::from([(
         "cancelled".to_string(),
-        test_session(test_status("cancelled", crate::lifecycle::STATE_CANCELLED, 1.0)),
+        test_session(test_status(
+            "cancelled",
+            crate::lifecycle::STATE_CANCELLED,
+            1.0,
+        )),
     )]);
     let mut captures = HashMap::from([("cancelled".to_string(), test_meta())]);
 
@@ -62,4 +66,41 @@ fn prune_capture_session_maps_treats_cancelled_as_terminal() {
 
     assert!(!sessions.contains_key("cancelled"));
     assert!(!captures.contains_key("cancelled"));
+}
+
+#[test]
+fn request_capture_stop_sets_session_and_attempt_flags() {
+    let session = test_session(test_status("active", crate::lifecycle::STATE_RUNNING, 1.0));
+    let attempt_stop = Arc::new(AtomicBool::new(false));
+    *session.attempt_stop.lock().unwrap() = Some(Arc::clone(&attempt_stop));
+
+    request_capture_stop(&session);
+
+    assert!(session.stop.load(Ordering::SeqCst));
+    assert!(attempt_stop.load(Ordering::SeqCst));
+    assert_eq!(
+        session.status.lock().unwrap().state,
+        crate::lifecycle::STATE_STOPPING
+    );
+}
+
+#[test]
+fn set_attempt_stop_inherits_existing_session_stop() {
+    let session = test_session(test_status("active", crate::lifecycle::STATE_RUNNING, 1.0));
+    session.stop.store(true, Ordering::SeqCst);
+    let attempt_stop = Arc::new(AtomicBool::new(false));
+
+    set_attempt_stop(&session, Some(Arc::clone(&attempt_stop)));
+
+    assert!(attempt_stop.load(Ordering::SeqCst));
+}
+
+#[test]
+fn join_capture_shutdown_consumes_worker_handle() {
+    let session = test_session(test_status("active", crate::lifecycle::STATE_RUNNING, 1.0));
+    *session.handle.lock().unwrap() = Some(std::thread::spawn(|| {}));
+
+    join_capture_shutdown(std::slice::from_ref(&session));
+
+    assert!(session.handle.lock().unwrap().is_none());
 }

@@ -5,6 +5,7 @@ mod assets_commands;
 mod capture;
 mod diagnostic;
 mod error;
+mod instance;
 mod lifecycle;
 mod state;
 mod store_commands;
@@ -15,7 +16,7 @@ mod windivert_commands;
 mod window_commands;
 
 use nte_store::JsonStore;
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 
 use crate::admin::{pending_admin_capture_from_args, pending_admin_diagnostic_from_args};
 use crate::state::{AppState, portable_root};
@@ -25,19 +26,29 @@ pub fn run() {
         .unwrap_or_else(|error| panic!("failed to read pending admin capture: {error:?}"));
     let pending_admin_diagnostic = pending_admin_diagnostic_from_args()
         .unwrap_or_else(|error| panic!("failed to read pending admin diagnostic: {error:?}"));
-    tauri::Builder::default()
+    let root =
+        portable_root().unwrap_or_else(|error| panic!("failed to resolve portable root: {error}"));
+    let admin_handoff = pending_admin_capture.is_some() || pending_admin_diagnostic.is_some();
+    let _instance_guard = match instance::acquire(&root, admin_handoff)
+        .unwrap_or_else(|error| panic!("failed to acquire application instance: {error:#}"))
+    {
+        instance::AcquireResult::Primary(guard) => guard,
+        instance::AcquireResult::Existing => return,
+    };
+    let assets_root = root.clone();
+    let store_root = root.clone();
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .register_uri_scheme_protocol("nteasset", |_ctx, request| {
-            let root = portable_root()
-                .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| ".".into()));
-            assets_commands::assets_protocol_response(&root, request)
+        .register_uri_scheme_protocol("nteasset", move |_ctx, request| {
+            assets_commands::assets_protocol_response(&assets_root, request)
         })
         .setup(move |app| {
-            let root =
-                portable_root().map_err(|err| format!("failed to resolve portable root: {err}"))?;
-            let _ = nte_update::cleanup_update_artifacts_after_success(&root);
-            let store = JsonStore::open_with_defaults(root, system_commands::store_defaults())
-                .map_err(|err| format!("failed to open JSON store: {err}"))?;
+            let _ = nte_update::cleanup_update_artifacts_after_success(&store_root);
+            let store = JsonStore::open_with_defaults(
+                store_root.clone(),
+                system_commands::store_defaults(),
+            )
+            .map_err(|err| format!("failed to open JSON store: {err}"))?;
             app.manage(AppState::new(
                 store,
                 pending_admin_capture.clone(),
@@ -92,6 +103,11 @@ pub fn run() {
             diagnostic::diagnostic_status,
             diagnostic::diagnostic_cancel
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running Tauri application");
+    app.run(|app, event| {
+        if matches!(event, RunEvent::ExitRequested { .. }) {
+            app.state::<AppState>().shutdown();
+        }
+    });
 }

@@ -1,4 +1,7 @@
-use std::sync::Mutex;
+use std::sync::{
+    Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread::JoinHandle;
 
 pub(crate) const STATE_STARTING: &str = "starting";
@@ -19,6 +22,20 @@ pub(crate) fn is_terminal_state(state: &str) -> bool {
 pub(crate) fn set_stopping(state: &mut String) {
     if matches!(state.as_str(), STATE_STARTING | STATE_RUNNING) {
         *state = STATE_STOPPING.to_string();
+    }
+}
+
+pub(crate) fn begin_shutdown(started: &AtomicBool) -> bool {
+    !started.swap(true, Ordering::SeqCst)
+}
+
+pub(crate) fn join_thread(handle: &Mutex<Option<JoinHandle<()>>>) {
+    let handle = handle
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .take();
+    if let Some(handle) = handle {
+        let _ = handle.join();
     }
 }
 
@@ -77,5 +94,22 @@ mod tests {
         assert!(try_join_finished_thread(&handle));
         assert!(handle.lock().unwrap().is_none());
         assert!(handle_joined(&handle));
+    }
+
+    #[test]
+    fn begin_shutdown_only_succeeds_once() {
+        let started = AtomicBool::new(false);
+
+        assert!(begin_shutdown(&started));
+        assert!(!begin_shutdown(&started));
+    }
+
+    #[test]
+    fn join_thread_takes_and_joins_handle() {
+        let handle = Mutex::new(Some(thread::spawn(|| {})));
+
+        join_thread(&handle);
+        assert!(handle_joined(&handle));
+        join_thread(&handle);
     }
 }

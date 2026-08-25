@@ -17,7 +17,7 @@ mod raw_filter;
 mod windivert_backend;
 
 #[cfg(windows)]
-pub(crate) use pktmon::bpf;
+pub(crate) use pktmon::{bpf, with_pktmon_capture};
 #[cfg(windows)]
 pub(crate) use raw_filter::should_write_raw_packet;
 

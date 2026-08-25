@@ -1,10 +1,10 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State, Wry};
 
 use crate::capture::{CaptureMode, CaptureStartOptions};
 use crate::diagnostic::DiagnosticMode;
@@ -29,6 +29,7 @@ pub(crate) struct PendingAdminDiagnostic {
 
 #[tauri::command]
 pub(crate) fn request_admin_capture_start(
+    app: AppHandle<Wry>,
     state: State<'_, AppState>,
     profile_name: String,
     locale: Option<String>,
@@ -52,12 +53,13 @@ pub(crate) fn request_admin_capture_start(
     };
     let path = write_admin_capture_payload(&payload)?;
     relaunch_admin_with_capture_payload(&path)?;
-    schedule_process_exit();
+    app.exit(0);
     Ok(true)
 }
 
 #[tauri::command]
 pub(crate) fn request_admin_diagnostic_start(
+    app: AppHandle<Wry>,
     duration_seconds: Option<u64>,
     mode: Option<DiagnosticMode>,
 ) -> Result<bool, ApiError> {
@@ -70,7 +72,7 @@ pub(crate) fn request_admin_diagnostic_start(
     };
     let path = write_admin_diagnostic_payload(&payload)?;
     relaunch_admin_with_diagnostic_payload(&path)?;
-    schedule_process_exit();
+    app.exit(0);
     Ok(true)
 }
 
@@ -172,13 +174,6 @@ fn write_admin_diagnostic_payload(payload: &PendingAdminDiagnostic) -> Result<Pa
     let text = serde_json::to_string(payload).map_err(api_error)?;
     fs::write(&path, text).map_err(api_error)?;
     Ok(path)
-}
-
-fn schedule_process_exit() {
-    std::thread::spawn(|| {
-        std::thread::sleep(Duration::from_millis(750));
-        std::process::exit(0);
-    });
 }
 
 #[cfg(not(windows))]

@@ -2,7 +2,7 @@ use std::process::{Command, Stdio};
 
 use nte_core::{UpdateChannel, UpdateCheckReport, UpdatePackage, UpdateStageReport, UpdateStatus};
 use nte_update::{prepare_update_install, update_status};
-use tauri::State;
+use tauri::{AppHandle, State, Wry};
 
 use crate::error::ApiError;
 use crate::state::{AppState, with_store};
@@ -37,6 +37,7 @@ pub(crate) async fn updater_download_and_stage(
 
 #[tauri::command]
 pub(crate) fn updater_install_staged(
+    app: AppHandle<Wry>,
     state: State<'_, AppState>,
     version: String,
     relaunch: Option<bool>,
@@ -57,7 +58,8 @@ pub(crate) fn updater_install_staged(
         .stderr(Stdio::null())
         .spawn()
         .map_err(api_error)?;
-    std::process::exit(0);
+    app.exit(0);
+    Ok(())
 }
 
 fn app_version() -> &'static str {

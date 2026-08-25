@@ -72,30 +72,31 @@ pub fn run_diagnostic_capture(
         warnings.len() as u64,
     );
 
-    while !stop.load(Ordering::SeqCst) && started_at.elapsed() < duration {
+    let capture_result = (|| -> Result<()> {
+        while !stop.load(Ordering::SeqCst) && started_at.elapsed() < duration {
         target.capture_strategy = strategy.kind.as_str().to_string();
         target.strategy_reason = strategy.reason.as_str().to_string();
         target.bpf = bpf(strategy.kind, &ports);
         let attempt_started_at = now_seconds();
         let attempt_start_counters = counters.clone();
-        let mut capture = pktmon::Capture::new()?;
-        if strategy.kind == CaptureStrategyKind::PortFiltered {
-            for port in &ports {
-                capture.add_filter(PktMonFilter {
-                    name: format!("NTE diagnostic UDP {port}"),
-                    transport_protocol: Some(TransportProtocol::UDP),
-                    port: (*port).into(),
-                    ..Default::default()
-                })?;
-                capture.add_filter(PktMonFilter {
-                    name: format!("NTE diagnostic TCP {port}"),
-                    transport_protocol: Some(TransportProtocol::TCP),
-                    port: (*port).into(),
-                    ..Default::default()
-                })?;
+        let restart_for_ports = with_pktmon_capture(|capture| {
+            if strategy.kind == CaptureStrategyKind::PortFiltered {
+                for port in &ports {
+                    capture.add_filter(PktMonFilter {
+                        name: format!("NTE diagnostic UDP {port}"),
+                        transport_protocol: Some(TransportProtocol::UDP),
+                        port: (*port).into(),
+                        ..Default::default()
+                    })?;
+                    capture.add_filter(PktMonFilter {
+                        name: format!("NTE diagnostic TCP {port}"),
+                        transport_protocol: Some(TransportProtocol::TCP),
+                        port: (*port).into(),
+                        ..Default::default()
+                    })?;
+                }
             }
-        }
-        capture.start()?;
+            capture.start()?;
 
         let mut restart_for_ports = false;
         let mut idle_ticks = 0_u32;
@@ -251,8 +252,8 @@ pub fn run_diagnostic_capture(
                 Err(error) => return Err(error.into()),
             }
         }
-        let _ = capture.stop();
-        let _ = capture.unload();
+            Ok(restart_for_ports)
+        })?;
         let attempt = CaptureAttemptSummary {
             attempt_index: attempts.len() as u32,
             capture_strategy: target.capture_strategy.clone(),
@@ -267,18 +268,25 @@ pub fn run_diagnostic_capture(
             break;
         }
     }
+        Ok(())
+    })();
 
-    if let Some(writer) = raw_writer.as_mut() {
+    let raw_finalize = if let Some(writer) = raw_writer.as_mut() {
         writer.write_stop(
             counters.packets_seen,
             counters.decoded_packets,
             counters.dropped_packets,
             counters.duplicate_packets,
-        )?;
-    }
-    if let Some(writer) = dropped_writer.as_mut() {
-        writer.write_stop(&counters)?;
-    }
+        )
+    } else {
+        Ok(())
+    };
+    let dropped_finalize = if let Some(writer) = dropped_writer.as_mut() {
+        writer.write_stop(&counters)
+    } else {
+        Ok(())
+    };
+    combine_diagnostic_capture_results(capture_result, raw_finalize, dropped_finalize)?;
     let assembler_warnings = std::mem::take(&mut assembler.warnings);
     add_warning_summary(&mut summary, &assembler_warnings);
     warnings.extend(assembler_warnings);
@@ -299,6 +307,29 @@ pub fn run_diagnostic_capture(
         warnings,
         elapsed_seconds: started_at.elapsed().as_secs_f64(),
     })
+}
+
+#[cfg(windows)]
+fn combine_diagnostic_capture_results(
+    capture_result: Result<()>,
+    raw_finalize: Result<()>,
+    dropped_finalize: Result<()>,
+) -> Result<()> {
+    let cleanup_error = match (raw_finalize, dropped_finalize) {
+        (Ok(()), Ok(())) => None,
+        (Err(error), Ok(())) => Some(format!("raw capture finalize failed: {error:#}")),
+        (Ok(()), Err(error)) => Some(format!("dropped capture finalize failed: {error:#}")),
+        (Err(raw_error), Err(dropped_error)) => Some(format!(
+            "raw capture finalize failed: {raw_error:#}; dropped capture finalize failed: {dropped_error:#}"
+        )),
+    };
+
+    match (capture_result, cleanup_error) {
+        (Ok(()), None) => Ok(()),
+        (Err(error), None) => Err(error),
+        (Ok(()), Some(cleanup_error)) => Err(anyhow::anyhow!(cleanup_error)),
+        (Err(error), Some(cleanup_error)) => Err(anyhow::anyhow!("{error:#}; {cleanup_error}")),
+    }
 }
 
 #[cfg(windows)]

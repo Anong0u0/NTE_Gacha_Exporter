@@ -1,4 +1,8 @@
 const EXTERNAL_PKTMON_STAGING_DIR_FALLBACK: &str = r"C:\Windows\Temp";
+const PKTMON_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const PKTMON_CLEANUP_TIMEOUT: Duration = Duration::from_secs(5);
+const PKTMON_COMMAND_POLL_INTERVAL: Duration = Duration::from_millis(50);
+
 
 fn run_external_pktmon_capture(
     paths: &SupportPaths,
@@ -8,9 +12,13 @@ fn run_external_pktmon_capture(
     duration: Duration,
     stop: Arc<AtomicBool>,
 ) -> ExternalCaptureReport {
-    let mut runner = PktmonRunner::new(paths, pppoe_detection, strategy);
+    let mut runner = PktmonRunner::new(paths, pppoe_detection, strategy, Arc::clone(&stop));
     let staging_dir = external_pktmon_staging_dir();
     let staging_paths = external_staging_paths(paths, &staging_dir);
+
+    if stop.load(Ordering::SeqCst) {
+        return runner.finish();
+    }
 
     if let Err(create_error) = fs::create_dir_all(&staging_dir) {
         runner.write_stderr_line(format!(
@@ -50,8 +58,11 @@ fn run_external_pktmon_capture(
     }
 
     if stop.load(Ordering::SeqCst) {
-        runner.run(&["stop"], "pktmon.exe stop failed");
-        runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
+        runner.run_cleanup(&["stop"], "pktmon.exe stop failed");
+        runner.run_cleanup(
+            &["filter", "remove"],
+            "pktmon.exe filter remove failed",
+        );
         runner.cleanup_staging_files(&staging_paths);
         return runner.finish();
     }
@@ -66,12 +77,15 @@ fn run_external_pktmon_capture(
         &paths.counters_txt,
         "pktmon.exe counters failed",
     );
-    runner.run(&["stop"], "pktmon.exe stop failed");
+    runner.run_cleanup(&["stop"], "pktmon.exe stop failed");
     runner.run(
         &["pcapng", &external_etl, "-o", &external_pcapng],
         "pktmon.exe pcapng failed",
     );
-    runner.run(&["filter", "remove"], "pktmon.exe filter remove failed");
+    runner.run_cleanup(
+        &["filter", "remove"],
+        "pktmon.exe filter remove failed",
+    );
     runner.copy_staging_artifact(&staging_paths.etl, &paths.external_etl, "ETL");
     runner.copy_staging_artifact(
         &staging_paths.pcapng,
@@ -91,6 +105,7 @@ struct PktmonRunner<'a> {
     error: Option<String>,
     pppoe_detection: PppoeDetection,
     strategy: CaptureStrategy,
+    cancel: Arc<AtomicBool>,
 }
 
 impl<'a> PktmonRunner<'a> {
@@ -98,6 +113,7 @@ impl<'a> PktmonRunner<'a> {
         paths: &'a SupportPaths,
         pppoe_detection: PppoeDetection,
         strategy: CaptureStrategy,
+        cancel: Arc<AtomicBool>,
     ) -> Self {
         Self {
             paths,
@@ -108,6 +124,7 @@ impl<'a> PktmonRunner<'a> {
             error: None,
             pppoe_detection,
             strategy,
+            cancel,
         }
     }
 
@@ -138,7 +155,12 @@ impl<'a> PktmonRunner<'a> {
         output_path: &Path,
         error_message: impl Into<String>,
     ) {
-        let execution = run_command("pktmon.exe", args);
+        let execution = run_command(
+            "pktmon.exe",
+            args,
+            Some(self.cancel.as_ref()),
+            PKTMON_COMMAND_TIMEOUT,
+        );
         let success = execution.log.success;
         if let Err(write_error) = fs::write(output_path, &execution.stdout) {
             self.mark_error(format!("write pktmon output failed: {write_error}"));
@@ -150,10 +172,24 @@ impl<'a> PktmonRunner<'a> {
     }
 
     fn run_command(&mut self, args: &[&str]) -> bool {
-        let execution = run_command("pktmon.exe", args);
+        let execution = run_command(
+            "pktmon.exe",
+            args,
+            Some(self.cancel.as_ref()),
+            PKTMON_COMMAND_TIMEOUT,
+        );
         let success = execution.log.success;
         self.record_command(execution);
         success
+    }
+
+    fn run_cleanup(&mut self, args: &[&str], error_message: impl Into<String>) {
+        let execution = run_command("pktmon.exe", args, None, PKTMON_CLEANUP_TIMEOUT);
+        let success = execution.log.success;
+        self.record_command(execution);
+        if !success {
+            self.mark_error(error_message);
+        }
     }
 
     fn record_command(&mut self, execution: CommandExecution) {
@@ -274,43 +310,213 @@ struct CommandExecution {
     stderr: Vec<u8>,
 }
 
-fn run_command(program: &str, args: &[&str]) -> CommandExecution {
+struct CommandOutputReaders {
+    stdout: JoinHandle<std::io::Result<Vec<u8>>>,
+    stderr: JoinHandle<std::io::Result<Vec<u8>>>,
+}
+
+fn spawn_command_output_reader(
+    mut reader: impl Read + Send + 'static,
+) -> JoinHandle<std::io::Result<Vec<u8>>> {
+    std::thread::spawn(move || {
+        let mut output = Vec::new();
+        reader.read_to_end(&mut output)?;
+        Ok(output)
+    })
+}
+
+fn run_command(
+    program: &str,
+    args: &[&str],
+    cancel: Option<&AtomicBool>,
+    timeout: Duration,
+) -> CommandExecution {
     let args_vec = args
         .iter()
         .map(|arg| (*arg).to_string())
         .collect::<Vec<_>>();
-    match Command::new(program).args(args).output() {
-        Ok(output) => {
-            let success = output.status.success();
-            CommandExecution {
-                log: ExternalCommandLog {
-                    program: program.to_string(),
-                    args: args_vec,
-                    exit_code: output.status.code(),
-                    success,
-                    stdout_bytes: output.stdout.len(),
-                    stderr_bytes: output.stderr.len(),
-                    error: None,
-                },
-                stdout: output.stdout,
-                stderr: output.stderr,
+    let command_line = if args.is_empty() {
+        program.to_string()
+    } else {
+        format!("{program} {}", args.join(" "))
+    };
+
+    if cancel.is_some_and(|cancel| cancel.load(Ordering::SeqCst)) {
+        return command_failure(
+            program,
+            args_vec,
+            format!("command cancelled: {command_line}"),
+        );
+    }
+
+    let mut child = match Command::new(program)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(error) => return command_failure(program, args_vec, error.to_string()),
+    };
+    let readers = CommandOutputReaders {
+        stdout: spawn_command_output_reader(
+            child.stdout.take().expect("piped stdout must be available"),
+        ),
+        stderr: spawn_command_output_reader(
+            child.stderr.take().expect("piped stderr must be available"),
+        ),
+    };
+    let started = Instant::now();
+
+    loop {
+        let abort_error = if cancel.is_some_and(|cancel| cancel.load(Ordering::SeqCst)) {
+            Some(format!("command cancelled: {command_line}"))
+        } else if started.elapsed() >= timeout {
+            Some(format!(
+                "command timed out after {}ms: {command_line}",
+                timeout.as_millis()
+            ))
+        } else {
+            None
+        };
+        if let Some(error) = abort_error {
+            return terminate_command(child, readers, program, args_vec, error);
+        }
+
+        match child.try_wait() {
+            Ok(Some(_)) => {
+                return collect_command_output(child, readers, program, args_vec, None);
+            }
+            Ok(None) => {
+                let remaining = timeout.saturating_sub(started.elapsed());
+                std::thread::sleep(PKTMON_COMMAND_POLL_INTERVAL.min(remaining));
+            }
+            Err(error) => {
+                return terminate_command(
+                    child,
+                    readers,
+                    program,
+                    args_vec,
+                    format!("failed to wait for command {command_line}: {error}"),
+                );
             }
         }
-        Err(error) => {
-            let stderr = format!("{error}\n").into_bytes();
-            CommandExecution {
-                log: ExternalCommandLog {
-                    program: program.to_string(),
-                    args: args_vec,
-                    exit_code: None,
-                    success: false,
-                    stdout_bytes: 0,
-                    stderr_bytes: stderr.len(),
-                    error: Some(error.to_string()),
+    }
+}
+
+fn terminate_command(
+    mut child: std::process::Child,
+    readers: CommandOutputReaders,
+    program: &str,
+    args: Vec<String>,
+    error: String,
+) -> CommandExecution {
+    if let Err(kill_error) = child.kill() {
+        return match child.try_wait() {
+            Ok(Some(_)) => collect_command_output(child, readers, program, args, Some(error)),
+            Ok(None) => command_failure(
+                program,
+                args,
+                format!("{error}; failed to terminate command: {kill_error}"),
+            ),
+            Err(wait_error) => command_failure(
+                program,
+                args,
+                format!(
+                    "{error}; failed to terminate command: {kill_error}; failed to poll command: {wait_error}"
+                ),
+            ),
+        };
+    }
+    collect_command_output(child, readers, program, args, Some(error))
+}
+
+fn collect_command_output(
+    mut child: std::process::Child,
+    readers: CommandOutputReaders,
+    program: &str,
+    args: Vec<String>,
+    error: Option<String>,
+) -> CommandExecution {
+    let status = match child.wait() {
+        Ok(status) => status,
+        Err(wait_error) => {
+            return command_failure(
+                program,
+                args,
+                match error {
+                    Some(error) => {
+                        format!("{error}; failed to collect command output: {wait_error}")
+                    }
+                    None => wait_error.to_string(),
                 },
-                stdout: Vec::new(),
-                stderr,
-            }
+            );
         }
+    };
+    let stdout = join_command_output_reader(readers.stdout, "stdout");
+    let stderr = join_command_output_reader(readers.stderr, "stderr");
+    let (stdout, mut stderr) = match (stdout, stderr) {
+        (Ok(stdout), Ok(stderr)) => (stdout, stderr),
+        (stdout, stderr) => {
+            let mut errors = Vec::with_capacity(2);
+            if let Err(error) = stdout {
+                errors.push(error);
+            }
+            if let Err(error) = stderr {
+                errors.push(error);
+            }
+            let reader_error = errors.join("; ");
+            let error = if let Some(error) = error {
+                format!("{error}; {reader_error}")
+            } else {
+                reader_error
+            };
+            return command_failure(program, args, error);
+        }
+    };
+    if let Some(error) = error.as_ref() {
+        stderr.extend_from_slice(error.as_bytes());
+        stderr.push(b'\n');
+    }
+    CommandExecution {
+        log: ExternalCommandLog {
+            program: program.to_string(),
+            args,
+            exit_code: status.code(),
+            success: error.is_none() && status.success(),
+            stdout_bytes: stdout.len(),
+            stderr_bytes: stderr.len(),
+            error,
+        },
+        stdout,
+        stderr,
+    }
+}
+
+fn join_command_output_reader(
+    reader: JoinHandle<std::io::Result<Vec<u8>>>,
+    stream: &'static str,
+) -> Result<Vec<u8>, String> {
+    match reader.join() {
+        Ok(Ok(output)) => Ok(output),
+        Ok(Err(error)) => Err(format!("failed to read command {stream}: {error}")),
+        Err(_) => Err(format!("command {stream} reader panicked")),
+    }
+}
+
+fn command_failure(program: &str, args: Vec<String>, error: String) -> CommandExecution {
+    let stderr = format!("{error}\n").into_bytes();
+    CommandExecution {
+        log: ExternalCommandLog {
+            program: program.to_string(),
+            args,
+            exit_code: None,
+            success: false,
+            stdout_bytes: 0,
+            stderr_bytes: stderr.len(),
+            error: Some(error),
+        },
+        stdout: Vec::new(),
+        stderr,
     }
 }

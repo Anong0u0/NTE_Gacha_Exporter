@@ -27,18 +27,43 @@ pub(crate) fn diagnostic_cancel(
     session_id: String,
 ) -> Result<DiagnosticStatus, ApiError> {
     let session = diagnostic_runtime_session(&state, &session_id)?;
+    request_diagnostic_cancel(&session);
+    diagnostic_status_inner(&state, &session_id)
+}
+
+fn request_diagnostic_cancel(session: &DiagnosticRuntimeSession) {
     session.cancel_requested.store(true, Ordering::SeqCst);
     {
-        let mut status = session.status.lock().map_err(|_| {
-            api_error_message("diagnostic_lock_poisoned", "diagnostic lock poisoned")
-        })?;
+        let mut status = session
+            .status
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if crate::lifecycle::is_active_state(&status.state) {
             crate::lifecycle::set_stopping(&mut status.state);
             status.stage = crate::lifecycle::STATE_STOPPING.to_string();
             status.updated_at = now_seconds();
         }
     }
-    diagnostic_status_inner(&state, &session_id)
+}
+
+pub(crate) fn request_diagnostic_shutdown(state: &AppState) -> Vec<Arc<DiagnosticRuntimeSession>> {
+    let sessions = state
+        .diagnostic_sessions
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .values()
+        .cloned()
+        .collect::<Vec<_>>();
+    for session in &sessions {
+        request_diagnostic_cancel(session);
+    }
+    sessions
+}
+
+pub(crate) fn join_diagnostic_shutdown(sessions: &[Arc<DiagnosticRuntimeSession>]) {
+    for session in sessions {
+        crate::lifecycle::join_thread(&session.handle);
+    }
 }
 
 pub(crate) fn start_diagnostic_session(
@@ -75,6 +100,9 @@ pub(crate) fn start_diagnostic_session(
         cancel_requested: Arc::clone(&cancel_requested),
         handle: Mutex::new(None),
     });
+    let _registration = state.session_registration().ok_or_else(|| {
+        api_error_message("app_shutting_down", "application is shutting down")
+    })?;
     state
         .diagnostic_sessions
         .lock()

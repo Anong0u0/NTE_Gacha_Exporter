@@ -37,6 +37,22 @@ fn test_session(status: CaptureStatus) -> Arc<CaptureRuntimeSession> {
     })
 }
 
+pub(crate) fn shutdown_session_probe(
+    session_id: &str,
+    handle: JoinHandle<()>,
+) -> (Arc<CaptureRuntimeSession>, [Arc<AtomicBool>; 2]) {
+    let session = test_session(test_status(
+        session_id,
+        crate::lifecycle::STATE_RUNNING,
+        1.0,
+    ));
+    let stop = Arc::clone(&session.stop);
+    let attempt_stop = Arc::new(AtomicBool::new(false));
+    *session.attempt_stop.lock().unwrap() = Some(Arc::clone(&attempt_stop));
+    *session.handle.lock().unwrap() = Some(handle);
+    (session, [stop, attempt_stop])
+}
+
 fn test_meta() -> CaptureSessionMeta {
     CaptureSessionMeta {
         profile_name: "default".to_string(),

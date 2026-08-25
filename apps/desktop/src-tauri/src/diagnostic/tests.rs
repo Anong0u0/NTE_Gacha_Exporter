@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -154,6 +154,29 @@ mod tests {
     }
 
     #[test]
+    fn request_diagnostic_cancel_sets_flag_and_stopping_state() {
+        let runtime = diagnostic_session(diagnostic_status("diagnostic-active", "running", 1.0));
+
+        request_diagnostic_cancel(&runtime);
+
+        assert!(runtime.cancel_requested.load(Ordering::SeqCst));
+        let status = runtime.status.lock().unwrap();
+        assert_eq!(status.state, crate::lifecycle::STATE_STOPPING);
+        assert_eq!(status.stage, crate::lifecycle::STATE_STOPPING);
+    }
+
+    #[test]
+    fn join_diagnostic_shutdown_consumes_worker_handle() {
+        let runtime = diagnostic_session(diagnostic_status("diagnostic-active", "running", 1.0));
+        *runtime.handle.lock().unwrap() = Some(std::thread::spawn(|| {}));
+
+        join_diagnostic_shutdown(std::slice::from_ref(&runtime));
+
+        assert!(runtime.handle.lock().unwrap().is_none());
+    }
+
+
+    #[test]
     fn prune_diagnostic_session_map_treats_cancelled_as_terminal() {
         let mut sessions = std::collections::HashMap::from([(
             "cancelled".to_string(),
@@ -224,6 +247,123 @@ mod tests {
 
         assert!(capture_stop.load(Ordering::SeqCst));
         assert!(cancel_requested.load(Ordering::SeqCst));
+    }
+
+    const EXTERNAL_COMMAND_LARGE_OUTPUT_BYTES: usize = 256 * 1024;
+
+    #[test]
+    #[ignore]
+    fn external_command_large_output_child() {
+        let mut stdout = std::io::stdout().lock();
+        stdout
+            .write_all(&vec![b'o'; EXTERNAL_COMMAND_LARGE_OUTPUT_BYTES])
+            .unwrap();
+        stdout.flush().unwrap();
+        drop(stdout);
+
+        let mut stderr = std::io::stderr().lock();
+        stderr
+            .write_all(&vec![b'e'; EXTERNAL_COMMAND_LARGE_OUTPUT_BYTES])
+            .unwrap();
+        stderr.flush().unwrap();
+    }
+
+    #[test]
+    fn external_command_drains_large_stdout_and_stderr() {
+        let program = std::env::current_exe().unwrap();
+        let program = program.to_string_lossy();
+        let args = [
+            "--ignored",
+            "--exact",
+            "diagnostic::tests::external_command_large_output_child",
+            "--nocapture",
+        ];
+
+        let execution = run_command(&program, &args, None, Duration::from_secs(5));
+
+        assert!(execution.log.success, "{:?}", execution.log.error);
+        assert!(
+            execution
+                .stdout
+                .iter()
+                .filter(|&&byte| byte == b'o')
+                .count()
+                >= EXTERNAL_COMMAND_LARGE_OUTPUT_BYTES
+        );
+        assert!(
+            execution
+                .stderr
+                .iter()
+                .filter(|&&byte| byte == b'e')
+                .count()
+                >= EXTERNAL_COMMAND_LARGE_OUTPUT_BYTES
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn external_command_blocking_child() {
+        std::thread::sleep(Duration::from_secs(60));
+    }
+
+    #[test]
+    fn external_command_cancels_and_reaps_child() {
+        let program = std::env::current_exe().unwrap();
+        let program = program.to_string_lossy();
+        let args = [
+            "--ignored",
+            "--exact",
+            "diagnostic::tests::external_command_blocking_child",
+        ];
+        let cancel = Arc::new(AtomicBool::new(false));
+        let cancel_trigger = Arc::clone(&cancel);
+        let trigger = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            cancel_trigger.store(true, Ordering::SeqCst);
+        });
+        let started = Instant::now();
+
+        let execution = run_command(
+            &program,
+            &args,
+            Some(cancel.as_ref()),
+            Duration::from_secs(5),
+        );
+        trigger.join().unwrap();
+
+        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(!execution.log.success);
+        assert!(
+            execution
+                .log
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("command cancelled"))
+        );
+    }
+
+    #[test]
+    fn external_command_times_out_and_reaps_child() {
+        let program = std::env::current_exe().unwrap();
+        let program = program.to_string_lossy();
+        let args = [
+            "--ignored",
+            "--exact",
+            "diagnostic::tests::external_command_blocking_child",
+        ];
+        let started = Instant::now();
+
+        let execution = run_command(&program, &args, None, Duration::from_millis(50));
+
+        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(!execution.log.success);
+        assert!(
+            execution
+                .log
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("command timed out"))
+        );
     }
 
     trait IntoDiagnosticResultParts {
@@ -300,5 +440,19 @@ mod tests {
             cancel_requested: Arc::new(AtomicBool::new(false)),
             handle: Mutex::new(None),
         })
+    }
+
+    pub(crate) fn shutdown_session_probe(
+        session_id: &str,
+        handle: JoinHandle<()>,
+    ) -> (Arc<DiagnosticRuntimeSession>, Arc<AtomicBool>) {
+        let session = diagnostic_session(diagnostic_status(
+            session_id,
+            crate::lifecycle::STATE_RUNNING,
+            1.0,
+        ));
+        let cancel_requested = Arc::clone(&session.cancel_requested);
+        *session.handle.lock().unwrap() = Some(handle);
+        (session, cancel_requested)
     }
 }

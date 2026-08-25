@@ -1,10 +1,21 @@
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
+#[cfg(not(windows))]
 use std::thread;
 use std::time::Duration;
+#[cfg(not(windows))]
+use std::time::Instant;
+
+#[cfg(windows)]
+use windows_sys::Win32::{
+    Foundation::{CloseHandle, ERROR_INVALID_PARAMETER, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT},
+    System::Threading::{OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject},
+};
 
 use nte_update::{apply_staged_update, cleanup_update_artifacts_after_success};
+
+const APP_EXIT_TIMEOUT: Duration = Duration::from_secs(60);
 
 fn main() {
     let code = match run() {
@@ -19,7 +30,7 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = Args::parse(env::args().skip(1).collect())?;
-    wait_for_pid(args.app_pid);
+    wait_for_pid(args.app_pid, APP_EXIT_TIMEOUT)?;
     apply_staged_update(&args.root, &args.version).map_err(|error| error.to_string())?;
     let _ = cleanup_update_artifacts_after_success(&args.root);
     if args.relaunch {
@@ -78,26 +89,53 @@ impl Args {
     }
 }
 
-fn wait_for_pid(pid: u32) {
-    for _ in 0..120 {
-        if !pid_is_alive(pid) {
-            return;
+#[cfg(windows)]
+fn wait_for_pid(pid: u32, timeout: Duration) -> Result<(), String> {
+    let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, pid) };
+    if handle.is_null() {
+        let error = std::io::Error::last_os_error();
+        if error.raw_os_error() == Some(ERROR_INVALID_PARAMETER as i32) {
+            return Ok(());
         }
-        thread::sleep(Duration::from_millis(500));
+        return Err(format!(
+            "failed to wait for application process {pid}: {error}"
+        ));
+    }
+
+    let timeout_ms = timeout.as_millis().min(u128::from(u32::MAX)) as u32;
+    let wait = unsafe { WaitForSingleObject(handle, timeout_ms) };
+    let wait_error = (wait == WAIT_FAILED).then(std::io::Error::last_os_error);
+    let _ = unsafe { CloseHandle(handle) };
+
+    match wait {
+        WAIT_OBJECT_0 => Ok(()),
+        WAIT_TIMEOUT => Err(format!(
+            "timed out waiting for application process {pid} to exit"
+        )),
+        WAIT_FAILED => Err(format!(
+            "failed to wait for application process {pid}: {}",
+            wait_error.expect("WAIT_FAILED must preserve its OS error")
+        )),
+        other => Err(format!(
+            "failed to wait for application process {pid}: unexpected wait result {other}"
+        )),
     }
 }
 
-#[cfg(windows)]
-fn pid_is_alive(pid: u32) -> bool {
-    let output = Command::new("cmd")
-        .args(["/C", "tasklist", "/FI", &format!("PID eq {pid}")])
-        .output();
-    output.is_ok_and(|output| String::from_utf8_lossy(&output.stdout).contains(&pid.to_string()))
-}
-
 #[cfg(not(windows))]
-fn pid_is_alive(pid: u32) -> bool {
-    PathBuf::from(format!("/proc/{pid}")).exists()
+fn wait_for_pid(pid: u32, timeout: Duration) -> Result<(), String> {
+    let started = Instant::now();
+    loop {
+        if !PathBuf::from(format!("/proc/{pid}")).exists() {
+            return Ok(());
+        }
+        if started.elapsed() >= timeout {
+            return Err(format!(
+                "timed out waiting for application process {pid} to exit"
+            ));
+        }
+        thread::sleep(Duration::from_millis(500).min(timeout.saturating_sub(started.elapsed())));
+    }
 }
 
 fn launcher_exe_name() -> &'static str {
@@ -105,5 +143,39 @@ fn launcher_exe_name() -> &'static str {
         "nte-gacha-exporter.exe"
     } else {
         "nte-gacha-exporter"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn updater_wait_child() {}
+
+    #[test]
+    fn wait_for_pid_times_out_while_process_is_alive() {
+        let pid = std::process::id();
+
+        let error = wait_for_pid(pid, Duration::ZERO).unwrap_err();
+
+        assert_eq!(
+            error,
+            format!("timed out waiting for application process {pid} to exit")
+        );
+    }
+
+    #[test]
+    fn wait_for_pid_returns_after_process_exit() {
+        let executable = std::env::current_exe().unwrap();
+        let mut child = Command::new(executable)
+            .args(["--ignored", "--exact", "tests::updater_wait_child"])
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        assert!(child.wait().unwrap().success());
+
+        wait_for_pid(pid, Duration::from_secs(1)).unwrap();
     }
 }
