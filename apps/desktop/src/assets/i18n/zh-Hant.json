@@ -99,6 +99,7 @@
   "diagnostic.title": "抓包診斷",
   "diagnostic.verdict": "判定",
   "capture.autoPage": "自動翻頁",
+  "capture.autoPagePartial": "自動翻頁提前結束，共翻閱 {count} 頁",
   "capture.cancelled": "擷取已取消",
   "capture.completed": "擷取完成",
   "capture.decoded": "{count} 已解碼",

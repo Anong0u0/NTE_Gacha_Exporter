@@ -15,9 +15,11 @@ impl AutoPager {
             StatusEvent::new("page ready", "page")
                 .step(&step.status)
                 .pool(&pool)
-                .page(page.current, page.total),
+                .page_optional(page.current, page.total),
         );
         let mut visited_pages = 1_u32;
+        self.visited_pages_by_pool.insert(pool.clone(), visited_pages);
+        self.last_page_by_pool.insert(pool.clone(), page.current);
         if self.should_skip_pool(&pool, &step.status, &page)
             || self.apply_capture_control(&pool, &step.status, &page, visited_pages, false)?
         {
@@ -26,9 +28,10 @@ impl AutoPager {
                 skipped: true,
                 visited_pages,
                 last_page: page.current,
+                partial_reason: None,
             });
         }
-        while page.current < page.total {
+        while page.total.is_none_or(|total| page.current < total) {
             if self.should_stop() {
                 return Err(AutomationError::message("auto page stopped"));
             }
@@ -37,7 +40,7 @@ impl AutoPager {
                 StatusEvent::new("page next", "page")
                     .step(&step.status)
                     .pool(&pool)
-                    .page(expected, page.total),
+                    .page_optional(expected, page.total),
             );
             if self.apply_capture_control(&pool, &step.status, &page, expected, false)? {
                 return Ok(PoolPageRun {
@@ -45,20 +48,22 @@ impl AutoPager {
                     skipped: true,
                     visited_pages,
                     last_page: page.current,
+                    partial_reason: None,
                 });
             }
             match self.click_page_button(PageClickRequest {
                 page_rect,
                 point: next_button,
                 pool: &pool,
-                step: &step.status,
-                previous: page,
+                previous: page.clone(),
                 expected_page: expected,
-                visited_pages,
             })? {
                 PageClickOutcome::Changed(next_page) => {
                     page = next_page;
-                    visited_pages = page.current;
+                    visited_pages = visited_pages.saturating_add(1);
+                    self.visited_pages_by_pool
+                        .insert(pool.clone(), visited_pages);
+                    self.last_page_by_pool.insert(pool.clone(), page.current);
                     if self.should_skip_pool(&pool, &step.status, &page)
                         || self.apply_capture_control(
                             &pool,
@@ -73,15 +78,17 @@ impl AutoPager {
                             skipped: true,
                             visited_pages,
                             last_page: page.current,
+                            partial_reason: None,
                         });
                     }
                 }
-                PageClickOutcome::SkipPool(last_page) => {
+                PageClickOutcome::Partial(reason) => {
                     return Ok(PoolPageRun {
                         pool,
-                        skipped: true,
+                        skipped: false,
                         visited_pages,
-                        last_page: last_page.current,
+                        last_page: page.current,
+                        partial_reason: Some(reason),
                     });
                 }
             }
@@ -92,6 +99,7 @@ impl AutoPager {
             skipped: false,
             visited_pages,
             last_page: page.current,
+            partial_reason: None,
         })
     }
 
@@ -99,7 +107,7 @@ impl AutoPager {
         &mut self,
         pool: &str,
         step: &str,
-        page: &PageNumber,
+        page: &PageCursor,
         visited_pages: u32,
     ) -> AutomationResult<()> {
         let _ = self.apply_capture_control(pool, step, page, visited_pages, true)?;
@@ -107,12 +115,12 @@ impl AutoPager {
             StatusEvent::new("pool completed", "pool_completed")
                 .step(step)
                 .pool(pool)
-                .page(page.total, page.total),
+                .page_optional(page.current, page.total),
         );
         Ok(())
     }
 
-    fn should_skip_pool(&mut self, pool: &str, step: &str, page: &PageNumber) -> bool {
+    fn should_skip_pool(&mut self, pool: &str, step: &str, page: &PageCursor) -> bool {
         if self.options.full_update
             || self.options.known_record_keys.is_empty()
             || self.options.record_snapshot.is_none()
@@ -130,7 +138,7 @@ impl AutoPager {
                     StatusEvent::new("known records found; skipping pool", "pool_skipped")
                         .step(step)
                         .pool(pool)
-                        .page(page.current, page.total)
+                        .page_optional(page.current, page.total)
                         .technical_detail(&format!("duplicate_records={duplicate_count}")),
                 );
                 return true;
@@ -160,7 +168,7 @@ impl AutoPager {
         &mut self,
         pool: &str,
         step: &str,
-        page: &PageNumber,
+        page: &PageCursor,
         visited_pages: u32,
         pool_complete: bool,
     ) -> AutomationResult<bool> {
@@ -180,7 +188,7 @@ impl AutoPager {
                         StatusEvent::new("known records found; skipping pool", "pool_skipped")
                             .step(step)
                             .pool(pool)
-                            .page(page.current, page.total)
+                            .page_optional(page.current, page.total)
                             .technical_detail(&format!("duplicate_records={duplicate_records}")),
                     );
                     return Ok(true);
@@ -211,7 +219,7 @@ impl AutoPager {
                     self.status(
                         StatusEvent::new("capture window waiting", "diagnostic")
                             .pool(pool)
-                            .page(page.current, page.total)
+                            .page_optional(page.current, page.total)
                             .technical_detail(&capture_wait_detail(
                                 decoded_pages,
                                 max_visited_pages,
@@ -229,7 +237,7 @@ impl AutoPager {
         &self,
         pool: &str,
         step: &str,
-        page: &PageNumber,
+        page: &PageCursor,
         visited_pages: u32,
         pool_complete: bool,
     ) -> AutoPageControlDecision {

@@ -99,6 +99,7 @@
   "diagnostic.title": "Capture diagnostic",
   "diagnostic.verdict": "Verdict",
   "capture.autoPage": "Auto page",
+  "capture.autoPagePartial": "Auto page ended early after {count} pages",
   "capture.cancelled": "Capture cancelled",
   "capture.completed": "Capture completed",
   "capture.decoded": "{count} decoded",

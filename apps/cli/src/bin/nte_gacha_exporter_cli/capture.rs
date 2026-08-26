@@ -218,30 +218,36 @@ fn run_auto_capture(context: AutoCaptureContext) -> CliResult<()> {
 
     let mut options = AutoPageOptions::new(pid, Arc::clone(&stop));
     options.full_update = true;
-    options.non_interactive = true;
     options.tooltip = false;
     options.labels = auto_page_labels(&locale);
     options.on_status = Some(Arc::new(print_auto_status));
     let auto_result = run_auto_page(options);
     println!(
         "auto_page={} message={}",
-        auto_result.status, auto_result.message
+        auto_result.outcome.as_str(), auto_result.message
     );
-    if auto_result.succeeded() {
-        stop.store(true, Ordering::SeqCst);
-    }
+    stop.store(true, Ordering::SeqCst);
 
     let capture_result = handle
         .join()
         .map_err(|_| CliError::new(2, "capture worker panicked"))?
         .map_err(capture_error)?;
     export_capture_rows(&capture_result.rows, &locale, &json, Some(&csv))?;
-    println!("records={}", capture_result.rows.len());
+    let record_count = capture_result.rows.len();
+    println!("records={record_count}");
     print_paths(&json, Some(&csv), output_raw.as_deref());
-    if auto_result.succeeded() {
-        Ok(())
-    } else {
-        Err(CliError::new(2, auto_result.message))
+    match auto_result.outcome {
+        AutoPageOutcome::Completed | AutoPageOutcome::Cancelled => Ok(()),
+        AutoPageOutcome::Partial if record_count > 0 => {
+            eprintln!(
+                "warning: auto page ended early; preserved {} visited pages and {record_count} records",
+                auto_result.visited_pages()
+            );
+            Ok(())
+        }
+        AutoPageOutcome::Partial | AutoPageOutcome::Failed => {
+            Err(CliError::new(2, auto_result.message))
+        }
     }
 }
 

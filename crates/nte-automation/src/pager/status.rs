@@ -34,9 +34,9 @@ impl<'a> StatusEvent<'a> {
         self
     }
 
-    fn page(mut self, current_page: u32, total_pages: u32) -> Self {
+    fn page_optional(mut self, current_page: u32, total_pages: Option<u32>) -> Self {
         self.current_page = Some(current_page);
-        self.total_pages = Some(total_pages);
+        self.total_pages = total_pages;
         self
     }
 

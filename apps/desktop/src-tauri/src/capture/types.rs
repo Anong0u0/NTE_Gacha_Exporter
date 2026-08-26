@@ -11,7 +11,8 @@ use std::time::{Duration, Instant};
 use nte_automation::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageOptions as AutomationOptions,
-    AutoPageResult as AutoPageRunResult, AutoPageStatus as AutomationStatus, run_auto_page,
+    AutoPageOutcome, AutoPageResult as AutoPageRunResult, AutoPageStatus as AutomationStatus,
+    run_auto_page,
 };
 use nte_capture::{
     CaptureAttemptSummary, CaptureBackend, CaptureOptions, CaptureRecordBuilder, CaptureStrategy,

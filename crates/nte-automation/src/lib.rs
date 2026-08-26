@@ -14,8 +14,15 @@ pub use home::restore_game_home;
 pub use model::{
     AUTO_PAGE_INCREMENTAL_DUPLICATE_RECORD_THRESHOLD, AutoPageControlContext,
     AutoPageControlDecision, AutoPageDiagnostics, AutoPageInputDiagnostics, AutoPageOptions,
-    AutoPageResult, AutoPageStatus, MouseButton, MouseClickDiagnostics, PageNumber, Point,
-    RecordSnapshot, Rect, Size, TemplateMatch, TemplateTransitionDiagnostics,
+    AutoPageOutcome, AutoPageRecoveryDiagnostics, AutoPageResult, AutoPageStatus,
+    AutoPageStopReason, MouseButton, MouseClickDiagnostics, OcrCandidateDiagnostics,
+    OcrFieldDiagnostics, OcrReadDiagnostics, OcrSegmentationDiagnostics, PageNumber,
+    PageTransitionDiagnostics, Point, RecordSnapshot, Rect, Size, TemplateMatch,
+    TemplateTransitionDiagnostics,
+};
+pub use ocr::{
+    NumberCandidate, NumberObservation, ObservationState, PageFingerprint, PageNumberReader,
+    PageObservation, PageReadConstraint,
 };
 pub use pager::run_auto_page;
 pub use profile::{AutomationProfile, load_profile};

@@ -109,7 +109,7 @@ fn control_context(pool: &str, visited_pages: u32) -> AutoPageControlContext {
         pool: pool.to_string(),
         step: "test".to_string(),
         current_page: visited_pages,
-        total_pages: 50,
+        total_pages: Some(50),
         visited_pages,
         pool_complete: false,
     }

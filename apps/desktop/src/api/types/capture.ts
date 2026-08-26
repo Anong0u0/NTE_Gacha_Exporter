@@ -30,18 +30,49 @@ type CaptureAttemptSummary = {
   counters: CaptureCounters;
 };
 
-type AutoPageStatus = {
-  state: string;
+type AutoPageErrorSummary = {
+  code: string;
+  message: string;
+};
+
+type AutoPageRunningStatus = {
+  state: "running";
   message: string;
   kind: string;
-  step?: string | null;
-  pool?: string | null;
-  current_page?: number | null;
-  total_pages?: number | null;
-  technical_detail?: string | null;
-  completed_pools?: string[];
-  skipped_pools?: string[];
+  step: string | null;
+  pool: string | null;
+  current_page: number | null;
+  total_pages: number | null;
+  technical_detail: string;
+  elapsed_seconds: number;
 };
+
+type AutoPageDrainingStatus = {
+  state: "draining";
+  message: string;
+  kind: "draining";
+  required_pages_by_pool: Record<string, number>;
+  decoded_pages_by_pool: Record<string, number>;
+  missing_pages_by_pool: Record<string, number>;
+  last_decoded_at: number | null;
+};
+
+type AutoPageTerminalStatus = {
+  state: "completed" | "partial" | "failed" | "cancelled";
+  message: string;
+  reason: AutoPageErrorSummary | null;
+  capture_drain_warning: AutoPageErrorSummary | null;
+  completed_pools: string[];
+  skipped_pools: string[];
+  visited_pages: number;
+  visited_pages_by_pool: Record<string, number>;
+  last_page_by_pool: Record<string, number>;
+};
+
+export type AutoPageStatus =
+  | AutoPageRunningStatus
+  | AutoPageDrainingStatus
+  | AutoPageTerminalStatus;
 
 export type CaptureStatus = {
   session_id: string;
@@ -54,7 +85,7 @@ export type CaptureStatus = {
   started_at: number;
   updated_at: number;
   target?: CaptureTarget | null;
-  auto_page?: AutoPageStatus | null;
+  auto_page: AutoPageStatus | null;
   raw_path?: string | null;
   error?: {
     code: string;

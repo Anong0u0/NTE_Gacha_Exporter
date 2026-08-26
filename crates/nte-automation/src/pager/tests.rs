@@ -7,6 +7,7 @@ mod tests {
         mpsc,
     };
 
+    use crate::{NumberCandidate, NumberObservation, ObservationState};
 
     #[test]
     fn record_pool_maps_capture_records_to_workflow_pools() {
@@ -169,10 +170,10 @@ mod tests {
             .complete_pool(
                 "standard",
                 "standardStep",
-                &PageNumber {
+                &PageCursor {
                     current: 59,
-                    total: 59,
-                    text: "59/59".to_string(),
+                    total: Some(59),
+                    fingerprint: fingerprint(&[0], &[0]),
                 },
                 59,
             )
@@ -528,6 +529,230 @@ mod tests {
             tooltip: AutomationTooltip::new(false),
             started_at: Instant::now(),
             diagnostics: AutoPageDiagnostics::default(),
+            completed_pools: Vec::new(),
+            skipped_pools: Vec::new(),
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
+        }
+    }
+
+    #[test]
+    fn stable_page_total_requires_consecutive_valid_samples() {
+        let mut total = StablePageTotal::default();
+        total.observe(Some(191), 1);
+        assert_eq!(total.confirmed(), None);
+        total.observe(Some(191), 1);
+        assert_eq!(total.confirmed(), Some(191));
+
+        total.observe(Some(190), 1);
+        assert_eq!(total.confirmed(), None);
+        total.observe(None, 1);
+        total.observe(Some(191), 1);
+        assert_eq!(total.confirmed(), None);
+        total.observe(Some(55), 56);
+        assert_eq!(total.confirmed(), None);
+    }
+
+    #[test]
+    fn advancing_page_preserves_authoritative_total() {
+        for total in [None, Some(191)] {
+            let previous = PageCursor {
+                current: 55,
+                total,
+                fingerprint: fingerprint(&[0], &[0]),
+            };
+
+            let next = previous.advance(56, fingerprint(&[1], &[0]));
+
+            assert_eq!(next.current, 56);
+            assert_eq!(next.total, total);
+        }
+    }
+
+    #[test]
+    fn unchanged_fingerprint_never_confirms_transition() {
+        let baseline = fingerprint(&[0, 0, 0, 0], &[0, 0, 0, 0]);
+        let mut tracker = PageTransitionTracker::new();
+
+        assert_eq!(
+            tracker.observe(&baseline, &baseline),
+            PageTransitionProgress::Waiting
+        );
+        assert_eq!(
+            tracker.observe(&baseline, &baseline),
+            PageTransitionProgress::Waiting
+        );
+        assert_eq!(tracker.finish(), PageTransitionTerminal::Unchanged);
+    }
+
+    #[test]
+    fn changed_fingerprint_requires_two_consecutive_stable_samples() {
+        let baseline = fingerprint(&[0, 0, 0, 0], &[0, 0, 0, 0]);
+        let changed = fingerprint(&[1, 1, 0, 0], &[0, 0, 0, 0]);
+        let mut tracker = PageTransitionTracker::new();
+
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Candidate
+        );
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Confirmed
+        );
+    }
+
+    #[test]
+    fn animation_frame_breaks_changed_stability_and_disables_retry() {
+        let baseline = fingerprint(&[0, 0, 0, 0], &[0, 0, 0, 0]);
+        let changed = fingerprint(&[1, 1, 0, 0], &[0, 0, 0, 0]);
+        let animation = fingerprint(&[1, 0, 1, 0], &[1, 0, 0, 0]);
+        let mut tracker = PageTransitionTracker::new();
+
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Candidate
+        );
+        assert_eq!(
+            tracker.observe(&baseline, &animation),
+            PageTransitionProgress::Waiting
+        );
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Candidate
+        );
+        assert_eq!(tracker.finish(), PageTransitionTerminal::Indeterminate);
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Confirmed
+        );
+    }
+
+    #[test]
+    fn suffix_change_never_confirms_page_transition() {
+        let baseline = fingerprint(&[0, 0, 0, 0], &[0, 0, 0, 0]);
+        let wrong_suffix = fingerprint(&[1, 1, 0, 0], &[1, 0, 0, 0]);
+        let mut tracker = PageTransitionTracker::new();
+
+        assert_eq!(
+            tracker.observe(&baseline, &wrong_suffix),
+            PageTransitionProgress::Waiting
+        );
+        assert_eq!(
+            tracker.observe(&baseline, &wrong_suffix),
+            PageTransitionProgress::Waiting
+        );
+
+        assert_eq!(tracker.finish(), PageTransitionTerminal::Indeterminate);
+    }
+
+    #[test]
+    fn missing_fingerprint_disables_click_retry() {
+        let baseline = fingerprint(&[0, 0, 0, 0], &[0, 0, 0, 0]);
+        let changed = fingerprint(&[1, 1, 0, 0], &[0, 0, 0, 0]);
+        let mut tracker = PageTransitionTracker::new();
+
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Candidate
+        );
+        tracker.observe_missing();
+        assert_eq!(
+            tracker.observe(&baseline, &changed),
+            PageTransitionProgress::Candidate
+        );
+
+        assert_eq!(tracker.finish(), PageTransitionTerminal::Indeterminate);
+    }
+
+    #[test]
+    fn ocr_validation_never_supplies_navigation_state() {
+        let expected = page_observation(
+            56,
+            191,
+            ObservationState::Confident,
+            ObservationState::Confident,
+        );
+        let wrong_current = page_observation(
+            88,
+            191,
+            ObservationState::Confident,
+            ObservationState::Confident,
+        );
+        let impossible_total = page_observation(
+            56,
+            50,
+            ObservationState::Confident,
+            ObservationState::Confident,
+        );
+        let ambiguous_current = page_observation(
+            56,
+            191,
+            ObservationState::Ambiguous,
+            ObservationState::Confident,
+        );
+        let ambiguous_total = page_observation(
+            56,
+            191,
+            ObservationState::Confident,
+            ObservationState::Ambiguous,
+        );
+
+        assert_eq!(
+            page_ocr_validation(&expected, 56, Some(191)),
+            PageOcrValidation::Matches
+        );
+        assert_eq!(
+            page_ocr_validation(&wrong_current, 56, Some(191)),
+            PageOcrValidation::Mismatch
+        );
+        assert_eq!(
+            page_ocr_validation(&impossible_total, 56, None),
+            PageOcrValidation::Mismatch
+        );
+        assert_eq!(
+            page_ocr_validation(&expected, 56, Some(190)),
+            PageOcrValidation::Mismatch
+        );
+        assert_eq!(
+            page_ocr_validation(&ambiguous_current, 56, Some(191)),
+            PageOcrValidation::Ambiguous
+        );
+        assert_eq!(
+            page_ocr_validation(&ambiguous_total, 56, Some(191)),
+            PageOcrValidation::Ambiguous
+        );
+    }
+
+    fn fingerprint(current: &[u8], suffix: &[u8]) -> PageFingerprint {
+        PageFingerprint {
+            current_mask: current.to_vec(),
+            suffix_mask: suffix.to_vec(),
+        }
+    }
+
+    fn page_observation(
+        current: u32,
+        total: u32,
+        current_state: ObservationState,
+        total_state: ObservationState,
+    ) -> PageObservation {
+        PageObservation {
+            slash: ObservationState::Confident,
+            current: NumberObservation {
+                state: current_state,
+                candidates: vec![NumberCandidate {
+                    value: current,
+                    score: 0.9,
+                }],
+            },
+            total: NumberObservation {
+                state: total_state,
+                candidates: vec![NumberCandidate {
+                    value: total,
+                    score: 0.9,
+                }],
+            },
+            fingerprint: Some(fingerprint(&[0], &[0])),
         }
     }
 

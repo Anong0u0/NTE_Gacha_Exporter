@@ -140,9 +140,9 @@ function onWinDivertBackendChange(event: Event) {
                   <span v-if="app.captureStatus.counters.duplicate_packets">{{ app.t("capture.duplicates", { count: app.captureStatus.counters.duplicate_packets }) }}</span>
                 </div>
                 <div v-if="app.autoPageStatusLine" class="capture-target">{{ app.autoPageStatusLine }}</div>
-                <div v-if="app.captureStatus.auto_page" class="capture-stats">
-                  <span>{{ app.t("capture.poolsDone", { count: app.captureStatus.auto_page.completed_pools?.length ?? 0 }) }}</span>
-                  <span>{{ app.t("capture.poolsSkipped", { count: app.captureStatus.auto_page.skipped_pools?.length ?? 0 }) }}</span>
+                <div v-if="app.autoPagePoolSummary" class="capture-stats">
+                  <span>{{ app.t("capture.poolsDone", { count: app.autoPagePoolSummary.completed }) }}</span>
+                  <span>{{ app.t("capture.poolsSkipped", { count: app.autoPagePoolSummary.skipped }) }}</span>
                 </div>
                 <div v-if="app.captureStatus.raw_path" class="capture-target">{{ app.t("capture.rawPath") }} · {{ app.captureStatus.raw_path }}</div>
                 <div v-if="app.captureStatus.error?.support_path" class="capture-target">support · {{ app.captureStatus.error.support_path }}</div>

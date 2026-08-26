@@ -1,4 +1,18 @@
 impl AutoPager {
+    fn record_page_transition(&mut self, diagnostics: PageTransitionDiagnostics) {
+        const MAX_PAGE_TRANSITIONS: usize = 16;
+        self.diagnostics.recovery.transitions.push(diagnostics);
+        let extra = self
+            .diagnostics
+            .recovery
+            .transitions
+            .len()
+            .saturating_sub(MAX_PAGE_TRANSITIONS);
+        if extra > 0 {
+            self.diagnostics.recovery.transitions.drain(0..extra);
+        }
+    }
+
     fn record_template_match(&mut self, matched: TemplateMatch) {
         const MAX_TEMPLATE_MATCHES: usize = 8;
         self.diagnostics.visual.last_template_matches.push(matched);

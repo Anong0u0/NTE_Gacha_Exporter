@@ -13,6 +13,10 @@ impl AutoPager {
             matcher: ImageTemplateMatcher::new(scaled_profile.clone()),
             profile: scaled_profile,
             started_at: Instant::now(),
+            completed_pools: Vec::new(),
+            skipped_pools: Vec::new(),
+            visited_pages_by_pool: BTreeMap::new(),
+            last_page_by_pool: BTreeMap::new(),
             diagnostics: AutoPageDiagnostics {
                 window: Some(AutoPageWindowDiagnostics {
                     hwnd: window.hwnd,
@@ -38,10 +42,6 @@ impl AutoPager {
     }
 
     fn run(&mut self) -> AutomationResult<AutoPageResult> {
-        let mut completed = Vec::new();
-        let mut skipped = Vec::new();
-        let mut visited_pages_by_pool = BTreeMap::new();
-        let mut last_page_by_pool = BTreeMap::new();
         self.status(StatusEvent::new("auto page started", "started").step("started"));
         self.focus_window()?;
         for step in self.profile.workflow.clone() {
@@ -49,22 +49,55 @@ impl AutoPager {
                 return Err(AutomationError::message("auto page stopped"));
             }
             if let Some(result) = self.run_step(&step)? {
-                visited_pages_by_pool.insert(result.pool.clone(), result.visited_pages);
-                last_page_by_pool.insert(result.pool.clone(), result.last_page);
+                self.visited_pages_by_pool
+                    .insert(result.pool.clone(), result.visited_pages);
+                self.last_page_by_pool
+                    .insert(result.pool.clone(), result.last_page);
+                if let Some(reason) = result.partial_reason {
+                    self.status(
+                        StatusEvent::new("auto page ended with partial data", "partial")
+                            .pool(&result.pool)
+                            .page_optional(result.last_page, None),
+                    );
+                    return Ok(self.result(
+                        crate::model::AutoPageOutcome::Partial,
+                        reason.message.clone(),
+                        Some(reason),
+                    ));
+                }
                 if result.skipped {
-                    skipped.push(result.pool);
+                    self.skipped_pools.push(result.pool.clone());
                 } else {
-                    completed.push(result.pool);
+                    self.completed_pools.push(result.pool.clone());
                 }
             }
         }
         self.status(StatusEvent::new("auto page completed", "completed").step("completed"));
-        Ok(AutoPageResult::completed_with_pages(
-            completed,
-            skipped,
-            visited_pages_by_pool,
-            last_page_by_pool,
+        Ok(self.result(
+            crate::model::AutoPageOutcome::Completed,
+            "auto page completed".to_string(),
+            None,
         ))
+    }
+
+    fn result(
+        &self,
+        outcome: crate::model::AutoPageOutcome,
+        message: String,
+        reason: Option<AutoPageStopReason>,
+    ) -> AutoPageResult {
+        let mut diagnostics = self.diagnostics.clone();
+        diagnostics.recovery.terminal_reason = reason.clone();
+        AutoPageResult {
+            outcome,
+            message,
+            reason,
+            completed_pools: self.completed_pools.clone(),
+            skipped_pools: self.skipped_pools.clone(),
+            visited_pages_by_pool: self.visited_pages_by_pool.clone(),
+            last_page_by_pool: self.last_page_by_pool.clone(),
+            diagnostics,
+        }
     }
 
     fn run_step(&mut self, step: &WorkflowStep) -> AutomationResult<Option<PoolPageRun>> {

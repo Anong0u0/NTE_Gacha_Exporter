@@ -232,14 +232,13 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         };
         let mut options = AutomationOptions::new(pid, Arc::clone(&attempt_stop));
         options.full_update = mode.full_update();
-        options.non_interactive = true;
         options.labels = auto_page_labels(&locale);
         apply_capture_start_options(&mut options, &start_options);
         options.control = Some(control);
         options.on_status = Some(auto_status_callback);
         let auto_result = run_auto_page(options);
         let drain_error = auto_result
-            .succeeded()
+            .usable()
             .then(|| {
                 wait_for_capture_drain(
                     &runtime,
@@ -257,12 +256,19 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
             .map_err(|_| "capture worker panicked".to_string())
             .and_then(|result| result);
         extend_attempts_from_result(&mut attempts, &capture_result);
-        final_auto_page = Some(auto_page_result_value(&auto_result));
-        final_error = if auto_result.succeeded() {
-            drain_error
+        let has_records = capture_result
+            .as_ref()
+            .is_ok_and(|result| !result.rows.is_empty());
+        let capture_drain_warning = if auto_result.outcome == AutoPageOutcome::Partial && has_records {
+            drain_error.as_ref()
         } else {
-            Some(auto_page_runtime_error(&auto_result.message))
+            None
         };
+        final_auto_page = Some(auto_page_result_value(
+            &auto_result,
+            capture_drain_warning,
+        ));
+        final_error = auto_page_terminal_error(&auto_result, drain_error, has_records);
         final_capture_result = apply_attempts_to_result(capture_result, &attempts);
         final_auto_result = Some(auto_result);
     }
@@ -286,6 +292,21 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         },
     );
     finish_auto_page_terminal(pid, stopped_by_user, &app);
+}
+
+fn auto_page_terminal_error(
+    result: &AutoPageRunResult,
+    drain_error: Option<RuntimeError>,
+    has_records: bool,
+) -> Option<RuntimeError> {
+    match result.outcome {
+        AutoPageOutcome::Partial if has_records => None,
+        AutoPageOutcome::Completed => drain_error,
+        AutoPageOutcome::Partial | AutoPageOutcome::Failed => {
+            drain_error.or_else(|| Some(auto_page_runtime_error(&result.message)))
+        }
+        AutoPageOutcome::Cancelled => None,
+    }
 }
 
 fn capture_strategy_for_start(

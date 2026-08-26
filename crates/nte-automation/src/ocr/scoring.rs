@@ -23,6 +23,15 @@ impl GlyphClassifier for PageNumberReader {
         scores.truncate(5);
         scores
     }
+
+    fn score_glyph(&self, target: &TargetMask, slot: GlyphSlot, ch: char) -> f32 {
+        self.template_indices_by_char
+            .get(&ch)
+            .into_iter()
+            .flatten()
+            .map(|index| score_template_slot(&self.templates[*index], target, slot))
+            .fold(0.0_f32, f32::max)
+    }
 }
 
 fn score_template_slot(template: &GlyphTemplate, target: &TargetMask, slot: GlyphSlot) -> f32 {

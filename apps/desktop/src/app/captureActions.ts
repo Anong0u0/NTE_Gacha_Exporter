@@ -172,7 +172,10 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
         deps.lastReport.value = status.import_report;
       }
       await deps.refreshAll();
-      deps.statusText.value = status.import_report ? deps.t("status.captureMerged") : deps.t("status.captureCompleted");
+      const preservedPages = partialAutoPageVisitedPages(status);
+      deps.statusText.value = preservedPages === null
+        ? status.import_report ? deps.t("status.captureMerged") : deps.t("status.captureCompleted")
+        : deps.t("capture.autoPagePartial", { count: preservedPages });
       if (status.target?.interface === "windivert") {
         deps.captureWinDivertBackendEnabled.value = true;
       }
@@ -259,6 +262,11 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
       default:
         return null;
     }
+  }
+
+  function partialAutoPageVisitedPages(status: CaptureStatus) {
+    const auto = status.auto_page;
+    return auto?.state === "partial" ? auto.visited_pages : null;
   }
 
   function windivertUnavailableRecovery(technicalDetail: string): CaptureRecoveryState {

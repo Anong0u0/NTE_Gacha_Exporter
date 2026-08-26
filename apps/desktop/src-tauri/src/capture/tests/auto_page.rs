@@ -596,12 +596,16 @@ fn capture_drain_does_not_require_skipped_pool_pages() {
     visited.insert("standard".to_string(), 10);
     let mut last = BTreeMap::new();
     last.insert("standard".to_string(), 10);
-    let auto_result = AutoPageRunResult::completed_with_pages(
-        Vec::new(),
-        vec!["standard".to_string()],
-        visited,
-        last,
-    );
+    let auto_result = AutoPageRunResult {
+        outcome: AutoPageOutcome::Completed,
+        message: "auto page completed".to_string(),
+        reason: None,
+        completed_pools: Vec::new(),
+        skipped_pools: vec!["standard".to_string()],
+        visited_pages_by_pool: visited,
+        last_page_by_pool: last,
+        diagnostics: AutoPageDiagnostics::default(),
+    };
 
     assert!(
         wait_for_capture_drain(

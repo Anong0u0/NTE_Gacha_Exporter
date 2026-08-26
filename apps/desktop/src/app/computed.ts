@@ -107,12 +107,23 @@ export function createAppComputed(deps: ComputedDeps) {
   const autoPageStatusLine = computed(() => {
     const auto = deps.captureStatus.value?.auto_page;
     if (!auto) return "";
-    const page =
-      auto.current_page && auto.total_pages
-        ? ` ${deps.t("capture.page", { current: auto.current_page, total: auto.total_pages })}`
-        : "";
+    if (auto.state === "partial") {
+      return deps.t("capture.autoPagePartial", { count: auto.visited_pages });
+    }
+    if (auto.state !== "running") return auto.message;
+    const page = auto.current_page !== null && auto.total_pages !== null
+      ? ` ${deps.t("capture.page", { current: auto.current_page, total: auto.total_pages })}`
+      : "";
     const pool = auto.pool ? ` ${auto.pool}` : "";
     return `${auto.message}${pool}${page}`;
+  });
+  const autoPagePoolSummary = computed(() => {
+    const auto = deps.captureStatus.value?.auto_page;
+    if (!auto || auto.state === "running" || auto.state === "draining") return null;
+    return {
+      completed: auto.completed_pools.length,
+      skipped: auto.skipped_pools.length,
+    };
   });
   const captureModeLabel = computed(() =>
     formatCaptureMode(deps.captureStatus.value?.mode ?? deps.captureMode.value, deps.t),
@@ -138,6 +149,7 @@ export function createAppComputed(deps: ComputedDeps) {
     captureTitle,
     captureSubtitle,
     autoPageStatusLine,
+    autoPagePoolSummary,
     captureModeLabel,
   };
 }

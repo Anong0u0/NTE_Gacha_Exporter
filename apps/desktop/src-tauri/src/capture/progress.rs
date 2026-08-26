@@ -357,13 +357,19 @@ fn auto_page_status_value(status: &AutomationStatus, state: &str) -> Value {
     })
 }
 
-fn auto_page_result_value(result: &AutoPageRunResult) -> Value {
+fn auto_page_result_value(
+    result: &AutoPageRunResult,
+    capture_drain_warning: Option<&RuntimeError>,
+) -> Value {
     json!({
-        "state": if result.succeeded() { "completed" } else { "failed" },
+        "state": result.outcome.as_str(),
         "message": result.message,
+        "reason": result.reason,
+        "capture_drain_warning": capture_drain_warning,
         "completed_pools": result.completed_pools,
         "skipped_pools": result.skipped_pools,
         "visited_pages_by_pool": result.visited_pages_by_pool,
         "last_page_by_pool": result.last_page_by_pool,
+        "visited_pages": result.visited_pages(),
     })
 }

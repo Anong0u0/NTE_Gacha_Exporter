@@ -1,6 +1,6 @@
 
 const SUPPORT_SCHEMA: &str = "nte-gacha-capture-support";
-const SUPPORT_SCHEMA_VERSION: u32 = 2;
+const SUPPORT_SCHEMA_VERSION: u32 = 3;
 const CAPTURE_SUPPORT_RETENTION_LIMIT: usize = 3;
 const SUPPORT_DATA_DIR: &str = "data";
 const SUPPORT_DIR: &str = "support";
@@ -376,12 +376,14 @@ fn support_report(
 
 fn auto_page_summary(result: &AutoPageRunResult) -> Value {
     json!({
-        "status": result.status,
+        "outcome": result.outcome,
         "message": result.message,
+        "reason": result.reason,
         "completed_pools": result.completed_pools,
         "skipped_pools": result.skipped_pools,
         "visited_pages_by_pool": result.visited_pages_by_pool,
         "last_page_by_pool": result.last_page_by_pool,
+        "visited_pages": result.visited_pages(),
     })
 }
 
@@ -392,6 +394,7 @@ fn auto_page_diagnostics(diagnostics: &AutoPageDiagnostics) -> Value {
         "visual": diagnostics.visual,
         "input": diagnostics.input,
         "ocr": diagnostics.ocr,
+        "recovery": diagnostics.recovery,
     })
 }
 

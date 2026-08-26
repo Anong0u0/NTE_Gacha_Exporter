@@ -110,40 +110,35 @@ pub struct AutoPageInputDiagnostics {
     pub last_click: Option<MouseClickDiagnostics>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct PageReadHintDiagnostics {
-    pub previous_current: Option<u32>,
-    pub expected_current: Option<u32>,
-    pub expected_total: Option<u32>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OcrCandidateDiagnostics {
+    pub value: u32,
+    pub score: f32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OcrAttemptDiagnostic {
-    pub candidate_index: usize,
-    pub size: Size,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub method: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pass: Option<String>,
-    pub text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub score: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub second_text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub second_score: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub margin: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub glyph_count: Option<usize>,
-    pub error: Option<String>,
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OcrFieldDiagnostics {
+    pub state: String,
+    pub margin: f32,
+    pub candidates: Vec<OcrCandidateDiagnostics>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct OcrReadDiagnostics {
-    pub hint: PageReadHintDiagnostics,
-    pub attempts: Vec<OcrAttemptDiagnostic>,
+    pub known_total: Option<u32>,
+    pub slash_score: Option<f32>,
+    pub slash_rect: Option<Rect>,
+    pub segmentation: Option<OcrSegmentationDiagnostics>,
+    pub current: OcrFieldDiagnostics,
+    pub total: OcrFieldDiagnostics,
     pub error: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OcrSegmentationDiagnostics {
+    pub target_rect: Rect,
+    pub current_components: Vec<Rect>,
+    pub total_components: Vec<Rect>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,6 +185,7 @@ pub struct AutoPageDiagnostics {
     pub visual: AutoPageVisualDiagnostics,
     pub input: AutoPageInputDiagnostics,
     pub ocr: Option<OcrReadDiagnostics>,
+    pub recovery: AutoPageRecoveryDiagnostics,
     #[serde(skip)]
     pub context_png: Option<Vec<u8>>,
     #[serde(skip)]
@@ -228,7 +224,7 @@ pub struct AutoPageControlContext {
     pub pool: String,
     pub step: String,
     pub current_page: u32,
-    pub total_pages: u32,
+    pub total_pages: Option<u32>,
     pub visited_pages: u32,
     pub pool_complete: bool,
 }
@@ -250,7 +246,6 @@ pub struct AutoPageOptions {
     pub pid: u32,
     pub stop: Arc<AtomicBool>,
     pub full_update: bool,
-    pub non_interactive: bool,
     pub tooltip: bool,
     pub known_record_keys: Vec<String>,
     pub labels: BTreeMap<String, String>,
@@ -270,7 +265,6 @@ impl AutoPageOptions {
             pid,
             stop,
             full_update: false,
-            non_interactive: false,
             tooltip: true,
             known_record_keys: Vec::new(),
             labels: BTreeMap::new(),
@@ -307,10 +301,61 @@ mod tests {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AutoPageOutcome {
+    Completed,
+    Partial,
+    Failed,
+    Cancelled,
+}
+
+impl AutoPageOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Completed => "completed",
+            Self::Partial => "partial",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutoPageStopReason {
+    pub code: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AutoPageRecoveryDiagnostics {
+    pub ocr_mismatches: u32,
+    pub ocr_ambiguous: u32,
+    pub click_retries: u32,
+    pub transition_timeouts: u32,
+    pub transitions: Vec<PageTransitionDiagnostics>,
+    pub terminal_reason: Option<AutoPageStopReason>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageTransitionDiagnostics {
+    pub pool: String,
+    pub from_page: u32,
+    pub expected_page: u32,
+    pub click_attempt: u32,
+    pub current_distance: f32,
+    pub suffix_distance: f32,
+    pub stable: bool,
+    pub accepted: bool,
+    pub observed_current: Option<u32>,
+    pub observed_total: Option<u32>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutoPageResult {
-    pub status: String,
+    pub outcome: AutoPageOutcome,
     pub message: String,
+    pub reason: Option<AutoPageStopReason>,
     pub completed_pools: Vec<String>,
     pub skipped_pools: Vec<String>,
     pub visited_pages_by_pool: BTreeMap<String, u32>,
@@ -320,61 +365,27 @@ pub struct AutoPageResult {
 }
 
 impl AutoPageResult {
-    pub fn completed(completed_pools: Vec<String>, skipped_pools: Vec<String>) -> Self {
-        Self::completed_with_pages(
-            completed_pools,
-            skipped_pools,
-            BTreeMap::new(),
-            BTreeMap::new(),
-        )
-    }
-
-    pub fn completed_with_pages(
-        completed_pools: Vec<String>,
-        skipped_pools: Vec<String>,
-        visited_pages_by_pool: BTreeMap<String, u32>,
-        last_page_by_pool: BTreeMap<String, u32>,
-    ) -> Self {
-        Self {
-            status: "completed".to_string(),
-            message: "auto page completed".to_string(),
-            completed_pools,
-            skipped_pools,
-            visited_pages_by_pool,
-            last_page_by_pool,
-            diagnostics: AutoPageDiagnostics::default(),
-        }
-    }
-
     pub fn failed(
         message: impl Into<String>,
         completed_pools: Vec<String>,
         skipped_pools: Vec<String>,
     ) -> Self {
+        let message = message.into();
+        let reason = AutoPageStopReason {
+            code: "automation_failed".to_string(),
+            message: message.clone(),
+        };
+        let mut diagnostics = AutoPageDiagnostics::default();
+        diagnostics.recovery.terminal_reason = Some(reason.clone());
         Self {
-            status: "failed".to_string(),
-            message: message.into(),
+            outcome: AutoPageOutcome::Failed,
+            message,
+            reason: Some(reason),
             completed_pools,
             skipped_pools,
             visited_pages_by_pool: BTreeMap::new(),
             last_page_by_pool: BTreeMap::new(),
-            diagnostics: AutoPageDiagnostics::default(),
-        }
-    }
-
-    pub fn manual(
-        message: impl Into<String>,
-        completed_pools: Vec<String>,
-        skipped_pools: Vec<String>,
-    ) -> Self {
-        Self {
-            status: "manual".to_string(),
-            message: message.into(),
-            completed_pools,
-            skipped_pools,
-            visited_pages_by_pool: BTreeMap::new(),
-            last_page_by_pool: BTreeMap::new(),
-            diagnostics: AutoPageDiagnostics::default(),
+            diagnostics,
         }
     }
 
@@ -382,11 +393,18 @@ impl AutoPageResult {
         message: impl Into<String>,
         completed_pools: Vec<String>,
         skipped_pools: Vec<String>,
-        diagnostics: AutoPageDiagnostics,
+        mut diagnostics: AutoPageDiagnostics,
     ) -> Self {
+        let message = message.into();
+        let reason = AutoPageStopReason {
+            code: "automation_failed".to_string(),
+            message: message.clone(),
+        };
+        diagnostics.recovery.terminal_reason = Some(reason.clone());
         Self {
-            status: "failed".to_string(),
-            message: message.into(),
+            outcome: AutoPageOutcome::Failed,
+            message,
+            reason: Some(reason),
             completed_pools,
             skipped_pools,
             visited_pages_by_pool: BTreeMap::new(),
@@ -395,28 +413,14 @@ impl AutoPageResult {
         }
     }
 
-    pub fn manual_with_diagnostics(
-        message: impl Into<String>,
-        completed_pools: Vec<String>,
-        skipped_pools: Vec<String>,
-        diagnostics: AutoPageDiagnostics,
-    ) -> Self {
-        Self {
-            status: "manual".to_string(),
-            message: message.into(),
-            completed_pools,
-            skipped_pools,
-            visited_pages_by_pool: BTreeMap::new(),
-            last_page_by_pool: BTreeMap::new(),
-            diagnostics,
-        }
+    pub fn usable(&self) -> bool {
+        matches!(
+            self.outcome,
+            AutoPageOutcome::Completed | AutoPageOutcome::Partial
+        )
     }
 
-    pub fn succeeded(&self) -> bool {
-        self.status == "completed"
-    }
-
-    pub fn manual_required(&self) -> bool {
-        self.status == "manual"
+    pub fn visited_pages(&self) -> u32 {
+        self.visited_pages_by_pool.values().copied().sum()
     }
 }

@@ -4,6 +4,7 @@ import type {
   CaptureMode,
   CaptureStartOptions,
   CaptureStatus,
+  AutoPageStatus,
   DashboardSelection,
   DiagnosticStatus,
   DiagnosticMode,
@@ -344,22 +345,47 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
       ports: [30230],
       bpf: "port 30230",
     },
-    auto_page:
-      mode === "live_only"
-        ? null
-        : {
-            state: completed ? "completed" : "running",
-            message: completed ? "auto page completed" : session?.polls ? "page next" : "auto page started",
-            kind: completed ? "completed" : "page",
-            pool: session?.polls ? "limited" : null,
-            current_page: session?.polls ? Math.min(2, session.polls + 1) : null,
-            total_pages: 3,
-            completed_pools: completed ? ["limited", "standard"] : [],
-            skipped_pools: mode === "auto_page_incremental" && completed ? ["fork"] : [],
-          },
+    auto_page: mockAutoPageStatus(mode, session?.polls ?? 0, completed),
     raw_path: rawPath,
     error: null,
     import_report: completed ? mockReport(profileName, mockCaptureSourceKind(mode), rawPath) : null,
+  };
+}
+
+function mockAutoPageStatus(
+  mode: CaptureMode,
+  polls: number,
+  completed: boolean,
+): AutoPageStatus | null {
+  if (mode === "live_only" || (!completed && polls === 0)) return null;
+  if (!completed) {
+    return {
+      state: "running",
+      message: "page next",
+      kind: "page",
+      step: "limitedBoardPages",
+      pool: "limited",
+      current_page: 2,
+      total_pages: 3,
+      technical_detail: "",
+      elapsed_seconds: 1,
+    };
+  }
+
+  const fullUpdate = mode === "auto_page_full";
+  const pagesByPool = fullUpdate
+    ? { limited: 3, standard: 3, fork: 3 }
+    : { limited: 3, standard: 3, fork: 1 };
+  return {
+    state: "completed",
+    message: "auto page completed",
+    reason: null,
+    capture_drain_warning: null,
+    completed_pools: fullUpdate ? ["limited", "standard", "fork"] : ["limited", "standard"],
+    skipped_pools: fullUpdate ? [] : ["fork"],
+    visited_pages: fullUpdate ? 9 : 7,
+    visited_pages_by_pool: pagesByPool,
+    last_page_by_pool: { ...pagesByPool },
   };
 }
 
@@ -393,14 +419,18 @@ function mockCaptureStalledStatus(
       bpf: "port 30230",
     },
     auto_page: {
-      state: "failed",
-      message: "capture window waiting",
-      kind: "diagnostic",
-      pool: "limited",
-      current_page: 2,
-      total_pages: 3,
+      state: "partial",
+      message: "auto page ended with partial data",
+      reason: {
+        code: "automation_interrupted",
+        message: "capture window stalled: pool=limited visited_pages=8 decoded_pages=1 max_visited_pages=7",
+      },
+      capture_drain_warning: null,
       completed_pools: [],
       skipped_pools: [],
+      visited_pages: 7,
+      visited_pages_by_pool: { limited: 7 },
+      last_page_by_pool: { limited: 7 },
     },
     raw_path: "data/runs/raw-mock.jsonl",
     error: {

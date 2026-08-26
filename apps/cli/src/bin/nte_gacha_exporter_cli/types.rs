@@ -18,7 +18,7 @@ use nte_assets::{
     AssetPackBuildOptions, DEFAULT_WEBP_QUALITY, asset_pack_source_from_git, build_asset_maps,
     build_assets_pack, find_assets_root,
 };
-use nte_automation::{AutoPageOptions, AutoPageStatus, run_auto_page};
+use nte_automation::{AutoPageOptions, AutoPageOutcome, AutoPageStatus, run_auto_page};
 use nte_capture::{
     CaptureBackend, CaptureOptions, CaptureProgress, CaptureRecordBuilder, CaptureStrategy,
     CaptureStrategyKind, ParsedRow, build_capture_document, candidate_ports, capture_doctor,

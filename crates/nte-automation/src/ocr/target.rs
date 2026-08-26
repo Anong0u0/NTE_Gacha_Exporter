@@ -1,4 +1,4 @@
-fn target_from_mask(mask: &[bool], image: &RgbaImage, threshold: u8) -> Option<TargetMask> {
+fn target_from_mask(mask: &[bool], image: &RgbaImage) -> Option<TargetMask> {
     let width = image.width();
     let height = image.height();
     let components = connected_components(mask, width, height)
@@ -69,7 +69,6 @@ fn target_from_mask(mask: &[bool], image: &RgbaImage, threshold: u8) -> Option<T
     }
 
     Some(TargetMask {
-        threshold,
         left,
         top,
         width: out_width,

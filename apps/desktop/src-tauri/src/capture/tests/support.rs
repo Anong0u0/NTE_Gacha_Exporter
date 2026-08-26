@@ -15,7 +15,7 @@ fn support_json_excludes_record_payloads_and_raw_contents() {
     let path = result.json_path.unwrap();
     let text = std::fs::read_to_string(path).unwrap();
     assert!(text.contains("nte-gacha-capture-support"));
-    assert!(text.contains("\"schema_version\": 2"));
+    assert!(text.contains("\"schema_version\": 3"));
     assert!(text.contains("raw_path_exists"));
     assert!(text.contains("\"raw_path_exists\": true"));
     assert!(!text.contains("private-record"));
