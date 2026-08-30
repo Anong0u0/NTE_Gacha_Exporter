@@ -69,6 +69,185 @@ fn prune_capture_session_maps_treats_cancelled_as_terminal() {
 }
 
 #[test]
+fn prune_capture_session_maps_treats_partial_as_terminal() {
+    let mut sessions = HashMap::from([(
+        "partial".to_string(),
+        test_session(test_status(
+            "partial",
+            crate::lifecycle::STATE_PARTIAL,
+            1.0,
+        )),
+    )]);
+    let mut captures = HashMap::from([("partial".to_string(), test_meta())]);
+
+    prune_capture_session_maps(&mut sessions, &mut captures, "other", 2_000.0);
+
+    assert!(!sessions.contains_key("partial"));
+    assert!(!captures.contains_key("partial"));
+}
+
+#[test]
+fn merge_gate_accepts_completed_and_partial_only() {
+    assert!(capture_state_can_merge(crate::lifecycle::STATE_COMPLETED));
+    assert!(capture_state_can_merge(crate::lifecycle::STATE_PARTIAL));
+    assert!(!capture_state_can_merge(crate::lifecycle::STATE_FAILED));
+    assert!(!capture_state_can_merge(crate::lifecycle::STATE_CANCELLED));
+}
+
+#[test]
+fn capture_import_failure_is_terminal_without_saved_document() {
+    let mut status = test_status("partial-import-failure", crate::lifecycle::STATE_PARTIAL, 1.0);
+    status.records_count = 155;
+    status.latest_records = vec![json!({ "record_id": "latest" })];
+    status.counters.decoded_packets = 155;
+    status.target = Some(json!({ "interface": "pktmon" }));
+    status.auto_page = Some(json!({ "state": "partial" }));
+    status.document = Some(json!({ "nte": { "list": [] } }));
+
+    apply_capture_import_failure(
+        &mut status,
+        &api_error_message("internal_error", "records write failed"),
+    );
+
+    assert_eq!(status.state, crate::lifecycle::STATE_FAILED);
+    assert_eq!(
+        status.error.as_ref().map(|error| error.code.as_str()),
+        Some("capture_import_failed")
+    );
+    assert_eq!(
+        status.error.as_ref().map(|error| error.message.as_str()),
+        Some("records write failed")
+    );
+    assert!(status.document.is_none());
+    assert!(status.import_report.is_none());
+    assert!(status.latest_records.is_empty());
+    assert_eq!(status.records_count, 155);
+    assert_eq!(status.counters.decoded_packets, 155);
+    assert_eq!(status.target, Some(json!({ "interface": "pktmon" })));
+    assert_eq!(status.auto_page, Some(json!({ "state": "partial" })));
+}
+
+#[test]
+fn partial_merge_imports_only_safe_pool_records_and_is_idempotent() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = nte_store::JsonStore::open(tmp.path()).unwrap();
+    let mut existing = capture_result("test", "port_filtered", "default", 1, 12);
+    existing.rows = vec![parsed_row("CardPool_NewRole", 100)];
+    let existing_text =
+        serde_json::to_string(&build_capture_document(&existing.rows, "en").unwrap()).unwrap();
+    store
+        .import_public_document("default", &existing_text, "test", None)
+        .unwrap();
+
+    let mut safe_row = parsed_row("CardPool_Character", 10);
+    safe_row.lottery_id = Some("Lottery_Unknown".to_string());
+    let unsafe_rows = (0..6)
+        .map(|index| parsed_row("CardPool_NewRole", index))
+        .collect::<Vec<_>>();
+    let mut partial_rows = vec![safe_row.clone()];
+    partial_rows.extend(unsafe_rows.clone());
+    let mut auto_result = auto_page_result(AutoPageOutcome::Partial);
+    auto_result.completed_pools = vec!["limited".to_string()];
+    let mergeable_rows = mergeable_auto_page_rows(&partial_rows, &auto_result);
+    assert_eq!(mergeable_rows.len(), 1);
+    let partial_text =
+        serde_json::to_string(&build_capture_document(&mergeable_rows, "en").unwrap()).unwrap();
+    let mut status = test_status("partial-merge", crate::lifecycle::STATE_PARTIAL, 1.0);
+    let mut meta = test_meta();
+
+    merge_capture_document_with_store(&store, &mut status, &mut meta, &partial_text).unwrap();
+
+    let report = status.import_report.as_ref().unwrap();
+    assert_eq!(report.records_inserted, 1);
+    assert_eq!(report.records_skipped, 0);
+    assert_eq!(meta.import_report.as_ref().unwrap().records_inserted, 1);
+    assert_eq!(
+        store
+            .list_records("default", "en", &nte_core::RecordFilter::default())
+            .unwrap()
+            .total,
+        2
+    );
+
+    let mut builder = CaptureRecordBuilder::new("en").unwrap();
+    let safe_record = builder.build_record(&safe_row);
+    let unsafe_records = builder.build_records(&unsafe_rows);
+    let known_keys = store.profile_record_keys("default").unwrap();
+    assert!(known_keys.contains(&safe_record.record_key));
+    for record in &unsafe_records {
+        assert!(!known_keys.contains(&record.record_key));
+    }
+
+    let snapshots = unsafe_records
+        .iter()
+        .enumerate()
+        .map(|(index, record)| {
+            capture_record(
+                &record.record_key,
+                "standard",
+                "monopoly:CardPool_NewRole",
+                0,
+                index as u32,
+            )
+        })
+        .collect::<Vec<_>>();
+    let coordinator = AutoPageCoordinator::new(false, &known_keys);
+    coordinator.add_progress(&progress_with_rows(Vec::new()), Some(&snapshots));
+    assert_eq!(
+        coordinator.decision(control_context("standard", 5)),
+        AutoPageControlDecision::Continue
+    );
+
+    status.import_report = None;
+    merge_capture_document_with_store(&store, &mut status, &mut meta, &partial_text).unwrap();
+
+    assert_eq!(status.import_report.as_ref().unwrap().records_inserted, 1);
+    assert_eq!(
+        store
+            .list_records("default", "en", &nte_core::RecordFilter::default())
+            .unwrap()
+            .total,
+        2
+    );
+}
+
+#[test]
+fn full_update_partial_merge_keeps_existing_records_and_creates_backup() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = nte_store::JsonStore::open(tmp.path()).unwrap();
+    let existing = capture_result("test", "port_filtered", "default", 1, 12);
+    let existing_text = serde_json::to_string(&build_capture_document(&existing.rows, "en").unwrap()).unwrap();
+    store
+        .import_public_document("default", &existing_text, "test", None)
+        .unwrap();
+
+    let partial = capture_result("test", "port_filtered", "default", 2, 12);
+    let partial_text = serde_json::to_string(&build_capture_document(&partial.rows, "en").unwrap()).unwrap();
+    let mut status = test_status("full-partial-merge", crate::lifecycle::STATE_PARTIAL, 1.0);
+    let mut meta = test_meta();
+    meta.full_update = true;
+
+    merge_capture_document_with_store(&store, &mut status, &mut meta, &partial_text).unwrap();
+
+    let report = status.import_report.as_ref().unwrap();
+    assert_eq!(report.records_inserted, 1);
+    assert_eq!(report.records_skipped, 1);
+    assert_eq!(
+        store
+            .list_records("default", "en", &nte_core::RecordFilter::default())
+            .unwrap()
+            .total,
+        2
+    );
+    let backup_count = std::fs::read_dir(tmp.path().join("data/backups"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "zip"))
+        .count();
+    assert_eq!(backup_count, 1);
+}
+
+#[test]
 fn request_capture_stop_sets_session_and_attempt_flags() {
     let session = test_session(test_status("active", crate::lifecycle::STATE_RUNNING, 1.0));
     let attempt_stop = Arc::new(AtomicBool::new(false));

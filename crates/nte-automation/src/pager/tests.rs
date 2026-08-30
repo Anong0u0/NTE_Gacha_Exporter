@@ -191,6 +191,43 @@ mod tests {
     }
 
     #[test]
+    fn pool_completion_stall_times_out_without_completed_status() {
+        let (event_tx, event_rx) = mpsc::channel();
+        let mut options = AutoPageOptions::new(42, Arc::new(AtomicBool::new(false)));
+        options.click_timeout = 0.001;
+        options.click_poll_interval = 0.0;
+        options.control = Some(Arc::new(move |context| {
+            assert!(context.pool_complete);
+            assert_eq!(context.pool, "standard");
+            assert_eq!(context.visited_pages, 59);
+            AutoPageControlDecision::WaitCapture {
+                decoded_pages: 55,
+                max_visited_pages: 55,
+            }
+        }));
+        options.on_status = Some(Arc::new(move |status| {
+            event_tx.send(status.kind).unwrap();
+        }));
+        let mut pager = control_test_pager(options);
+
+        let error = pager
+            .complete_pool(
+                "standard",
+                "standardStep",
+                &PageCursor {
+                    current: 59,
+                    total: Some(59),
+                    fingerprint: fingerprint(&[0], &[0]),
+                },
+                59,
+            )
+            .unwrap_err();
+
+        assert!(error.to_string().contains("phase=pool_complete"));
+        assert!(!event_rx.try_iter().any(|kind| kind == "pool_completed"));
+    }
+
+    #[test]
     fn template_match_center_uses_actual_matched_size() {
         let matched = TemplateMatch {
             name: "scaled".to_string(),

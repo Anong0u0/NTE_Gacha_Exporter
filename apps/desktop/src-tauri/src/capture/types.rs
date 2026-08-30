@@ -39,6 +39,11 @@ const AUTO_PAGE_PAGE_RECORD_MIN_WAIT_MS: u64 = 300;
 const AUTO_PAGE_MAX_PAGE_RECORD_MIN_WAIT_MS: u64 = 1500;
 const AUTO_PAGE_CAPTURE_WINDOW_STALLED_CODE: &str = "auto_page_capture_window_stalled";
 const AUTO_PAGE_FAILED_CODE: &str = "auto_page_failed";
+const CAPTURE_INCOMPLETE_CODE: &str = "capture_incomplete";
+const CAPTURE_STOPPED_CODE: &str = "capture_stopped";
+const CAPTURE_STOPPED_DURING_DRAIN_CODE: &str = "capture_stopped_during_drain";
+const USER_STOPPED_CODE: &str = "user_stopped";
+const AUTOMATION_INTERRUPTED_CODE: &str = "automation_interrupted";
 
 #[derive(Debug, Clone)]
 pub(crate) struct CaptureSessionMeta {
@@ -421,6 +426,8 @@ fn record_key_counts(keys: &[String]) -> BTreeMap<String, u64> {
 pub(crate) struct CaptureStatus {
     session_id: String,
     state: String,
+    profile_name: String,
+    locale: String,
     mode: String,
     records_count: u64,
     latest_records: Vec<Value>,
@@ -437,6 +444,33 @@ pub(crate) struct CaptureStatus {
     document: Option<Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     import_report: Option<ImportReport>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct CapturePartialReason {
+    code: String,
+    message: String,
+    retryable_with_slower_paging: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    support_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    support_image_path: Option<String>,
+}
+
+impl CapturePartialReason {
+    fn new(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        retryable_with_slower_paging: bool,
+    ) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+            retryable_with_slower_paging,
+            support_path: None,
+            support_image_path: None,
+        }
+    }
 }
 
 fn runtime_error(code: impl Into<String>, message: impl Into<String>) -> RuntimeError {

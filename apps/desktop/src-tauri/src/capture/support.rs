@@ -32,7 +32,7 @@ fn attach_capture_support(
     source_kind: &str,
     auto_result: Option<&AutoPageRunResult>,
 ) {
-    if status.error.is_none() {
+    if status.error.is_none() && capture_partial_reason_value(status).is_none() {
         return;
     }
     let result = write_capture_support(SupportRequest {
@@ -43,7 +43,79 @@ fn attach_capture_support(
     });
     if let Some(error) = status.error.as_mut() {
         attach_support_paths(error, result);
+    } else {
+        attach_partial_support_paths(status, result);
     }
+}
+
+fn capture_partial_support_required(status: &CaptureStatus) -> bool {
+    capture_partial_reason_value(status)
+        .and_then(|reason| reason.get("code"))
+        .and_then(Value::as_str)
+        .is_some_and(|code| code != USER_STOPPED_CODE)
+}
+
+fn capture_partial_reason_value(
+    status: &CaptureStatus,
+) -> Option<&serde_json::Map<String, Value>> {
+    status
+        .auto_page
+        .as_ref()?
+        .get("reason")?
+        .as_object()
+}
+
+fn capture_partial_reason_value_mut(
+    status: &mut CaptureStatus,
+) -> Option<&mut serde_json::Map<String, Value>> {
+    status
+        .auto_page
+        .as_mut()?
+        .get_mut("reason")?
+        .as_object_mut()
+}
+
+fn attach_partial_support_paths(status: &mut CaptureStatus, result: SupportWriteResult) {
+    let Some(reason) = capture_partial_reason_value_mut(status) else {
+        return;
+    };
+    if let Some(path) = result.json_path {
+        reason.insert(
+            "support_path".to_string(),
+            Value::String(path.to_string_lossy().to_string()),
+        );
+    }
+    let image_path = result.image_path.or(result.raw_page_image_path);
+    if let Some(path) = image_path {
+        reason.insert(
+            "support_image_path".to_string(),
+            Value::String(path.to_string_lossy().to_string()),
+        );
+    }
+    if let Some(support_error) = result.error {
+        let message = reason
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        reason.insert(
+            "message".to_string(),
+            Value::String(format!("{message}; support_failed: {support_error}")),
+        );
+    }
+}
+
+fn append_partial_support_error(status: &mut CaptureStatus, support_error: String) {
+    let Some(reason) = capture_partial_reason_value_mut(status) else {
+        return;
+    };
+    let message = reason
+        .get("message")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    reason.insert(
+        "message".to_string(),
+        Value::String(format!("{message}; support_failed: {support_error}")),
+    );
 }
 
 fn attach_support_paths(error: &mut RuntimeError, result: SupportWriteResult) {
@@ -339,6 +411,7 @@ fn support_report(
     raw_page_image_path: Option<&PathBuf>,
     support_error: Option<&str>,
 ) -> SupportReport {
+    let partial_reason = capture_partial_reason_value(request.status);
     SupportReport {
         schema: SUPPORT_SCHEMA,
         schema_version: SUPPORT_SCHEMA_VERSION,
@@ -346,8 +419,10 @@ fn support_report(
         app_version: env!("CARGO_PKG_VERSION"),
         session_id: request.status.session_id.clone(),
         failure: json!({
-            "code": request.status.error.as_ref().map(|error| error.code.as_str()),
-            "message": request.status.error.as_ref().map(|error| error.message.as_str()),
+            "code": request.status.error.as_ref().map(|error| error.code.as_str())
+                .or_else(|| partial_reason.and_then(|reason| reason.get("code")).and_then(Value::as_str)),
+            "message": request.status.error.as_ref().map(|error| error.message.as_str())
+                .or_else(|| partial_reason.and_then(|reason| reason.get("message")).and_then(Value::as_str)),
             "state": request.status.state,
             "source_kind": request.source_kind,
             "support_error": support_error,

@@ -83,6 +83,73 @@ fn attach_capture_support_adds_paths_to_runtime_error() {
 }
 
 #[test]
+fn attach_capture_support_adds_paths_to_partial_reason() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut status = test_status("partial-paths", crate::lifecycle::STATE_PARTIAL, 1.0);
+    status.auto_page = Some(json!({
+        "state": "partial",
+        "reason": {
+            "code": CAPTURE_INCOMPLETE_CODE,
+            "message": "required=160 decoded=155",
+            "retryable_with_slower_paging": true
+        }
+    }));
+
+    attach_capture_support(tmp.path(), &mut status, "pktmon-auto-page-capture", None);
+
+    let reason = capture_partial_reason_value(&status).unwrap();
+    assert_eq!(
+        reason.get("code").and_then(Value::as_str),
+        Some(CAPTURE_INCOMPLETE_CODE)
+    );
+    assert!(
+        reason
+            .get("support_path")
+            .and_then(Value::as_str)
+            .is_some_and(|path| Path::new(path).is_file())
+    );
+}
+
+#[test]
+fn pure_user_stop_does_not_request_support_bundle() {
+    let mut status = test_status("user-stop", crate::lifecycle::STATE_PARTIAL, 1.0);
+    status.auto_page = Some(json!({
+        "state": "partial",
+        "reason": {
+            "code": USER_STOPPED_CODE,
+            "message": "stopped by user",
+            "retryable_with_slower_paging": false
+        }
+    }));
+
+    assert!(!capture_partial_support_required(&status));
+}
+
+#[test]
+fn automation_interrupted_partial_requests_support_bundle() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut status = test_status("automation-interrupted", crate::lifecycle::STATE_PARTIAL, 1.0);
+    status.auto_page = Some(json!({
+        "state": "partial",
+        "reason": {
+            "code": AUTOMATION_INTERRUPTED_CODE,
+            "message": "template transition failed",
+            "retryable_with_slower_paging": false
+        }
+    }));
+
+    assert!(capture_partial_support_required(&status));
+    attach_capture_support(tmp.path(), &mut status, "pktmon-auto-page-capture", None);
+
+    let support_path = capture_partial_reason_value(&status)
+        .and_then(|reason| reason.get("support_path"))
+        .and_then(Value::as_str)
+        .map(Path::new)
+        .unwrap();
+    assert!(support_path.is_file());
+}
+
+#[test]
 fn support_rotate_keeps_latest_three_bundles() {
     let tmp = tempfile::tempdir().unwrap();
     let support_dir = tmp.path().join("data/support");

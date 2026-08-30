@@ -248,3 +248,43 @@ fn full_update_import_prunes_generated_backups_after_success() {
     assert!(!old_backup.exists());
     assert_eq!(backups, 1);
 }
+
+#[test]
+fn full_update_import_merges_partial_records_without_replacing_existing_data() {
+    let tmp = tempfile::tempdir().unwrap();
+    let store = JsonStore::open(tmp.path()).unwrap();
+    let existing = public_document(vec![record(
+        "r1",
+        "CardPool_Character",
+        "fork_dustbin",
+        "2026-01-01 10:00:00",
+    )]);
+    store
+        .import_public_document("default", &existing, "json", None)
+        .unwrap();
+    let partial = public_document(vec![
+        record(
+            "r1",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:00:00",
+        ),
+        record(
+            "r2",
+            "CardPool_Character",
+            "fork_dustbin",
+            "2026-01-01 10:01:00",
+        ),
+    ]);
+
+    let report = store
+        .import_public_document_with_backup("default", &partial, "auto_page_full", None)
+        .unwrap();
+    let records = store
+        .list_records("default", "zh-Hant", &RecordFilter::default())
+        .unwrap();
+
+    assert_eq!(report.records_inserted, 1);
+    assert_eq!(report.records_skipped, 1);
+    assert_eq!(records.total, 2);
+}

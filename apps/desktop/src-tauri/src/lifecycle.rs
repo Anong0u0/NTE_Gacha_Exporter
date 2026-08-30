@@ -8,6 +8,7 @@ pub(crate) const STATE_STARTING: &str = "starting";
 pub(crate) const STATE_RUNNING: &str = "running";
 pub(crate) const STATE_STOPPING: &str = "stopping";
 pub(crate) const STATE_COMPLETED: &str = "completed";
+pub(crate) const STATE_PARTIAL: &str = "partial";
 pub(crate) const STATE_FAILED: &str = "failed";
 pub(crate) const STATE_CANCELLED: &str = "cancelled";
 
@@ -16,7 +17,10 @@ pub(crate) fn is_active_state(state: &str) -> bool {
 }
 
 pub(crate) fn is_terminal_state(state: &str) -> bool {
-    matches!(state, STATE_COMPLETED | STATE_FAILED | STATE_CANCELLED)
+    matches!(
+        state,
+        STATE_COMPLETED | STATE_PARTIAL | STATE_FAILED | STATE_CANCELLED
+    )
 }
 
 pub(crate) fn set_stopping(state: &mut String) {
@@ -66,8 +70,9 @@ mod tests {
     use std::thread;
 
     #[test]
-    fn terminal_states_include_cancelled() {
+    fn terminal_states_include_partial_and_cancelled() {
         assert!(is_terminal_state(STATE_COMPLETED));
+        assert!(is_terminal_state(STATE_PARTIAL));
         assert!(is_terminal_state(STATE_FAILED));
         assert!(is_terminal_state(STATE_CANCELLED));
         assert!(!is_terminal_state(STATE_RUNNING));

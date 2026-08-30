@@ -20,18 +20,13 @@ pub(crate) fn capture_start(
         Ok(locale)
     })?;
     let output_raw = with_store(&state, |store| Ok(Some(capture_raw_output_path(store))))?;
-    let known_record_keys = if mode == CaptureMode::AutoPageIncremental {
-        with_store(&state, |store| store.profile_record_keys(&profile_name))?
-    } else {
-        Vec::new()
-    };
     let mut status = start_rust_capture_session(
         app,
         &state,
+        &profile_name,
         &locale,
         mode,
         output_raw.clone(),
-        known_record_keys,
         options.unwrap_or_default(),
     )?;
     status.import_report = None;
@@ -50,7 +45,7 @@ pub(crate) fn capture_start(
                 import_report: None,
             },
         );
-    if status.state == crate::lifecycle::STATE_COMPLETED {
+    if capture_state_can_merge(&status.state) {
         return capture_status_with_merge(&state, &status.session_id);
     }
     Ok(status)

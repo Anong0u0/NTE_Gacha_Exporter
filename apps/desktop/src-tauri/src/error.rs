@@ -15,6 +15,11 @@ pub(crate) struct ApiError {
     code: String,
     message: String,
 }
+impl ApiError {
+    pub(crate) fn message(&self) -> &str {
+        &self.message
+    }
+}
 
 pub(crate) fn api_error(error: impl std::fmt::Display) -> ApiError {
     ApiError {

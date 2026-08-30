@@ -16,7 +16,7 @@ test("capture window stalled opens retry dialog", async ({ page }) => {
   await expect(stalledDialog).toBeVisible();
   await expect(stalledDialog).toContainText("auto_page_capture_window_stalled");
   await expect(stalledDialog).toContainText("可能網路延遲");
-  await expect(stalledDialog).toContainText("自動翻頁提前結束，共翻閱 7 頁");
+  await expect(stalledDialog).toContainText("自動翻頁部分完成，已讀取 7 頁");
   await expect(stalledDialog.getByRole("button", { name: /降低速度重試.*500ms/ })).toBeVisible();
 
   await stalledDialog.getByRole("button", { name: /降低速度重試.*500ms/ }).click();
@@ -34,7 +34,7 @@ test("topbar status details do not duplicate stalled retry action", async ({ pag
   await page.locator('[data-agent-id="topbar-status"]').click();
   const statusDialog = page.getByRole("dialog", { name: "擷取狀態" });
   await expect(statusDialog).toBeVisible();
-  await expect(statusDialog).toContainText("自動翻頁提前結束，共翻閱 7 頁");
+  await expect(statusDialog).toContainText("自動翻頁部分完成，已讀取 7 頁");
   await expect(statusDialog).not.toContainText("可能網路延遲");
   await expect(statusDialog).not.toContainText("降低速度重試");
 });

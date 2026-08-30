@@ -4,6 +4,35 @@
   background: var(--danger-soft);
 }
 
+.status.partial {
+  color: #795300;
+  border-color: color-mix(in srgb, var(--warning) 82%, var(--border-strong));
+  background: color-mix(in srgb, var(--warning) 18%, var(--surface-panel));
+}
+
+.capture-partial-dialog {
+  border-color: color-mix(in srgb, var(--warning) 78%, var(--border-strong));
+}
+
+.status-dialog-message.partial {
+  color: #795300;
+}
+
+.capture-partial-pages {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--warning) 55%, var(--border-soft));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface-panel));
+}
+
+.capture-partial-pages p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 12px;
+}
+
 .view-stack {
   width: 100%;
   display: grid;

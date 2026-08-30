@@ -143,11 +143,12 @@
   },
   "workflow": [
     {
-      "action": "clickTemplate",
+      "action": "clickTemplateUntilTemplate",
       "status": "boardDetails",
       "point": null,
       "pointSequence": [],
       "template": "homeBoardFileIcon",
+      "targetTemplate": "recordTabSelectedCap",
       "pageRect": null,
       "nextButton": null,
       "pool": null,

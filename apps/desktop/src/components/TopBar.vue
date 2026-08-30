@@ -9,6 +9,15 @@ const statusDialogOpen = ref(false);
 let menuCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 const statusSummary = computed(() => app.errorText || app.statusText || app.captureSubtitle);
+const partialReason = computed(() => {
+  const auto = app.captureStatus?.auto_page;
+  return auto?.state === "partial" ? auto.reason : null;
+});
+
+async function retryPartialFromStatus() {
+  statusDialogOpen.value = false;
+  await app.retryAutoPageSlower();
+}
 
 function openCaptureMenu() {
   if (menuCloseTimer) {
@@ -110,7 +119,13 @@ function onWinDivertBackendChange(event: Event) {
               </label>
             </div>
           </div>
-          <button type="button" class="status" data-agent-id="topbar-status" :class="{ error: app.errorText }" @click="statusDialogOpen = true">
+          <button
+            type="button"
+            class="status"
+            data-agent-id="topbar-status"
+            :class="{ error: app.errorText, partial: app.captureStatus?.state === 'partial' }"
+            @click="statusDialogOpen = true"
+          >
             {{ statusSummary }}
           </button>
         </div>
@@ -140,6 +155,9 @@ function onWinDivertBackendChange(event: Event) {
                   <span v-if="app.captureStatus.counters.duplicate_packets">{{ app.t("capture.duplicates", { count: app.captureStatus.counters.duplicate_packets }) }}</span>
                 </div>
                 <div v-if="app.autoPageStatusLine" class="capture-target">{{ app.autoPageStatusLine }}</div>
+                <p v-if="partialReason" class="status-dialog-subtitle" data-agent-id="capture-partial-reason">
+                  {{ app.t("capture.partialReason") }} · {{ partialReason.message }}
+                </p>
                 <div v-if="app.autoPagePoolSummary" class="capture-stats">
                   <span>{{ app.t("capture.poolsDone", { count: app.autoPagePoolSummary.completed }) }}</span>
                   <span>{{ app.t("capture.poolsSkipped", { count: app.autoPagePoolSummary.skipped }) }}</span>
@@ -147,6 +165,8 @@ function onWinDivertBackendChange(event: Event) {
                 <div v-if="app.captureStatus.raw_path" class="capture-target">{{ app.t("capture.rawPath") }} · {{ app.captureStatus.raw_path }}</div>
                 <div v-if="app.captureStatus.error?.support_path" class="capture-target">support · {{ app.captureStatus.error.support_path }}</div>
                 <div v-if="app.captureStatus.error?.support_image_path" class="capture-target">support image · {{ app.captureStatus.error.support_image_path }}</div>
+                <div v-if="partialReason?.support_path" class="capture-target">support · {{ partialReason.support_path }}</div>
+                <div v-if="partialReason?.support_image_path" class="capture-target">support image · {{ partialReason.support_image_path }}</div>
                 <div v-if="app.captureStatus.target" class="capture-target">
                   {{ app.t("capture.target") }} · {{ app.captureStatus.target.pid ?? "-" }} · {{ app.captureStatus.target.interface ?? "-" }}
                 </div>
@@ -156,6 +176,18 @@ function onWinDivertBackendChange(event: Event) {
                     <span>{{ app.captureRecordName(record) }}</span>
                     <small>{{ app.captureRecordMeta(record) }}</small>
                   </div>
+                </div>
+                <div v-if="app.captureStatus.state === 'partial' && app.canRetryAutoPageSlower" class="status-dialog-actions">
+                  <button
+                    type="button"
+                    class="primary"
+                    data-agent-id="capture-partial-retry"
+                    :disabled="app.captureActionBusy"
+                    @click="retryPartialFromStatus"
+                  >
+                    <RefreshCw :size="17" />
+                    <span>{{ app.t("capture.slowRetry", { ms: app.nextPageRecordMinWaitMs }) }}</span>
+                  </button>
                 </div>
               </div>
             </div>

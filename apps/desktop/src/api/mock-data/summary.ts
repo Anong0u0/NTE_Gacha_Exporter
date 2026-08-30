@@ -112,7 +112,7 @@ function mockLatestFiveCrossBannerSummary(): PoolKindSummary[] {
 
 export const mockCaptureSessions = new Map<
   string,
-  { profileName: string; polls: number; stopped: boolean; mode: CaptureMode; options?: CaptureStartOptions }
+  { profileName: string; locale: string; polls: number; stopped: boolean; mode: CaptureMode; options?: CaptureStartOptions }
 >();
 
 const mockSummary: PoolKindSummary[] = [

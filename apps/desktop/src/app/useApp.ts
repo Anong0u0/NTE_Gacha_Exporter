@@ -349,6 +349,8 @@ export function useApp() {
     formatError: formatters.formatError,
     formatCaptureState: formatters.formatCaptureState,
     formatCaptureMode: formatters.formatCaptureMode,
+    applySettings,
+    loadProfiles,
     saveRecordViewPrefs,
     setActiveProfileName,
     refreshAll: refreshAllProxy,

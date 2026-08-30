@@ -1,12 +1,17 @@
 fn start_rust_capture_session(
     app: AppHandle<Wry>,
     state: &State<'_, AppState>,
+    profile_name: &str,
     locale: &str,
     mode: CaptureMode,
     output_raw: Option<String>,
-    known_record_keys: Vec<String>,
     start_options: CaptureStartOptions,
 ) -> Result<CaptureStatus, ApiError> {
+    let known_record_keys = if mode == CaptureMode::AutoPageIncremental {
+        with_store(state, |store| store.profile_record_keys(profile_name))?
+    } else {
+        Vec::new()
+    };
     let pid = find_process_pid("HTGame.exe")
         .map_err(api_error)?
         .ok_or_else(|| api_error_message("capture_environment", "HTGame.exe not found"))?;
@@ -43,6 +48,8 @@ fn start_rust_capture_session(
     let initial_status = CaptureStatus {
         session_id: session_id.clone(),
         state: crate::lifecycle::STATE_STARTING.to_string(),
+        profile_name: profile_name.to_string(),
+        locale: locale.to_string(),
         mode: mode.as_str().to_string(),
         records_count: 0,
         latest_records: Vec::new(),
@@ -115,7 +122,7 @@ fn start_rust_capture_session(
                 },
                 stop_for_thread,
             );
-            let should_persist_windivert = windivert_capture_succeeded(&result, None);
+            let should_persist_windivert = windivert_capture_succeeded(&result);
             if should_persist_windivert {
                 enable_windivert_backend_from_app(&app);
             }
@@ -237,8 +244,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
         options.control = Some(control);
         options.on_status = Some(auto_status_callback);
         let auto_result = run_auto_page(options);
-        let drain_error = auto_result
-            .usable()
+        let drain_error = should_drain_auto_page_result(&auto_result)
             .then(|| {
                 wait_for_capture_drain(
                     &runtime,
@@ -256,16 +262,15 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
             .map_err(|_| "capture worker panicked".to_string())
             .and_then(|result| result);
         extend_attempts_from_result(&mut attempts, &capture_result);
+
         let has_records = capture_result
             .as_ref()
             .is_ok_and(|result| !result.rows.is_empty());
-        let capture_drain_warning = if auto_result.outcome == AutoPageOutcome::Partial && has_records {
-            drain_error.as_ref()
-        } else {
-            None
-        };
+        let capture_drain_warning =
+            capture_drain_warning_for_result(has_records, drain_error.as_ref());
         final_auto_page = Some(auto_page_result_value(
             &auto_result,
+            &coordinator.counts(),
             capture_drain_warning,
         ));
         final_error = auto_page_terminal_error(&auto_result, drain_error, has_records);
@@ -276,7 +281,7 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
     set_attempt_stop(&runtime, None);
     let stopped_by_user = stop.load(Ordering::SeqCst);
     stop.store(true, Ordering::SeqCst);
-    if windivert_capture_succeeded(&final_capture_result, final_error.as_ref()) {
+    if windivert_capture_succeeded(&final_capture_result) {
         enable_windivert_backend_from_app(&app);
     }
     finish_capture_result(
@@ -294,19 +299,37 @@ fn run_auto_page_capture_thread(context: AutoPageCaptureThread) {
     finish_auto_page_terminal(pid, stopped_by_user, &app);
 }
 
+
+fn capture_drain_warning_for_result(
+    has_records: bool,
+    drain_error: Option<&RuntimeError>,
+) -> Option<&RuntimeError> {
+    drain_error.filter(|_| has_records)
+}
 fn auto_page_terminal_error(
     result: &AutoPageRunResult,
     drain_error: Option<RuntimeError>,
     has_records: bool,
 ) -> Option<RuntimeError> {
     match result.outcome {
-        AutoPageOutcome::Partial if has_records => None,
+        AutoPageOutcome::Partial | AutoPageOutcome::Failed if has_records => drain_error,
         AutoPageOutcome::Completed => drain_error,
         AutoPageOutcome::Partial | AutoPageOutcome::Failed => {
             drain_error.or_else(|| Some(auto_page_runtime_error(&result.message)))
         }
         AutoPageOutcome::Cancelled => None,
     }
+}
+
+fn should_drain_auto_page_result(result: &AutoPageRunResult) -> bool {
+    if result.outcome == AutoPageOutcome::Completed {
+        return true;
+    }
+    result.outcome == AutoPageOutcome::Partial
+        && !result
+            .reason
+            .as_ref()
+            .is_some_and(|reason| reason.message.starts_with("capture window stalled:"))
 }
 
 fn capture_strategy_for_start(
@@ -356,13 +379,11 @@ fn enable_windivert_backend_from_app(app: &AppHandle<Wry>) {
 
 fn windivert_capture_succeeded(
     result: &Result<nte_capture::CaptureResult, impl std::fmt::Display>,
-    error: Option<&RuntimeError>,
 ) -> bool {
-    error.is_none()
-        && result.as_ref().is_ok_and(|result| {
-            (!result.rows.is_empty() || result.counters.decoded_packets > 0)
-                && result.target.interface == CaptureBackend::WinDivert.as_str()
-        })
+    result.as_ref().is_ok_and(|result| {
+        (!result.rows.is_empty() || result.counters.decoded_packets > 0)
+            && result.target.interface == CaptureBackend::WinDivert.as_str()
+    })
 }
 
 fn capture_interface(backend: CaptureBackend) -> &'static str {

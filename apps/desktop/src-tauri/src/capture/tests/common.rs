@@ -2,6 +2,8 @@ fn test_status(session_id: &str, state: &str, updated_at: f64) -> CaptureStatus 
     CaptureStatus {
         session_id: session_id.to_string(),
         state: state.to_string(),
+        profile_name: "default".to_string(),
+        locale: "en".to_string(),
         mode: "live_only".to_string(),
         records_count: 0,
         latest_records: Vec::new(),

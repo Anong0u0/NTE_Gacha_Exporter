@@ -1,6 +1,6 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 
-import { api, type CaptureMode, type CaptureStartOptions, type CaptureStatus, type ImportReport, type PendingAdminCapture } from "../api";
+import { api, type CaptureMode, type CaptureStartOptions, type CaptureStatus, type ImportReport, type PendingAdminCapture, type Settings } from "../api";
 import type { I18nKey } from "./i18n";
 import { ensureWinDivertInstalled, reinstallWinDivert as reinstallWinDivertFiles, type WinDivertInstallStage } from "./windivertInstall";
 
@@ -22,7 +22,7 @@ export type RecoveryDialogActionId =
   | "disable_windivert";
 
 export type CaptureRecoveryState = {
-  kind: "stalled" | "vpn_proxy_suspected" | "windivert_unavailable" | "windivert_no_decode";
+  kind: "partial" | "stalled" | "vpn_proxy_suspected" | "windivert_unavailable" | "windivert_no_decode";
   technicalDetail: string;
   actions: { id: RecoveryDialogActionId; label: string; primary?: boolean }[];
   busyStage?: WinDivertInstallStage | null;
@@ -47,20 +47,30 @@ type CaptureActionsDeps = {
   formatCaptureState(value?: string | null): string;
   formatCaptureMode(value?: string | null): string;
   saveRecordViewPrefs(profileName?: string): void;
+  applySettings(settings: Settings): void;
+  loadProfiles(): Promise<void>;
   setActiveProfileName(profileName: string): void;
   refreshAll(): Promise<void>;
 };
 
 export function createCaptureActions(deps: CaptureActionsDeps) {
   let capturePollTimer: ReturnType<typeof setInterval> | null = null;
+  let lastPresentedPartialSessionId: string | null = null;
   const pageRecordMinWaitMs = ref(DEFAULT_PAGE_RECORD_MIN_WAIT_MS);
 
-  const canRetryAutoPageSlower = computed(() =>
-    deps.captureStatus.value?.state === "failed"
-      && deps.captureStatus.value.error?.code === CAPTURE_WINDOW_STALLED_CODE
+  const canRetryAutoPageSlower = computed(() => {
+    const status = deps.captureStatus.value;
+    const retryableFailure = status?.state === "failed"
+      && status.error?.code === CAPTURE_WINDOW_STALLED_CODE;
+    const retryablePartial = status?.state === "partial"
+      && status.auto_page?.state === "partial"
+      && status.auto_page.reason.retryable_with_slower_paging === true;
+    return Boolean(
+      (retryableFailure || retryablePartial)
       && !deps.captureActionBusy.value
-      && Boolean(deps.activeProfileName.value),
-  );
+      && deps.activeProfileName.value,
+    );
+  });
 
   const nextPageRecordMinWaitMs = computed(() =>
     Math.min(MAX_PAGE_RECORD_MIN_WAIT_MS, pageRecordMinWaitMs.value + PAGE_RECORD_RETRY_STEP_MS),
@@ -118,12 +128,29 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
   }
 
   async function retryAutoPageSlower() {
-    if (!canRetryAutoPageSlower.value) return;
-    const retryMode = retryCaptureMode();
-    if (!isAutoPageMode(retryMode)) return;
+    const status = deps.captureStatus.value;
+    if (!canRetryAutoPageSlower.value || !status || !isAutoPageMode(status.mode)) return;
+    deps.captureActionBusy.value = true;
     deps.captureRecoveryState.value = null;
+    deps.errorText.value = "";
+    deps.saveRecordViewPrefs();
+    try {
+      const settings = await api.updateSettings({
+        active_profile: status.profile_name,
+        locale: status.locale,
+        capture_auto_page_enabled: true,
+        capture_full_update_enabled: status.mode === "auto_page_full",
+      });
+      deps.applySettings(settings);
+      await deps.loadProfiles();
+      await deps.refreshAll();
+    } catch (error) {
+      deps.errorText.value = deps.formatError(error);
+      return;
+    } finally {
+      deps.captureActionBusy.value = false;
+    }
     pageRecordMinWaitMs.value = nextPageRecordMinWaitMs.value;
-    deps.captureMode.value = retryMode;
     await startLiveCapture({
       captureOptions: {
         page_record_min_wait_ms: pageRecordMinWaitMs.value,
@@ -137,9 +164,10 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     deps.captureActionBusy.value = true;
     deps.errorText.value = "";
     try {
-      await applyCaptureStatus(await api.captureStop(sessionId));
-      deps.statusText.value = deps.t("status.captureStopping");
+      const status = await api.captureStop(sessionId);
+      await applyCaptureStatus(status);
       if (deps.isCaptureActive.value) {
+        deps.statusText.value = deps.t("status.captureStopping");
         ensureCapturePolling();
       }
     } catch (error) {
@@ -172,10 +200,24 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
         deps.lastReport.value = status.import_report;
       }
       await deps.refreshAll();
-      const preservedPages = partialAutoPageVisitedPages(status);
-      deps.statusText.value = preservedPages === null
-        ? status.import_report ? deps.t("status.captureMerged") : deps.t("status.captureCompleted")
-        : deps.t("capture.autoPagePartial", { count: preservedPages });
+      deps.statusText.value = status.import_report ? deps.t("status.captureMerged") : deps.t("status.captureCompleted");
+      if (status.target?.interface === "windivert") {
+        deps.captureWinDivertBackendEnabled.value = true;
+      }
+    } else if (status.state === "partial") {
+      clearCapturePolling();
+      deps.errorText.value = "";
+      if (status.import_report) {
+        deps.lastReport.value = status.import_report;
+      }
+      await deps.refreshAll();
+      deps.statusText.value = status.import_report
+        ? deps.t("capture.partialSaved")
+        : deps.t("capture.partialAvailable");
+      if (status.import_report && lastPresentedPartialSessionId !== status.session_id) {
+        deps.captureRecoveryState.value = partialRecoveryState(status);
+        lastPresentedPartialSessionId = status.session_id;
+      }
       if (status.target?.interface === "windivert") {
         deps.captureWinDivertBackendEnabled.value = true;
       }
@@ -264,9 +306,24 @@ export function createCaptureActions(deps: CaptureActionsDeps) {
     }
   }
 
-  function partialAutoPageVisitedPages(status: CaptureStatus) {
-    const auto = status.auto_page;
-    return auto?.state === "partial" ? auto.visited_pages : null;
+  function partialRecoveryState(status: CaptureStatus): CaptureRecoveryState {
+    const autoPage = status.auto_page;
+    const reason = autoPage?.state === "partial" ? autoPage.reason : null;
+    const actions: CaptureRecoveryState["actions"] = [
+      { id: "close", label: deps.t("common.close") },
+    ];
+    if (reason?.retryable_with_slower_paging) {
+      actions.push({
+        id: "retry_auto_page_slower",
+        label: deps.t("capture.slowRetry", { ms: nextPageRecordMinWaitMs.value }),
+        primary: true,
+      });
+    }
+    return {
+      kind: "partial",
+      technicalDetail: reason ? `${reason.code}: ${reason.message}` : "",
+      actions,
+    };
   }
 
   function windivertUnavailableRecovery(technicalDetail: string): CaptureRecoveryState {

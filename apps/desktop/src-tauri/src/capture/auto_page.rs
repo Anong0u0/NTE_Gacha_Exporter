@@ -5,10 +5,7 @@ fn wait_for_capture_drain(
     session_stop: &Arc<AtomicBool>,
     attempt_stop: &Arc<AtomicBool>,
 ) -> Option<RuntimeError> {
-    let mut required = auto_result.visited_pages_by_pool.clone();
-    for pool in &auto_result.skipped_pools {
-        required.remove(pool);
-    }
+    let required = required_capture_pages(auto_result);
     if required.is_empty() {
         return None;
     }
@@ -58,6 +55,14 @@ fn wait_for_capture_drain(
         }
         std::thread::sleep(CAPTURE_DRAIN_POLL_INTERVAL);
     }
+}
+
+fn required_capture_pages(auto_result: &AutoPageRunResult) -> BTreeMap<String, u32> {
+    let mut required = auto_result.visited_pages_by_pool.clone();
+    for pool in &auto_result.skipped_pools {
+        required.remove(pool);
+    }
+    required
 }
 
 fn missing_capture_pages(

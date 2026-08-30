@@ -272,9 +272,10 @@ export const mockApi: AppApi = {
   async takePendingAdminDiagnostic() {
     return null;
   },
-  async captureStart(profileName: string, _locale?: string, mode: CaptureMode = "live_only", options?: CaptureStartOptions) {
+  async captureStart(profileName: string, locale?: string, mode: CaptureMode = "live_only", options?: CaptureStartOptions) {
     const sessionId = `mock-capture-${Date.now()}`;
-    mockCaptureSessions.set(sessionId, { profileName, polls: 0, stopped: false, mode, options });
+    const resolvedLocale = locale?.trim() ? locale : mockLocale;
+    mockCaptureSessions.set(sessionId, { profileName, locale: resolvedLocale, polls: 0, stopped: false, mode, options });
     return mockCaptureStatus(sessionId);
   },
   async captureStatus(sessionId: string) {
@@ -320,8 +321,12 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
   if (session && shouldMockCaptureStalled(session)) {
     return mockCaptureStalledStatus(sessionId, session);
   }
+  if (session && shouldMockCapturePartial(session)) {
+    return mockCapturePartialStatus(sessionId, session);
+  }
   const completed = Boolean(session?.stopped || (session && session.polls >= 2));
-  const profileName = session?.profileName ?? "default";
+  const profileName = session?.profileName ?? mockProfile.name;
+  const locale = session?.locale ?? mockLocale;
   const mode = session?.mode ?? "live_only";
   const rawPath = "data/runs/raw-mock.jsonl";
   const records = mockRecordsForScenario();
@@ -329,6 +334,8 @@ function mockCaptureStatus(sessionId: string): CaptureStatus {
   return {
     session_id: sessionId,
     state: completed ? "completed" : session?.polls ? "running" : "starting",
+    profile_name: profileName,
+    locale,
     mode,
     records_count: recordsCount,
     latest_records: records.slice(0, recordsCount),
@@ -385,6 +392,9 @@ function mockAutoPageStatus(
     skipped_pools: fullUpdate ? [] : ["fork"],
     visited_pages: fullUpdate ? 9 : 7,
     visited_pages_by_pool: pagesByPool,
+    required_pages_by_pool: { ...pagesByPool },
+    decoded_pages_by_pool: { ...pagesByPool },
+    missing_pages_by_pool: {},
     last_page_by_pool: { ...pagesByPool },
   };
 }
@@ -395,13 +405,103 @@ function shouldMockCaptureStalled(session: { mode: CaptureMode; options?: Captur
     && (session.options?.page_record_min_wait_ms ?? 300) < 500;
 }
 
+function shouldMockCapturePartial(session: { mode: CaptureMode; options?: CaptureStartOptions }) {
+  return mockScenario() === "capture-partial"
+    && session.mode !== "live_only"
+    && (session.options?.page_record_min_wait_ms ?? 300) < 500;
+}
+
+function mockCapturePartialStatus(
+  sessionId: string,
+  session: { profileName: string; locale: string; stopped: boolean; mode: CaptureMode },
+): CaptureStatus {
+  const rawPath = "data/runs/raw-mock-partial.jsonl";
+  const records = mockRecordsForScenario();
+  const partial = session.stopped;
+  const fullUpdate = session.mode === "auto_page_full";
+  const completedPools = fullUpdate ? ["limited", "standard", "fork"] : ["limited", "standard"];
+  const skippedPools = fullUpdate ? [] : ["fork"];
+  const requiredPagesByPool: Record<string, number> = fullUpdate
+    ? { limited: 55, standard: 60, fork: 45 }
+    : { limited: 55, standard: 60 };
+  const missingPagesByPool: Record<string, number> = fullUpdate
+    ? { limited: 2, standard: 1, fork: 2 }
+    : { limited: 2, standard: 1 };
+  const report = {
+    ...mockReport(session.profileName, mockCaptureSourceKind(session.mode), rawPath),
+    records_seen: 155,
+    records_inserted: 5,
+    records_skipped: 150,
+  };
+  return {
+    session_id: sessionId,
+    state: partial ? "partial" : "running",
+    profile_name: session.profileName,
+    locale: session.locale,
+    mode: session.mode,
+    records_count: partial ? 155 : 150,
+    latest_records: records.slice(0, 5),
+    counters: {
+      packets_seen: 771,
+      decoded_packets: 155,
+      dropped_packets: 0,
+    },
+    started_at: Date.now() / 1000 - 6,
+    updated_at: Date.now() / 1000,
+    target: {
+      pid: "1234",
+      interface: "mock0",
+      ports: [30230],
+      bpf: "port 30230",
+    },
+    auto_page: partial
+      ? {
+          state: "partial",
+          message: "capture stopped before packet drain completed",
+          completed_pools: completedPools,
+          skipped_pools: skippedPools,
+          visited_pages: 160,
+          visited_pages_by_pool: { limited: 55, standard: 60, fork: 45 },
+          required_pages_by_pool: requiredPagesByPool,
+          decoded_pages_by_pool: { limited: 53, standard: 59, fork: 43 },
+          missing_pages_by_pool: missingPagesByPool,
+          capture_drain_warning: null,
+          last_page_by_pool: { limited: 55, standard: 60, fork: 45 },
+          reason: {
+            code: "capture_stopped_during_drain",
+            message: "capture stopped before packet drain completed",
+            retryable_with_slower_paging: true,
+            support_path: "mock/support/capture-partial.json",
+          },
+        }
+      : {
+          state: "draining",
+          message: "waiting for capture drain",
+          kind: "draining",
+          completed_pools: completedPools,
+          skipped_pools: skippedPools,
+          visited_pages: 160,
+          visited_pages_by_pool: { limited: 55, standard: 60, fork: 45 },
+          required_pages_by_pool: requiredPagesByPool,
+          decoded_pages_by_pool: { limited: 53, standard: 59, fork: 43 },
+          missing_pages_by_pool: missingPagesByPool,
+          last_decoded_at: Date.now() / 1000,
+        },
+    raw_path: rawPath,
+    error: null,
+    import_report: partial ? report : null,
+  };
+}
+
 function mockCaptureStalledStatus(
   sessionId: string,
-  session: { mode: CaptureMode },
+  session: { profileName: string; locale: string; mode: CaptureMode },
 ): CaptureStatus {
   return {
     session_id: sessionId,
     state: "failed",
+    profile_name: session.profileName,
+    locale: session.locale,
     mode: session.mode,
     records_count: 0,
     latest_records: [],
@@ -424,12 +524,16 @@ function mockCaptureStalledStatus(
       reason: {
         code: "automation_interrupted",
         message: "capture window stalled: pool=limited visited_pages=8 decoded_pages=1 max_visited_pages=7",
+        retryable_with_slower_paging: true,
       },
       capture_drain_warning: null,
       completed_pools: [],
       skipped_pools: [],
       visited_pages: 7,
       visited_pages_by_pool: { limited: 7 },
+      required_pages_by_pool: { limited: 7 },
+      decoded_pages_by_pool: { limited: 1 },
+      missing_pages_by_pool: { limited: 6 },
       last_page_by_pool: { limited: 7 },
     },
     raw_path: "data/runs/raw-mock.jsonl",

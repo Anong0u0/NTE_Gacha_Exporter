@@ -3,27 +3,70 @@ fn capture_status_with_merge(
     session_id: &str,
 ) -> Result<CaptureStatus, ApiError> {
     let session = capture_runtime_session(state, session_id)?;
-    let status = session
+    let mut status = session
         .status
         .lock()
         .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?
         .clone();
-    if status.state != crate::lifecycle::STATE_COMPLETED {
+    if !capture_state_can_merge(&status.state) {
         cleanup_terminal_capture_session(state, session_id, &session, &status)?;
         return Ok(status);
     }
-    let mut status = status;
-    {
+    let merge_error = {
         let mut captures = state
             .captures
             .lock()
             .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
-        if let Some(meta) = captures.get_mut(session_id) {
-            merge_completed_capture(state, &mut status, meta)?;
-        }
+        captures
+            .get_mut(session_id)
+            .and_then(|meta| merge_capture(state, &mut status, meta).err())
+    };
+    if let Some(error) = merge_error {
+        let mut runtime_status = session
+            .status
+            .lock()
+            .map_err(|_| api_error_message("capture_lock_poisoned", "capture lock poisoned"))?;
+        apply_capture_import_failure(&mut runtime_status, &error);
+        status = runtime_status.clone();
+        drop(runtime_status);
+        cleanup_terminal_capture_session(state, session_id, &session, &status)?;
+        return Ok(status);
     }
     cleanup_terminal_capture_session(state, session_id, &session, &status)?;
     Ok(status)
+}
+fn merge_capture(
+    state: &State<'_, AppState>,
+    status: &mut CaptureStatus,
+    meta: &mut CaptureSessionMeta,
+) -> Result<(), ApiError> {
+    if let Some(report) = &meta.import_report {
+        status.import_report = Some(report.clone());
+        return Ok(());
+    }
+    let Some(document) = status.document.as_ref() else {
+        return Ok(());
+    };
+    let document_text = serde_json::to_string(document).map_err(api_error)?;
+    with_store(state, |store| {
+        merge_capture_document_with_store(store, status, meta, &document_text)
+    })
+}
+
+fn apply_capture_import_failure(status: &mut CaptureStatus, error: &ApiError) {
+    status.state = crate::lifecycle::STATE_FAILED.to_string();
+    status.updated_at = now_seconds();
+    status.latest_records.clear();
+    status.error = Some(runtime_error("capture_import_failed", error.message().to_string()));
+    status.document = None;
+    status.import_report = None;
+}
+
+fn capture_state_can_merge(state: &str) -> bool {
+    matches!(
+        state,
+        crate::lifecycle::STATE_COMPLETED | crate::lifecycle::STATE_PARTIAL
+    )
 }
 
 fn capture_runtime_session(
@@ -39,41 +82,35 @@ fn capture_runtime_session(
         .ok_or_else(|| api_error_message("capture_not_found", "capture session not found"))
 }
 
-fn merge_completed_capture(
-    state: &State<'_, AppState>,
+
+fn merge_capture_document_with_store(
+    store: &nte_store::JsonStore,
     status: &mut CaptureStatus,
     meta: &mut CaptureSessionMeta,
-) -> Result<(), ApiError> {
+    document_text: &str,
+) -> Result<(), nte_core::GuiError> {
     if let Some(report) = &meta.import_report {
         status.import_report = Some(report.clone());
         return Ok(());
     }
-    let Some(document) = status.document.as_ref() else {
-        return Ok(());
-    };
-    let document_text = serde_json::to_string(document).map_err(api_error)?;
     let report = if meta.full_update {
-        with_store(state, |store| {
-            store.import_public_document_with_backup(
-                &meta.profile_name,
-                &document_text,
-                &meta.source_kind,
-                meta.source_path.as_deref(),
-            )
-        })?
+        store.import_public_document_with_backup(
+            &meta.profile_name,
+            document_text,
+            &meta.source_kind,
+            meta.source_path.as_deref(),
+        )?
     } else {
-        with_store(state, |store| {
-            store.import_public_document(
-                &meta.profile_name,
-                &document_text,
-                &meta.source_kind,
-                meta.source_path.as_deref(),
-            )
-        })?
+        store.import_public_document(
+            &meta.profile_name,
+            document_text,
+            &meta.source_kind,
+            meta.source_path.as_deref(),
+        )?
     };
     meta.import_report = Some(report.clone());
     if meta.source_path.is_some() {
-        with_store(state, |store| store.cleanup_generated_raw_runs_keep_latest())?;
+        store.cleanup_generated_raw_runs_keep_latest()?;
     }
     status.import_report = Some(report);
     Ok(())

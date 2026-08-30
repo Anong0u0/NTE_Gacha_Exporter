@@ -81,6 +81,7 @@ export function createAppComputed(deps: ComputedDeps) {
       return deps.summary.value?.total_records ? deps.t("capture.mergePrompt") : deps.t("capture.importPrompt");
     }
     if (deps.captureStatus.value.state === "completed") return deps.t("capture.completed");
+    if (deps.captureStatus.value.state === "partial") return deps.t("capture.partialSavedTitle");
     if (deps.captureStatus.value.state === "failed") return deps.t("capture.failed");
     if (deps.captureStatus.value.state === "cancelled") return deps.t("capture.cancelled");
     if (deps.captureStatus.value.state === "stopping") return deps.t("capture.stopping");

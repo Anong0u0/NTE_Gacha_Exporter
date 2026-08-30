@@ -34,6 +34,7 @@ export type MockScenario =
   | "default"
   | "unknown-banners"
   | "capture-stalled"
+  | "capture-partial"
   | "latest-five-cost-distance"
   | "latest-five-cross-banner";
 const MOCK_SCENARIO_KEY = "nte.mockScenario";
@@ -169,6 +170,7 @@ export function mockScenario(): MockScenario {
   const value = window.localStorage.getItem(MOCK_SCENARIO_KEY);
   return value === "unknown-banners"
     || value === "capture-stalled"
+    || value === "capture-partial"
     || value === "latest-five-cost-distance"
     || value === "latest-five-cross-banner"
     ? value
