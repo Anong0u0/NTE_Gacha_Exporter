@@ -134,6 +134,35 @@ mod tests {
     }
 
     #[test]
+    fn decodes_byte_aligned_monopoly_envelope() {
+        let body = monopoly_row_bytes(2, "1036");
+        let mut payload = Vec::new();
+        payload.extend(0x03000000_u32.to_le_bytes());
+        payload.extend(2_u32.to_le_bytes());
+        payload.extend(0x80000010_u32.to_le_bytes());
+        payload.extend(527_u32.to_le_bytes());
+        payload.extend(128_u32.to_le_bytes());
+        payload.extend(1_774_080_u32.to_le_bytes());
+        payload.extend([0_u8; 2]);
+        payload.extend(block_payload(
+            MONOPOLY_MARKER,
+            1,
+            &body,
+            u32::try_from(body.len() + 4).unwrap(),
+        ));
+
+        let (blocks, warnings) = parse_payload_blocks(&payload, 0, 1, 0);
+
+        assert!(warnings.is_empty());
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].rows.len(), 1);
+        assert_eq!(blocks[0].rows[0].source.view, "raw");
+        assert_eq!(blocks[0].rows[0].source.stream_key.as_deref(), Some("monopoly:128"));
+        assert_eq!(blocks[0].rows[0].source.page_index, Some(16));
+        assert_eq!(blocks[0].rows[0].source.segment_index, Some(31));
+    }
+
+    #[test]
     fn legacy_multi_row_roll_points_are_not_decoded_as_lottery_ids() {
         let body = (1..=6)
             .flat_map(|points| monopoly_row_bytes(points, &format!("item-{points}")))

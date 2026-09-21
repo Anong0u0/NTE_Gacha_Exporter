@@ -38,7 +38,7 @@
     "item_kind_inventory": "Objeto",
     "item_kind_vehicle_module": "Piezas de modificación",
     "ui_appearance_02": "Planeador",
-    "ui_forkshop_03": "Programas de investigación de discos",
+    "ui_forkshop_03": "Programa de investigación de discos",
     "ui_forkshop_07": "Detalles",
     "ui_forkshop_10": "Registros"
   },
@@ -185,7 +185,7 @@
       "name": "Piezas de modificación·Arremetida del sabueso: Esquema de colores"
     },
     "Fashion_vehicle_1072_V013": {
-      "name": "Piezas de modificación·Nosotras tres: Esquema de colores"
+      "name": "Piezas de modificación·Paseo fantasma"
     },
     "Fashion_vehicle_1075_V006": {
       "name": "Piezas de modificación·Nosotras tres: Esquema de colores"
@@ -248,7 +248,7 @@
       "name": "Disco·Marchando más allá del tiempo"
     },
     "fork_appliance": {
-      "name": "Disco·\"Música de verdad\""
+      "name": "Disco·Música de verdad"
     },
     "fork_bopu": {
       "name": "Disco·Aturdimiento de cosmos, Ensoñación salvaje"
@@ -321,7 +321,7 @@
     "ForkLottery_AnHunQu": {
       "name": "Caja milagrosa",
       "group_label": "Investigación de discos",
-      "title": "Especial de Nocturne"
+      "title": "Especial de Nocturno"
     },
     "ForkLottery_Canhong": {
       "name": "Caja milagrosa",
@@ -394,7 +394,7 @@
       "title": "Especial de luna brillante"
     },
     "ForkLottery_AnHunQu": {
-      "title": "Especial de Nocturne"
+      "title": "Especial de Nocturno"
     },
     "ForkLottery_Kaesi": {
       "title": "Especial de persecución"

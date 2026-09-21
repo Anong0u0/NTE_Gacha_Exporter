@@ -2,16 +2,13 @@ fn parse_protocol_envelope(
     record_type: RecordType,
     data: &[u8],
     marker_pos: usize,
-    view: &str,
+    _view: &str,
 ) -> Result<Option<ProtocolEnvelope>, ParseError> {
     if marker_pos == 0 {
         return Ok(None);
     }
     match record_type {
         RecordType::Monopoly => {
-            if !view.starts_with("shift8:") {
-                return Err(message("invalid monopoly protocol view"));
-            }
             if marker_pos < 26 {
                 return Err(message("invalid monopoly protocol envelope"));
             }
@@ -38,9 +35,6 @@ fn parse_protocol_envelope(
             }))
         }
         RecordType::Fork => {
-            if !view.starts_with("shift8:") {
-                return Err(message("invalid fork protocol view"));
-            }
             if marker_pos < 17 {
                 return Err(message("invalid fork protocol envelope"));
             }

@@ -301,7 +301,7 @@
     },
     "Fashion_Glide_1072": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide_1036_256.Fashion_Glide_1036_256"
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide_1072_256.Fashion_Glide_1072_256"
       },
       "rarity": 4,
       "category": "glider",
@@ -448,11 +448,12 @@
     },
     "Fashion_vehicle_1072_V013": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1075_V006.Fashion_vehicle_1075_V006",
-        "head_icon": "/Game/UI/UI_Icon/item_100/Fashion_vehicle_1075_V006_100.Fashion_vehicle_1075_V006_100"
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1072_V013.Fashion_vehicle_1072_V013",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_V013_Skin_001.YH_UI_car_icon_V013_Skin_001"
       },
       "rarity": 5,
-      "category": "inventory"
+      "category": "vehicle_module",
+      "color": "#000000"
     },
     "Fashion_vehicle_1075_V006": {
       "asset_refs": {
