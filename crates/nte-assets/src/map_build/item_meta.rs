@@ -185,56 +185,49 @@ fn linked_appearance_id(row: &JsonObject) -> Option<String> {
         .find(|appearance_id| !appearance_id.is_empty() && appearance_id != "None")
 }
 
-fn v13_character_icon_layout_start() -> NaiveDateTime {
-    NaiveDate::from_ymd_opt(2026, 8, 13)
-        .expect("valid v1.3 start date")
-        .and_hms_opt(6, 30, 0)
-        .expect("valid v1.3 start time")
-}
-
-fn uses_v13_character_icon_layout(
-    character_id: &str,
-    character_show_times: &BTreeMap<String, AssetDateTime>,
-) -> bool {
-    character_show_times
-        .get(character_id)
-        .is_some_and(|show_time| show_time.value >= v13_character_icon_layout_start())
-}
-
-fn uses_v13_fashion_icon_layout(
-    appearance: &JsonObject,
-    character_show_times: &BTreeMap<String, AssetDateTime>,
-) -> bool {
-    appearance
-        .get("CharacterID")
-        .and_then(value_to_text)
-        .is_some_and(|character_id| {
-            uses_v13_character_icon_layout(&character_id, character_show_times)
-        })
-}
-
-fn linked_appearance_refs(appearance: &JsonObject, uses_v13_layout: bool) -> JsonObject {
-    if !uses_v13_layout {
-        return asset_refs_from_fields(
-            appearance,
-            &[
-                ("HeadIconBig", "icon"),
-                ("HeadIcon", "head_icon"),
-                ("SmallPortraitImg", "portrait"),
-            ],
-        );
+fn add_default_character_icons(
+    meta: &mut BTreeMap<String, JsonObject>,
+    assets_root: &Path,
+    canonicalizer: &ItemCanonicalizer,
+) -> Result<(), GuiError> {
+    for &(_, rel_path) in APPEARANCE_TABLES {
+        for appearance in rows_from_table(&assets_root.join(rel_path))?.values() {
+            if appearance.get("IsDefault").and_then(Value::as_bool) != Some(true)
+                || appearance
+                    .get("AppearanceType")
+                    .and_then(value_to_text)
+                    .as_deref()
+                    != Some("EAppearanceType::Fashion")
+            {
+                continue;
+            }
+            let Some(character_id) = appearance.get("CharacterID").and_then(value_to_text) else {
+                continue;
+            };
+            let character_id = canonicalizer.canonicalize(&character_id);
+            if item_category(meta, &character_id) != Some("character") {
+                continue;
+            }
+            // The default appearance supplies the square head even when the character
+            // table still uses legacy icon paths or cleared release schedules.
+            let Some(icon) = asset_path(appearance.get("HeadIcon"))
+                .or_else(|| asset_path(appearance.get("HeadIconBig")))
+            else {
+                continue;
+            };
+            let mut patch = JsonObject::new();
+            patch.insert("asset_refs".to_string(), json!({"icon": icon}));
+            merge_item_meta(meta, character_id, patch);
+        }
     }
+    Ok(())
+}
 
+fn linked_appearance_refs(appearance: &JsonObject) -> JsonObject {
     let mut refs = JsonObject::new();
     let head_icon = asset_path(appearance.get("HeadIcon"));
     let head_icon_big = asset_path(appearance.get("HeadIconBig"));
-    let distinct_head_icon = head_icon
-        .as_ref()
-        .filter(|head_icon| Some(*head_icon) != head_icon_big.as_ref())
-        .cloned();
-    let icon = distinct_head_icon
-        .or_else(|| head_icon_big.clone())
-        .or_else(|| head_icon.clone());
+    let icon = head_icon.clone().or_else(|| head_icon_big.clone());
     if let Some(icon) = icon {
         refs.insert("icon".to_string(), Value::String(icon));
     }
@@ -251,9 +244,8 @@ fn replace_linked_appearance_refs(
     meta: &mut BTreeMap<String, JsonObject>,
     item_id: &str,
     appearance: &JsonObject,
-    uses_v13_layout: bool,
 ) {
-    let refs = linked_appearance_refs(appearance, uses_v13_layout);
+    let refs = linked_appearance_refs(appearance);
     let item = meta.entry(item_id.to_string()).or_default();
     let asset_refs = item
         .entry("asset_refs".to_string())
@@ -272,7 +264,6 @@ fn add_linked_appearance_meta(
     meta: &mut BTreeMap<String, JsonObject>,
     assets_root: &Path,
     known_ids: &BTreeSet<String>,
-    character_show_times: &BTreeMap<String, AssetDateTime>,
 ) -> Result<(), GuiError> {
     let mut appearances = JsonObject::new();
     for &(_, rel_path) in APPEARANCE_TABLES {
@@ -302,12 +293,7 @@ fn add_linked_appearance_meta(
             else {
                 continue;
             };
-            replace_linked_appearance_refs(
-                meta,
-                &item_id,
-                appearance,
-                uses_v13_fashion_icon_layout(appearance, character_show_times),
-            );
+            replace_linked_appearance_refs(meta, &item_id, appearance);
         }
     }
     Ok(())
@@ -359,7 +345,6 @@ fn add_gacha_illustrate_meta(
     assets_root: &Path,
     known_ids: &BTreeSet<String>,
     canonicalizer: &ItemCanonicalizer,
-    character_show_times: &BTreeMap<String, AssetDateTime>,
 ) -> Result<(), GuiError> {
     let path = assets_root.join(GACHA_ILLUSTRATE_TABLE);
     if !path.exists() {
@@ -373,21 +358,16 @@ fn add_gacha_illustrate_meta(
         if !known_ids.contains(&item_id) {
             continue;
         }
-        let is_character = item_category(meta, &item_id) == Some("character");
         let mut patch = JsonObject::new();
-        let mut refs = asset_refs_from_fields(
+        let refs = asset_refs_from_fields(
             row,
             &[
+                ("HeadIcon", "icon"),
                 ("ItemIcon", "portrait"),
                 ("ActivityHeadIcon", "banner"),
                 ("MaterialTexture", "material"),
             ],
         );
-        if !is_character || !uses_v13_character_icon_layout(&item_id, character_show_times) {
-            if let Some(icon) = asset_path(row.get("HeadIcon")) {
-                refs.insert("icon".to_string(), Value::String(icon));
-            }
-        }
         if !refs.is_empty() {
             patch.insert("asset_refs".to_string(), Value::Object(refs));
         }
@@ -425,7 +405,6 @@ fn build_item_meta_rows(
     let known_ids = items.keys().cloned().collect::<BTreeSet<_>>();
     let mut meta = BTreeMap::new();
     let business_cards = business_card_refs(assets_root)?;
-    let character_show_times = character_show_boundaries(assets_root, ScheduleRegion::Mainland)?;
     for &(category, rel_path) in TABLES.iter().chain(APPEARANCE_TABLES.iter()) {
         let path = assets_root.join(rel_path);
         if !path.exists() {
@@ -445,19 +424,9 @@ fn build_item_meta_rows(
         }
     }
     add_vehicle_module_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
-    add_gacha_illustrate_meta(
-        &mut meta,
-        assets_root,
-        &known_ids,
-        canonicalizer,
-        &character_show_times,
-    )?;
-    add_linked_appearance_meta(
-        &mut meta,
-        assets_root,
-        &known_ids,
-        &character_show_times,
-    )?;
+    add_gacha_illustrate_meta(&mut meta, assets_root, &known_ids, canonicalizer)?;
+    add_default_character_icons(&mut meta, assets_root, canonicalizer)?;
+    add_linked_appearance_meta(&mut meta, assets_root, &known_ids)?;
 
     let mut rows = Vec::new();
     for (item_id, item_name) in items {

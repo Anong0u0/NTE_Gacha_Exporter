@@ -79,6 +79,9 @@
     "1039": {
       "name": "Personnage·Fadia"
     },
+    "1042": {
+      "name": "Personnage·Oiseau noir"
+    },
     "1052": {
       "name": "Personnage·Hotori"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "Personnage·Jiuyuan"
+    },
+    "1057": {
+      "name": "Personnage·Akane Rin"
     },
     "1070": {
       "name": "Personnage·Aurelia"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "Deltaplanes·Écharpe écarlate"
     },
+    "Fashion_Glide_1042": {
+      "name": "Deltaplanes·Le Héraut"
+    },
     "Fashion_Glide_1052": {
       "name": "Deltaplanes·Brise d’orchidée"
+    },
+    "Fashion_Glide_1057": {
+      "name": "Deltaplanes·Journée à la dérive"
     },
     "Fashion_Glide_1071": {
       "name": "Deltaplanes·Cavalier céleste"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "Tenue·Vignette d’automne"
     },
+    "Fashion_character_1042_02": {
+      "name": "Tenue·Le Rouge et le Noir"
+    },
     "Fashion_character_1052_01": {
       "name": "Tenue·Orchidée inestimable"
+    },
+    "Fashion_character_1057_03": {
+      "name": "Tenue·Idole rayonnante"
     },
     "Fashion_character_1071_01": {
       "name": "Tenue·Ciel dégagé"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "Pièces de rechange·Mirage des sables - Peinture"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "Pièces de rechange·Plume nocturne - Peinture"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "Pièces de rechange·Brume d’automne - Peinture"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "Pièces de rechange·Kit Turbo Linko"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "Pièces de rechange·Ruée du molosse - Peinture"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "Arc·Oraora !"
     },
+    "fork_prism": {
+      "name": "Arc·Face cachée de la Lune"
+    },
     "fork_rishi": {
       "name": "Arc·Congés"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "Arc·Le grand voleur"
+    },
+    "fork_twinbirds": {
+      "name": "Arc·Crime et châtiment"
     },
     "fork_vine": {
       "name": "Arc·La joie de vivre"
@@ -328,6 +358,11 @@
       "group_label": "Recherche d’arc",
       "title": "Spécial envoûtement"
     },
+    "ForkLottery_HeiYu": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Plume du nid"
+    },
     "ForkLottery_Kaesi": {
       "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
@@ -337,6 +372,11 @@
       "name": "Boîte miraculeuse",
       "group_label": "Recherche d’arc",
       "title": "Spécial symphonie"
+    },
+    "ForkLottery_MingYin": {
+      "name": "Boîte miraculeuse",
+      "group_label": "Recherche d’arc",
+      "title": "Spécial Céleste"
     },
     "ForkLottery_Nanali": {
       "name": "Boîte miraculeuse",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "Je zappe à gogo !"
     },
+    "Lottery_HeiYu": {
+      "title": "Grand final annoncé"
+    },
+    "Lottery_MingYin": {
+      "title": "Étoile éblouissante"
+    },
     "ForkLottery_Nanali": {
       "title": "Spécial Tigresse"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "Spécial symphonie"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "Spécial Plume du nid"
+    },
+    "ForkLottery_MingYin": {
+      "title": "Spécial Céleste"
     }
   }
 }

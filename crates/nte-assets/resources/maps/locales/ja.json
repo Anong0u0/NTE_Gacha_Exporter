@@ -79,6 +79,9 @@
     "1039": {
       "name": "キャラ·ファルディーヤ"
     },
+    "1042": {
+      "name": "キャラ·クロバネ"
+    },
     "1052": {
       "name": "キャラ·潯"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "キャラ·九原"
+    },
+    "1057": {
+      "name": "キャラ·明音凛"
     },
     "1070": {
       "name": "キャラ·海月"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "グライダー·緋妄"
     },
+    "Fashion_Glide_1042": {
+      "name": "グライダー·予兆の翼"
+    },
     "Fashion_Glide_1052": {
       "name": "グライダー·幽蘭"
+    },
+    "Fashion_Glide_1057": {
+      "name": "グライダー·迷いの日"
     },
     "Fashion_Glide_1071": {
       "name": "グライダー·ダークチェイサー"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "コスチューム·秋色ルージュ"
     },
+    "Fashion_character_1042_02": {
+      "name": "コスチューム·赤と黒"
+    },
     "Fashion_character_1052_01": {
       "name": "コスチューム·万金の蘭"
+    },
+    "Fashion_character_1057_03": {
+      "name": "コスチューム·ステージスター"
     },
     "Fashion_character_1071_01": {
       "name": "コスチューム·サニーデイズ"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "改造パーツ·白砂の幻影 - 塗装"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "改造パーツ·ナイトフェザー"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "改造パーツ·秋色の残影"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "改造パーツ·ぐるぐるリンコセット"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "改造パーツ·ハウンドラッシュ"
@@ -188,10 +212,10 @@
       "name": "改造パーツ·悪霊同乗中"
     },
     "Fashion_vehicle_1075_V006": {
-      "name": "改造パーツ·乗り物スキン「トリプル・メイツ」"
+      "name": "改造パーツ·トリプル・メイツ"
     },
     "Fashion_vehicle_1076_V024": {
-      "name": "改造パーツ·ドラグーン-塗装"
+      "name": "改造パーツ·ドラグーン"
     },
     "fork_Arachne": {
       "name": "弧盤·永遠のワルツ"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "弧盤·オラオラ！"
     },
+    "fork_prism": {
+      "name": "弧盤·月のB面"
+    },
     "fork_rishi": {
       "name": "弧盤·休息日"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "弧盤·呪われた出会い"
+    },
+    "fork_twinbirds": {
+      "name": "弧盤·罪と罰"
     },
     "fork_vine": {
       "name": "弧盤·いつも笑顔で"
@@ -328,6 +358,11 @@
       "group_label": "弧盤研究プロジェクト",
       "title": "蠱惑特別号"
     },
+    "ForkLottery_HeiYu": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "黒羽特別号"
+    },
     "ForkLottery_Kaesi": {
       "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
@@ -337,6 +372,11 @@
       "name": "奇跡ボックス",
       "group_label": "弧盤研究プロジェクト",
       "title": "万波特別号"
+    },
+    "ForkLottery_MingYin": {
+      "name": "奇跡ボックス",
+      "group_label": "弧盤研究プロジェクト",
+      "title": "日月星特別号"
     },
     "ForkLottery_Nanali": {
       "name": "奇跡ボックス",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "全帯域ローミング中"
     },
+    "Lottery_HeiYu": {
+      "title": "終局のオラクル"
+    },
+    "Lottery_MingYin": {
+      "title": "一番星"
+    },
     "ForkLottery_Nanali": {
       "title": "猛虎特別号"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "万波特別号"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "黒羽特別号"
+    },
+    "ForkLottery_MingYin": {
+      "title": "日月星特別号"
     }
   }
 }

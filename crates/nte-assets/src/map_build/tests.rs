@@ -3,6 +3,47 @@ mod tests {
     use super::*;
 
     #[test]
+    fn character_icons_use_default_appearance_heads_across_legacy_paths() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_minimal_assets(tmp.path());
+        let map = build_full_asset_map(tmp.path(), "zh-Hant").unwrap();
+
+        for (id, icon) in [
+            ("1004", "/Game/LacrimosaSquareHead"),
+            ("1010", "/Game/SquareCharacterHead"),
+            ("1036", "/Game/CharacterIcon"),
+        ] {
+            assert_eq!(map["items"][id]["asset_refs"]["icon"], json!(icon));
+        }
+    }
+
+    #[test]
+    fn character_and_fashion_icons_survive_cleared_show_times() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_minimal_assets(tmp.path());
+        let before = build_full_asset_map(tmp.path(), "zh-Hant").unwrap();
+
+        let character_path = tmp.path().join(CHARACTER_TABLE);
+        let mut characters = load_json(&character_path).unwrap();
+        for id in ["1036", "1072"] {
+            characters["Rows"][id]["ElementData"]["ShowTime"] = schedule(1, 1, 1, 0, 0, true);
+        }
+        write_json(character_path, characters);
+        let after = build_full_asset_map(tmp.path(), "zh-Hant").unwrap();
+
+        for id in [
+            "1036",
+            "Fashion_character_1036_03",
+            "Fashion_character_1072_01",
+        ] {
+            assert_eq!(
+                after["items"][id]["asset_refs"],
+                before["items"][id]["asset_refs"]
+            );
+        }
+    }
+
+    #[test]
     fn builds_map_from_minimal_assets() {
         let tmp = tempfile::tempdir().unwrap();
         write_minimal_assets(tmp.path());
@@ -25,7 +66,7 @@ mod tests {
         );
         assert_eq!(
             nanali_refs.get("icon"),
-            Some(&json!("/Game/LegacyCharacterIcon256"))
+            Some(&json!("/Game/SquareCharacterHead"))
         );
         assert_eq!(
             nanali_refs.get("banner"),
@@ -78,11 +119,11 @@ mod tests {
             .unwrap();
         assert_eq!(
             fashion_refs.get("icon"),
-            Some(&json!("/Game/LinkedFashionIcon"))
+            Some(&json!("/Game/LinkedFashionHead"))
         );
         assert_eq!(
             fashion_refs.get("head_icon"),
-            Some(&json!("/Game/LinkedFashionHead"))
+            Some(&json!("/Game/LinkedFashionIcon"))
         );
         assert_eq!(
             fashion_refs.get("portrait"),
@@ -107,10 +148,9 @@ mod tests {
             v13_distinct_refs.get("portrait"),
             Some(&json!("/Game/V13FashionPortrait"))
         );
-        let v13_missing_200_refs =
-            map["items"]["Fashion_character_1072_01"]["asset_refs"]
-                .as_object()
-                .unwrap();
+        let v13_missing_200_refs = map["items"]["Fashion_character_1072_01"]["asset_refs"]
+            .as_object()
+            .unwrap();
         assert_eq!(
             v13_missing_200_refs.get("icon"),
             Some(&json!("/Game/V13FashionRound256"))
@@ -638,6 +678,20 @@ mod tests {
         write_json(
             root.join("DataTable/Character/Appearance/DT_AppearanceData.json"),
             json!({"Rows": {
+                "base_lacrimosa": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1004",
+                    "IsDefault": true,
+                    "HeadIcon": {"AssetPathName": "/Game/LacrimosaSquareHead"},
+                    "HeadIconBig": {"AssetPathName": "/Game/LacrimosaPortrait"}
+                },
+                "base_nanali": {
+                    "AppearanceType": "EAppearanceType::Fashion",
+                    "CharacterID": "1010",
+                    "IsDefault": true,
+                    "HeadIcon": {"AssetPathName": "/Game/SquareCharacterHead"},
+                    "HeadIconBig": {"AssetPathName": "/Game/LegacyCharacterIcon256"}
+                },
                 "Fashion_Glide_1010": {
                     "Name": {"Key": "glide_1010", "TableId": "ST_Item"},
                     "Quality": "EItemQuality::ITEM_QUALITY_ORANGE",
@@ -656,8 +710,9 @@ mod tests {
                 "Fashion_1036_1": {
                     "AppearanceType": "EAppearanceType::Fashion",
                     "CharacterID": "1036",
+                    "IsDefault": true,
                     "HeadIconBig": {"AssetPathName": "/Game/LinkedCharacterIcon"},
-                    "HeadIcon": {"AssetPathName": "/Game/LinkedCharacterHead"},
+                    "HeadIcon": {"AssetPathName": "/Game/CharacterIcon"},
                     "SmallPortraitImg": {"AssetPathName": "/Game/LinkedCharacterPortrait"}
                 },
                 "Fashion_1036_3": {

@@ -79,6 +79,9 @@
     "1039": {
       "name": "Charakter·Fadia"
     },
+    "1042": {
+      "name": "Charakter·Blackbird"
+    },
     "1052": {
       "name": "Charakter·Hotori"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "Charakter·Jiuyuan"
+    },
+    "1057": {
+      "name": "Charakter·Akane Rin"
     },
     "1070": {
       "name": "Charakter·Aurelia"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "Gleiter·Scharlachrote Schärpe"
     },
+    "Fashion_Glide_1042": {
+      "name": "Gleiter·Der Vorbote"
+    },
     "Fashion_Glide_1052": {
       "name": "Gleiter·Orchideenbrise"
+    },
+    "Fashion_Glide_1057": {
+      "name": "Gleiter·Ein Tag auf Abwegen"
     },
     "Fashion_Glide_1071": {
       "name": "Gleiter·Himmelsreiter"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "Outfit·Herbstvignette"
     },
+    "Fashion_character_1042_02": {
+      "name": "Outfit·Rot und Schwarz"
+    },
     "Fashion_character_1052_01": {
       "name": "Outfit·Unbezahlbare Orchidee"
+    },
+    "Fashion_character_1057_03": {
+      "name": "Outfit·Strahlendes Idol"
     },
     "Fashion_character_1071_01": {
       "name": "Outfit·Klarer Himmel"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "Mod-Teile·Sand-Illusion – Lackierung"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "Mod-Teile·Nachtfeder – Lackierung"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "Mod-Teile·Herbstnebel - Lackierung"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "Mod-Teile·Turbo-Linko-Set"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "Mod-Teile·Hundeblitz – Lackierung"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "Arkus·Oraora!"
     },
+    "fork_prism": {
+      "name": "Arkus·Rückseite des Mondes"
+    },
     "fork_rishi": {
       "name": "Arkus·Freier Tag"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "Arkus·Verdammte Begegnung"
+    },
+    "fork_twinbirds": {
+      "name": "Arkus·Schuld und Sühne"
     },
     "fork_vine": {
       "name": "Arkus·Glücklich sein"
@@ -328,6 +358,11 @@
       "group_label": "Arkus-Forschung",
       "title": "Verzauberung-Spezialausgabe"
     },
+    "ForkLottery_HeiYu": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Nestfeder-Spezialausgabe"
+    },
     "ForkLottery_Kaesi": {
       "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
@@ -337,6 +372,11 @@
       "name": "Sensationskiste",
       "group_label": "Arkus-Forschung",
       "title": "Symphonie-Spezialausgabe"
+    },
+    "ForkLottery_MingYin": {
+      "name": "Sensationskiste",
+      "group_label": "Arkus-Forschung",
+      "title": "Himmels-Spezialausgabe"
     },
     "ForkLottery_Nanali": {
       "name": "Sensationskiste",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "Auf allen Kanälen!"
     },
+    "Lottery_HeiYu": {
+      "title": "Prophezeites Finale"
+    },
+    "Lottery_MingYin": {
+      "title": "Gleißender Stern"
+    },
     "ForkLottery_Nanali": {
       "title": "Tiger-Spezialausgabe"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "Symphonie-Spezialausgabe"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "Nestfeder-Spezialausgabe"
+    },
+    "ForkLottery_MingYin": {
+      "title": "Himmels-Spezialausgabe"
     }
   }
 }

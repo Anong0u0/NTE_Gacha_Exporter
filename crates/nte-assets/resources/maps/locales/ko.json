@@ -79,6 +79,9 @@
     "1039": {
       "name": "캐릭터·파디아"
     },
+    "1042": {
+      "name": "캐릭터·레이븐"
+    },
     "1052": {
       "name": "캐릭터·호토리"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "캐릭터·구원"
+    },
+    "1057": {
+      "name": "캐릭터·아카네 린"
     },
     "1070": {
       "name": "캐릭터·우미츠키"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "글라이더·적련"
     },
+    "Fashion_Glide_1042": {
+      "name": "글라이더·징조의 새"
+    },
     "Fashion_Glide_1052": {
       "name": "글라이더·유란"
+    },
+    "Fashion_Glide_1057": {
+      "name": "글라이더·방황의 날"
     },
     "Fashion_Glide_1071": {
       "name": "글라이더·스카이 라이더"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "코스튬·가을의 여유"
     },
+    "Fashion_character_1042_02": {
+      "name": "코스튬·적과 흑"
+    },
     "Fashion_character_1052_01": {
       "name": "코스튬·고급 난초"
+    },
+    "Fashion_character_1057_03": {
+      "name": "코스튬·슈퍼스타"
     },
     "Fashion_character_1071_01": {
       "name": "코스튬·화창한 하루"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "튜닝 부품·하얀 모래의 신기루 - 리버리"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "튜닝 부품·밤하늘의 깃털 - 리버리"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "튜닝 부품·가을의 여운-리버리"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "튜닝 부품·빙글빙글 링코-세트"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "튜닝 부품·사냥개의 습격-리버리"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "아크·오라오라!"
     },
+    "fork_prism": {
+      "name": "아크·달의 대척점"
+    },
     "fork_rishi": {
       "name": "아크·휴일"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "아크·망할 인연"
+    },
+    "fork_twinbirds": {
+      "name": "아크·죄와 벌"
     },
     "fork_vine": {
       "name": "아크·미소 천사"
@@ -328,6 +358,11 @@
       "group_label": "아크 연구 모집",
       "title": "미혹 특간"
     },
+    "ForkLottery_HeiYu": {
+      "name": "기적 상자",
+      "group_label": "아크 연구 모집",
+      "title": "깃털 특간"
+    },
     "ForkLottery_Kaesi": {
       "name": "기적 상자",
       "group_label": "아크 연구 모집",
@@ -337,6 +372,11 @@
       "name": "기적 상자",
       "group_label": "아크 연구 모집",
       "title": "만물의 소리 특간"
+    },
+    "ForkLottery_MingYin": {
+      "name": "기적 상자",
+      "group_label": "아크 연구 모집",
+      "title": "해달별 특간"
     },
     "ForkLottery_Nanali": {
       "name": "기적 상자",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "주파수 로밍 중!"
     },
+    "Lottery_HeiYu": {
+      "title": "예언의 마지막 순간"
+    },
+    "Lottery_MingYin": {
+      "title": "찬란한 별"
+    },
     "ForkLottery_Nanali": {
       "title": "타이거 특간"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "만물의 소리 특간"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "깃털 특간"
+    },
+    "ForkLottery_MingYin": {
+      "title": "해달별 특간"
     }
   }
 }

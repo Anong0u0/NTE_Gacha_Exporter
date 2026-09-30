@@ -79,6 +79,9 @@
     "1039": {
       "name": "Personaje·Fadia"
     },
+    "1042": {
+      "name": "Personaje·Raven"
+    },
     "1052": {
       "name": "Personaje·Hotori"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "Personaje·Jiuyuan"
+    },
+    "1057": {
+      "name": "Personaje·Akane Rin"
     },
     "1070": {
       "name": "Personaje·Aurelia"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "Planeador·Listón escarlata"
     },
+    "Fashion_Glide_1042": {
+      "name": "Planeador·El Heraldo"
+    },
     "Fashion_Glide_1052": {
       "name": "Planeador·Brisa de orquídea"
+    },
+    "Fashion_Glide_1057": {
+      "name": "Planeador·Día a la deriva"
     },
     "Fashion_Glide_1071": {
       "name": "Planeador·Cazador celeste"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "Atuendo·Viñeta otoñal"
     },
+    "Fashion_character_1042_02": {
+      "name": "Atuendo·Rojo y negro"
+    },
     "Fashion_character_1052_01": {
       "name": "Atuendo·Orquídea invaluable"
+    },
+    "Fashion_character_1057_03": {
+      "name": "Atuendo·Ídolo radiante"
     },
     "Fashion_character_1071_01": {
       "name": "Atuendo·Cielo azul"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "Piezas de modificación·Espejismo arenoso: Esquema de colores"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "Piezas de modificación·Pluma nocturna: Esquema de colores"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "Piezas de modificación·Neblina de otoño: Esquema de colores"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "Piezas de modificación·Set Turbo Linko"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "Piezas de modificación·Arremetida del sabueso: Esquema de colores"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "Disco·¡Oraora!"
     },
+    "fork_prism": {
+      "name": "Disco·Cara oculta de la Luna"
+    },
     "fork_rishi": {
       "name": "Disco·Día libre"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "Disco·El gran ladrón"
+    },
+    "fork_twinbirds": {
+      "name": "Disco·Crimen y castigo"
     },
     "fork_vine": {
       "name": "Disco·Sé feliz"
@@ -328,6 +358,11 @@
       "group_label": "Investigación de discos",
       "title": "Especial de Hechizo"
     },
+    "ForkLottery_HeiYu": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Pluma del nido"
+    },
     "ForkLottery_Kaesi": {
       "name": "Caja milagrosa",
       "group_label": "Investigación de discos",
@@ -337,6 +372,11 @@
       "name": "Caja milagrosa",
       "group_label": "Investigación de discos",
       "title": "Especial de Sinfonía"
+    },
+    "ForkLottery_MingYin": {
+      "name": "Caja milagrosa",
+      "group_label": "Investigación de discos",
+      "title": "Especial de Astros"
     },
     "ForkLottery_Nanali": {
       "name": "Caja milagrosa",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "¡Recorriendo todos los canales!"
     },
+    "Lottery_HeiYu": {
+      "title": "Final predestinado"
+    },
+    "Lottery_MingYin": {
+      "title": "Estrella deslumbrante"
+    },
     "ForkLottery_Nanali": {
       "title": "Especial de tigre"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "Especial de Sinfonía"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "Especial de Pluma del nido"
+    },
+    "ForkLottery_MingYin": {
+      "title": "Especial de Astros"
     }
   }
 }

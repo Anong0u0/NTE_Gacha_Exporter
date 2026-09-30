@@ -4,7 +4,7 @@
   "items": {
     "1003": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_003_256.player_003_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_003.player_003",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_003x100.player_003x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_05_s.YH_UI_bg_card_show_strip_05_s"
       },
@@ -14,7 +14,7 @@
     },
     "1004": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_256.player_004_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_004.player_004",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_004x100.player_004x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_06_s.YH_UI_bg_card_show_strip_06_s"
       },
@@ -24,7 +24,7 @@
     },
     "1008": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_008_256.player_008_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_008.player_008",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_008x100.player_008x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_07_s.YH_UI_bg_card_show_strip_07_s"
       },
@@ -34,7 +34,7 @@
     },
     "1010": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_256.player_010_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_010.player_010",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_010x100.player_010x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_08_s.YH_UI_bg_card_show_strip_08_s"
       },
@@ -44,7 +44,7 @@
     },
     "1019": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_019_256.player_019_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_019.player_019",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_019x100.player_019x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_09_s.YH_UI_bg_card_show_strip_09_s"
       },
@@ -54,7 +54,7 @@
     },
     "1020": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_020_256.player_020_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_020.player_020",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_020.player_020",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_18_s.YH_UI_bg_card_show_strip_18_s"
       },
@@ -64,7 +64,7 @@
     },
     "1021": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_021_256.player_021_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_021.player_021",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_021_100.player_021_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_13_s.YH_UI_bg_card_show_strip_13_s"
       },
@@ -74,7 +74,7 @@
     },
     "1023": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_028_256.player_028_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_028.player_028",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_028x100.player_028x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_15_s.YH_UI_bg_card_show_strip_15_s"
       },
@@ -84,7 +84,7 @@
     },
     "1025": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_012.player_012",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_012.player_012",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_012_100.player_012_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_17_s.YH_UI_bg_card_show_strip_17_s"
       },
@@ -94,7 +94,7 @@
     },
     "1033": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_015_256.player_015_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_015.player_015",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_015x100.player_015x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_11_s.YH_UI_bg_card_show_strip_11_s"
       },
@@ -114,7 +114,7 @@
     },
     "1039": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_027_256.player_027_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_027.player_027",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_027x100.player_027x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_12_s.YH_UI_bg_card_show_strip_12_s"
       },
@@ -122,9 +122,19 @@
       "category": "character",
       "color": "#B095D9"
     },
+    "1042": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_heiyu.player_heiyu",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_heiyu_100.player_heiyu_100",
+        "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/Card_Likeability_1042_s.Card_Likeability_1042_s"
+      },
+      "rarity": 5,
+      "category": "character",
+      "color": "#B99B3C"
+    },
     "1052": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_013_256.player_013_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_013.player_013",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/player_013x100.player_013x100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_14_s.YH_UI_bg_card_show_strip_14_s"
       },
@@ -134,7 +144,7 @@
     },
     "1054": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_005_256.player_005_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_005.player_005",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_005_100.player_005_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_16_s.YH_UI_bg_card_show_strip_16_s"
       },
@@ -144,7 +154,7 @@
     },
     "1055": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_104_256.player_104_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_104.player_104",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_104_100.player_104_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_04_s.YH_UI_bg_card_show_strip_04_s"
       },
@@ -152,9 +162,19 @@
       "category": "character",
       "color": "#A595D1"
     },
+    "1057": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_mingyin.player_mingyin",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_mingyin_100.player_mingyin_100",
+        "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/Card_Likeability_1057_s.Card_Likeability_1057_s"
+      },
+      "rarity": 5,
+      "category": "character",
+      "color": "#4079CC"
+    },
     "1070": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_haiyue_256.player_haiyue_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_haiyue.player_haiyue",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_haiyue_100.player_haiyue_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_36_s.YH_UI_bg_card_show_strip_36_s"
       },
@@ -164,7 +184,7 @@
     },
     "1071": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi1_256.player_kaesi1_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_kaesi1.player_kaesi1",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_kaesi1_100.player_kaesi1_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_46_s.YH_UI_bg_card_show_strip_46_s"
       },
@@ -184,7 +204,7 @@
     },
     "1073": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_073_256.player_073_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_073.player_073",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_073_100.player_073_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_19_s.YH_UI_bg_card_show_strip_19_s"
       },
@@ -194,7 +214,7 @@
     },
     "1075": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_yiluoyi_256.player_yiluoyi_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_yiluoyi.player_yiluoyi",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_yiluoyi_100.player_yiluoyi_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_47_s.YH_UI_bg_card_show_strip_47_s"
       },
@@ -204,7 +224,7 @@
     },
     "1076": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_zhenhong_256.player_zhenhong_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_zhenhong.player_zhenhong",
         "head_icon": "/Game/UI/UI_Icon/AvatarImage/100/player_zhenhong_100.player_zhenhong_100",
         "banner": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_48_s.YH_UI_bg_card_show_strip_48_s"
       },
@@ -251,8 +271,8 @@
     },
     "Fashion_1075_rpg_level2_Base": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_yiluoyi3_256.player_yiluoyi3_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_yiluoy3.player_yiluoy3",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_yiluoy3.player_yiluoy3",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_yiluoyi3_256.player_yiluoyi3_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_yiluoyi3.YH_lihui_fashionshop_yiluoyi3"
       },
       "rarity": 5,
@@ -283,9 +303,25 @@
       "category": "glider",
       "color": "#000000"
     },
+    "Fashion_Glide_1042": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide_1024_256.Fashion_Glide_1024_256"
+      },
+      "rarity": 4,
+      "category": "glider",
+      "color": "#000000"
+    },
     "Fashion_Glide_1052": {
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_glide_1052_256.Fashion_glide_1052_256"
+      },
+      "rarity": 4,
+      "category": "glider",
+      "color": "#000000"
+    },
+    "Fashion_Glide_1057": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_Glide_1072_256.Fashion_Glide_1072_256"
       },
       "rarity": 4,
       "category": "glider",
@@ -325,8 +361,8 @@
     },
     "Fashion_character_1004_01": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_004_3.player_004_3",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_004_3.player_004_3",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_004_3_256.player_004_3_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshopi_anhunqu3.YH_lihui_fashionshopi_anhunqu3"
       },
       "rarity": 5,
@@ -335,8 +371,8 @@
     },
     "Fashion_character_1010": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_010_3.player_010_3",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_010_3.player_010_3",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_010_3_256.player_010_3_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_nanali3.YH_lihui_fashionshop_nanali3"
       },
       "rarity": 5,
@@ -353,11 +389,31 @@
       "category": "fashion",
       "color": "#000000"
     },
+    "Fashion_character_1042_02": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_heiyu2.player_heiyu2",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_heiyu2_256.player_heiyu2_256",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_heiyu2.YH_lihui_fashionshop_heiyu2"
+      },
+      "rarity": 5,
+      "category": "fashion",
+      "color": "#000000"
+    },
     "Fashion_character_1052_01": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_052_3.player_052_3",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_052_3.player_052_3",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_052_3_256.player_052_3_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_xun1_2.YH_lihui_fashionshop_xun1_2"
+      },
+      "rarity": 5,
+      "category": "fashion",
+      "color": "#000000"
+    },
+    "Fashion_character_1057_03": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_mingyin3.player_mingyin3",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_mingyin3_256.player_mingyin3_256",
+        "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_mingyin3.YH_lihui_fashionshop_mingyin3"
       },
       "rarity": 5,
       "category": "fashion",
@@ -365,8 +421,8 @@
     },
     "Fashion_character_1071_01": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_kaesi2.player_kaesi2",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_kaesi2.player_kaesi2",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_kaesi2_256.player_kaesi2_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_kaesi2.YH_lihui_fashionshop_kaesi2"
       },
       "rarity": 5,
@@ -375,7 +431,8 @@
     },
     "Fashion_character_1072_01": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_lingke_2_256.player_lingke_2_256",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_lingke_2.player_lingke_2",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_lingke_2_256.player_lingke_2_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_lingke2.YH_lihui_fashionshop_lingke2"
       },
       "rarity": 5,
@@ -384,8 +441,8 @@
     },
     "Fashion_character_1076_01": {
       "asset_refs": {
-        "icon": "/Game/UI/UI_Icon/AvatarImage/256/player_zhenhong5_256.player_zhenhong5_256",
-        "head_icon": "/Game/UI/UI_Icon/AvatarImage/200/player_zhenhong5.player_zhenhong5",
+        "icon": "/Game/UI/UI_Icon/AvatarImage/200/player_zhenhong5.player_zhenhong5",
+        "head_icon": "/Game/UI/UI_Icon/AvatarImage/256/player_zhenhong5_256.player_zhenhong5_256",
         "portrait": "/Game/UI/UI/Appearance/Fashion/1024/YH_lihui_fashionshop_zhenhong5.YH_lihui_fashionshop_zhenhong5"
       },
       "rarity": 5,
@@ -428,6 +485,15 @@
       "category": "vehicle_module",
       "color": "#000000"
     },
+    "Fashion_vehicle_1042_V013": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1042_V013.Fashion_vehicle_1042_V013",
+        "head_icon": "/Game/UI/UI/Vehicle/icon/YH_UI_car_icon_V013_Skin_002.YH_UI_car_icon_V013_Skin_002"
+      },
+      "rarity": 5,
+      "category": "vehicle_module",
+      "color": "#000000"
+    },
     "Fashion_vehicle_1052_V024": {
       "asset_refs": {
         "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1052_V024.Fashion_vehicle_1052_V024",
@@ -435,6 +501,15 @@
       },
       "rarity": 5,
       "category": "vehicle_module",
+      "color": "#000000"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Item/Fashion_vehicle_1072_V013.Fashion_vehicle_1072_V013",
+        "head_icon": "/Game/UI/UI_Icon/item_100/Fashion_vehicle_1072_V013_100.Fashion_vehicle_1072_V013_100"
+      },
+      "rarity": 5,
+      "category": "inventory",
       "color": "#000000"
     },
     "Fashion_vehicle_1071_V010": {
@@ -725,6 +800,14 @@
       "category": "fork",
       "color": "#000000"
     },
+    "fork_prism": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_prism_256.fork_prism_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_prism_100.fork_prism_100"
+      },
+      "rarity": 5,
+      "category": "fork"
+    },
     "fork_rishi": {
       "asset_refs": {
         "portrait": "/Game/UI/UI_Icon/Fork/fork_rishi_256.fork_rishi_256",
@@ -751,6 +834,14 @@
       "rarity": 4,
       "category": "fork",
       "color": "#000000"
+    },
+    "fork_twinbirds": {
+      "asset_refs": {
+        "icon": "/Game/UI/UI_Icon/Fork/fork_twinbirds_256.fork_twinbirds_256",
+        "head_icon": "/Game/UI/UI_Icon/Fork/fork_twinbirds_100.fork_twinbirds_100"
+      },
+      "rarity": 5,
+      "category": "fork"
     },
     "fork_vine": {
       "asset_refs": {
@@ -804,7 +895,9 @@
     "Fashion_glide_1004": "Fashion_Glide_1004",
     "Fashion_glide_1010": "Fashion_Glide_1010",
     "Fashion_glide_1036": "Fashion_Glide_1036",
+    "Fashion_glide_1042": "Fashion_Glide_1042",
     "Fashion_glide_1052": "Fashion_Glide_1052",
+    "Fashion_glide_1057": "Fashion_Glide_1057",
     "Fashion_glide_1071": "Fashion_Glide_1071",
     "Fashion_glide_1072": "Fashion_Glide_1072",
     "Fashion_glide_1075": "Fashion_Glide_1075",
@@ -826,6 +919,11 @@
         "fork_DemonBlade"
       ]
     },
+    "ForkLottery_HeiYu": {
+      "pickup_item_ids": [
+        "fork_twinbirds"
+      ]
+    },
     "ForkLottery_Kaesi": {
       "pickup_item_ids": [
         "fork_GoldWool"
@@ -834,6 +932,11 @@
     "ForkLottery_LingKe": {
       "pickup_item_ids": [
         "fork_GoldRecord"
+      ]
+    },
+    "ForkLottery_MingYin": {
+      "pickup_item_ids": [
+        "fork_prism"
       ]
     },
     "ForkLottery_Nanali": {
@@ -952,32 +1055,60 @@
       "source_id": "Lottery_Yiluoyi"
     },
     "Lottery_Canhong": {
-      "rate_up_5": [
-        "1036"
-      ],
+      "rule_id": "monopoly_limited",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
       "asset_refs": {
         "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_60_s.YH_UI_bg_card_show_strip_60_s"
       },
-      "rule_id": "monopoly_limited",
+      "rate_up_5": [
+        "1036"
+      ],
       "rate_up_4": [],
       "source_id": "Lottery_Canhong"
     },
     "Lottery_LingKe": {
-      "rate_up_5": [
-        "1072"
-      ],
+      "rule_id": "monopoly_limited",
       "pool_id": "CardPool_Character",
       "pool_kind": "monopoly_limited",
       "banner_type": "limited",
       "asset_refs": {
         "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/YH_UI_bg_card_show_strip_61_s.YH_UI_bg_card_show_strip_61_s"
       },
-      "rule_id": "monopoly_limited",
+      "rate_up_5": [
+        "1072"
+      ],
       "rate_up_4": [],
       "source_id": "Lottery_LingKe"
+    },
+    "Lottery_HeiYu": {
+      "rate_up_5": [
+        "1042"
+      ],
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "asset_refs": {
+        "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/Card_Likeability_1042_s.Card_Likeability_1042_s"
+      },
+      "rule_id": "monopoly_limited",
+      "rate_up_4": [],
+      "source_id": "Lottery_HeiYu"
+    },
+    "Lottery_MingYin": {
+      "rate_up_5": [
+        "1057"
+      ],
+      "pool_id": "CardPool_Character",
+      "pool_kind": "monopoly_limited",
+      "banner_type": "limited",
+      "asset_refs": {
+        "image": "/Game/UI/UI/PlayerInfo/BusinessCards/Card_Small/Card_Likeability_1057_s.Card_Likeability_1057_s"
+      },
+      "rule_id": "monopoly_limited",
+      "rate_up_4": [],
+      "source_id": "Lottery_MingYin"
     },
     "ForkLottery_Nanali": {
       "currency_count": 10,
@@ -1114,6 +1245,40 @@
       },
       "currency_id": "WeaponGacha",
       "source_id": "ForkLottery_LingKe"
+    },
+    "ForkLottery_HeiYu": {
+      "currency_count": 10,
+      "pool_id": "ForkLottery_HeiYu",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "roll_unit": 10,
+      "rate_up_5": [
+        "fork_twinbirds"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "asset_refs": {
+        "image": "/Game/UI/UI_Icon/Fork/fork_twinbirds_256.fork_twinbirds_256"
+      },
+      "currency_id": "WeaponGacha",
+      "source_id": "ForkLottery_HeiYu"
+    },
+    "ForkLottery_MingYin": {
+      "currency_count": 10,
+      "pool_id": "ForkLottery_MingYin",
+      "pool_kind": "fork_lottery",
+      "banner_type": "fork",
+      "roll_unit": 10,
+      "rate_up_5": [
+        "fork_prism"
+      ],
+      "rate_up_4": [],
+      "rule_id": "fork_lottery_s",
+      "asset_refs": {
+        "image": "/Game/UI/UI_Icon/Fork/fork_prism_256.fork_prism_256"
+      },
+      "currency_id": "WeaponGacha",
+      "source_id": "ForkLottery_MingYin"
     }
   },
   "gacha_rules": {

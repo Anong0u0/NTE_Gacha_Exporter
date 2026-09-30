@@ -79,6 +79,9 @@
     "1039": {
       "name": "角色·法帝婭"
     },
+    "1042": {
+      "name": "角色·黑羽"
+    },
     "1052": {
       "name": "角色·潯"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "角色·九原"
+    },
+    "1057": {
+      "name": "角色·明音凜"
     },
     "1070": {
       "name": "角色·海月"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "滑翔翼·赤練"
     },
+    "Fashion_Glide_1042": {
+      "name": "滑翔翼·預兆鳥"
+    },
     "Fashion_Glide_1052": {
       "name": "滑翔翼·幽蘭"
+    },
+    "Fashion_Glide_1057": {
+      "name": "滑翔翼·迷茫日"
     },
     "Fashion_Glide_1071": {
       "name": "滑翔翼·天際獵手"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "時裝·秋色閒章"
     },
+    "Fashion_character_1042_02": {
+      "name": "時裝·紅與黑"
+    },
     "Fashion_character_1052_01": {
       "name": "時裝·蘭花不菲"
+    },
+    "Fashion_character_1057_03": {
+      "name": "時裝·舞台之星"
     },
     "Fashion_character_1071_01": {
       "name": "時裝·放晴日"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "改裝件·白沙幻境-塗裝"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "改裝件·夜色飛羽-塗裝"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "改裝件·秋色殘影-塗裝"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "改裝件·高速運轉的靈可-套裝"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "改裝件·獵犬奔襲-塗裝"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "弧盤·歐拉歐拉！"
     },
+    "fork_prism": {
+      "name": "弧盤·月的對蹠點"
+    },
     "fork_rishi": {
       "name": "弧盤·休假日"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "弧盤·該死的邂逅"
+    },
+    "fork_twinbirds": {
+      "name": "弧盤·罪與罰"
     },
     "fork_vine": {
       "name": "弧盤·笑口常開"
@@ -328,6 +358,11 @@
       "group_label": "弧盤研募",
       "title": "攝心特刊"
     },
+    "ForkLottery_HeiYu": {
+      "name": "奇蹟盒盒",
+      "group_label": "弧盤研募",
+      "title": "棲羽特刊"
+    },
     "ForkLottery_Kaesi": {
       "name": "奇蹟盒盒",
       "group_label": "弧盤研募",
@@ -337,6 +372,11 @@
       "name": "奇蹟盒盒",
       "group_label": "弧盤研募",
       "title": "萬籟特刊"
+    },
+    "ForkLottery_MingYin": {
+      "name": "奇蹟盒盒",
+      "group_label": "弧盤研募",
+      "title": "日月星特刊"
     },
     "ForkLottery_Nanali": {
       "name": "奇蹟盒盒",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "全頻帶漫遊中！"
     },
+    "Lottery_HeiYu": {
+      "title": "預言終幕時"
+    },
+    "Lottery_MingYin": {
+      "title": "燦爛的星"
+    },
     "ForkLottery_Nanali": {
       "title": "猛虎特刊"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "萬籟特刊"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "棲羽特刊"
+    },
+    "ForkLottery_MingYin": {
+      "title": "日月星特刊"
     }
   }
 }

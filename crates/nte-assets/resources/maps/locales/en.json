@@ -79,6 +79,9 @@
     "1039": {
       "name": "Character·Fadia"
     },
+    "1042": {
+      "name": "Character·Blackbird"
+    },
     "1052": {
       "name": "Character·Hotori"
     },
@@ -87,6 +90,9 @@
     },
     "1055": {
       "name": "Character·Jiuyuan"
+    },
+    "1057": {
+      "name": "Character·Akane Rin"
     },
     "1070": {
       "name": "Character·Aurelia"
@@ -130,8 +136,14 @@
     "Fashion_Glide_1036": {
       "name": "Glider·Scarlet Sash"
     },
+    "Fashion_Glide_1042": {
+      "name": "Glider·The Harbinger"
+    },
     "Fashion_Glide_1052": {
       "name": "Glider·Orchid Breeze"
+    },
+    "Fashion_Glide_1057": {
+      "name": "Glider·Day Adrift"
     },
     "Fashion_Glide_1071": {
       "name": "Glider·Skyrider"
@@ -154,8 +166,14 @@
     "Fashion_character_1036_03": {
       "name": "Outfit·Autumn Vignette"
     },
+    "Fashion_character_1042_02": {
+      "name": "Outfit·Rouge et Noir"
+    },
     "Fashion_character_1052_01": {
       "name": "Outfit·Priceless Orchid"
+    },
+    "Fashion_character_1057_03": {
+      "name": "Outfit·Shining Idol"
     },
     "Fashion_character_1071_01": {
       "name": "Outfit·Clear Skies"
@@ -178,8 +196,14 @@
     "Fashion_vehicle_1036_V043": {
       "name": "Mod Parts·Sandy Mirage - Livery"
     },
+    "Fashion_vehicle_1042_V013": {
+      "name": "Mod Parts·Nightplume - Livery"
+    },
     "Fashion_vehicle_1052_V024": {
       "name": "Mod Parts·Autumn Haze - Livery"
+    },
+    "Fashion_vehicle_1057_V013": {
+      "name": "Mod Parts·Turbo Linko Set"
     },
     "Fashion_vehicle_1071_V010": {
       "name": "Mod Parts·Hound Blitz - Livery"
@@ -280,6 +304,9 @@
     "fork_oulaquantao": {
       "name": "Arc·Oraora!"
     },
+    "fork_prism": {
+      "name": "Arc·Far Side of the Moon"
+    },
     "fork_rishi": {
       "name": "Arc·Day Off"
     },
@@ -288,6 +315,9 @@
     },
     "fork_tuansanlang": {
       "name": "Arc·The Great Thief"
+    },
+    "fork_twinbirds": {
+      "name": "Arc·Crime and Punishment"
     },
     "fork_vine": {
       "name": "Arc·Be Happy"
@@ -328,6 +358,11 @@
       "group_label": "Arc Research",
       "title": "Spellbound Special"
     },
+    "ForkLottery_HeiYu": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Roostfeather Special"
+    },
     "ForkLottery_Kaesi": {
       "name": "Miracle Box",
       "group_label": "Arc Research",
@@ -337,6 +372,11 @@
       "name": "Miracle Box",
       "group_label": "Arc Research",
       "title": "Soundscape Special"
+    },
+    "ForkLottery_MingYin": {
+      "name": "Miracle Box",
+      "group_label": "Arc Research",
+      "title": "Celestial Special"
     },
     "ForkLottery_Nanali": {
       "name": "Miracle Box",
@@ -387,6 +427,12 @@
     "Lottery_LingKe": {
       "title": "Surfing All Channels!"
     },
+    "Lottery_HeiYu": {
+      "title": "Foretold Finale"
+    },
+    "Lottery_MingYin": {
+      "title": "Dazzling Star"
+    },
     "ForkLottery_Nanali": {
       "title": "Tiger Special"
     },
@@ -410,6 +456,12 @@
     },
     "ForkLottery_LingKe": {
       "title": "Soundscape Special"
+    },
+    "ForkLottery_HeiYu": {
+      "title": "Roostfeather Special"
+    },
+    "ForkLottery_MingYin": {
+      "title": "Celestial Special"
     }
   }
 }
