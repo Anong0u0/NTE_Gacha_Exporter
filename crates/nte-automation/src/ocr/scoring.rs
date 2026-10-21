@@ -5,11 +5,8 @@ fn scaled_len(value: u32, scale: f32) -> i32 {
 impl GlyphClassifier for PageNumberReader {
     fn classify_glyph(&self, target: &TargetMask, slot: GlyphSlot) -> GlyphScores {
         let mut scores = Vec::new();
-        for (&ch, indices) in &self.template_indices_by_char {
-            let mut best = 0.0_f32;
-            for &index in indices {
-                best = best.max(score_template_slot(&self.templates[index], target, slot));
-            }
+        for &ch in self.template_indices_by_char.keys() {
+            let best = self.score_glyph(target, slot, ch);
             if best >= MIN_GLYPH_SCORE {
                 scores.push(GlyphCandidate { ch, score: best });
             }

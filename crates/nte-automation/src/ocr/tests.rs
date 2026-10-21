@@ -23,6 +23,28 @@ mod tests {
     }
 
     #[test]
+    fn digit_seven_does_not_move_the_page_separator() {
+        let reader = PageNumberReader::default();
+        let mut fingerprints = Vec::new();
+        for current in [26, 27] {
+            let path = format!("page_{current}_of_42.png");
+            let image = fixture_image(&path);
+            let (observation, diagnostics) = reader
+                .observe_page_number(&image, PageReadConstraint::default())
+                .unwrap();
+            assert_eq!(
+                observation.current.confident_value(),
+                Some(current),
+                "{path}: {diagnostics:?}"
+            );
+            assert_eq!(observation.total.confident_value(), Some(42), "{path}");
+            fingerprints.push(observation.fingerprint.unwrap());
+        }
+        assert!(fingerprints[0].current_distance(&fingerprints[1]) >= PAGE_CURRENT_CHANGED_DISTANCE);
+        assert!(fingerprints[0].suffix_distance(&fingerprints[1]) <= PAGE_SUFFIX_UNCHANGED_DISTANCE);
+    }
+
+    #[test]
     fn reads_previously_difficult_fixtures_without_navigation_hint() {
         let reader = PageNumberReader::default();
         for (path, current, total) in [
@@ -265,6 +287,8 @@ mod tests {
             "page_18_of_49.png" => include_bytes!("../../tests/fixtures/page_numbers/page_18_of_49.png"),
             "page_19_of_49.png" => include_bytes!("../../tests/fixtures/page_numbers/page_19_of_49.png"),
             "page_20_of_49.png" => include_bytes!("../../tests/fixtures/page_numbers/page_20_of_49.png"),
+            "page_26_of_42.png" => include_bytes!("../../tests/fixtures/page_numbers/page_26_of_42.png"),
+            "page_27_of_42.png" => include_bytes!("../../tests/fixtures/page_numbers/page_27_of_42.png"),
             "failure_01_of_27.png" => include_bytes!("../../tests/fixtures/page_numbers/failure_01_of_27.png"),
             "failure_01_of_47.png" => include_bytes!("../../tests/fixtures/page_numbers/failure_01_of_47.png"),
             "page_02_of_14.png" => include_bytes!("../../tests/fixtures/page_numbers/page_02_of_14.png"),

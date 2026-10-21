@@ -22,6 +22,7 @@ const FINGERPRINT_WIDTH: u32 = 64;
 const FINGERPRINT_HEIGHT: u32 = 32;
 
 include!("ocr/reader.rs");
+include!("ocr/separator.rs");
 include!("ocr/types.rs");
 include!("ocr/diagnostics.rs");
 include!("ocr/target.rs");
